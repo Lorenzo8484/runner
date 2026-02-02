@@ -320,7 +320,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.5; // 🔻 lowered (readable)
+    renderer.toneMappingExposure = 1.22; // 🔻 lowered (readable)
     renderer.physicallyCorrectLights = true;
 
     renderer.shadowMap.enabled = true;
@@ -336,30 +336,36 @@
     camera.position.set(0, 2.2, 5.8);
     camera.add(listener);
 
-    // Lights (jungle mood)
-    const sun = new THREE.DirectionalLight(0xe6ffd6, 1.65);
-    sun.position.set(5, 9, 4);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048,2048);
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 40;
-    sun.shadow.camera.left = -8;
-    sun.shadow.camera.right=  8;
-    sun.shadow.camera.top  =  8;
-    sun.shadow.camera.bottom=-8;
-    sun.shadow.bias = -0.00035;
-    scene.add(sun);
+    // Lights (jungle mood) — FIX VISIBILITÀ
+const sun = new THREE.DirectionalLight(0xf3ffe6, 2.6); // 🔺 più forte
+sun.position.set(6, 10, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 55;
+sun.shadow.camera.left = -10;
+sun.shadow.camera.right = 10;
+sun.shadow.camera.top = 10;
+sun.shadow.camera.bottom = -10;
+sun.shadow.bias = -0.00025;
+scene.add(sun);
 
-    const hemi = new THREE.HemisphereLight(0x93ffd4, 0x081209, 0.55);
-    scene.add(hemi);
+// ambient “base” (fondamentale su iPhone)
+const amb = new THREE.AmbientLight(0x8fd3a8, 0.55);
+scene.add(amb);
 
-    const rim = new THREE.PointLight(0x6eff9b, 12, 16, 2);
-    rim.position.set(-2.2, 1.8, 1.8);
-    scene.add(rim);
+// cielo/riempimento
+const hemi = new THREE.HemisphereLight(0xbfffe0, 0x0a160c, 0.85);
+scene.add(hemi);
 
-    const warm = new THREE.PointLight(0xffcc88, 10, 18, 2);
-    warm.position.set(2.0, 1.5, 1.4);
-    scene.add(warm);
+// luci laterali morbide
+const rim = new THREE.PointLight(0x6eff9b, 10, 22, 2);
+rim.position.set(-3.0, 2.0, 2.2);
+scene.add(rim);
+
+const warm = new THREE.PointLight(0xffcc88, 8, 24, 2);
+warm.position.set(3.0, 1.7, 1.8);
+scene.add(warm);
 
     // ---------- Postprocessing: LOW bloom + motion
     const composer = new EffectComposer(renderer);
