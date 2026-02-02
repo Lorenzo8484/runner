@@ -320,7 +320,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95; // 🔻 lowered (readable)
+    renderer.toneMappingExposure = 1.22; // 🔻 lowered (readable)
     renderer.physicallyCorrectLights = true;
 
     renderer.shadowMap.enabled = true;
@@ -329,7 +329,8 @@
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x06110a, 0.060); // jungle fog
+    scene.background = new THREE.Color(0x0b1a10);   // verde scuro “giungla”
+    scene.fog = new THREE.FogExp2(0x0b1a10, 0.030)
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 240);
     camera.position.set(0, 2.2, 5.8);
