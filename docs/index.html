@@ -320,7 +320,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.22; // 🔻 lowered (readable)
+    renderer.toneMappingExposure = 1.38; // 🔻 lowered (readable)
     renderer.physicallyCorrectLights = true;
 
     renderer.shadowMap.enabled = true;
@@ -330,7 +330,7 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1a10);   // verde scuro “giungla”
-    scene.fog = new THREE.FogExp2(0x0b1a10, 0.030)
+    scene.fog = new THREE.FogExp2(0x0b1a10, 0.015)
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 240);
     camera.position.set(0, 2.2, 5.8);
@@ -366,6 +366,11 @@ scene.add(rim);
 const warm = new THREE.PointLight(0xffcc88, 8, 24, 2);
 warm.position.set(3.0, 1.7, 1.8);
 scene.add(warm);
+
+// FRONT FILL LIGHT — rende visibile runner + strada
+const front = new THREE.DirectionalLight(0xffffff, 1.2);
+front.position.set(0, 3.5, 6); // davanti alla camera
+scene.add(front);
 
     // ---------- Postprocessing: LOW bloom + motion
     const composer = new EffectComposer(renderer);
@@ -429,10 +434,11 @@ scene.add(warm);
     const dirtTex = makeDirtTexture(1024);
 
     const roadMat = new THREE.MeshStandardMaterial({
-      map: dirtTex,
-      roughness: 1.0,
-      metalness: 0.02
-    });
+  map: dirtTex,
+  roughness: 0.95,
+  metalness: 0.0,
+  color: new THREE.Color(0x556b4a) // 🔺 più chiaro
+});
 
     const segments=[];
     for(let i=0;i<segCount;i++){
