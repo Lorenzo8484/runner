@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Emoji Runner — UE-ish (One File)</title>
+  <title>Jungle Emoji Runner (Three.js)</title>
   <style>
     :root { color-scheme: dark; }
-    html,body{height:100%;margin:0;background:#05070c;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
+    html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
+
     .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;}
     .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:170px;}
     .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
@@ -17,25 +18,31 @@
     .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
     .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(ellipse at center, rgba(0,0,0,.55), rgba(0,0,0,.82));backdrop-filter:blur(10px);z-index:20;}
-    .panel{width:min(700px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
+
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
+      backdrop-filter:blur(10px);z-index:20;}
+    .panel{width:min(760px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
+      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
     .title{font-size:22px;font-weight:900;margin:4px 0 6px;}
     .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
-    .toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);cursor:pointer;user-select:none;}
+    .toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);cursor:pointer;user-select:none;}
     .toggle label{font-weight:800;}
     .toggle span{opacity:.85;font-size:12px;}
     .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
     .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
+
     .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
+
     input[type="file"]{display:none;}
   </style>
 
-  <!-- Three.js importmap -->
   <script type="importmap">
   {
     "imports": {
@@ -72,26 +79,27 @@
 
   <div class="overlay" id="menu">
     <div class="panel">
-      <div class="title">Emoji Runner — UE-ish (One File)</div>
+      <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle">
-        Shadow + contact shadow + motion (afterimage) + bloom + suoni “engine”. HDRI EXR: “Shanghai Bund” (Poly Haven CC0).
+        Bloom ridotto (leggibile), giungla con alberi 3D + fog, runner realistico (se carichi runner.glb),
+        ostacoli 3D veri (se carichi rock/log), audio realistico (se metti .ogg).
       </div>
 
       <div class="grid">
         <button class="btn full" id="startBtn">▶️ Inizia</button>
 
         <div class="toggle full" id="audioToggle">
-          <div><label>Suoni</label><br/><span>Engine + SFX (WebAudio).</span></div>
+          <div><label>Suoni</label><br/><span>Audio realistico se presente, fallback se no.</span></div>
           <div class="switch on" id="audioSwitch"><i></i></div>
         </div>
 
         <div class="toggle full" id="bloomToggle">
-          <div><label>Bloom</label><br/><span>Neon glow.</span></div>
+          <div><label>Bloom</label><br/><span>Già basso (consigliato ON).</span></div>
           <div class="switch on" id="bloomSwitch"><i></i></div>
         </div>
 
         <div class="toggle full" id="motionToggle">
-          <div><label>Motion</label><br/><span>Afterimage trail.</span></div>
+          <div><label>Motion</label><br/><span>Afterimage trail leggero.</span></div>
           <div class="switch on" id="motionSwitch"><i></i></div>
         </div>
 
@@ -100,8 +108,14 @@
           <div class="switch on" id="qualitySwitch"><i></i></div>
         </div>
 
-        <button class="btn full" id="loadModelBtn">📦 Carica ostacolo reale (.glb/.gltf)</button>
-        <input id="modelFile" type="file" accept=".glb,.gltf" />
+        <button class="btn full" id="loadRunnerBtn">🏃 Carica runner (.glb)</button>
+        <input id="runnerFile" type="file" accept=".glb,.gltf" />
+
+        <button class="btn full" id="loadObstacleBtn">🪵 Carica ostacoli (.glb) (uno o più)</button>
+        <input id="obstacleFiles" type="file" accept=".glb,.gltf" multiple />
+
+        <button class="btn full" id="loadTreeBtn">🌴 Carica albero (.glb) (opzionale)</button>
+        <input id="treeFile" type="file" accept=".glb,.gltf" />
 
         <div class="toggle full">
           <div><label>Record</label><br/><span>Salvato in locale.</span></div>
@@ -113,14 +127,13 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
     import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
     import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    // ---------------- UI refs
+    // ---------- UI
     const scoreEl = document.getElementById('score');
     const coinsEl = document.getElementById('coins');
     const bestEl  = document.getElementById('best');
@@ -143,160 +156,171 @@
     const audioSwitch = document.getElementById('audioSwitch');
     const bloomToggle = document.getElementById('bloomToggle');
     const bloomSwitch = document.getElementById('bloomSwitch');
-    const motionToggle = document.getElementById('motionToggle');
-    const motionSwitch = document.getElementById('motionSwitch');
+    const motionToggle= document.getElementById('motionToggle');
+    const motionSwitch= document.getElementById('motionSwitch');
     const qualityToggle = document.getElementById('qualityToggle');
     const qualitySwitch = document.getElementById('qualitySwitch');
 
-    const loadModelBtn = document.getElementById('loadModelBtn');
-    const modelFile = document.getElementById('modelFile');
+    const loadRunnerBtn = document.getElementById('loadRunnerBtn');
+    const runnerFile = document.getElementById('runnerFile');
 
-    // ---------------- helpers
+    const loadObstacleBtn = document.getElementById('loadObstacleBtn');
+    const obstacleFiles = document.getElementById('obstacleFiles');
+
+    const loadTreeBtn = document.getElementById('loadTreeBtn');
+    const treeFile = document.getElementById('treeFile');
+
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-    function toggleSwitch(el, on){ el.classList.toggle('on', !!on); return on; }
+    function toggleSwitch(el,on){ el.classList.toggle('on',!!on); return on; }
     function menuIsOpen(){ return menu.style.display !== 'none'; }
 
-    // ---------------- Audio (procedural “better”)
-    let audioEnabled = true;
-    let audioReady = false;
+    // ---------- Basic audio: realistic files if present, else procedural fallback
+    let audioEnabled=true;
+    let audioReady=false;
     let actx=null, master=null;
-    let engineGain=null, engineOscA=null, engineOscB=null, engineNoise=null, engineFilter=null;
-
-    function syncAudioUI(){ audioSwitch.classList.toggle('on', !!audioEnabled); }
+    let engineGain=null, engineOscA=null, engineOscB=null, engineFilter=null, engineNoise=null;
 
     function initAudio(){
-      if (audioReady) return;
+      if(audioReady) return;
       try{
         actx = new (window.AudioContext||window.webkitAudioContext)();
         master = actx.createGain();
-        master.gain.value = 0.45;
+        master.gain.value = 0.55;
         master.connect(actx.destination);
 
-        engineGain = actx.createGain();
-        engineGain.gain.value = 0.0;
+        // engine (soft)
+        engineGain = actx.createGain(); engineGain.gain.value=0.0;
+        engineFilter = actx.createBiquadFilter(); engineFilter.type='lowpass'; engineFilter.frequency.value=220;
+        engineOscA = actx.createOscillator(); engineOscA.type='sawtooth'; engineOscA.frequency.value=60;
+        engineOscB = actx.createOscillator(); engineOscB.type='square'; engineOscB.frequency.value=30;
 
-        engineFilter = actx.createBiquadFilter();
-        engineFilter.type = 'lowpass';
-        engineFilter.frequency.value = 260;
-
-        engineOscA = actx.createOscillator();
-        engineOscA.type = 'sawtooth';
-        engineOscA.frequency.value = 70;
-
-        engineOscB = actx.createOscillator();
-        engineOscB.type = 'square';
-        engineOscB.frequency.value = 35;
-
-        const noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+        // noise
+        const noiseBuf = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
         const data = noiseBuf.getChannelData(0);
-        for (let i=0;i<data.length;i++) data[i] = (Math.random()*2-1) * 0.45;
-        engineNoise = actx.createBufferSource();
-        engineNoise.buffer = noiseBuf;
-        engineNoise.loop = true;
+        for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.18;
+        engineNoise = actx.createBufferSource(); engineNoise.buffer=noiseBuf; engineNoise.loop=true;
 
-        const noiseHP = actx.createBiquadFilter();
-        noiseHP.type='highpass';
-        noiseHP.frequency.value = 220;
+        const noiseHP = actx.createBiquadFilter(); noiseHP.type='highpass'; noiseHP.frequency.value=160;
 
-        const mix = actx.createGain();
-        mix.gain.value = 0.22;
-
-        engineOscA.connect(mix);
-        engineOscB.connect(mix);
-        engineNoise.connect(noiseHP);
-        noiseHP.connect(mix);
-
+        const mix = actx.createGain(); mix.gain.value=0.18;
+        engineOscA.connect(mix); engineOscB.connect(mix);
+        engineNoise.connect(noiseHP); noiseHP.connect(mix);
         mix.connect(engineFilter);
         engineFilter.connect(engineGain);
         engineGain.connect(master);
 
-        engineOscA.start();
-        engineOscB.start();
-        engineNoise.start();
-
-        audioReady = true;
-      } catch(e){
-        audioEnabled = false;
+        engineOscA.start(); engineOscB.start(); engineNoise.start();
+        audioReady=true;
+      }catch(e){
+        audioEnabled=false;
       }
-      syncAudioUI();
+      audioSwitch.classList.toggle('on',!!audioEnabled);
     }
 
     function setEngine(on){
       if(!audioEnabled) return;
       initAudio(); if(!audioReady) return;
-      const t = actx.currentTime;
-      const target = on ? 0.22 : 0.0;
+      const t=actx.currentTime;
+      const target= on ? 0.16 : 0.0;
       engineGain.gain.cancelScheduledValues(t);
-      engineGain.gain.setValueAtTime(engineGain.gain.value, t);
-      engineGain.gain.linearRampToValueAtTime(target, t + (on ? 0.25 : 0.18));
+      engineGain.gain.setValueAtTime(engineGain.gain.value,t);
+      engineGain.gain.linearRampToValueAtTime(target, t+(on?0.25:0.15));
     }
 
     function updateEngine(speedMul){
-      if(!audioEnabled || !audioReady) return;
-      const t = actx.currentTime;
-      const rpm = 1 + speedMul*0.55;
-      engineOscA.frequency.setValueAtTime(70 * rpm, t);
-      engineOscB.frequency.setValueAtTime(35 * rpm, t);
-      engineFilter.frequency.setValueAtTime(240 + 220 * rpm, t);
+      if(!audioEnabled||!audioReady) return;
+      const t=actx.currentTime;
+      const rpm = 1 + speedMul*0.45;
+      engineOscA.frequency.setValueAtTime(60*rpm, t);
+      engineOscB.frequency.setValueAtTime(30*rpm, t);
+      engineFilter.frequency.setValueAtTime(200 + 180*rpm, t);
     }
 
-    function envBeep(type,freq,dur=0.09,gain=0.22, pan=0){
+    function beep(type,freq,dur=0.08,g=0.14){
       if(!audioEnabled) return;
       initAudio(); if(!audioReady) return;
-      const t0 = actx.currentTime;
-      const o = actx.createOscillator();
-      const g = actx.createGain();
-      const p = actx.createStereoPanner();
-      p.pan.setValueAtTime(pan, t0);
-
-      o.type = type;
-      o.frequency.setValueAtTime(freq, t0);
-
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(gain, t0+0.012);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-
-      o.connect(g); g.connect(p); p.connect(master);
+      const t0=actx.currentTime;
+      const o=actx.createOscillator();
+      const gg=actx.createGain();
+      o.type=type; o.frequency.setValueAtTime(freq,t0);
+      gg.gain.setValueAtTime(0.0001,t0);
+      gg.gain.exponentialRampToValueAtTime(g,t0+0.012);
+      gg.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+      o.connect(gg); gg.connect(master);
       o.start(t0); o.stop(t0+dur+0.02);
     }
 
-    function noiseBurst(dur=0.11,gain=0.22){
-      if(!audioEnabled) return;
-      initAudio(); if(!audioReady) return;
-      const t0 = actx.currentTime;
-      const size = Math.floor(actx.sampleRate*dur);
-      const buf = actx.createBuffer(1,size,actx.sampleRate);
-      const d = buf.getChannelData(0);
-      for(let i=0;i<size;i++) d[i]=(Math.random()*2-1)*(1-i/size);
-      const src = actx.createBufferSource(); src.buffer=buf;
-      const f = actx.createBiquadFilter(); f.type='bandpass'; f.frequency.setValueAtTime(520,t0); f.Q.value=0.9;
-      const g = actx.createGain();
-      g.gain.setValueAtTime(gain,t0);
-      g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-      src.connect(f); f.connect(g); g.connect(master);
-      src.start(t0); src.stop(t0+dur+0.02);
+    // Realistic audio files (optional)
+    const listener = new THREE.AudioListener();
+    const fileSfx = {
+      step: [],
+      coin: null,
+      power: null,
+      hit: null
+    };
+    const audioLoader = new THREE.AudioLoader();
+    async function tryLoadAudio(){
+      // if you add files, they will be used:
+      // ./assets/audio/footstep_1.ogg ... footstep_4.ogg
+      // ./assets/audio/coin.ogg, power.ogg, hit.ogg
+      const tryOne = (url)=> new Promise((res)=>audioLoader.load(url, b=>res(b), undefined, ()=>res(null)));
+      const mk = (buf)=>{
+        if(!buf) return null;
+        const a = new THREE.Audio(listener);
+        a.setBuffer(buf);
+        return a;
+      };
+
+      for(let i=1;i<=4;i++){
+        const b = await tryOne(`./assets/audio/footstep_${i}.ogg`);
+        if(b){ const a=mk(b); a.setVolume(0.45); fileSfx.step.push(a); }
+      }
+      {
+        const b = await tryOne(`./assets/audio/coin.ogg`);
+        if(b){ fileSfx.coin=mk(b); fileSfx.coin.setVolume(0.55); }
+      }
+      {
+        const b = await tryOne(`./assets/audio/power.ogg`);
+        if(b){ fileSfx.power=mk(b); fileSfx.power.setVolume(0.55); }
+      }
+      {
+        const b = await tryOne(`./assets/audio/hit.ogg`);
+        if(b){ fileSfx.hit=mk(b); fileSfx.hit.setVolume(0.7); }
+      }
     }
 
-    const SFX = {
-      coin(pan=0){ envBeep('triangle', 880, 0.06, 0.16, pan); envBeep('sine', 1320, 0.07, 0.10, pan); },
-      power(pan=0){ envBeep('sawtooth', 520, 0.10, 0.18, pan); envBeep('triangle', 980, 0.12, 0.12, pan); },
-      jump(){ envBeep('square', 420, 0.06, 0.10, 0); envBeep('sine', 640, 0.08, 0.08, 0); },
-      slide(){ envBeep('sine', 240, 0.09, 0.09, 0); },
-      whoosh(pan=0){ noiseBurst(0.08, 0.14); envBeep('sine', 160, 0.10, 0.05, pan); },
-      shield(){ envBeep('triangle', 320, 0.08, 0.10, 0); envBeep('sine', 720, 0.10, 0.09, 0); },
-      over(){ noiseBurst(0.16, 0.26); envBeep('sawtooth', 140, 0.20, 0.14, 0); }
-    };
+    function playFootstep(){
+      if(audioEnabled && fileSfx.step.length){
+        const a = fileSfx.step[rndi(0,fileSfx.step.length-1)];
+        a.isPlaying && a.stop();
+        a.play();
+      } else {
+        beep('sine', 160, 0.05, 0.06);
+      }
+    }
+    function playCoin(){
+      if(audioEnabled && fileSfx.coin){ fileSfx.coin.isPlaying && fileSfx.coin.stop(); fileSfx.coin.play(); }
+      else { beep('triangle', 880, 0.06, 0.12); beep('sine', 1320, 0.07, 0.08); }
+    }
+    function playPower(){
+      if(audioEnabled && fileSfx.power){ fileSfx.power.isPlaying && fileSfx.power.stop(); fileSfx.power.play(); }
+      else { beep('sawtooth', 520, 0.09, 0.10); beep('triangle', 900, 0.10, 0.08); }
+    }
+    function playHit(){
+      if(audioEnabled && fileSfx.hit){ fileSfx.hit.isPlaying && fileSfx.hit.stop(); fileSfx.hit.play(); }
+      else { beep('square', 140, 0.14, 0.12); }
+    }
 
-    // ---------------- Renderer (shadows)
+    // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 0.95; // 🔻 lowered (readable)
     renderer.physicallyCorrectLights = true;
 
     renderer.shadowMap.enabled = true;
@@ -304,258 +328,309 @@
 
     document.body.appendChild(renderer.domElement);
 
-    // ---------------- Scene / Camera
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x05070c, 0.050);
+    scene.fog = new THREE.FogExp2(0x06110a, 0.060); // jungle fog
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 250);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 240);
     camera.position.set(0, 2.2, 5.8);
+    camera.add(listener);
 
-    // ---------------- Lights
-    const key = new THREE.DirectionalLight(0xcfe8ff, 2.2);
-    key.position.set(4, 7, 3);
-    key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
-    key.shadow.camera.near = 0.5;
-    key.shadow.camera.far = 30;
-    key.shadow.camera.left = -6;
-    key.shadow.camera.right = 6;
-    key.shadow.camera.top = 6;
-    key.shadow.camera.bottom = -6;
-    key.shadow.bias = -0.00035;
-    scene.add(key);
+    // Lights (jungle mood)
+    const sun = new THREE.DirectionalLight(0xe6ffd6, 1.65);
+    sun.position.set(5, 9, 4);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 40;
+    sun.shadow.camera.left = -8;
+    sun.shadow.camera.right=  8;
+    sun.shadow.camera.top  =  8;
+    sun.shadow.camera.bottom=-8;
+    sun.shadow.bias = -0.00035;
+    scene.add(sun);
 
-    const fill = new THREE.HemisphereLight(0x7fd6ff, 0x0b0f18, 0.75);
-    scene.add(fill);
+    const hemi = new THREE.HemisphereLight(0x93ffd4, 0x081209, 0.55);
+    scene.add(hemi);
 
-    const neonL = new THREE.PointLight(0x55ddff, 18, 18, 2);
-    neonL.position.set(-2.2, 1.6, 1.8);
-    scene.add(neonL);
+    const rim = new THREE.PointLight(0x6eff9b, 12, 16, 2);
+    rim.position.set(-2.2, 1.8, 1.8);
+    scene.add(rim);
 
-    const neonR = new THREE.PointLight(0xff4df2, 18, 18, 2);
-    neonR.position.set( 2.2, 1.6, 1.8);
-    scene.add(neonR);
+    const warm = new THREE.PointLight(0xffcc88, 10, 18, 2);
+    warm.position.set(2.0, 1.5, 1.4);
+    scene.add(warm);
 
-    // ---------------- HDRI EXR + PMREM (Poly Haven)
-    const HDR_EXR = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/exr/4k/shanghai_bund_4k.exr';
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    pmrem.compileEquirectangularShader();
-
-    const exr = await new EXRLoader().loadAsync(HDR_EXR);
-    exr.mapping = THREE.EquirectangularReflectionMapping;
-    const envMap = pmrem.fromEquirectangular(exr).texture;
-    scene.environment = envMap;
-    scene.background  = envMap;
-    exr.dispose();
-
-    // ---------------- Postprocessing: Bloom + Afterimage
+    // ---------- Postprocessing: LOW bloom + motion
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.90, 0.55, 0.20
+      0.22, // strength 🔻
+      0.25, // radius   🔻
+      0.90  // threshold 🔺
     );
     composer.addPass(bloomPass);
 
     const afterPass = new AfterimagePass();
-    afterPass.uniforms['damp'].value = 0.90; // trail amount
+    afterPass.uniforms['damp'].value = 0.90;
     composer.addPass(afterPass);
 
-    // ---------------- Contact shadow (fake)
+    // ---------- Contact shadow under runner
     function makeContactShadowTexture(size=512){
-      const c = document.createElement('canvas');
-      c.width=c.height=size;
-      const g = c.getContext('2d');
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
-      const grd = g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
+      const grd=g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
       grd.addColorStop(0,'rgba(0,0,0,0.45)');
       grd.addColorStop(0.55,'rgba(0,0,0,0.12)');
       grd.addColorStop(1,'rgba(0,0,0,0)');
-      g.fillStyle=grd;
-      g.fillRect(0,0,size,size);
-      const t = new THREE.CanvasTexture(c);
-      t.colorSpace = THREE.SRGBColorSpace;
+      g.fillStyle=grd; g.fillRect(0,0,size,size);
+      const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
       return t;
     }
-
     const contactTex = makeContactShadowTexture(512);
     const contact = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.4, 1.4),
-      new THREE.MeshBasicMaterial({ map: contactTex, transparent:true, opacity:0.65, depthWrite:false })
+      new THREE.PlaneGeometry(1.5,1.5),
+      new THREE.MeshBasicMaterial({ map:contactTex, transparent:true, opacity:0.62, depthWrite:false })
     );
     contact.rotation.x = -Math.PI/2;
-    contact.position.set(0, 0.015, 0.2);
+    contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // ---------------- Road (Poly Haven asphalt_02)
-    const lanesX = [-1.1, 0, 1.1];
-    const segLen = 8.0, segCount = 9, roadWidth = 4.0;
+    // ---------- World layout
+    const lanesX = [-1.15, 0, 1.15];
+    const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
-    const loader = new THREE.TextureLoader();
-    const TEX = {
-      diff:  'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_diff_2k.jpg',
-      rough: 'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_2k.jpg',
-      nor:   'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_nor_gl_2k.jpg'
-    };
-
-    const texDiff  = await loader.loadAsync(TEX.diff);
-    const texRough = await loader.loadAsync(TEX.rough);
-    const texNor   = await loader.loadAsync(TEX.nor);
-    texDiff.colorSpace = THREE.SRGBColorSpace;
-
-    for (const t of [texDiff, texRough, texNor]) {
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(2.4, 8.0);
+    // Ground (jungle path) - procedural texture
+    function makeDirtTexture(size=512){
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
+      g.fillStyle='#2d2a1c'; g.fillRect(0,0,size,size);
+      for(let i=0;i<9000;i++){
+        const x=Math.random()*size, y=Math.random()*size;
+        const v=rndi(20,90);
+        g.fillStyle=`rgba(${v+25},${v+12},${v},${rnd(0.05,0.20)})`;
+        g.fillRect(x,y,1,1);
+      }
+      const t=new THREE.CanvasTexture(c);
+      t.colorSpace=THREE.SRGBColorSpace;
+      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.repeat.set(2.0, 10.0);
+      return t;
     }
+    const dirtTex = makeDirtTexture(1024);
 
     const roadMat = new THREE.MeshStandardMaterial({
-      map: texDiff, roughnessMap: texRough, normalMap: texNor,
-      roughness: 1.0, metalness: 0.06,
+      map: dirtTex,
+      roughness: 1.0,
+      metalness: 0.02
     });
 
-    const lineMat = new THREE.MeshStandardMaterial({
-      color: 0x0d1220,
-      emissive: 0x45e8ff,
-      emissiveIntensity: 2.1,
-      roughness: 0.35,
-      metalness: 0.25,
-      transparent: true,
-      opacity: 0.60
-    });
-
-    const segments = [];
-    for (let i=0;i<segCount;i++){
-      const geo = new THREE.PlaneGeometry(roadWidth, segLen); geo.rotateX(-Math.PI/2);
+    const segments=[];
+    for(let i=0;i<segCount;i++){
+      const geo = new THREE.PlaneGeometry(roadWidth, segLen);
+      geo.rotateX(-Math.PI/2);
       const mesh = new THREE.Mesh(geo, roadMat);
       mesh.position.set(0, 0, -i*segLen);
-      mesh.receiveShadow = true;
+      mesh.receiveShadow=true;
       scene.add(mesh);
-
-      const linesGeo = new THREE.PlaneGeometry(roadWidth*0.98, segLen*0.98); linesGeo.rotateX(-Math.PI/2);
-      const lines = new THREE.Mesh(linesGeo, lineMat);
-      lines.position.set(0, 0.012, -i*segLen);
-      scene.add(lines);
-
-      segments.push({ mesh, lines });
+      segments.push(mesh);
     }
 
-    const wallGeo = new THREE.BoxGeometry(0.24, 2.3, segLen*segCount);
-    const wallL = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
-      color: 0x070a10, metalness: 0.80, roughness: 0.25, emissive: 0x2bdcff, emissiveIntensity: 0.35
-    }));
-    wallL.position.set(-roadWidth/2 - 0.45, 1.15, -segLen*segCount/2 + segLen/2);
-    wallL.receiveShadow = true;
-    scene.add(wallL);
+    // side ground (wider)
+    const sideGeo = new THREE.PlaneGeometry(40, segLen*segCount);
+    sideGeo.rotateX(-Math.PI/2);
+    const sideMat = new THREE.MeshStandardMaterial({ color:0x0a1a0f, roughness:1, metalness:0 });
+    const side = new THREE.Mesh(sideGeo, sideMat);
+    side.position.set(0, -0.02, -segLen*segCount/2 + segLen/2);
+    side.receiveShadow = true;
+    scene.add(side);
 
-    const wallR = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
-      color: 0x070a10, metalness: 0.80, roughness: 0.25, emissive: 0xff2bd6, emissiveIntensity: 0.35
-    }));
-    wallR.position.set( roadWidth/2 + 0.45, 1.15, -segLen*segCount/2 + segLen/2);
-    wallR.receiveShadow = true;
-    scene.add(wallR);
+    // ---------- Jungle props (trees) — default procedural, can be replaced by loaded tree model
+    let treeProto = null;
+    function makeTreePrimitive(){
+      const g = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.11, 0.16, 1.6, 10),
+        new THREE.MeshStandardMaterial({ color:0x3a2a1a, roughness:1, metalness:0 })
+      );
+      trunk.castShadow=true; trunk.receiveShadow=true;
+      trunk.position.y = 0.8;
+      g.add(trunk);
 
-    // ---------------- Player
-    const player = new THREE.Group(); scene.add(player);
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(0.75, 1.6, 12),
+        new THREE.MeshStandardMaterial({ color:0x134a22, roughness:1, metalness:0 })
+      );
+      crown.castShadow=true; crown.receiveShadow=true;
+      crown.position.y = 1.9;
+      g.add(crown);
 
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.22, 0.45, 8, 16),
-      new THREE.MeshStandardMaterial({
-        color: 0x0f1424, metalness: 0.42, roughness: 0.22,
-        emissive: 0x8fdcff, emissiveIntensity: 0.22
-      })
+      const crown2 = new THREE.Mesh(
+        new THREE.ConeGeometry(0.6, 1.3, 12),
+        new THREE.MeshStandardMaterial({ color:0x0f3b1c, roughness:1, metalness:0 })
+      );
+      crown2.castShadow=true; crown2.receiveShadow=true;
+      crown2.position.y = 2.3;
+      g.add(crown2);
+
+      return g;
+    }
+    treeProto = makeTreePrimitive();
+
+    const jungle = new THREE.Group();
+    scene.add(jungle);
+
+    function spawnTree(x,z){
+      const obj = treeProto.clone(true);
+      obj.position.set(x, 0, z);
+      obj.scale.setScalar(rnd(0.8, 1.25));
+      obj.rotation.y = rnd(0, Math.PI*2);
+      obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+      jungle.add(obj);
+      return obj;
+    }
+
+    // create lines of trees along the path (looped)
+    const treePool=[];
+    const treeSpacing=2.8;
+    const treeSideX = roadWidth/2 + 1.7;
+    for(let i=0;i<Math.floor((segLen*segCount)/treeSpacing);i++){
+      const z = -i*treeSpacing;
+      treePool.push(spawnTree(-treeSideX - rnd(0,1.8), z));
+      treePool.push(spawnTree( treeSideX + rnd(0,1.8), z));
+      // extra bushes
+      if(Math.random()<0.35){
+        const bush = new THREE.Mesh(
+          new THREE.SphereGeometry(rnd(0.35,0.65), 10, 8),
+          new THREE.MeshStandardMaterial({ color:0x0f401d, roughness:1, metalness:0 })
+        );
+        bush.position.set((Math.random()<0.5?-1:1)*(treeSideX-0.4 + rnd(0,1.2)), 0.35, z + rnd(-0.7,0.7));
+        bush.castShadow=true; bush.receiveShadow=true;
+        jungle.add(bush);
+        treePool.push(bush);
+      }
+    }
+
+    function loopJungle(scroll){
+      // if any tree passes camera, wrap back
+      const wrapZ = segLen*segCount;
+      for(const obj of treePool){
+        obj.position.z += scroll;
+        if(obj.position.z > 6){
+          obj.position.z -= wrapZ;
+        }
+      }
+    }
+
+    // ---------- Runner: default dummy, can load realistic runner.glb
+    const gltfLoader = new GLTFLoader();
+    let runner = new THREE.Group();
+    scene.add(runner);
+
+    // Dummy runner (placeholder)
+    const dummyBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
+      new THREE.MeshStandardMaterial({ color:0x1b2a1c, roughness:0.65, metalness:0.05 })
     );
-    body.position.y = 0.65;
-    body.castShadow = true;
-    player.add(body);
+    dummyBody.position.y=0.85;
+    dummyBody.castShadow=true;
+    runner.add(dummyBody);
 
-    const visor = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 24, 18),
-      new THREE.MeshStandardMaterial({
-        color: 0x0b0f18, roughness: 0.06,
-        emissive: 0xff4df2, emissiveIntensity: 0.28
-      })
+    const dummyHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 18, 14),
+      new THREE.MeshStandardMaterial({ color:0x2a3b22, roughness:0.5, metalness:0.02 })
     );
-    visor.position.set(0, 0.78, 0.16);
-    visor.castShadow = true;
-    player.add(visor);
+    dummyHead.position.set(0, 1.25, 0.05);
+    dummyHead.castShadow=true;
+    runner.add(dummyHead);
 
-    const shieldRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.42, 0.03, 10, 64),
-      new THREE.MeshStandardMaterial({
-        color: 0x1b2a44, metalness: 0.2, roughness: 0.15,
-        emissive: 0x55ddff, emissiveIntensity: 1.25,
-        transparent:true, opacity:0.65
-      })
-    );
-    shieldRing.rotation.x = Math.PI/2;
-    shieldRing.position.y = 0.7;
-    shieldRing.visible = false;
-    player.add(shieldRing);
+    let mixer=null, runAction=null;
+    function setRunnerTo(obj, animations){
+      // remove previous
+      scene.remove(runner);
+      runner = obj;
+      runner.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+      runner.position.set(0,0,0);
+      scene.add(runner);
 
-    // ---------------- Emoji sprites
+      mixer=null; runAction=null;
+      if(animations && animations.length){
+        mixer = new THREE.AnimationMixer(runner);
+        runAction = mixer.clipAction(animations[0]);
+        runAction.play();
+      }
+      loadRunnerBtn.textContent = "✅ Runner caricato";
+    }
+
+    async function tryLoadRunnerFromPath(){
+      // Optional: if you add ./assets/models/runner.glb it will load automatically.
+      try{
+        const gltf = await gltfLoader.loadAsync('./assets/models/runner.glb');
+        setRunnerTo(gltf.scene, gltf.animations);
+      }catch(e){
+        // keep dummy
+      }
+    }
+
+    // ---------- Obstacles prototypes (real if present)
+    const obstacleProtos=[];
+    function addObstacleProto(sceneObj){
+      sceneObj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+      obstacleProtos.push(sceneObj);
+    }
+    async function tryLoadObstacleDefaults(){
+      // optional defaults if you add them:
+      // ./assets/models/rock_01.glb and ./assets/models/log_01.glb
+      const tryOne = async (p)=>{
+        try{
+          const gltf = await gltfLoader.loadAsync(p);
+          addObstacleProto(gltf.scene);
+        }catch(e){}
+      };
+      await tryOne('./assets/models/rock_01.glb');
+      await tryOne('./assets/models/log_01.glb');
+    }
+
+    function spawnObstacleVisual(){
+      if(obstacleProtos.length){
+        const proto = obstacleProtos[rndi(0, obstacleProtos.length-1)];
+        const obj = proto.clone(true);
+        obj.scale.setScalar(rnd(0.45, 0.80));
+        obj.rotation.y = rnd(0, Math.PI*2);
+        obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+        return obj;
+      }
+      // fallback: 3D box obstacle
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(rnd(0.6,0.9), rnd(0.7,1.2), rnd(0.6,0.9)),
+        new THREE.MeshStandardMaterial({ color:0x3a2a12, roughness:0.9, metalness:0.02 })
+      );
+      box.castShadow=true; box.receiveShadow=true;
+      return box;
+    }
+
+    // ---------- Emoji pickups (sprites)
     function makeEmojiSprite(emoji, size=256){
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const g = c.getContext('2d');
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
-      g.globalAlpha = 0.18;
-      g.fillStyle = '#cfefff';
+      g.globalAlpha=0.18;
+      g.fillStyle='#cfefff';
       g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
-      g.globalAlpha = 1;
-      g.font = `${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+      g.globalAlpha=1;
+      g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
       g.textAlign='center'; g.textBaseline='middle';
       g.fillText(emoji, size/2, size/2+8);
-
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const mat = new THREE.SpriteMaterial({ map: tex, transparent:true });
-      const spr = new THREE.Sprite(mat);
+      const tex=new THREE.CanvasTexture(c);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
+      const spr=new THREE.Sprite(mat);
       spr.scale.set(0.75,0.75,1);
       return spr;
     }
 
-    // ---------------- Real obstacle via user GLB/GLTF
-    let obstacleModelProto = null;
-    const gltfLoader = new GLTFLoader();
-
-    async function loadObstacleFromFile(file){
-      const url = URL.createObjectURL(file);
-      try{
-        const gltf = await gltfLoader.loadAsync(url);
-        obstacleModelProto = gltf.scene;
-        obstacleModelProto.traverse(o=>{
-          if(o.isMesh){
-            o.castShadow = true;
-            o.receiveShadow = true;
-            if(o.material) o.material.envMapIntensity = 1.25;
-          }
-        });
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    }
-
-    loadModelBtn.addEventListener('click', ()=> modelFile.click());
-    modelFile.addEventListener('change', async (e)=>{
-      const f = e.target.files?.[0];
-      if(!f) return;
-      await loadObstacleFromFile(f);
-      loadModelBtn.textContent = "✅ Modello ostacolo caricato";
-    });
-
-    function spawnObstacleVisual(){
-      if(obstacleModelProto){
-        const obj = obstacleModelProto.clone(true);
-        obj.scale.setScalar(0.40);
-        return obj;
-      }
-      const spr = makeEmojiSprite(["🧱","🚧","🪨","🗑️","🪵"][rndi(0,4)]);
-      spr.scale.set(0.95,0.95,1);
-      return spr;
-    }
-
-    // ---------------- Game data
     const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const POWERUPS = [
       { key:"magnet", emoji:"🧲", name:"Magnete", dur:7.5 },
@@ -564,19 +639,34 @@
       { key:"slow",   emoji:"🐢", name:"Slow-mo",  dur:6.0 }
     ];
 
-    const BEST_KEY = 'emoji_runner_best_ue_onefile_v1';
-    const loadBest = ()=> Number(localStorage.getItem(BEST_KEY)||'0')||0;
-    const saveBest = (v)=> localStorage.setItem(BEST_KEY, String(v));
+    // Shield visual
+    const shieldRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.48, 0.03, 10, 64),
+      new THREE.MeshStandardMaterial({
+        color:0x1b3a22, metalness:0.1, roughness:0.25,
+        emissive:0x44ff88, emissiveIntensity:1.05,
+        transparent:true, opacity:0.62
+      })
+    );
+    shieldRing.rotation.x = Math.PI/2;
+    shieldRing.position.y = 0.95;
+    shieldRing.visible=false;
+    runner.add(shieldRing);
+
+    // ---------- Game state
+    const BEST_KEY='jungle_runner_best_v1';
+    const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
+    const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     const game = {
-      lane: 1, targetLane: 1,
-      y: 0, vy: 0, jumping:false,
+      lane:1, targetLane:1,
+      y:0, vy:0, jumping:false,
       sliding:false, slideT:0,
-      baseSpeed: 8.2, speedMul: 1.0,
+      baseSpeed: 8.6, speedMul:1.0,
       score:0, coins:0, best: loadBest(),
       over:false, paused:true,
-      entities: [], spawnT: 0.28,
-      active: null,
+      entities: [], spawnT:0.30,
+      active:null,
       hasShield:false, magnet:false, double:false, slow:false
     };
 
@@ -584,7 +674,7 @@
     bestBig.textContent = String(game.best);
 
     function setActivePower(p){
-      game.active = { ...p, t: p.dur };
+      game.active = { ...p, t:p.dur };
       pillNone.style.display='none';
       pillPower.style.display='inline-flex';
       pEmoji.textContent = p.emoji;
@@ -606,68 +696,103 @@
       if(game.active.key==='shield') game.hasShield=true;
     }
 
-    // ---------------- Spawning
+    function openMenu(){
+      menu.style.display='flex';
+      game.paused=true;
+      bestBig.textContent=String(game.best);
+      setEngine(false);
+    }
+    function closeMenu(){ menu.style.display='none'; }
+
+    function reset(){
+      game.lane=1; game.targetLane=1;
+      game.y=0; game.vy=0; game.jumping=false;
+      game.sliding=false; game.slideT=0;
+      game.baseSpeed=8.6; game.speedMul=1.0;
+      game.score=0; game.coins=0;
+      game.over=false;
+      game.spawnT=0.30;
+
+      for(const e of game.entities) scene.remove(e.obj);
+      game.entities.length=0;
+
+      clearActivePower();
+      game.hasShield=false;
+      shieldRing.visible=false;
+
+      game.paused=false;
+      pauseBtn.textContent='Pausa';
+      setEngine(true);
+    }
+
+    function togglePause(){
+      if(game.over) return;
+      game.paused=!game.paused;
+      pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
+      setEngine(!game.paused);
+    }
+
+    // ---------- Spawning rows
     function spawnRow(){
-      const blocked = new Set();
-      let oCount = Math.random()<0.10 ? 2 : rndi(0,2);
+      const blocked=new Set();
+      const oCount = Math.random()<0.10 ? 2 : rndi(0,2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
-      const coinLanes = new Set();
-      let cCount = rndi(1,2);
+      const coinLanes=new Set();
+      const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
-      const z0 = -42 - rnd(0,18);
+      const z0 = -48 - rnd(0,18);
 
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.5?'low':'high'); // low->jump, high->slide
+        const kind = (Math.random()<0.5?'low':'high'); // low=jump, high=slide
         const obj = spawnObstacleVisual();
-        obj.position.set(lanesX[l], 0.60, z0);
+        obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
-        obj.traverse?.(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
         game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
       });
 
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
-        spr.position.set(lanesX[l], 0.95, z0 - rnd(0,3));
-        spr.scale.set(0.72,0.72,1);
+        spr.position.set(lanesX[l], 1.10, z0 - rnd(0,3));
+        spr.scale.set(0.78,0.78,1);
         scene.add(spr);
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
       if(Math.random()<0.10){
         const p = POWERUPS[rndi(0,POWERUPS.length-1)];
-        const lane = rndi(0,2);
-        const spr = makeEmojiSprite(p.emoji);
-        spr.position.set(lanesX[lane], 1.05, z0 - rnd(1,5));
-        spr.scale.set(0.76,0.76,1);
+        const lane=rndi(0,2);
+        const spr=makeEmojiSprite(p.emoji);
+        spr.position.set(lanesX[lane], 1.18, z0 - rnd(1,5));
+        spr.scale.set(0.82,0.82,1);
         scene.add(spr);
         game.entities.push({ type:'power', lane, z:spr.position.z, obj:spr, key:p.key, dur:p.dur, name:p.name, emoji:p.emoji });
       }
     }
 
-    // ---------------- Controls + motion tilt
-    let tiltTarget = 0;
+    // ---------- Controls + motion feel
+    let tiltTarget=0, camRoll=0, camShake=0;
     function moveLane(dir){
       if(game.over||game.paused) return;
       game.targetLane = clamp(game.targetLane+dir,0,2);
       game.lane = game.targetLane;
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
-      SFX.whoosh(dir>0 ? 0.35 : -0.35);
+      if(audioEnabled){ beep('sine', 140, 0.06, 0.05); }
     }
     function jump(){
       if(game.over||game.paused) return;
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
-        SFX.jump();
+        if(audioEnabled) beep('square', 420, 0.06, 0.08);
       }
     }
     function slide(){
       if(game.over||game.paused) return;
       game.sliding=true;
       game.slideT=0.45;
-      SFX.slide();
+      if(audioEnabled) beep('sine', 220, 0.08, 0.06);
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -697,43 +822,6 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    // ---------------- Menu + state
-    function openMenu(){
-      menu.style.display='flex';
-      game.paused=true;
-      bestBig.textContent=String(game.best);
-      setEngine(false);
-    }
-    function closeMenu(){ menu.style.display='none'; }
-
-    function reset(){
-      game.lane=1; game.targetLane=1;
-      game.y=0; game.vy=0; game.jumping=false;
-      game.sliding=false; game.slideT=0;
-      game.baseSpeed=8.2; game.speedMul=1.0;
-      game.score=0; game.coins=0;
-      game.over=false;
-      game.spawnT=0.30;
-
-      for(const e of game.entities) scene.remove(e.obj);
-      game.entities.length=0;
-
-      clearActivePower();
-      game.hasShield=false;
-      shieldRing.visible=false;
-
-      game.paused=false;
-      pauseBtn.textContent='Pausa';
-      setEngine(true);
-    }
-
-    function togglePause(){
-      if(game.over) return;
-      game.paused = !game.paused;
-      pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      setEngine(!game.paused);
-    }
-
     startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); reset(); });
     restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); reset(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
@@ -743,7 +831,8 @@
     bloomToggle.addEventListener('click', ()=>{ bloomOn=!bloomOn; toggleSwitch(bloomSwitch,bloomOn); bloomPass.enabled=bloomOn; });
     motionToggle.addEventListener('click', ()=>{ motionOn=!motionOn; toggleSwitch(motionSwitch,motionOn); afterPass.enabled=motionOn; });
     qualityToggle.addEventListener('click', ()=>{
-      highQuality=!highQuality; toggleSwitch(qualitySwitch,highQuality);
+      highQuality=!highQuality;
+      toggleSwitch(qualitySwitch,highQuality);
       const pr = highQuality ? Math.min(2, window.devicePixelRatio||1) : 1;
       renderer.setPixelRatio(pr);
       composer.setPixelRatio(pr);
@@ -751,18 +840,72 @@
 
     audioToggle.addEventListener('click', ()=>{
       initAudio();
-      audioEnabled = !audioEnabled;
-      syncAudioUI();
-      setEngine(audioEnabled && !game.paused && !menuIsOpen());
-      if(audioEnabled) envBeep('triangle', 660, 0.08, 0.10, 0);
-      else setEngine(false);
+      audioEnabled=!audioEnabled;
+      toggleSwitch(audioSwitch,audioEnabled);
+      if(!audioEnabled) setEngine(false);
+      else setEngine(!game.paused && !menuIsOpen());
     });
-    syncAudioUI();
 
-    // ---------------- Main update (with motion feel)
-    let tPrev = performance.now();
-    let camRoll = 0;
-    let camShake = 0;
+    // file loaders (runner/obstacles/trees)
+    loadRunnerBtn.addEventListener('click', ()=> runnerFile.click());
+    runnerFile.addEventListener('change', async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const url=URL.createObjectURL(f);
+      try{
+        const gltf=await gltfLoader.loadAsync(url);
+        setRunnerTo(gltf.scene, gltf.animations);
+      } finally { URL.revokeObjectURL(url); }
+    });
+
+    loadObstacleBtn.addEventListener('click', ()=> obstacleFiles.click());
+    obstacleFiles.addEventListener('change', async (e)=>{
+      const files=[...(e.target.files||[])];
+      if(!files.length) return;
+      for(const f of files){
+        const url=URL.createObjectURL(f);
+        try{
+          const gltf=await gltfLoader.loadAsync(url);
+          addObstacleProto(gltf.scene);
+        } finally { URL.revokeObjectURL(url); }
+      }
+      loadObstacleBtn.textContent = `✅ Ostacoli caricati (${obstacleProtos.length})`;
+    });
+
+    loadTreeBtn.addEventListener('click', ()=> treeFile.click());
+    treeFile.addEventListener('change', async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const url=URL.createObjectURL(f);
+      try{
+        const gltf=await gltfLoader.loadAsync(url);
+        treeProto = gltf.scene;
+        treeProto.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; if(o.material) o.material.envMapIntensity=1.0; }});
+        // replace existing jungle with new tree model quickly:
+        for(const obj of treePool){ obj.parent && obj.parent.remove(obj); }
+        treePool.length=0;
+        const count = Math.floor((segLen*segCount)/treeSpacing);
+        for(let i=0;i<count;i++){
+          const z=-i*treeSpacing;
+          const left = treeProto.clone(true);
+          left.position.set(-treeSideX - rnd(0,1.8), 0, z);
+          left.scale.setScalar(rnd(0.55, 0.95));
+          left.rotation.y=rnd(0,Math.PI*2);
+          left.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          jungle.add(left); treePool.push(left);
+
+          const right = treeProto.clone(true);
+          right.position.set(treeSideX + rnd(0,1.8), 0, z);
+          right.scale.setScalar(rnd(0.55, 0.95));
+          right.rotation.y=rnd(0,Math.PI*2);
+          right.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          jungle.add(right); treePool.push(right);
+        }
+        loadTreeBtn.textContent = "✅ Albero caricato";
+      } finally { URL.revokeObjectURL(url); }
+    });
+
+    // ---------- Update loop
+    let tPrev=performance.now();
+    let stepTimer=0;
 
     function update(dt, tNow){
       if(game.paused) return;
@@ -770,75 +913,67 @@
       const timeScale = game.slow ? 0.62 : 1.0;
       dt *= timeScale;
 
-      game.speedMul = 1 + Math.min(1.45, game.score/1700);
+      game.speedMul = 1 + Math.min(1.55, game.score/1600);
       const speed = game.baseSpeed * game.speedMul;
 
       updateEngine(game.speedMul);
 
-      // power timer
+      // powers
       if(game.active){
         game.active.t -= dt;
         applyPowerFlags();
         const pct = clamp((game.active.t/game.active.dur)*100,0,100);
         pBar.style.width = pct.toFixed(1)+'%';
-        if(game.active.key==='shield') shieldRing.visible = true;
+        if(game.active.key==='shield') shieldRing.visible=true;
         if(game.active.t<=0) clearActivePower();
       } else {
         game.magnet=false; game.double=false; game.slow=false;
       }
 
       // gravity
-      const g = 22.0;
+      const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timer
+      // slide
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
 
-      // player transform
-      player.position.x = lanesX[game.lane];
-      player.position.y = (-game.y);
-      if(game.sliding){
-        body.scale.set(1.15, 0.75, 1.15);
-        body.position.y = 0.52;
-      } else {
-        body.scale.set(1,1,1);
-        body.position.y = 0.65;
-      }
-      shieldRing.position.y = 0.70 + player.position.y;
+      // runner transform
+      runner.position.x = lanesX[game.lane];
+      runner.position.y = (-game.y);
 
-      // contact shadow response to height
-      const h = player.position.y;
-      const s = 1.15 + clamp(h*0.65, 0, 0.85);
-      contact.position.x = player.position.x;
-      contact.scale.set(s, s, 1);
-      contact.material.opacity = clamp(0.62 - h*0.25, 0.12, 0.62);
+      // contact shadow
+      const h = runner.position.y;
+      const s = 1.10 + clamp(h*0.65, 0, 0.85);
+      contact.position.x = runner.position.x;
+      contact.scale.set(s,s,1);
+      contact.material.opacity = clamp(0.60 - h*0.25, 0.12, 0.60);
+
+      // animate runner if glb
+      if(mixer) mixer.update(dt);
 
       // road scroll
       const scroll = speed*dt;
-      texDiff.offset.y  -= scroll*0.08;
-      texRough.offset.y -= scroll*0.08;
-      texNor.offset.y   -= scroll*0.08;
+      dirtTex.offset.y -= scroll*0.085;
 
-      for(const seg of segments){
-        seg.mesh.position.z += scroll;
-        seg.lines.position.z += scroll;
-        if(seg.mesh.position.z > segLen){
-          seg.mesh.position.z -= segLen*segCount;
-          seg.lines.position.z -= segLen*segCount;
+      for(const mesh of segments){
+        mesh.position.z += scroll;
+        if(mesh.position.z > segLen){
+          mesh.position.z -= segLen*segCount;
         }
       }
+      loopJungle(scroll);
 
-      // spawn
+      // spawn rows
       game.spawnT -= dt;
-      const minGap = 0.50 / game.speedMul;
+      const minGap = 0.52 / game.speedMul;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(minGap, minGap+0.34);
+        game.spawnT = rnd(minGap, minGap+0.36);
       }
 
       // move entities
@@ -858,29 +993,37 @@
 
       // despawn
       for(let i=game.entities.length-1;i>=0;i--){
-        if(game.entities[i].z > 3.5){
+        if(game.entities[i].z > 4.2){
           scene.remove(game.entities[i].obj);
           game.entities.splice(i,1);
         }
       }
 
-      // collisions
-      const px = player.position.x;
-      const py = player.position.y + 0.65;
+      // footsteps timing (only when running on ground)
+      if(game.y===0 && !game.paused){
+        stepTimer += dt * (speed/9.0);
+        if(stepTimer >= 0.62){
+          stepTimer = 0;
+          playFootstep();
+        }
+      }
 
+      // collisions
+      const px = runner.position.x;
+      const py = runner.position.y + 0.95;
       for(let i=game.entities.length-1;i>=0;i--){
-        const e = game.entities[i];
-        const dz = Math.abs(e.z - 0.2);
-        const dx = Math.abs(e.obj.position.x - px);
-        const dy = Math.abs(e.obj.position.y - py);
-        const hit = (dz < 0.65 && dx < 0.45 && dy < 0.85);
+        const e=game.entities[i];
+        const dz=Math.abs(e.z - 0.25);
+        const dx=Math.abs(e.obj.position.x - px);
+        const dy=Math.abs(e.obj.position.y - py);
+        const hit = (dz < 0.70 && dx < 0.55 && dy < 0.95);
         if(!hit) continue;
 
         if(e.type==='coin'){
           game.coins += 1;
           game.score += 28*(game.double?2:1);
           scene.remove(e.obj); game.entities.splice(i,1);
-          SFX.coin((e.obj.position.x - px) > 0 ? 0.25 : -0.25);
+          playCoin();
           continue;
         }
 
@@ -890,7 +1033,7 @@
           applyPowerFlags();
           if(p.key==='shield'){ game.hasShield=true; shieldRing.visible=true; }
           scene.remove(e.obj); game.entities.splice(i,1);
-          SFX.power((e.obj.position.x - px) > 0 ? 0.18 : -0.18);
+          playPower();
           continue;
         }
 
@@ -904,13 +1047,13 @@
               game.hasShield=false;
               shieldRing.visible=false;
               scene.remove(e.obj); game.entities.splice(i,1);
-              SFX.shield();
+              playHit();
               camShake = 0.22;
             } else {
               game.over=true;
               game.paused=true;
               setEngine(false);
-              SFX.over();
+              playHit();
               if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
               openMenu();
               startBtn.textContent='🔁 Riprova';
@@ -919,7 +1062,7 @@
         }
       }
 
-      // score
+      // score tick
       game.score += (19*game.speedMul)*dt*(game.double?2:1);
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
 
@@ -938,26 +1081,26 @@
     }
 
     function animate(tNow){
-      const dt = Math.min(0.033, (tNow - tPrev)/1000);
-      tPrev = tNow;
+      const dt=Math.min(0.033,(tNow-tPrev)/1000);
+      tPrev=tNow;
 
-      update(dt, tNow);
+      update(dt,tNow);
 
-      // Camera: FOV dynamic + roll + bob + tiny shake
-      const speedBoost = 1 + (game.paused ? 0 : (game.speedMul-1)*0.25);
-      camera.fov = 60 + (speedBoost-1)*10;
+      // camera
+      const speedBoost = 1 + (game.paused?0: (game.speedMul-1)*0.22);
+      camera.fov = 60 + (speedBoost-1)*9.0;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0026)*0.03;
-      camera.position.set(0, 2.2 + bob, 5.8);
+      const bob = Math.sin(tNow*0.0024)*0.03;
+      camera.position.set(0, 2.25 + bob, 5.9);
 
-      const sx = (Math.sin(tNow*0.031) + Math.sin(tNow*0.017)) * 0.02 * camShake;
-      const sy = (Math.sin(tNow*0.027)) * 0.015 * camShake;
+      const sx = (Math.sin(tNow*0.031)+Math.sin(tNow*0.017))*0.02*camShake;
+      const sy = (Math.sin(tNow*0.027))*0.015*camShake;
       camera.position.x += sx;
       camera.position.y += sy;
 
       camera.rotation.z = camRoll;
-      camera.lookAt(0, 1.15, -2.2);
+      camera.lookAt(0, 1.20, -2.4);
 
       // shield pulse
       if(shieldRing.visible){
@@ -969,7 +1112,7 @@
       requestAnimationFrame(animate);
     }
 
-    // ---------------- Resize
+    // ---------- Resize
     function onResize(){
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
@@ -979,10 +1122,15 @@
     }
     window.addEventListener('resize', onResize);
 
-    // ---------------- Boot
-    openMenu();
-    requestAnimationFrame(animate);
+    // ---------- Boot: try load optional assets + audio
+    (async ()=>{
+      // these are optional; game runs even if missing
+      await tryLoadRunnerFromPath();
+      await tryLoadObstacleDefaults();
+      await tryLoadAudio();
+      openMenu();
+      requestAnimationFrame(animate);
+    })();
   </script>
 </body>
 </html>
-<!-- redeploy -->
