@@ -1,4 +1,4 @@
-<!doctype html>
+fog<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
@@ -330,7 +330,7 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1a10);   // verde scuro “giungla”
-    scene.fog = new THREE.FogExp2(0x0b1a10, 0.015)
+    scene.fog = null; // ✅ via la nebbia: era la c
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 240);
     camera.position.set(0, 2.2, 5.8);
@@ -385,6 +385,7 @@ scene.add(front);
     composer.addPass(bloomPass);
 
     const afterPass = new AfterimagePass();
+    codice
     afterPass.uniforms['damp'].value = 0.90;
     composer.addPass(afterPass);
 
