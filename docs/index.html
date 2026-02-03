@@ -385,14 +385,28 @@ function playHit(){
     const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
     function makeDirtTexture(size=512){
-      const c=document.createElement('canvas'); c.width=c.height=size;
-      const g=c.getContext('2d');
-      g.fillStyle='#3b3a28'; g.fillRect(0,0,size,size); // più chiaro
-      for(let i=0;i<12000;i++){
-        const x=Math.random()*size, y=Math.random()*size;
-        const v=rndi(50,120);
-        g.fillStyle=`rgba(${v+35},${v+20},${v},${rnd(0.05,0.18)})`;
-        g.fillRect(x,y,1,1);
+      const texLoader = new THREE.TextureLoader();
+
+const groundColor = texLoader.load('./assets/textures/ground/albedo.jpg');
+groundColor.colorSpace = THREE.SRGBColorSpace;
+groundColor.wrapS = groundColor.wrapT = THREE.RepeatWrapping;
+groundColor.repeat.set(2, 10);
+
+const groundNormal = texLoader.load('./assets/textures/ground/normal.jpg');
+groundNormal.wrapS = groundNormal.wrapT = THREE.RepeatWrapping;
+groundNormal.repeat.set(2, 10);
+
+const groundRough = texLoader.load('./assets/textures/ground/roughness.jpg');
+groundRough.wrapS = groundRough.wrapT = THREE.RepeatWrapping;
+groundRough.repeat.set(2, 10);
+
+const roadMat = new THREE.MeshStandardMaterial({
+  map: groundColor,
+  normalMap: groundNormal,
+  roughnessMap: groundRough,
+  roughness: 1.0,
+  metalness: 0.0
+});
       }
       const t=new THREE.CanvasTexture(c);
       t.colorSpace=THREE.SRGBColorSpace;
@@ -402,12 +416,28 @@ function playHit(){
     }
     const dirtTex = makeDirtTexture(1024);
 
-    const roadMat = new THREE.MeshStandardMaterial({
-      map: dirtTex,
-      roughness: 0.95,
-      metalness: 0.0,
-      color: new THREE.Color(0x7f8a62) // più leggibile
-    });
+    const texLoader = new THREE.TextureLoader();
+
+const groundColor = texLoader.load('./assets/textures/ground/albedo.jpg');
+groundColor.colorSpace = THREE.SRGBColorSpace;
+groundColor.wrapS = groundColor.wrapT = THREE.RepeatWrapping;
+groundColor.repeat.set(2, 10);
+
+const groundNormal = texLoader.load('./assets/textures/ground/normal.jpg');
+groundNormal.wrapS = groundNormal.wrapT = THREE.RepeatWrapping;
+groundNormal.repeat.set(2, 10);
+
+const groundRough = texLoader.load('./assets/textures/ground/roughness.jpg');
+groundRough.wrapS = groundRough.wrapT = THREE.RepeatWrapping;
+groundRough.repeat.set(2, 10);
+
+const roadMat = new THREE.MeshStandardMaterial({
+  map: groundColor,
+  normalMap: groundNormal,
+  roughnessMap: groundRough,
+  roughness: 1.0,
+  metalness: 0.0
+});
 
     const segments=[];
     for(let i=0;i<segCount;i++){
