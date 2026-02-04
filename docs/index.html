@@ -10,11 +10,12 @@
     canvas{display:block;touch-action:none;}
 
     .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;}
-    .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:170px;}
+    .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:190px;}
     .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
     .small{font-size:12px;opacity:.86;line-height:1.2}
     .btn{pointer-events:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf1ff;padding:10px 12px;border-radius:14px;font-weight:800;cursor:pointer;user-select:none;}
     .btn:active{transform:scale(.98);}
+
     .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
     .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
@@ -66,6 +67,12 @@
     <div class="card">
       <div class="row"><div><strong>Score</strong>: <span id="score">0</span></div><div class="small">x<span id="mult">1.0</span></div></div>
       <div class="row"><div><strong>Emoji</strong>: <span id="coins">0</span></div><div class="small">Record: <span id="best">0</span></div></div>
+
+      <div class="row small">
+        <div><strong>Cibo</strong>: <span id="foodCount">0</span>/10</div>
+        <div>Ultimo: <span id="foodIcon">—</span></div>
+      </div>
+
       <div class="small">Velocità: <span id="spd">1.00</span>x</div>
 
       <div class="life">
@@ -78,6 +85,11 @@
         <span id="pEmoji">🚀</span><strong id="pName">Boost</strong>
         <div class="bar"><i id="pBar"></i></div>
       </div>
+
+      <div class="pill" id="pillInv" style="display:none;">
+        <span>🫧</span><strong>Invincibile</strong>
+        <div class="bar"><i id="invBar"></i></div>
+      </div>
     </div>
 
     <div style="display:flex;gap:10px;">
@@ -88,7 +100,7 @@
 
   <div class="help">
     <div class="card small">
-      Desktop: ← →, ↑ salto, ↓ scivolata, P pausa, R restart. • Mobile: swipe sx/dx, su (salto), giù (scivolata).
+      Desktop: ← →, ↑ salto, ↓ scivolata, P pausa, R restart • Mobile: swipe sx/dx, su (salto), giù (scivolata)
     </div>
   </div>
 
@@ -136,14 +148,12 @@
         <div class="stat"><div class="k">Tempo</div><div class="v" id="goTime">0:00</div></div>
         <div class="stat"><div class="k">Vita rimasta</div><div class="v" id="goLives">0</div></div>
       </div>
-
       <div style="display:flex;gap:10px;margin-top:12px;">
         <button class="btn" id="goRetry" style="flex:1;">🔁 Riprova</button>
         <button class="btn" id="goMenu" style="flex:1;">☰ Menu</button>
       </div>
-
       <div class="small" style="opacity:.78;margin-top:10px;">
-        Vita: 5 tacche (parti sempre con 3). Cuori ❤️ frequenti per recuperare vita.
+        Vita: 5 tacche (parti con 3). Cuori ❤️ ogni 25 emoji.
       </div>
     </div>
   </div>
@@ -166,13 +176,19 @@
     const spdEl   = document.getElementById('spd');
     const multEl  = document.getElementById('mult');
 
-    const lifeTicks = document.getElementById('lifeTicks');
+    const foodCountEl = document.getElementById('foodCount');
+    const foodIconEl  = document.getElementById('foodIcon');
 
     const pillNone = document.getElementById('pillNone');
     const pillPower= document.getElementById('pillPower');
     const pEmoji   = document.getElementById('pEmoji');
     const pName    = document.getElementById('pName');
     const pBar     = document.getElementById('pBar');
+
+    const pillInv  = document.getElementById('pillInv');
+    const invBar   = document.getElementById('invBar');
+
+    const lifeTicks = document.getElementById('lifeTicks');
 
     const menu = document.getElementById('menu');
     const startBtn = document.getElementById('startBtn');
@@ -231,14 +247,15 @@
       }
     }
 
-    // ---------- Difficulty knobs (EASIER)
+    // ---------- Difficulty knobs
     const DIFF = {
-      obstacleChanceRow: 0.55,  // ↓ meno righe con ostacoli
-      maxObstaclesRow: 1,       // ↓ max 1 ostacolo per riga (invece di 2)
-      doubleObstacleChance: 0.03, // rarissimo mettere 2
+      obstacleChanceRow: 0.52,
+      maxObstaclesRow: 1,
+      doubleObstacleChance: 0.03,
       spawnPowerChance: 0.14,
-      heartEvery: 15,           // ❤️ più spesso (prima 20)
-      obstacleHitbox: 0.90      // ↓ hitbox ostacolo più “permissiva” (più facile)
+      heartEvery: 25,            // ✅ richiesto
+      obstacleHitbox: 0.90,
+      turtleChance: 0.11         // probabilità di tartaruga quando c’è un “ostacolo”
     };
 
     // ---------- Audio (fallback)
@@ -321,6 +338,7 @@
     function playHit(){ beep('square', 120, 0.14, 0.10); }
     function playHeart(){ beep('sine', 520, 0.07, 0.10); beep('sine', 820, 0.07, 0.07); }
     function playInvincible(){ beep('triangle', 980, 0.08, 0.10); beep('sine', 1500, 0.10, 0.07); }
+    function playTurtleKick(){ beep('square', 220, 0.08, 0.08); beep('triangle', 620, 0.08, 0.06); }
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -652,6 +670,41 @@
       return box;
     }
 
+    // ---------- Turtle (procedural)
+    function makeTurtle(){
+      const g = new THREE.Group();
+
+      const shell = new THREE.Mesh(
+        new THREE.SphereGeometry(0.42, 18, 12),
+        new THREE.MeshStandardMaterial({ color:0x2c6d3b, roughness:0.9, metalness:0.0 })
+      );
+      shell.scale.set(1.0, 0.7, 1.1);
+      shell.position.y = 0.45;
+      shell.castShadow = true;
+      shell.receiveShadow = true;
+      g.add(shell);
+
+      const body = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.14, 0.35, 6, 10),
+        new THREE.MeshStandardMaterial({ color:0x6aa06c, roughness:0.95, metalness:0.0 })
+      );
+      body.rotation.z = Math.PI/2;
+      body.position.set(0, 0.28, 0.12);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      g.add(body);
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.13, 14, 10),
+        new THREE.MeshStandardMaterial({ color:0x78b47a, roughness:0.95, metalness:0.0 })
+      );
+      head.position.set(0, 0.36, 0.34);
+      head.castShadow=true; head.receiveShadow=true;
+      g.add(head);
+
+      return g;
+    }
+
     // ---------- Emoji sprites
     function makeEmojiSprite(emoji, size=256, glow=false){
       const c=document.createElement('canvas'); c.width=c.height=size;
@@ -675,7 +728,6 @@
       return spr;
     }
 
-    // Cibo
     const FOOD_SET = new Set(["🍕","🍔","🍟","🌭","🍩","🍰","🍦","🍫","🍪","🍉","🍓","🥝","🍋"]);
     const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝","🍔","🍟","🍩"];
 
@@ -689,7 +741,7 @@
     ];
 
     // ---------- Game state
-    const BEST_KEY='jungle_runner_best_v4';
+    const BEST_KEY='jungle_runner_best_v5';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
@@ -724,8 +776,8 @@
 
       nextHeartAt: DIFF.heartEvery,
 
-      // CIBO: ora cresce POCO (molto più piccolo)
       foodCount: 0,
+      lastFood: '—',
       fatInv: 0.0,
 
       runnerScale: 1.0,
@@ -810,10 +862,14 @@
       game.nextHeartAt = DIFF.heartEvery;
 
       game.foodCount = 0;
+      game.lastFood = '—';
       game.fatInv = 0.0;
       game.runnerScale = 1.0;
       game.runnerScaleTarget = 1.0;
       if(fatBubble) fatBubble.visible = false;
+
+      pillInv.style.display = 'none';
+      invBar.style.width = '0%';
 
       if(full){
         game.lives = 3;
@@ -835,9 +891,8 @@
       setEngine(!game.paused && !menuIsOpen() && gameover.style.display==='none');
     }
 
-    // ---------- Spawning (EASIER)
+    // ---------- Spawning
     function spawnRow(){
-      // probabilità di non spawnare ostacoli in questa riga
       const hasObstacles = Math.random() < DIFF.obstacleChanceRow;
 
       const blocked=new Set();
@@ -854,11 +909,19 @@
       const z0 = -48 - rnd(0,18);
 
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.55?'low':'high'); // leggermente più “low” (più intuitivo)
-        const obj = spawnObstacleVisual();
-        obj.position.set(lanesX[l], 0.65, z0);
-        scene.add(obj);
-        game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
+        // ✅ ogni tanto mettiamo tartaruga al posto dell'ostacolo
+        if(Math.random() < DIFF.turtleChance){
+          const t = makeTurtle();
+          t.position.set(lanesX[l], 0, z0);
+          scene.add(t);
+          game.entities.push({ type:'turtle', lane:l, z:z0, obj:t, shell:false, shellV:0 });
+        } else {
+          const kind = (Math.random()<0.55?'low':'high');
+          const obj = spawnObstacleVisual();
+          obj.position.set(lanesX[l], 0.65, z0);
+          scene.add(obj);
+          game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
+        }
       });
 
       coinLanes.forEach(l=>{
@@ -1040,7 +1103,7 @@
       } finally { URL.revokeObjectURL(url); }
     });
 
-    // ---------- Visual feedback
+    // ---------- Visual feedback helpers
     function setRunnerFlash(hex=0xff3355, intensity=1.2){
       runner.traverse(o=>{
         if(o.isMesh && o.material){
@@ -1063,6 +1126,9 @@
       game.invuln = Math.max(game.invuln, 10.0);
       if(fatBubble) fatBubble.visible = true;
       playInvincible();
+
+      pillInv.style.display = 'inline-flex';
+      invBar.style.width = '100%';
     }
 
     function damage(){
@@ -1102,6 +1168,7 @@
 
       game.runTime += dt;
 
+      // invuln timer
       if(game.invuln > 0){
         game.invuln = Math.max(0, game.invuln - dt);
         if(game.invuln===0) clearFlash();
@@ -1111,13 +1178,20 @@
         dt *= 0.22;
       }
 
+      // FAT INVINCIBLE (cibo): ✅ 10s + SPEED TRIPLA
       if(game.fatInv > 0){
         game.fatInv = Math.max(0, game.fatInv - dt);
+
+        const pct = clamp((game.fatInv/10.0)*100, 0, 100);
+        invBar.style.width = pct.toFixed(1)+'%';
+
         if(game.fatInv === 0){
           game.foodCount = 0;
           game.runnerScaleTarget = 1.0;
           if(fatBubble) fatBubble.visible = false;
           clearFlash();
+          pillInv.style.display = 'none';
+          invBar.style.width = '0%';
         } else {
           if(fatBubble){
             const p = 1.0 + 0.06*Math.sin(tNow*0.01);
@@ -1128,6 +1202,7 @@
         }
       }
 
+      // active power
       if(game.active){
         game.active.t -= dt;
         applyPowerFlags();
@@ -1143,16 +1218,21 @@
       }
 
       const inAir = (game.y < -0.01) || game.jumping;
+
+      // time scale: jump slow motion + power slow
       let timeScale = 1.0;
       if(game.slow) timeScale *= 0.70;
       if(inAir) timeScale *= 0.25;
-
-      const boostMul = game.boost ? 1.35 : 1.0;
       dt *= timeScale;
 
-      const speed = game.baseSpeed * boostMul;
-      updateEngine(1.0 * boostMul);
+      // SPEED: base * boost power * fatInv triple
+      const boostMul = game.boost ? 1.35 : 1.0;
+      const fatMul   = (game.fatInv > 0) ? 3.0 : 1.0;   // ✅ richiesto
+      const speed = game.baseSpeed * boostMul * fatMul;
 
+      updateEngine(boostMul * fatMul);
+
+      // physics
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
@@ -1163,9 +1243,9 @@
         if(game.slideT<=0) game.sliding=false;
       }
 
-      // ✅ CIBO: ora cresce MOLTO meno (max ~1.22)
+      // CIBO: crescita contenuta
       if(game.fatInv <= 0){
-        const sTarget = 1.0 + Math.min(0.22, game.foodCount * 0.022); // 10 cibi => +0.22
+        const sTarget = 1.0 + Math.min(0.22, game.foodCount * 0.022);
         game.runnerScaleTarget = sTarget;
       }
       game.runnerScale = lerp(game.runnerScale, game.runnerScaleTarget, 1 - Math.pow(0.0001, dt));
@@ -1174,6 +1254,7 @@
       runner.position.x = lanesX[game.lane];
       runner.position.y = (-game.y);
 
+      // contact shadow
       const h = runner.position.y;
       const s = (1.10 + clamp(h*0.65, 0, 0.85)) * (0.95 + game.runnerScale*0.10);
       contact.position.x = runner.position.x;
@@ -1182,6 +1263,7 @@
 
       if(mixer) mixer.update(dt);
 
+      // world scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
 
@@ -1193,19 +1275,21 @@
       }
       loopJungle(scroll);
 
-      // spawn rows un filo più distanziate (più facile)
+      // spawn rows (un po' più distanziate)
       game.spawnT -= dt;
-      const minGap = 0.70 / boostMul;
+      const minGap = 0.70 / (boostMul*fatMul);
       if(game.spawnT<=0){
         spawnRow();
         game.spawnT = rnd(minGap, minGap+0.55);
       }
 
+      // hearts
       if(game.coins >= game.nextHeartAt){
         spawnHeart();
         game.nextHeartAt += DIFF.heartEvery;
       }
 
+      // trail
       if(game.trail){
         trailSpawnT -= dt;
         if(trailSpawnT <= 0){
@@ -1216,10 +1300,23 @@
         trailSpawnT = 0;
       }
 
-      // magnet stronger
+      // entities move + magnet stronger + turtle logic
       for(const e of game.entities){
-        e.z += scroll;
+        // turtle “shell” va in avanti (verso z più negativo) con velocità alta
+        const extra = (e.type==='turtle' && e.shell) ? (e.shellV * dt) : 0;
+
+        e.z += scroll + extra;
         e.obj.position.z = e.z;
+
+        if(e.type==='turtle'){
+          // camminata semplice
+          if(!e.shell){
+            e.obj.position.y = 0;
+            e.obj.rotation.y = Math.sin(tNow*0.002 + e.z*0.2) * 0.15;
+          } else {
+            e.obj.rotation.y += dt*6.0;
+          }
+        }
 
         if(game.magnet && (e.type==='coin'||e.type==='power'||e.type==='heart')){
           const dx = lanesX[game.lane] - e.obj.position.x;
@@ -1238,6 +1335,24 @@
         }
       }
 
+      // turtle shell demolishes obstacles in same lane when passing near
+      for(const t of game.entities){
+        if(t.type!=='turtle' || !t.shell) continue;
+        for(let j=game.entities.length-1;j>=0;j--){
+          const o = game.entities[j];
+          if(o.type!=='obst') continue;
+          if(o.lane !== t.lane) continue;
+          const d = Math.abs(o.z - t.z);
+          if(d < 1.15){
+            scene.remove(o.obj);
+            game.entities.splice(j,1);
+            game.score += 45;
+            camShake = Math.max(camShake, 0.10);
+          }
+        }
+      }
+
+      // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         if(game.entities[i].z > 4.2){
           scene.remove(game.entities[i].obj);
@@ -1245,6 +1360,7 @@
         }
       }
 
+      // footsteps
       if(game.y===0 && !game.paused){
         stepTimer += dt * (speed/9.0);
         if(stepTimer >= 1.05){
@@ -1253,6 +1369,7 @@
         }
       }
 
+      // collisions
       const px = runner.position.x;
       const py = runner.position.y + 0.95;
 
@@ -1263,7 +1380,6 @@
         const dx=Math.abs(e.obj.position.x - px);
         const dy=Math.abs(e.obj.position.y - py);
 
-        // hitbox un po' più permissiva
         const hit = (dz < 0.70 && dx < (0.55*game.runnerScale*DIFF.obstacleHitbox) && dy < (0.95*game.runnerScale*DIFF.obstacleHitbox));
         if(!hit) continue;
 
@@ -1274,6 +1390,7 @@
           const em = e.emoji || e.obj.userData.emoji;
           if(FOOD_SET.has(em)){
             game.foodCount = Math.min(10, game.foodCount + 1);
+            game.lastFood = em;
             if(game.foodCount >= 10 && game.fatInv <= 0){
               startFatInvincible();
             }
@@ -1303,10 +1420,45 @@
           continue;
         }
 
+        if(e.type==='turtle'){
+          // se sei in aria (salto) => la “calci” e diventa guscio che scivola e distrugge ostacoli
+          const airborne = (game.y < -0.20);
+          if(airborne && !e.shell){
+            e.shell = true;
+            e.shellV = -55; // verso avanti (z più negativo) molto veloce
+            playTurtleKick();
+            camShake = Math.max(camShake, 0.12);
+
+            // piccolo rimbalzo
+            game.vy = -4.4;
+            game.jumping = true;
+
+            // punti bonus
+            game.score += 80;
+
+            continue;
+          }
+
+          // se non lo salti => danno (se invincibile, lo elimina)
+          if(game.fatInv > 0){
+            scene.remove(e.obj); game.entities.splice(i,1);
+            game.score += 25;
+            camShake = Math.max(camShake, 0.10);
+            continue;
+          }
+          if(game.invuln > 0) continue;
+
+          // tartaruga è un ostacolo “da salto”
+          if(!airborne){
+            damage();
+          }
+          continue;
+        }
+
         if(e.type==='obst'){
           if(game.fatInv > 0){
             scene.remove(e.obj); game.entities.splice(i,1);
-            camShake = 0.10;
+            camShake = Math.max(camShake, 0.10);
             game.score += 35;
             continue;
           }
@@ -1323,16 +1475,24 @@
         }
       }
 
-      game.score += 20*dt*(game.double?2:1);
+      // score tick (più rapido durante fatInv per sensazione boost)
+      const scoreSpeedMul = (game.fatInv>0 ? 1.35 : 1.0);
+      game.score += 20*dt*scoreSpeedMul*(game.double?2:1);
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
 
+      // HUD
       scoreEl.textContent = String(Math.floor(game.score));
       coinsEl.textContent = String(game.coins);
       bestEl.textContent  = String(game.best);
       bestBig.textContent = String(game.best);
       multEl.textContent  = (game.double?'2.0':'1.0');
-      spdEl.textContent   = (1.0 * boostMul).toFixed(2);
 
+      spdEl.textContent = (boostMul*fatMul).toFixed(2);
+
+      foodCountEl.textContent = String(game.foodCount);
+      foodIconEl.textContent  = String(game.lastFood);
+
+      // camera feel
       tiltTarget *= 0.92;
       camRoll = camRoll*0.90 + tiltTarget*0.10;
       camShake = Math.max(0, camShake - dt*0.9);
@@ -1350,10 +1510,13 @@
       update(dt,tNow);
 
       const inAir = (game.y < -0.01) || game.jumping;
-      const boostFov = game.boost ? 12 : 0;
+      const fatOn = (game.fatInv > 0);
 
-      const targetFov = (inAir ? 48 : 60) + boostFov;
-      const targetZ   = (inAir ? 4.85 : 5.9);
+      const boostFov = game.boost ? 12 : 0;
+      const fatFov   = fatOn ? 6 : 0;
+
+      const targetFov = (inAir ? 48 : 60) + boostFov + fatFov;
+      const targetZ   = (inAir ? 4.85 : 5.9) - (fatOn ? 0.20 : 0.0);
       const targetY   = (inAir ? 2.05 : 2.25);
 
       camFov = lerp(camFov, targetFov, 1 - Math.pow(0.0001, dt));
