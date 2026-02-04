@@ -255,26 +255,6 @@
       o.connect(gg); gg.connect(master);
       o.start(t0); o.stop(t0+dur+0.02);
     }
-// ===============================
-// SFX di fallback (EVITANO CRASH)
-// ===============================
-function playFootstep(){
-  beep('sine', 150 + Math.random()*40, 0.045, 0.05);
-}
-
-function playCoin(){
-  beep('triangle', 900, 0.06, 0.10);
-  beep('sine', 1350, 0.07, 0.07);
-}
-
-function playPower(){
-  beep('sawtooth', 520, 0.10, 0.09);
-  beep('triangle', 880, 0.10, 0.07);
-}
-
-function playHit(){
-  beep('square', 120, 0.14, 0.11);
-}
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -384,8 +364,15 @@ function playHit(){
     const lanesX = [-1.15, 0, 1.15];
     const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
-    function makeDirtTexture(size=const texLoader = new THREE.TextureLoader();
-
+    function makeDirtTexture(size=512){
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
+      g.fillStyle='#3b3a28'; g.fillRect(0,0,size,size); // più chiaro
+      for(let i=0;i<12000;i++){
+        const x=Math.random()*size, y=Math.random()*size;
+        const v=rndi(50,120);
+        g.fillStyle=`rgba(${v+35},${v+20},${v},${rnd(0.05,0.18)})`;
+        g.fillRect(x,y,1,1);
       }
       const t=new THREE.CanvasTexture(c);
       t.colorSpace=THREE.SRGBColorSpace;
@@ -395,6 +382,12 @@ function playHit(){
     }
     const dirtTex = makeDirtTexture(1024);
 
+    const roadMat = new THREE.MeshStandardMaterial({
+      map: dirtTex,
+      roughness: 0.95,
+      metalness: 0.0,
+      color: new THREE.Color(0x7f8a62) // più leggibile
+    });
 
     const segments=[];
     for(let i=0;i<segCount;i++){
