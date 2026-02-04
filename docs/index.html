@@ -386,26 +386,6 @@ function playHit(){
 
     function makeDirtTexture(size=const texLoader = new THREE.TextureLoader();
 
-const groundColor = texLoader.load('./assets/textures/ground/diffuse.jpg');
-groundColor.colorSpace = THREE.SRGBColorSpace;
-groundColor.wrapS = groundColor.wrapT = THREE.RepeatWrapping;
-groundColor.repeat.set(2, 10);
-
-const groundNormal = texLoader.load('./assets/textures/ground/normal.exr');
-groundNormal.wrapS = groundNormal.wrapT = THREE.RepeatWrapping;
-groundNormal.repeat.set(2, 10);
-
-const groundRough = texLoader.load('./assets/textures/ground/roughness.exr');
-groundRough.wrapS = groundRough.wrapT = THREE.RepeatWrapping;
-groundRough.repeat.set(2, 10);
-
-const roadMat = new THREE.MeshStandardMaterial({
-  map: groundColor,
-  normalMap: groundNormal,
-  roughnessMap: groundRough,
-  roughness: 1.0,
-  metalness: 0.0
-});
       }
       const t=new THREE.CanvasTexture(c);
       t.colorSpace=THREE.SRGBColorSpace;
@@ -415,28 +395,6 @@ const roadMat = new THREE.MeshStandardMaterial({
     }
     const dirtTex = makeDirtTexture(1024);
 
-    const texLoader = new THREE.TextureLoader();
-
-const groundColor = texLoader.load('./assets/textures/ground/diffuse.jpg');
-groundColor.colorSpace = THREE.SRGBColorSpace;
-groundColor.wrapS = groundColor.wrapT = THREE.RepeatWrapping;
-groundColor.repeat.set(2, 10);
-
-const groundNormal = texLoader.load('./assets/textures/ground/normal.exr');
-groundNormal.wrapS = groundNormal.wrapT = THREE.RepeatWrapping;
-groundNormal.repeat.set(2, 10);
-
-const groundRough = texLoader.load('./assets/textures/ground/roughness.exr');
-groundRough.wrapS = groundRough.wrapT = THREE.RepeatWrapping;
-groundRough.repeat.set(2, 10);
-
-const roadMat = new THREE.MeshStandardMaterial({
-  map: groundColor,
-  normalMap: groundNormal,
-  roughnessMap: groundRough,
-  roughness: 1.0,
-  metalness: 0.0
-});
 
     const segments=[];
     for(let i=0;i<segCount;i++){
