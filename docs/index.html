@@ -126,14 +126,14 @@
     </div>
   </div>
 
-  <!-- GAME OVER (con statistiche) -->
+  <!-- GAME OVER -->
   <div class="overlay" id="gameover" style="display:none;">
     <div class="panel">
       <div class="title">Game Over</div>
       <div class="stats">
         <div class="stat"><div class="k">Score</div><div class="v" id="goScore">0</div></div>
         <div class="stat"><div class="k">Emoji raccolte</div><div class="v" id="goCoins">0</div></div>
-        <div class="stat"><div class="k">Velocità max</div><div class="v" id="goMaxSpd">0</div></div>
+        <div class="stat"><div class="k">Velocità max</div><div class="v" id="goMaxSpd">1.00x</div></div>
         <div class="stat"><div class="k">Tempo</div><div class="v" id="goTime">0:00</div></div>
       </div>
 
@@ -143,7 +143,7 @@
       </div>
 
       <div class="small" style="opacity:.78;margin-top:10px;">
-        Vita: 5 tacche (parti sempre con 3). Ogni colpo perde 1 tacca. Ogni 50 emoji appare un ❤️ che dà +1 tacca.
+        Vita: 5 tacche (parti sempre con 3). Cuori ❤️ più frequenti per recuperare vita.
       </div>
     </div>
   </div>
@@ -156,7 +156,6 @@
     import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    // ---- iOS detection
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     // ---------- UI
@@ -203,10 +202,10 @@
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const lerp=(a,b,t)=>a+(b-a)*t;
 
     function toggleSwitch(el,on){ el.classList.toggle('on',!!on); return on; }
     function menuIsOpen(){ return menu.style.display !== 'none'; }
-
     function fmtTime(sec){
       sec = Math.max(0, sec|0);
       const m = (sec/60)|0;
@@ -232,7 +231,7 @@
       }
     }
 
-    // ---------- Basic audio (fallback)
+    // ---------- Audio (fallback)
     let audioEnabled=true;
     let audioReady=false;
     let actx=null, master=null;
@@ -243,7 +242,7 @@
       try{
         actx = new (window.AudioContext||window.webkitAudioContext)();
         master = actx.createGain();
-        master.gain.value = 0.45; // un po' meno
+        master.gain.value = 0.45;
         master.connect(actx.destination);
 
         engineGain = actx.createGain(); engineGain.gain.value=0.0;
@@ -286,7 +285,7 @@
     function updateEngine(speedMul){
       if(!audioEnabled||!audioReady) return;
       const t=actx.currentTime;
-      const rpm = 1 + speedMul*0.45;
+      const rpm = 1 + speedMul*0.35;
       engineOscA.frequency.setValueAtTime(60*rpm, t);
       engineOscB.frequency.setValueAtTime(30*rpm, t);
       engineFilter.frequency.setValueAtTime(220 + 170*rpm, t);
@@ -306,12 +305,12 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
 
-    // SFX fallback (sempre presenti)
-    function playFootstep(){ beep('sine', 145 + Math.random()*35, 0.040, 0.035); }
-    function playCoin(){ beep('triangle', 900, 0.055, 0.09); beep('sine', 1320, 0.06, 0.06); }
-    function playPower(){ beep('sawtooth', 520, 0.09, 0.08); beep('triangle', 880, 0.10, 0.06); }
+    function playFootstep(){ beep('sine', 145 + Math.random()*35, 0.040, 0.030); }
+    function playCoin(){ beep('triangle', 900, 0.055, 0.08); beep('sine', 1320, 0.06, 0.05); }
+    function playPower(){ beep('sawtooth', 520, 0.09, 0.07); beep('triangle', 880, 0.10, 0.05); }
     function playHit(){ beep('square', 120, 0.14, 0.10); }
     function playHeart(){ beep('sine', 520, 0.07, 0.10); beep('sine', 820, 0.07, 0.07); }
+    function playInvincible(){ beep('triangle', 980, 0.08, 0.10); beep('sine', 1500, 0.10, 0.07); }
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -345,7 +344,6 @@
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 240);
     camera.position.set(0, 2.2, 5.8);
 
-    // Lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 1.9);
     sun.position.set(5, 9, 4);
     sun.castShadow = true;
@@ -366,7 +364,6 @@
     front.position.set(0, 3.5, 6);
     scene.add(front);
 
-    // Postprocessing (desktop only)
     let composer=null, bloomPass=null, afterPass=null;
     if(!IS_IOS){
       composer = new EffectComposer(renderer);
@@ -404,8 +401,6 @@
     const lanesX = [-1.15, 0, 1.15];
     const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
-    // Procedural dirt (resta come nel tuo)
-    const rndTex=(a,b)=>a+Math.random()*(b-a);
     function makeDirtTexture(size=512){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
@@ -413,7 +408,7 @@
       for(let i=0;i<12000;i++){
         const x=Math.random()*size, y=Math.random()*size;
         const v=rndi(50,120);
-        g.fillStyle=`rgba(${v+35},${v+20},${v},${rndTex(0.05,0.18)})`;
+        g.fillStyle=`rgba(${v+35},${v+20},${v},${rnd(0.05,0.18)})`;
         g.fillRect(x,y,1,1);
       }
       const t=new THREE.CanvasTexture(c);
@@ -450,7 +445,7 @@
     side.receiveShadow = true;
     scene.add(side);
 
-    // Jungle props (trees)
+    // Jungle props
     let treeProto=null;
     function makeTreePrimitive(){
       const g = new THREE.Group();
@@ -545,9 +540,9 @@
     dummyHead.castShadow=true;
     runner.add(dummyHead);
 
-    let mixer=null, runAction=null;
+    let mixer=null;
 
-    // Shield visual (ora lo agganciamo SEMPRE al runner attuale)
+    // Shield ring (per lo scudo)
     let shieldRing = null;
     function attachShieldToRunner(){
       if(shieldRing && shieldRing.parent) shieldRing.parent.remove(shieldRing);
@@ -564,7 +559,32 @@
       shieldRing.visible=false;
       runner.add(shieldRing);
     }
+
+    // Bubble (invincibilità “grosso”)
+    let fatBubble = null;
+    function attachBubbleToRunner(){
+      if(fatBubble && fatBubble.parent) fatBubble.parent.remove(fatBubble);
+      fatBubble = new THREE.Mesh(
+        new THREE.SphereGeometry(0.62, 26, 18),
+        new THREE.MeshStandardMaterial({
+          color:0x7ee6ff,
+          roughness:0.08,
+          metalness:0.0,
+          emissive:0x3ad6ff,
+          emissiveIntensity:0.65,
+          transparent:true,
+          opacity:0.18
+        })
+      );
+      fatBubble.castShadow=false;
+      fatBubble.receiveShadow=false;
+      fatBubble.position.y = 0.95;
+      fatBubble.visible = false;
+      runner.add(fatBubble);
+    }
+
     attachShieldToRunner();
+    attachBubbleToRunner();
 
     function setRunnerTo(obj, animations){
       scene.remove(runner);
@@ -573,14 +593,15 @@
       runner.position.set(0,0,0);
       scene.add(runner);
 
-      mixer=null; runAction=null;
+      mixer=null;
       if(animations && animations.length){
         mixer = new THREE.AnimationMixer(runner);
-        runAction = mixer.clipAction(animations[0]);
-        runAction.play();
+        const a = mixer.clipAction(animations[0]);
+        a.play();
       }
 
       attachShieldToRunner();
+      attachBubbleToRunner();
       loadRunnerBtn.textContent = "✅ Runner caricato";
     }
 
@@ -631,47 +652,38 @@
       const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
 
-      if(glow){
-        g.globalAlpha=0.18;
-        g.fillStyle='#ffffff';
-        g.beginPath(); g.arc(size/2,size/2,size*0.36,0,Math.PI*2); g.fill();
-        g.globalAlpha=1;
-      }else{
-        g.globalAlpha=0.18;
-        g.fillStyle='#cfefff';
-        g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
-        g.globalAlpha=1;
-      }
+      g.globalAlpha = glow ? 0.22 : 0.18;
+      g.fillStyle = glow ? '#ffffff' : '#cfefff';
+      g.beginPath(); g.arc(size/2,size/2,size*(glow?0.38:0.33),0,Math.PI*2); g.fill();
 
+      g.globalAlpha=1;
       g.font=`${size*0.58}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
       g.textAlign='center'; g.textBaseline='middle';
       g.fillText(emoji, size/2, size/2+8);
 
       const tex=new THREE.CanvasTexture(c);
       tex.colorSpace=THREE.SRGBColorSpace;
-
       const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
       const spr=new THREE.Sprite(mat);
       spr.scale.set(0.75,0.75,1);
       return spr;
     }
 
-    const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
+    // Emoji “cibo” che fanno ingrassare
+    const FOOD_SET = new Set(["🍕","🍔","🍟","🌭","🍩","🍰","🍦","🍫","🍪","🍉","🍓","🥝","🍋"]);
+    const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝","🍔","🍟","🍩"];
 
-    // Power-ups: manteniamo i tuoi + aggiungiamo 3 nuovi
     const POWERUPS = [
-      { key:"magnet", emoji:"🧲", name:"Magnete", dur:7.5 },
+      { key:"magnet", emoji:"🧲", name:"Magnete", dur:9.0 },
       { key:"shield", emoji:"🛡️", name:"Scudo",   dur:10.0 },
-      { key:"double", emoji:"✖️2", name:"Doppio",  dur:8.0 },
+      { key:"double", emoji:"✖️2", name:"Doppio",  dur:9.0 },
       { key:"slow",   emoji:"🐢", name:"Slow-mo",  dur:7.0 },
-
-      // NUOVI (quelli che hai chiesto)
       { key:"trail",  emoji:"🌟", name:"Emoji Trail", dur:7.0 },
       { key:"boost",  emoji:"🚀", name:"Boost",       dur:5.0 }
     ];
 
     // ---------- Game state
-    const BEST_KEY='jungle_runner_best_v2';
+    const BEST_KEY='jungle_runner_best_v3';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
@@ -680,9 +692,8 @@
       y:0, vy:0, jumping:false,
       sliding:false, slideT:0,
 
-      baseSpeed: 8.6,
-      speedMul:1.0,
-      maxSpeedMul:1.0,
+      // VELOCITÀ: permanente (non aumenta col punteggio)
+      baseSpeed: 9.0,
 
       score:0, coins:0,
       best: loadBest(),
@@ -701,12 +712,19 @@
       boost:false,
       trail:false,
 
-      lives: 3, // parte sempre con 3
-      invuln: 0.0, // invulnerabilità dopo colpo
-      stun: 0.0,   // mini stop
+      lives: 3,
+      invuln: 0.0,
+      stun: 0.0,
       runTime: 0.0,
 
-      nextHeartAt: 50 // ogni 50 emoji spawn cuore
+      // Cuori più frequenti
+      nextHeartAt: 20,      // ❤️ ogni 20 emoji (invece di 50)
+
+      // “Grosso” da cibo
+      foodCount: 0,         // cresce fino a 10
+      fatInv: 0.0,          // invincibilità 10s quando foodCount==10
+      runnerScale: 1.0,     // scala attuale (smooth)
+      runnerScaleTarget: 1.0
     };
 
     bestEl.textContent = String(game.best);
@@ -727,14 +745,11 @@
       pillNone.style.display='inline-flex';
       pillPower.style.display='none';
       pBar.style.width='0%';
-
       game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
-      game.hasShield = game.hasShield; // non toccare qui
     }
 
     function applyPowerFlags(){
       game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
-
       if(!game.active) return;
       if(game.active.key==='magnet') game.magnet=true;
       if(game.active.key==='double') game.double=true;
@@ -760,7 +775,7 @@
 
       goScore.textContent = String(Math.floor(game.score));
       goCoins.textContent = String(game.coins);
-      goMaxSpd.textContent = `${game.maxSpeedMul.toFixed(2)}x`;
+      goMaxSpd.textContent = `1.00x`; // velocità permanente
       goTime.textContent = fmtTime(game.runTime);
 
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
@@ -769,12 +784,11 @@
     }
 
     function resetRun(full=true){
-      // full=true quando riparti da 0 vite (vero game over)
       game.lane=1; game.targetLane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
 
-      game.baseSpeed=8.6; game.speedMul=1.0; game.maxSpeedMul=1.0;
+      game.baseSpeed=9.0;
       game.score=0; game.coins=0;
       game.spawnT=0.30;
 
@@ -788,7 +802,15 @@
       game.hasShield=false;
       if(shieldRing) shieldRing.visible=false;
 
-      game.nextHeartAt = 50;
+      // cuori frequenti
+      game.nextHeartAt = 20;
+
+      // cibo / grandezza
+      game.foodCount = 0;
+      game.fatInv = 0.0;
+      game.runnerScale = 1.0;
+      game.runnerScaleTarget = 1.0;
+      if(fatBubble) fatBubble.visible = false;
 
       if(full){
         game.lives = 3;
@@ -812,7 +834,6 @@
 
     // ---------- Spawning
     function spawnRow(){
-      // ostacoli: mai impossibili (almeno 1 corsia libera)
       const blocked=new Set();
       const oCount = Math.random()<0.10 ? 2 : rndi(0,2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
@@ -825,7 +846,7 @@
       const z0 = -48 - rnd(0,18);
 
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.5?'low':'high'); // low=jump, high=slide
+        const kind = (Math.random()<0.5?'low':'high');
         const obj = spawnObstacleVisual();
         obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
@@ -833,14 +854,15 @@
       });
 
       coinLanes.forEach(l=>{
-        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        const em = EMOJIS[rndi(0,EMOJIS.length-1)];
+        const spr = makeEmojiSprite(em);
+        spr.userData.emoji = em; // per cibo
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,3));
         spr.scale.set(0.78,0.78,1);
         scene.add(spr);
-        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
+        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr, emoji: em });
       });
 
-      // powerup
       if(Math.random()<0.12){
         const p = POWERUPS[rndi(0,POWERUPS.length-1)];
         const lane=rndi(0,2);
@@ -853,33 +875,34 @@
     }
 
     function spawnHeart(){
-      // appare solo se non sei già full
       if(game.lives >= LIVES_MAX) return;
 
       const z0 = -50 - rnd(0,14);
       const lane = rndi(0,2);
-      const spr = makeEmojiSprite('❤️', 320, true);
-      spr.position.set(lanesX[lane], 1.25, z0);
-      spr.scale.set(1.08, 1.08, 1);
+
+      // ❤️ più “spesso”: più grande + più glow
+      const spr = makeEmojiSprite('❤️', 420, true);
+      spr.position.set(lanesX[lane], 1.28, z0);
+      spr.scale.set(1.45, 1.45, 1);
       scene.add(spr);
       game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
     }
 
-    // NUOVO: Emoji Trail (genera una “scia” di emoji davanti)
     let trailSpawnT = 0.0;
     function spawnTrailCoins(){
       const z0 = -30 - rnd(0,6);
-      // fila su tutte e 3 le corsie
       for(let l=0;l<3;l++){
-        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        const em = EMOJIS[rndi(0,EMOJIS.length-1)];
+        const spr = makeEmojiSprite(em);
+        spr.userData.emoji = em;
         spr.position.set(lanesX[l], 1.10, z0 - l*0.9);
         spr.scale.set(0.78,0.78,1);
         scene.add(spr);
-        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr, trail:true });
+        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr, emoji: em, trail:true });
       }
     }
 
-    // ---------- Controls + motion feel
+    // ---------- Controls
     let tiltTarget=0, camRoll=0, camShake=0;
 
     function moveLane(dir){
@@ -887,7 +910,6 @@
       game.targetLane = clamp(game.targetLane+dir,0,2);
       game.lane = game.targetLane;
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
-      // (tolto beep qui: meno casino)
     }
     function jump(){
       if(game.over||game.paused) return;
@@ -937,7 +959,6 @@
     goRetry.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
     goMenu.addEventListener('click', ()=>{ openMenu(); });
 
-    // Toggles
     let highQuality=true;
     qualityToggle.addEventListener('click', ()=>{
       highQuality=!highQuality;
@@ -1012,18 +1033,43 @@
       } finally { URL.revokeObjectURL(url); }
     });
 
-    // ---------- Update loop
-    let tPrev=performance.now();
-    let stepTimer=0;
+    // ---------- Damage / Invincibility
+    function setRunnerFlash(hex=0xff3355, intensity=1.2){
+      runner.traverse(o=>{
+        if(o.isMesh && o.material){
+          o.material.emissive = o.material.emissive || new THREE.Color(0x000000);
+          o.material.emissiveIntensity = intensity;
+          o.material.emissive.setHex(hex);
+        }
+      });
+    }
+    function clearFlash(){
+      runner.traverse(o=>{
+        if(o.isMesh && o.material && o.material.emissive){
+          o.material.emissiveIntensity = 0.0;
+        }
+      });
+    }
+
+    function startFatInvincible(){
+      game.fatInv = 10.0;           // 10 secondi
+      game.invuln = Math.max(game.invuln, 10.0);
+      if(fatBubble) fatBubble.visible = true;
+      playInvincible();
+    }
 
     function damage(){
-      // scudo = annulla colpo (1 volta)
+      // invincibile (fat inv) => non prendi danno
+      if(game.fatInv > 0) return;
+
+      // scudo annulla un colpo
       if(game.hasShield){
         game.hasShield=false;
         if(shieldRing) shieldRing.visible=false;
         playHit();
         camShake = 0.18;
         game.invuln = 0.8;
+        setRunnerFlash(0x44ff88, 0.9);
         return;
       }
 
@@ -1034,15 +1080,7 @@
       camShake = 0.28;
       game.invuln = 1.25;
       game.stun = 0.22;
-
-      // flash runner
-      runner.traverse(o=>{
-        if(o.isMesh && o.material){
-          o.material.emissive = o.material.emissive || new THREE.Color(0x000000);
-          o.material.emissiveIntensity = 1.2;
-          o.material.emissive.setHex(0xff3355);
-        }
-      });
+      setRunnerFlash(0xff3355, 1.2);
 
       if(game.lives <= 0){
         game.over=true;
@@ -1051,28 +1089,43 @@
       }
     }
 
-    function clearFlash(){
-      runner.traverse(o=>{
-        if(o.isMesh && o.material && o.material.emissive){
-          o.material.emissiveIntensity = 0.0;
-        }
-      });
-    }
+    // ---------- Update loop
+    let tPrev=performance.now();
+    let stepTimer=0;
 
     function update(dt, tNow){
       if(game.paused) return;
 
       game.runTime += dt;
 
-      // invuln / stun
+      // invuln / stun timers
       if(game.invuln > 0){
         game.invuln = Math.max(0, game.invuln - dt);
         if(game.invuln===0) clearFlash();
       }
       if(game.stun > 0){
         game.stun = Math.max(0, game.stun - dt);
-        // durante stun, rallenta molto
         dt *= 0.18;
+      }
+
+      // fat invincibility timer (se attiva)
+      if(game.fatInv > 0){
+        game.fatInv = Math.max(0, game.fatInv - dt);
+        if(game.fatInv === 0){
+          // torna normale: reset cibo e rimpicciolisce piano piano
+          game.foodCount = 0;
+          game.runnerScaleTarget = 1.0;
+          if(fatBubble) fatBubble.visible = false;
+          clearFlash();
+        } else {
+          // piccolo pulsare bolla
+          if(fatBubble){
+            const p = 1.0 + 0.06*Math.sin(tNow*0.01);
+            fatBubble.scale.set(p,p,p);
+            fatBubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.009);
+          }
+          setRunnerFlash(0x3ad6ff, 0.55);
+        }
       }
 
       // powers
@@ -1081,9 +1134,7 @@
         applyPowerFlags();
         const pct = clamp((game.active.t/game.active.dur)*100,0,100);
         pBar.style.width = pct.toFixed(1)+'%';
-
         if(game.active.key==='shield' && shieldRing) shieldRing.visible=true;
-
         if(game.active.t<=0){
           clearActivePower();
           if(shieldRing) shieldRing.visible = game.hasShield;
@@ -1092,22 +1143,21 @@
         game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
       }
 
-      // “Slow-mo” migliorato: non solo dt, ma anche audio e feeling
+      // SLOW-MO quando salti (1/4) + camera “zoom in”
+      const inAir = (game.y < -0.01) || game.jumping;
       let timeScale = 1.0;
-      if(game.slow) timeScale = 0.65;
+      if(game.slow) timeScale *= 0.70;
+      if(inAir) timeScale *= 0.25; // ✅ 1/4 durante salto
 
-      // Boost: aumenta base speed e FOV (feeling)
+      // boost (solo temporaneo)
       const boostMul = game.boost ? 1.35 : 1.0;
 
       dt *= timeScale;
 
-      // speed scaling
-      game.speedMul = 1 + Math.min(1.60, game.score/1600);
-      const speed = game.baseSpeed * game.speedMul * boostMul;
+      // VELOCITÀ: fissa (non aumenta col punteggio)
+      const speed = game.baseSpeed * boostMul;
 
-      game.maxSpeedMul = Math.max(game.maxSpeedMul, game.speedMul * boostMul);
-
-      updateEngine(game.speedMul * boostMul);
+      updateEngine(1.0 * boostMul);
 
       // gravity
       const g=22.0;
@@ -1121,13 +1171,22 @@
         if(game.slideT<=0) game.sliding=false;
       }
 
-      // runner transform
+      // runner scale: cresce piano piano con “cibo”
+      // ogni cibo aumenta target, max ~1.55; quando invincibile torna a 1.0
+      if(game.fatInv <= 0){
+        const sTarget = 1.0 + Math.min(0.55, game.foodCount * 0.055);
+        game.runnerScaleTarget = sTarget;
+      }
+      game.runnerScale = lerp(game.runnerScale, game.runnerScaleTarget, 1 - Math.pow(0.0001, dt)); // smooth
+      runner.scale.setScalar(game.runnerScale);
+
+      // runner position
       runner.position.x = lanesX[game.lane];
       runner.position.y = (-game.y);
 
       // contact shadow
       const h = runner.position.y;
-      const s = 1.10 + clamp(h*0.65, 0, 0.85);
+      const s = (1.10 + clamp(h*0.65, 0, 0.85)) * (0.92 + game.runnerScale*0.18);
       contact.position.x = runner.position.x;
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.58 - h*0.24, 0.12, 0.58);
@@ -1135,7 +1194,7 @@
       // animate runner
       if(mixer) mixer.update(dt);
 
-      // road scroll
+      // scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
 
@@ -1149,16 +1208,16 @@
 
       // spawn rows
       game.spawnT -= dt;
-      const minGap = 0.52 / (game.speedMul * boostMul);
+      const minGap = 0.55 / boostMul;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(minGap, minGap+0.38);
+        game.spawnT = rnd(minGap, minGap+0.42);
       }
 
-      // spawn heart every 50 emojis (quando arrivi o superi la soglia)
+      // ❤️ più frequenti: ogni 20 emoji (se non full)
       if(game.coins >= game.nextHeartAt){
         spawnHeart();
-        game.nextHeartAt += 50;
+        game.nextHeartAt += 20;
       }
 
       // Emoji Trail power-up
@@ -1166,30 +1225,31 @@
         trailSpawnT -= dt;
         if(trailSpawnT <= 0){
           spawnTrailCoins();
-          trailSpawnT = 0.45; // densità scia
+          trailSpawnT = 0.45;
         }
       }else{
         trailSpawnT = 0;
       }
 
-      // move entities
+      // move entities + MAGNET più forte
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // magnet
+        // magnet strong
         if(game.magnet && (e.type==='coin'||e.type==='power'||e.type==='heart')){
           const dx = lanesX[game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
-          if(dist < 6.5){
-            e.obj.position.x += dx * dt * (1.6*(1-dist/6.5));
+          const radius = 10.5; // ✅ più raggio
+          if(dist < radius){
+            const pull = 4.2 * (1 - dist/radius); // ✅ più forza
+            e.obj.position.x += dx * dt * pull;
           }
         }
 
-        // piccoli “pulsing” sui cuori/power
         if(e.type==='heart'){
-          const pulse = 1.08 + 0.10*Math.sin(tNow*0.008);
+          const pulse = 1.45 + 0.12*Math.sin(tNow*0.008);
           e.obj.scale.set(pulse,pulse,1);
         }
       }
@@ -1202,7 +1262,7 @@
         }
       }
 
-      // footsteps (più rari)
+      // footsteps
       if(game.y===0 && !game.paused){
         stepTimer += dt * (speed/9.0);
         if(stepTimer >= 1.05){
@@ -1217,18 +1277,26 @@
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
-
         const dz=Math.abs(e.z - 0.25);
         const dx=Math.abs(e.obj.position.x - px);
         const dy=Math.abs(e.obj.position.y - py);
 
-        // collision box
-        const hit = (dz < 0.70 && dx < 0.55 && dy < 0.95);
+        const hit = (dz < 0.70 && dx < (0.55*game.runnerScale) && dy < (0.95*game.runnerScale));
         if(!hit) continue;
 
         if(e.type==='coin'){
           game.coins += 1;
           game.score += 28*(game.double?2:1);
+
+          // se è cibo => ingrassi piano piano
+          const em = e.emoji || e.obj.userData.emoji;
+          if(FOOD_SET.has(em)){
+            game.foodCount = Math.min(10, game.foodCount + 1);
+            if(game.foodCount >= 10 && game.fatInv <= 0){
+              startFatInvincible();
+            }
+          }
+
           scene.remove(e.obj); game.entities.splice(i,1);
           playCoin();
           continue;
@@ -1254,27 +1322,30 @@
         }
 
         if(e.type==='obst'){
-          // se invulnerabile, ignora
-          if(game.invuln > 0) {
-            // facciamo “rimbalzare” un pelo l’ostacolo per feedback
-            e.obj.position.x += (Math.random()<0.5?-1:1)*0.03;
+          // invincibilità “grosso” => spacchi l’ostacolo
+          if(game.fatInv > 0){
+            scene.remove(e.obj); game.entities.splice(i,1);
+            camShake = 0.10;
+            game.score += 35;
             continue;
           }
 
+          // invulnerabile => ignora
+          if(game.invuln > 0) continue;
+
           let mustHit=false;
-          if(e.kind==='low'  && !game.jumping && game.y===0) mustHit=true; // devi saltare
-          if(e.kind==='high' && !game.sliding) mustHit=true;               // devi scivolare
+          if(e.kind==='low'  && !game.jumping && game.y===0) mustHit=true;
+          if(e.kind==='high' && !game.sliding) mustHit=true;
 
           if(mustHit){
-            // rimuoviamo l’ostacolo colpito (così non colpisce due volte)
             scene.remove(e.obj); game.entities.splice(i,1);
             damage();
           }
         }
       }
 
-      // score tick
-      game.score += (19*game.speedMul)*dt*(game.double?2:1);
+      // score tick (velocità fissa)
+      game.score += 20*dt*(game.double?2:1);
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
 
       // HUD
@@ -1283,7 +1354,7 @@
       bestEl.textContent  = String(game.best);
       bestBig.textContent = String(game.best);
       multEl.textContent  = (game.double?'2.0':'1.0');
-      spdEl.textContent   = (game.speedMul * boostMul).toFixed(2);
+      spdEl.textContent   = (1.0 * boostMul).toFixed(2);
 
       // motion feel
       tiltTarget *= 0.92;
@@ -1291,20 +1362,34 @@
       camShake = Math.max(0, camShake - dt*0.9);
     }
 
+    // Camera targets (per salto “zoom in”)
+    let camZ = 5.9;
+    let camY = 2.25;
+    let camFov = 60;
+
     function animate(tNow){
       const dt=Math.min(0.033,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
 
-      // camera feel
+      const inAir = (game.y < -0.01) || game.jumping;
       const boostFov = game.boost ? 12 : 0;
-      const speedBoost = 1 + (game.paused?0: (game.speedMul-1)*0.22);
-      camera.fov = 60 + (speedBoost-1)*9.0 + boostFov;
+
+      // quando salti: FOV più stretto (zoom-in) + camera più vicina
+      const targetFov = (inAir ? 48 : 60) + boostFov;
+      const targetZ   = (inAir ? 4.85 : 5.9);
+      const targetY   = (inAir ? 2.05 : 2.25);
+
+      camFov = lerp(camFov, targetFov, 1 - Math.pow(0.0001, dt));
+      camZ   = lerp(camZ,   targetZ,   1 - Math.pow(0.0001, dt));
+      camY   = lerp(camY,   targetY,   1 - Math.pow(0.0001, dt));
+
+      camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0024)*0.03;
-      camera.position.set(0, 2.25 + bob, 5.9);
+      const bob = Math.sin(tNow*0.0024)*0.03 * (inAir ? 0.25 : 1.0);
+      camera.position.set(0, camY + bob, camZ);
 
       const sx = (Math.sin(tNow*0.031)+Math.sin(tNow*0.017))*0.02*camShake;
       const sy = (Math.sin(tNow*0.027))*0.015*camShake;
