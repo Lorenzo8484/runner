@@ -255,6 +255,27 @@
       o.connect(gg); gg.connect(master);
       o.start(t0); o.stop(t0+dur+0.02);
     }
+    
+    // ===============================
+// SFX di fallback (EVITANO CRASH)
+// ===============================
+function playFootstep(){
+  beep('sine', 150 + Math.random()*40, 0.045, 0.05);
+}
+
+function playCoin(){
+  beep('triangle', 900, 0.06, 0.10);
+  beep('sine', 1350, 0.07, 0.07);
+}
+
+function playPower(){
+  beep('sawtooth', 520, 0.10, 0.09);
+  beep('triangle', 880, 0.10, 0.07);
+}
+
+function playHit(){
+  beep('square', 120, 0.14, 0.11);
+}
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
