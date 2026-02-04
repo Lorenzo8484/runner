@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
-
   <style>
     :root { color-scheme: dark; }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
@@ -20,13 +19,17 @@
     .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
+    .life{display:flex;align-items:center;gap:8px;margin-top:8px;}
+    .ticks{display:flex;gap:6px;}
+    .tick{width:14px;height:10px;border-radius:5px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.10);}
+    .tick.on{background:rgba(255,90,120,.78);border-color:rgba(255,90,120,.55);box-shadow:0 0 10px rgba(255,90,120,.28);}
+
     .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
-    .panel{width:min(760px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
+    .panel{width:min(560px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
       background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
-    .title{font-size:22px;font-weight:900;margin:4px 0 6px;}
-    .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
+    .title{font-size:22px;font-weight:900;margin:4px 0 10px;}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
     .toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.16);
@@ -41,6 +44,11 @@
     .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+    .stat{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;padding:10px 12px;}
+    .stat .k{opacity:.78;font-size:12px;}
+    .stat .v{font-weight:900;font-size:18px;margin-top:2px;}
+
     input[type="file"]{display:none;}
   </style>
 
@@ -53,19 +61,25 @@
   }
   </script>
 </head>
-
 <body>
   <div class="hud">
     <div class="card">
       <div class="row"><div><strong>Score</strong>: <span id="score">0</span></div><div class="small">x<span id="mult">1.0</span></div></div>
       <div class="row"><div><strong>Emoji</strong>: <span id="coins">0</span></div><div class="small">Record: <span id="best">0</span></div></div>
       <div class="small">Velocità: <span id="spd">1.00</span>x</div>
+
+      <div class="life">
+        <div class="small" style="min-width:44px;">Vita</div>
+        <div class="ticks" id="lifeTicks"></div>
+      </div>
+
       <div class="pill" id="pillNone">Power-up: <strong>—</strong></div>
       <div class="pill" id="pillPower" style="display:none;">
-        <span id="pEmoji">🧲</span><strong id="pName">Magnete</strong>
+        <span id="pEmoji">🚀</span><strong id="pName">Boost</strong>
         <div class="bar"><i id="pBar"></i></div>
       </div>
     </div>
+
     <div style="display:flex;gap:10px;">
       <button class="btn" id="pause">Pausa</button>
       <button class="btn" id="restart">Restart</button>
@@ -74,55 +88,62 @@
 
   <div class="help">
     <div class="card small">
-      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
-      Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Se su iPhone non carica: Safari → aA → Disattiva “Blocchi contenuti”.</span>
+      Desktop: ← →, ↑ salto, ↓ scivolata, P pausa, R restart. • Mobile: swipe sx/dx, su (salto), giù (scivolata).
     </div>
   </div>
 
+  <!-- MENU (minimal) -->
   <div class="overlay" id="menu">
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
-      <div class="subtitle">
-        Terreno PBR Poly Haven (diffuse.jpg + normal.exr + roughness.exr). iPhone: render diretto stabile. Desktop: bloom/motion.
-      </div>
-
       <div class="grid">
         <button class="btn full" id="startBtn">▶️ Inizia</button>
 
         <div class="toggle full" id="audioToggle">
-          <div><label>Suoni</label><br/><span>Fallback beep (poi mettiamo audio reali).</span></div>
+          <div><label>Suoni</label><br/><span>On/Off</span></div>
           <div class="switch on" id="audioSwitch"><i></i></div>
         </div>
 
-        <div class="toggle full" id="bloomToggle">
-          <div><label>Bloom</label><br/><span>Desktop: ON/Off. iPhone: disattivato.</span></div>
-          <div class="switch on" id="bloomSwitch"><i></i></div>
-        </div>
-
-        <div class="toggle full" id="motionToggle">
-          <div><label>Motion</label><br/><span>Desktop: ON/Off. iPhone: disattivato.</span></div>
-          <div class="switch on" id="motionSwitch"><i></i></div>
-        </div>
-
         <div class="toggle full" id="qualityToggle">
-          <div><label>Qualità</label><br/><span>Alto / Medio (più FPS).</span></div>
+          <div><label>Qualità</label><br/><span>Alto / Medio</span></div>
           <div class="switch on" id="qualitySwitch"><i></i></div>
         </div>
 
         <button class="btn full" id="loadRunnerBtn">🏃 Carica runner (.glb)</button>
         <input id="runnerFile" type="file" accept=".glb,.gltf" />
 
-        <button class="btn full" id="loadObstacleBtn">🪵 Carica ostacoli (.glb) (uno o più)</button>
+        <button class="btn full" id="loadObstacleBtn">🪵 Carica ostacoli (.glb)</button>
         <input id="obstacleFiles" type="file" accept=".glb,.gltf" multiple />
 
-        <button class="btn full" id="loadTreeBtn">🌴 Carica albero (.glb) (opzionale)</button>
+        <button class="btn full" id="loadTreeBtn">🌴 Carica albero (.glb)</button>
         <input id="treeFile" type="file" accept=".glb,.gltf" />
 
         <div class="toggle full">
-          <div><label>Record</label><br/><span>Salvato in locale.</span></div>
+          <div><label>Record</label><br/><span>Salvato in locale</span></div>
           <div style="font-weight:900;font-size:18px;" id="bestBig">0</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER (con statistiche) -->
+  <div class="overlay" id="gameover" style="display:none;">
+    <div class="panel">
+      <div class="title">Game Over</div>
+      <div class="stats">
+        <div class="stat"><div class="k">Score</div><div class="v" id="goScore">0</div></div>
+        <div class="stat"><div class="k">Emoji raccolte</div><div class="v" id="goCoins">0</div></div>
+        <div class="stat"><div class="k">Velocità max</div><div class="v" id="goMaxSpd">0</div></div>
+        <div class="stat"><div class="k">Tempo</div><div class="v" id="goTime">0:00</div></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn" id="goRetry" style="flex:1;">🔁 Riprova</button>
+        <button class="btn" id="goMenu" style="flex:1;">☰ Menu</button>
+      </div>
+
+      <div class="small" style="opacity:.78;margin-top:10px;">
+        Vita: 5 tacche (parti sempre con 3). Ogni colpo perde 1 tacca. Ogni 50 emoji appare un ❤️ che dà +1 tacca.
       </div>
     </div>
   </div>
@@ -134,9 +155,8 @@
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
     import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
-    // --- iOS detection
+    // ---- iOS detection
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     // ---------- UI
@@ -146,6 +166,8 @@
     const bestBig = document.getElementById('bestBig');
     const spdEl   = document.getElementById('spd');
     const multEl  = document.getElementById('mult');
+
+    const lifeTicks = document.getElementById('lifeTicks');
 
     const pillNone = document.getElementById('pillNone');
     const pillPower= document.getElementById('pillPower');
@@ -158,31 +180,59 @@
     const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
 
+    const gameover = document.getElementById('gameover');
+    const goScore = document.getElementById('goScore');
+    const goCoins = document.getElementById('goCoins');
+    const goMaxSpd= document.getElementById('goMaxSpd');
+    const goTime  = document.getElementById('goTime');
+    const goRetry = document.getElementById('goRetry');
+    const goMenu  = document.getElementById('goMenu');
+
     const audioToggle = document.getElementById('audioToggle');
     const audioSwitch = document.getElementById('audioSwitch');
-    const bloomToggle = document.getElementById('bloomToggle');
-    const bloomSwitch = document.getElementById('bloomSwitch');
-    const motionToggle= document.getElementById('motionToggle');
-    const motionSwitch= document.getElementById('motionSwitch');
     const qualityToggle = document.getElementById('qualityToggle');
     const qualitySwitch = document.getElementById('qualitySwitch');
 
     const loadRunnerBtn = document.getElementById('loadRunnerBtn');
     const runnerFile = document.getElementById('runnerFile');
-
     const loadObstacleBtn = document.getElementById('loadObstacleBtn');
     const obstacleFiles = document.getElementById('obstacleFiles');
-
     const loadTreeBtn = document.getElementById('loadTreeBtn');
     const treeFile = document.getElementById('treeFile');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
     function toggleSwitch(el,on){ el.classList.toggle('on',!!on); return on; }
     function menuIsOpen(){ return menu.style.display !== 'none'; }
 
-    // ---------- Audio (fallback)
+    function fmtTime(sec){
+      sec = Math.max(0, sec|0);
+      const m = (sec/60)|0;
+      const s = sec%60;
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    // ---------- Life UI
+    const LIVES_MAX = 5;
+    function buildLifeUI(){
+      lifeTicks.innerHTML = '';
+      for(let i=0;i<LIVES_MAX;i++){
+        const d=document.createElement('div');
+        d.className='tick';
+        lifeTicks.appendChild(d);
+      }
+    }
+    buildLifeUI();
+    function renderLife(lives){
+      const kids=[...lifeTicks.children];
+      for(let i=0;i<kids.length;i++){
+        kids[i].classList.toggle('on', i < lives);
+      }
+    }
+
+    // ---------- Basic audio (fallback)
     let audioEnabled=true;
     let audioReady=false;
     let actx=null, master=null;
@@ -193,7 +243,7 @@
       try{
         actx = new (window.AudioContext||window.webkitAudioContext)();
         master = actx.createGain();
-        master.gain.value = 0.55;
+        master.gain.value = 0.45; // un po' meno
         master.connect(actx.destination);
 
         engineGain = actx.createGain(); engineGain.gain.value=0.0;
@@ -203,12 +253,12 @@
 
         const noiseBuf = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
         const data = noiseBuf.getChannelData(0);
-        for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.18;
+        for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.16;
         engineNoise = actx.createBufferSource(); engineNoise.buffer=noiseBuf; engineNoise.loop=true;
 
         const noiseHP = actx.createBiquadFilter(); noiseHP.type='highpass'; noiseHP.frequency.value=160;
 
-        const mix = actx.createGain(); mix.gain.value=0.18;
+        const mix = actx.createGain(); mix.gain.value=0.14;
         engineOscA.connect(mix); engineOscB.connect(mix);
         engineNoise.connect(noiseHP); noiseHP.connect(mix);
         mix.connect(engineFilter);
@@ -227,7 +277,7 @@
       if(!audioEnabled) return;
       initAudio(); if(!audioReady) return;
       const t=actx.currentTime;
-      const target= on ? 0.16 : 0.0;
+      const target= on ? 0.13 : 0.0;
       engineGain.gain.cancelScheduledValues(t);
       engineGain.gain.setValueAtTime(engineGain.gain.value,t);
       engineGain.gain.linearRampToValueAtTime(target, t+(on?0.25:0.15));
@@ -239,7 +289,7 @@
       const rpm = 1 + speedMul*0.45;
       engineOscA.frequency.setValueAtTime(60*rpm, t);
       engineOscB.frequency.setValueAtTime(30*rpm, t);
-      engineFilter.frequency.setValueAtTime(200 + 180*rpm, t);
+      engineFilter.frequency.setValueAtTime(220 + 170*rpm, t);
     }
 
     function beep(type,freq,dur=0.08,g=0.14){
@@ -256,11 +306,12 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
 
-    // --- SFX fallback (evita crash + funziona ovunque)
-    function playFootstep(){ beep('sine', 150 + Math.random()*40, 0.045, 0.045); }
-    function playCoin(){ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); }
-    function playPower(){ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); }
-    function playHit(){ beep('square', 120, 0.14, 0.11); }
+    // SFX fallback (sempre presenti)
+    function playFootstep(){ beep('sine', 145 + Math.random()*35, 0.040, 0.035); }
+    function playCoin(){ beep('triangle', 900, 0.055, 0.09); beep('sine', 1320, 0.06, 0.06); }
+    function playPower(){ beep('sawtooth', 520, 0.09, 0.08); beep('triangle', 880, 0.10, 0.06); }
+    function playHit(){ beep('square', 120, 0.14, 0.10); }
+    function playHeart(){ beep('sine', 520, 0.07, 0.10); beep('sine', 820, 0.07, 0.07); }
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -308,39 +359,26 @@
     sun.shadow.bias = -0.00028;
     scene.add(sun);
 
-    const hemi = new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.70);
-    scene.add(hemi);
-
-    const amb = new THREE.AmbientLight(0xffffff, IS_IOS ? 0.65 : 0.18);
-    scene.add(amb);
+    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.70));
+    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.65 : 0.18));
 
     const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.35 : 0.45);
     front.position.set(0, 3.5, 6);
     scene.add(front);
 
-    // ---------- Postprocessing (desktop only)
-    let composer = null;
-    let bloomPass = null;
-    let afterPass = null;
-
+    // Postprocessing (desktop only)
+    let composer=null, bloomPass=null, afterPass=null;
     if(!IS_IOS){
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-
-      bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.18,
-        0.22,
-        0.92
-      );
+      bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.18, 0.22, 0.92);
       composer.addPass(bloomPass);
-
       afterPass = new AfterimagePass();
       afterPass.uniforms['damp'].value = 0.94;
       composer.addPass(afterPass);
     }
 
-    // ---------- Contact shadow
+    // Contact shadow
     function makeContactShadowTexture(size=512){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
@@ -366,46 +404,31 @@
     const lanesX = [-1.15, 0, 1.15];
     const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
-    // ---------- Ground (REAL PBR from Poly Haven)
-    // Expected files placed by you:
-    // docs/assets/textures/ground/diffuse.jpg
-    // docs/assets/textures/ground/normal.exr
-    // docs/assets/textures/ground/roughness.exr
-    // (alpha.png not used here)
-    const texLoader = new THREE.TextureLoader();
-    const exrLoader = new EXRLoader();
-
-    const groundColor = texLoader.load('./assets/textures/ground/diffuse.jpg');
-    groundColor.colorSpace = THREE.SRGBColorSpace;
-    groundColor.wrapS = groundColor.wrapT = THREE.RepeatWrapping;
-    groundColor.repeat.set(2.0, 10.0);
-
-    let groundNormal = null;
-    let groundRough  = null;
+    // Procedural dirt (resta come nel tuo)
+    const rndTex=(a,b)=>a+Math.random()*(b-a);
+    function makeDirtTexture(size=512){
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
+      g.fillStyle='#3b3a28'; g.fillRect(0,0,size,size);
+      for(let i=0;i<12000;i++){
+        const x=Math.random()*size, y=Math.random()*size;
+        const v=rndi(50,120);
+        g.fillStyle=`rgba(${v+35},${v+20},${v},${rndTex(0.05,0.18)})`;
+        g.fillRect(x,y,1,1);
+      }
+      const t=new THREE.CanvasTexture(c);
+      t.colorSpace=THREE.SRGBColorSpace;
+      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.repeat.set(2.0, 10.0);
+      return t;
+    }
+    const dirtTex = makeDirtTexture(1024);
 
     const roadMat = new THREE.MeshStandardMaterial({
-      map: groundColor,
-      roughness: 1.0,
+      map: dirtTex,
+      roughness: 0.95,
       metalness: 0.0,
-      normalScale: new THREE.Vector2(1.0, 1.0) // se sembra invertito -> (1.0, -1.0)
-    });
-
-    exrLoader.load('./assets/textures/ground/normal.exr', (t)=>{
-      groundNormal = t;
-      groundNormal.colorSpace = THREE.NoColorSpace;
-      groundNormal.wrapS = groundNormal.wrapT = THREE.RepeatWrapping;
-      groundNormal.repeat.set(2.0, 10.0);
-      roadMat.normalMap = groundNormal;
-      roadMat.needsUpdate = true;
-    });
-
-    exrLoader.load('./assets/textures/ground/roughness.exr', (t)=>{
-      groundRough = t;
-      groundRough.colorSpace = THREE.NoColorSpace;
-      groundRough.wrapS = groundRough.wrapT = THREE.RepeatWrapping;
-      groundRough.repeat.set(2.0, 10.0);
-      roadMat.roughnessMap = groundRough;
-      roadMat.needsUpdate = true;
+      color: new THREE.Color(0x7f8a62)
     });
 
     const segments=[];
@@ -419,7 +442,6 @@
       segments.push(mesh);
     }
 
-    // side ground
     const sideGeo = new THREE.PlaneGeometry(40, segLen*segCount);
     sideGeo.rotateX(-Math.PI/2);
     const sideMat = new THREE.MeshStandardMaterial({ color:0x0d2416, roughness:1, metalness:0 });
@@ -428,8 +450,8 @@
     side.receiveShadow = true;
     scene.add(side);
 
-    // ---------- Jungle props (trees)
-    let treeProto = null;
+    // Jungle props (trees)
+    let treeProto=null;
     function makeTreePrimitive(){
       const g = new THREE.Group();
       const trunk = new THREE.Mesh(
@@ -524,6 +546,26 @@
     runner.add(dummyHead);
 
     let mixer=null, runAction=null;
+
+    // Shield visual (ora lo agganciamo SEMPRE al runner attuale)
+    let shieldRing = null;
+    function attachShieldToRunner(){
+      if(shieldRing && shieldRing.parent) shieldRing.parent.remove(shieldRing);
+      shieldRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.48, 0.03, 10, 64),
+        new THREE.MeshStandardMaterial({
+          color:0x1b3a22, metalness:0.1, roughness:0.25,
+          emissive:0x44ff88, emissiveIntensity:1.05,
+          transparent:true, opacity:0.62
+        })
+      );
+      shieldRing.rotation.x = Math.PI/2;
+      shieldRing.position.y = 0.95;
+      shieldRing.visible=false;
+      runner.add(shieldRing);
+    }
+    attachShieldToRunner();
+
     function setRunnerTo(obj, animations){
       scene.remove(runner);
       runner = obj;
@@ -537,6 +579,8 @@
         runAction = mixer.clipAction(animations[0]);
         runAction.play();
       }
+
+      attachShieldToRunner();
       loadRunnerBtn.textContent = "✅ Runner caricato";
     }
 
@@ -547,7 +591,7 @@
       }catch(e){}
     }
 
-    // ---------- Obstacles prototypes
+    // ---------- Obstacles
     const obstacleProtos=[];
     function addObstacleProto(sceneObj){
       sceneObj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
@@ -581,20 +625,31 @@
       return box;
     }
 
-    // ---------- Emoji pickups
-    function makeEmojiSprite(emoji, size=256){
+    // ---------- Emoji sprites
+    function makeEmojiSprite(emoji, size=256, glow=false){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
-      g.globalAlpha=0.18;
-      g.fillStyle='#cfefff';
-      g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
-      g.globalAlpha=1;
-      g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+
+      if(glow){
+        g.globalAlpha=0.18;
+        g.fillStyle='#ffffff';
+        g.beginPath(); g.arc(size/2,size/2,size*0.36,0,Math.PI*2); g.fill();
+        g.globalAlpha=1;
+      }else{
+        g.globalAlpha=0.18;
+        g.fillStyle='#cfefff';
+        g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
+        g.globalAlpha=1;
+      }
+
+      g.font=`${size*0.58}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
       g.textAlign='center'; g.textBaseline='middle';
       g.fillText(emoji, size/2, size/2+8);
+
       const tex=new THREE.CanvasTexture(c);
       tex.colorSpace=THREE.SRGBColorSpace;
+
       const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
       const spr=new THREE.Sprite(mat);
       spr.scale.set(0.75,0.75,1);
@@ -602,28 +657,21 @@
     }
 
     const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
+
+    // Power-ups: manteniamo i tuoi + aggiungiamo 3 nuovi
     const POWERUPS = [
       { key:"magnet", emoji:"🧲", name:"Magnete", dur:7.5 },
       { key:"shield", emoji:"🛡️", name:"Scudo",   dur:10.0 },
       { key:"double", emoji:"✖️2", name:"Doppio",  dur:8.0 },
-      { key:"slow",   emoji:"🐢", name:"Slow-mo",  dur:6.0 }
+      { key:"slow",   emoji:"🐢", name:"Slow-mo",  dur:7.0 },
+
+      // NUOVI (quelli che hai chiesto)
+      { key:"trail",  emoji:"🌟", name:"Emoji Trail", dur:7.0 },
+      { key:"boost",  emoji:"🚀", name:"Boost",       dur:5.0 }
     ];
 
-    const shieldRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.48, 0.03, 10, 64),
-      new THREE.MeshStandardMaterial({
-        color:0x1b3a22, metalness:0.1, roughness:0.25,
-        emissive:0x44ff88, emissiveIntensity:1.05,
-        transparent:true, opacity:0.62
-      })
-    );
-    shieldRing.rotation.x = Math.PI/2;
-    shieldRing.position.y = 0.95;
-    shieldRing.visible=false;
-    runner.add(shieldRing);
-
     // ---------- Game state
-    const BEST_KEY='jungle_runner_best_v1';
+    const BEST_KEY='jungle_runner_best_v2';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
@@ -631,16 +679,39 @@
       lane:1, targetLane:1,
       y:0, vy:0, jumping:false,
       sliding:false, slideT:0,
-      baseSpeed: 8.6, speedMul:1.0,
-      score:0, coins:0, best: loadBest(),
+
+      baseSpeed: 8.6,
+      speedMul:1.0,
+      maxSpeedMul:1.0,
+
+      score:0, coins:0,
+      best: loadBest(),
+
       over:false, paused:true,
-      entities: [], spawnT:0.30,
+
+      entities: [],
+      spawnT:0.30,
+
       active:null,
-      hasShield:false, magnet:false, double:false, slow:false
+      hasShield:false,
+
+      magnet:false,
+      double:false,
+      slow:false,
+      boost:false,
+      trail:false,
+
+      lives: 3, // parte sempre con 3
+      invuln: 0.0, // invulnerabilità dopo colpo
+      stun: 0.0,   // mini stop
+      runTime: 0.0,
+
+      nextHeartAt: 50 // ogni 50 emoji spawn cuore
     };
 
     bestEl.textContent = String(game.best);
     bestBig.textContent = String(game.best);
+    renderLife(game.lives);
 
     function setActivePower(p){
       game.active = { ...p, t:p.dur };
@@ -648,49 +719,87 @@
       pillPower.style.display='inline-flex';
       pEmoji.textContent = p.emoji;
       pName.textContent  = p.name;
+      playPower();
     }
+
     function clearActivePower(){
       game.active=null;
       pillNone.style.display='inline-flex';
       pillPower.style.display='none';
       pBar.style.width='0%';
-      game.magnet=false; game.double=false; game.slow=false;
+
+      game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
+      game.hasShield = game.hasShield; // non toccare qui
     }
+
     function applyPowerFlags(){
-      game.magnet=false; game.double=false; game.slow=false;
+      game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
+
       if(!game.active) return;
       if(game.active.key==='magnet') game.magnet=true;
       if(game.active.key==='double') game.double=true;
       if(game.active.key==='slow')   game.slow=true;
+      if(game.active.key==='boost')  game.boost=true;
+      if(game.active.key==='trail')  game.trail=true;
       if(game.active.key==='shield') game.hasShield=true;
     }
 
     function openMenu(){
       menu.style.display='flex';
+      gameover.style.display='none';
       game.paused=true;
       bestBig.textContent=String(game.best);
       setEngine(false);
     }
     function closeMenu(){ menu.style.display='none'; }
 
-    function reset(){
+    function openGameOver(){
+      gameover.style.display='flex';
+      menu.style.display='none';
+      setEngine(false);
+
+      goScore.textContent = String(Math.floor(game.score));
+      goCoins.textContent = String(game.coins);
+      goMaxSpd.textContent = `${game.maxSpeedMul.toFixed(2)}x`;
+      goTime.textContent = fmtTime(game.runTime);
+
+      if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
+      bestEl.textContent = String(game.best);
+      bestBig.textContent = String(game.best);
+    }
+
+    function resetRun(full=true){
+      // full=true quando riparti da 0 vite (vero game over)
       game.lane=1; game.targetLane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
-      game.baseSpeed=8.6; game.speedMul=1.0;
+
+      game.baseSpeed=8.6; game.speedMul=1.0; game.maxSpeedMul=1.0;
       game.score=0; game.coins=0;
-      game.over=false;
       game.spawnT=0.30;
+
+      game.invuln=0.0; game.stun=0.0;
+      game.runTime=0.0;
 
       for(const e of game.entities) scene.remove(e.obj);
       game.entities.length=0;
 
       clearActivePower();
       game.hasShield=false;
-      shieldRing.visible=false;
+      if(shieldRing) shieldRing.visible=false;
 
+      game.nextHeartAt = 50;
+
+      if(full){
+        game.lives = 3;
+      }
+      renderLife(game.lives);
+
+      game.over=false;
       game.paused=false;
       pauseBtn.textContent='Pausa';
+      closeMenu();
+      gameover.style.display='none';
       setEngine(true);
     }
 
@@ -698,14 +807,16 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      setEngine(!game.paused);
+      setEngine(!game.paused && !menuIsOpen() && gameover.style.display==='none');
     }
 
-    // ---------- Spawning rows
+    // ---------- Spawning
     function spawnRow(){
+      // ostacoli: mai impossibili (almeno 1 corsia libera)
       const blocked=new Set();
       const oCount = Math.random()<0.10 ? 2 : rndi(0,2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
+      if(blocked.size===3) blocked.delete(rndi(0,2));
 
       const coinLanes=new Set();
       const cCount = rndi(1,2);
@@ -714,7 +825,7 @@
       const z0 = -48 - rnd(0,18);
 
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.5?'low':'high');
+        const kind = (Math.random()<0.5?'low':'high'); // low=jump, high=slide
         const obj = spawnObstacleVisual();
         obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
@@ -729,14 +840,42 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      if(Math.random()<0.10){
+      // powerup
+      if(Math.random()<0.12){
         const p = POWERUPS[rndi(0,POWERUPS.length-1)];
         const lane=rndi(0,2);
-        const spr=makeEmojiSprite(p.emoji);
+        const spr=makeEmojiSprite(p.emoji, 256, true);
         spr.position.set(lanesX[lane], 1.18, z0 - rnd(1,5));
-        spr.scale.set(0.82,0.82,1);
+        spr.scale.set(0.88,0.88,1);
         scene.add(spr);
         game.entities.push({ type:'power', lane, z:spr.position.z, obj:spr, key:p.key, dur:p.dur, name:p.name, emoji:p.emoji });
+      }
+    }
+
+    function spawnHeart(){
+      // appare solo se non sei già full
+      if(game.lives >= LIVES_MAX) return;
+
+      const z0 = -50 - rnd(0,14);
+      const lane = rndi(0,2);
+      const spr = makeEmojiSprite('❤️', 320, true);
+      spr.position.set(lanesX[lane], 1.25, z0);
+      spr.scale.set(1.08, 1.08, 1);
+      scene.add(spr);
+      game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
+    }
+
+    // NUOVO: Emoji Trail (genera una “scia” di emoji davanti)
+    let trailSpawnT = 0.0;
+    function spawnTrailCoins(){
+      const z0 = -30 - rnd(0,6);
+      // fila su tutte e 3 le corsie
+      for(let l=0;l<3;l++){
+        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        spr.position.set(lanesX[l], 1.10, z0 - l*0.9);
+        spr.scale.set(0.78,0.78,1);
+        scene.add(spr);
+        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr, trail:true });
       }
     }
 
@@ -748,8 +887,8 @@
       game.targetLane = clamp(game.targetLane+dir,0,2);
       game.lane = game.targetLane;
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
+      // (tolto beep qui: meno casino)
     }
-
     function jump(){
       if(game.over||game.paused) return;
       if(!game.jumping && game.y>=-0.001){
@@ -757,7 +896,6 @@
         game.vy = -7.8;
       }
     }
-
     function slide(){
       if(game.over||game.paused) return;
       game.sliding=true;
@@ -771,7 +909,8 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
-      if(k==='r') { initAudio(); closeMenu(); reset(); }
+      if(k==='r') { initAudio(); resetRun(true); }
+      if(k==='escape') openMenu();
     });
 
     let touchStart=null;
@@ -791,22 +930,15 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); reset(); });
-    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); reset(); });
+    startBtn.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
+    restartBtn.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-    // toggles
-    let bloomOn=true, motionOn=true, highQuality=true;
-    bloomToggle.addEventListener('click', ()=>{
-      bloomOn=!bloomOn;
-      toggleSwitch(bloomSwitch,bloomOn);
-      if(bloomPass) bloomPass.enabled=bloomOn;
-    });
-    motionToggle.addEventListener('click', ()=>{
-      motionOn=!motionOn;
-      toggleSwitch(motionSwitch,motionOn);
-      if(afterPass) afterPass.enabled=motionOn;
-    });
+    goRetry.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
+    goMenu.addEventListener('click', ()=>{ openMenu(); });
+
+    // Toggles
+    let highQuality=true;
     qualityToggle.addEventListener('click', ()=>{
       highQuality=!highQuality;
       toggleSwitch(qualitySwitch,highQuality);
@@ -820,10 +952,10 @@
       audioEnabled=!audioEnabled;
       toggleSwitch(audioSwitch,audioEnabled);
       if(!audioEnabled) setEngine(false);
-      else setEngine(!game.paused && !menuIsOpen());
+      else setEngine(!game.paused && !menuIsOpen() && gameover.style.display==='none');
     });
 
-    // file loaders
+    // File loaders
     loadRunnerBtn.addEventListener('click', ()=> runnerFile.click());
     runnerFile.addEventListener('change', async (e)=>{
       const f=e.target.files?.[0]; if(!f) return;
@@ -845,7 +977,7 @@
           addObstacleProto(gltf.scene);
         } finally { URL.revokeObjectURL(url); }
       }
-      loadObstacleBtn.textContent = `✅ Ostacoli caricati (${obstacleProtos.length})`;
+      loadObstacleBtn.textContent = `✅ Ostacoli (${obstacleProtos.length})`;
     });
 
     loadTreeBtn.addEventListener('click', ()=> treeFile.click());
@@ -861,6 +993,7 @@
         const count = Math.floor((segLen*segCount)/treeSpacing);
         for(let i=0;i<count;i++){
           const z=-i*treeSpacing;
+
           const left = treeProto.clone(true);
           left.position.set(-treeSideX - rnd(0,1.8), 0, z);
           left.scale.setScalar(rnd(0.55, 0.95));
@@ -875,7 +1008,7 @@
           right.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
           jungle.add(right); treePool.push(right);
         }
-        loadTreeBtn.textContent = "✅ Albero caricato";
+        loadTreeBtn.textContent = "✅ Alberi";
       } finally { URL.revokeObjectURL(url); }
     });
 
@@ -883,15 +1016,64 @@
     let tPrev=performance.now();
     let stepTimer=0;
 
+    function damage(){
+      // scudo = annulla colpo (1 volta)
+      if(game.hasShield){
+        game.hasShield=false;
+        if(shieldRing) shieldRing.visible=false;
+        playHit();
+        camShake = 0.18;
+        game.invuln = 0.8;
+        return;
+      }
+
+      game.lives = Math.max(0, game.lives - 1);
+      renderLife(game.lives);
+
+      playHit();
+      camShake = 0.28;
+      game.invuln = 1.25;
+      game.stun = 0.22;
+
+      // flash runner
+      runner.traverse(o=>{
+        if(o.isMesh && o.material){
+          o.material.emissive = o.material.emissive || new THREE.Color(0x000000);
+          o.material.emissiveIntensity = 1.2;
+          o.material.emissive.setHex(0xff3355);
+        }
+      });
+
+      if(game.lives <= 0){
+        game.over=true;
+        game.paused=true;
+        openGameOver();
+      }
+    }
+
+    function clearFlash(){
+      runner.traverse(o=>{
+        if(o.isMesh && o.material && o.material.emissive){
+          o.material.emissiveIntensity = 0.0;
+        }
+      });
+    }
+
     function update(dt, tNow){
       if(game.paused) return;
 
-      const timeScale = game.slow ? 0.62 : 1.0;
-      dt *= timeScale;
+      game.runTime += dt;
 
-      game.speedMul = 1 + Math.min(1.55, game.score/1600);
-      const speed = game.baseSpeed * game.speedMul;
-      updateEngine(game.speedMul);
+      // invuln / stun
+      if(game.invuln > 0){
+        game.invuln = Math.max(0, game.invuln - dt);
+        if(game.invuln===0) clearFlash();
+      }
+      if(game.stun > 0){
+        game.stun = Math.max(0, game.stun - dt);
+        // durante stun, rallenta molto
+        dt *= 0.18;
+      }
 
       // powers
       if(game.active){
@@ -899,11 +1081,33 @@
         applyPowerFlags();
         const pct = clamp((game.active.t/game.active.dur)*100,0,100);
         pBar.style.width = pct.toFixed(1)+'%';
-        if(game.active.key==='shield') shieldRing.visible=true;
-        if(game.active.t<=0) clearActivePower();
+
+        if(game.active.key==='shield' && shieldRing) shieldRing.visible=true;
+
+        if(game.active.t<=0){
+          clearActivePower();
+          if(shieldRing) shieldRing.visible = game.hasShield;
+        }
       } else {
-        game.magnet=false; game.double=false; game.slow=false;
+        game.magnet=false; game.double=false; game.slow=false; game.boost=false; game.trail=false;
       }
+
+      // “Slow-mo” migliorato: non solo dt, ma anche audio e feeling
+      let timeScale = 1.0;
+      if(game.slow) timeScale = 0.65;
+
+      // Boost: aumenta base speed e FOV (feeling)
+      const boostMul = game.boost ? 1.35 : 1.0;
+
+      dt *= timeScale;
+
+      // speed scaling
+      game.speedMul = 1 + Math.min(1.60, game.score/1600);
+      const speed = game.baseSpeed * game.speedMul * boostMul;
+
+      game.maxSpeedMul = Math.max(game.maxSpeedMul, game.speedMul * boostMul);
+
+      updateEngine(game.speedMul * boostMul);
 
       // gravity
       const g=22.0;
@@ -928,16 +1132,12 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.58 - h*0.24, 0.12, 0.58);
 
-      // animate runner if glb
+      // animate runner
       if(mixer) mixer.update(dt);
 
       // road scroll
       const scroll = speed*dt;
-
-      // PBR textures offset (instead of old dirtTex)
-      groundColor.offset.y -= scroll*0.085;
-      if(groundNormal) groundNormal.offset.y -= scroll*0.085;
-      if(groundRough)  groundRough.offset.y  -= scroll*0.085;
+      dirtTex.offset.y -= scroll*0.085;
 
       for(const mesh of segments){
         mesh.position.z += scroll;
@@ -947,12 +1147,29 @@
       }
       loopJungle(scroll);
 
-      // spawn
+      // spawn rows
       game.spawnT -= dt;
-      const minGap = 0.52 / game.speedMul;
+      const minGap = 0.52 / (game.speedMul * boostMul);
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(minGap, minGap+0.36);
+        game.spawnT = rnd(minGap, minGap+0.38);
+      }
+
+      // spawn heart every 50 emojis (quando arrivi o superi la soglia)
+      if(game.coins >= game.nextHeartAt){
+        spawnHeart();
+        game.nextHeartAt += 50;
+      }
+
+      // Emoji Trail power-up
+      if(game.trail){
+        trailSpawnT -= dt;
+        if(trailSpawnT <= 0){
+          spawnTrailCoins();
+          trailSpawnT = 0.45; // densità scia
+        }
+      }else{
+        trailSpawnT = 0;
       }
 
       // move entities
@@ -960,13 +1177,20 @@
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        if(game.magnet && (e.type==='coin'||e.type==='power')){
+        // magnet
+        if(game.magnet && (e.type==='coin'||e.type==='power'||e.type==='heart')){
           const dx = lanesX[game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
           if(dist < 6.5){
             e.obj.position.x += dx * dt * (1.6*(1-dist/6.5));
           }
+        }
+
+        // piccoli “pulsing” sui cuori/power
+        if(e.type==='heart'){
+          const pulse = 1.08 + 0.10*Math.sin(tNow*0.008);
+          e.obj.scale.set(pulse,pulse,1);
         }
       }
 
@@ -978,10 +1202,10 @@
         }
       }
 
-      // footsteps
+      // footsteps (più rari)
       if(game.y===0 && !game.paused){
         stepTimer += dt * (speed/9.0);
-        if(stepTimer >= 1.10){ // meno beep
+        if(stepTimer >= 1.05){
           stepTimer = 0;
           playFootstep();
         }
@@ -990,11 +1214,15 @@
       // collisions
       const px = runner.position.x;
       const py = runner.position.y + 0.95;
+
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
+
         const dz=Math.abs(e.z - 0.25);
         const dx=Math.abs(e.obj.position.x - px);
         const dy=Math.abs(e.obj.position.y - py);
+
+        // collision box
         const hit = (dz < 0.70 && dx < 0.55 && dy < 0.95);
         if(!hit) continue;
 
@@ -1010,33 +1238,37 @@
           const p = POWERUPS.find(p=>p.key===e.key) || POWERUPS[0];
           setActivePower(p);
           applyPowerFlags();
-          if(p.key==='shield'){ game.hasShield=true; shieldRing.visible=true; }
+          if(p.key==='shield'){ game.hasShield=true; if(shieldRing) shieldRing.visible=true; }
           scene.remove(e.obj); game.entities.splice(i,1);
-          playPower();
+          continue;
+        }
+
+        if(e.type==='heart'){
+          if(game.lives < LIVES_MAX){
+            game.lives = Math.min(LIVES_MAX, game.lives + 1);
+            renderLife(game.lives);
+            playHeart();
+          }
+          scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
         if(e.type==='obst'){
+          // se invulnerabile, ignora
+          if(game.invuln > 0) {
+            // facciamo “rimbalzare” un pelo l’ostacolo per feedback
+            e.obj.position.x += (Math.random()<0.5?-1:1)*0.03;
+            continue;
+          }
+
           let mustHit=false;
-          if(e.kind==='low'  && !game.jumping && game.y===0) mustHit=true;
-          if(e.kind==='high' && !game.sliding) mustHit=true;
+          if(e.kind==='low'  && !game.jumping && game.y===0) mustHit=true; // devi saltare
+          if(e.kind==='high' && !game.sliding) mustHit=true;               // devi scivolare
 
           if(mustHit){
-            if(game.hasShield){
-              game.hasShield=false;
-              shieldRing.visible=false;
-              scene.remove(e.obj); game.entities.splice(i,1);
-              playHit();
-              camShake = 0.22;
-            } else {
-              game.over=true;
-              game.paused=true;
-              setEngine(false);
-              playHit();
-              if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
-              openMenu();
-              startBtn.textContent='🔁 Riprova';
-            }
+            // rimuoviamo l’ostacolo colpito (così non colpisce due volte)
+            scene.remove(e.obj); game.entities.splice(i,1);
+            damage();
           }
         }
       }
@@ -1051,7 +1283,7 @@
       bestEl.textContent  = String(game.best);
       bestBig.textContent = String(game.best);
       multEl.textContent  = (game.double?'2.0':'1.0');
-      spdEl.textContent   = (game.speedMul).toFixed(2);
+      spdEl.textContent   = (game.speedMul * boostMul).toFixed(2);
 
       // motion feel
       tiltTarget *= 0.92;
@@ -1065,9 +1297,10 @@
 
       update(dt,tNow);
 
-      // camera
+      // camera feel
+      const boostFov = game.boost ? 12 : 0;
       const speedBoost = 1 + (game.paused?0: (game.speedMul-1)*0.22);
-      camera.fov = 60 + (speedBoost-1)*9.0;
+      camera.fov = 60 + (speedBoost-1)*9.0 + boostFov;
       camera.updateProjectionMatrix();
 
       const bob = Math.sin(tNow*0.0024)*0.03;
@@ -1081,13 +1314,16 @@
       camera.rotation.z = camRoll;
       camera.lookAt(0, 1.20, -2.4);
 
-      if(shieldRing.visible){
+      if(shieldRing && shieldRing.visible){
         shieldRing.material.opacity = 0.55 + 0.18*Math.sin(tNow*0.008);
         shieldRing.rotation.z += dt*1.2;
       }
 
-      if(IS_IOS || !composer) renderer.render(scene, camera);
-      else composer.render();
+      if(IS_IOS || !composer){
+        renderer.render(scene, camera);
+      }else{
+        composer.render();
+      }
 
       requestAnimationFrame(animate);
     }
@@ -1103,7 +1339,7 @@
     }
     window.addEventListener('resize', onResize);
 
-    // ---------- Boot
+    // Boot
     (async ()=>{
       await tryLoadRunnerFromPath();
       await tryLoadObstacleDefaults();
