@@ -124,7 +124,7 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli si prendono solo scivolando.</span>
+      <span style="opacity:.75">Anelli: auto-piega quando arrivano nella tua corsia.</span>
     </div>
   </div>
 
@@ -133,10 +133,10 @@
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle">
         ✅ Scivolata: ruota dal centro (orizzontale).<br>
-        ✅ Magnete: solo quando prendi 🧲.<br>
-        ✅ Anelli: fissi, NON attratti dal magnete. Spawn a triplette.<br>
+        ✅ Magnete: solo quando prendi 🧲 (NON continuo).<br>
+        ✅ Anelli: fissi, NON attratti dal magnete. Spawn: 3 dietro l’altro nella stessa corsia.<br>
         ✅ Ogni <strong>15 anelli</strong> → 3 runner in corsia (raccolgono/demoliscono/spingono tartarughe).<br>
-        ✅ Boost cibo e boost anelli sono cumulativi: entrambi attivi → velocità pazzesca.
+        ✅ Boost cibo e boost anelli cumulativi: entrambi attivi → velocità pazzesca.
       </div>
 
       <div class="grid">
@@ -239,7 +239,8 @@
     scene.background = new THREE.Color(0x08120b);
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
-    const camera = new THREE.PerspectiveCamera(78, window.innerWidth/window.innerHeight, 0.1, 280);
+    // ✅ Camera più “alta e indietro” e lookAt più avanti: player in basso
+    const camera = new THREE.PerspectiveCamera(90, window.innerWidth/window.innerHeight, 0.1, 320);
 
     // lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
@@ -435,27 +436,23 @@
         })
       );
       ring.castShadow=true; ring.receiveShadow=true;
-      // ✅ VERTICALE: niente rotateX(Math.PI/2)
-      ring.rotation.set(0,0,0);
+      ring.rotation.set(0,0,0); // verticale
       return ring;
     }
 
     // Runner: pivot + model (così ruota dal CENTRO)
-    const runnerPivot = new THREE.Group(); // posizione del player nel mondo
+    const runnerPivot = new THREE.Group();
     runnerPivot.position.set(0,0,0);
     scene.add(runnerPivot);
 
-    // centro “fisico” per ruotare (altezza media del corpo)
     const runnerCenter = new THREE.Group();
-    runnerCenter.position.set(0, 0.95, 0); // punto intorno a cui ruota la scivolata
+    runnerCenter.position.set(0, 0.95, 0);
     runnerPivot.add(runnerCenter);
 
-    // model group (spostato sotto il centro, così ruota sul suo centro)
     const runnerModel = new THREE.Group();
     runnerModel.position.set(0, -0.95, 0);
     runnerCenter.add(runnerModel);
 
-    // dummy body
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
@@ -472,7 +469,6 @@
     dummyHead.castShadow=true;
     runnerModel.add(dummyHead);
 
-    // invincibility bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -485,7 +481,6 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // extra 2 runners (per modalità 3 corsie)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -496,7 +491,6 @@
       m.add(b); m.add(h);
 
       p.visible=false;
-      // bubble for minis (we reuse 1 material)
       const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone();
       bb.material.opacity = 0.18;
       p.add(bb);
@@ -519,7 +513,9 @@
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
+
       sliding:false, slideT:0,
+      autoSlideT:0, // ✅ scivolata automatica per entrare negli anelli
 
       baseSpeed: 12.9, // +50% permanente
       score:0, coins:0, best: loadBest(),
@@ -531,19 +527,12 @@
       foodCount:0,
       foodHistory:[],
 
-      // power timers
       invincibleT:0,
+      foodBoostT:0,
+      ringBoostT:0,
+      magnetT:0,
+      trioT:0,
 
-      // boosts (cumulativi)
-      foodBoostT:0,   // ✅ 10 cibo -> tripla
-      ringBoostT:0,   // ✅ attivato quando “modalità 3 runner” è attiva (o se vuoi puoi farlo separato)
-      // magnet
-      magnetT:0,      // ✅ attivo solo quando prendi 🧲
-
-      // “3 runner” mode
-      trioT:0,        // attivo dopo 15 anelli
-
-      // entities
       entities:[],
       spawnT:0.30,
       paused:true,
@@ -570,7 +559,6 @@
     }
 
     function setBoostUI(){
-      // mostra una pill se c'è qualsiasi timer importante
       const t = Math.max(game.foodBoostT, game.ringBoostT);
       if(t <= 0){
         pillBoost.style.display='none';
@@ -609,6 +597,7 @@
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
+      game.autoSlideT=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -693,7 +682,7 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      // FOOD (frequente)
+      // FOOD
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -704,7 +693,7 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // MAGNET power-up (ogni tanto)
+      // MAGNET power-up
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -714,7 +703,7 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // HEARTS: ogni 25 emoji + qualche extra
+      // HEARTS: ogni 25 emoji + extra
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
@@ -732,35 +721,35 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // TURTLES: ferme, se le colpisci partono avanti demolendo ostacoli
-      if(Math.random() < 0.12){
+      // TURTLES: ferme
+      if(Math.random() < 0.14){
         const lane=rndi(0,2);
         const t = makeTurtle();
         t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
         t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
         scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', vz:0 });
+        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // RINGS: triplette (3 vicini)
-      if(Math.random() < 0.24){
+      // ✅ RINGS: 3 dietro l’altro nella STESSA corsia
+      if(Math.random() < 0.26){
+        const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        for(let l=0;l<3;l++){
+        const gap = 1.75; // distanza tra anelli (dietro l’altro)
+        for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
-          ring.position.set(lanesX[l], 0.55, baseZ);
+          ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
           scene.add(ring);
-          game.entities.push({ type:'ring', lane:l, z:ring.position.z, obj:ring });
+          game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
         }
       }
     }
 
     // ---- Controls
-    let tiltTarget=0, camRoll=0, camShake=0;
+    let tiltTarget=0, camRoll=0;
     function moveLane(dir){
       if(game.over||game.paused) return;
-      // se trio attivo, i 3 runner coprono già le corsie → lasciamo lane “fermo”
       if(game.trioT>0) return;
-
       game.lane = clamp(game.lane+dir,0,2);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
@@ -777,6 +766,7 @@
       if(game.over||game.paused) return;
       game.sliding=true;
       game.slideT=0.55;
+      game.autoSlideT=0;
       sfx.slide();
     }
 
@@ -817,39 +807,40 @@
       audioSwitch.classList.toggle('on',!!audioEnabled);
     });
 
-    // ---- Camera state (player MOLTO più in basso)
-    let camZ = 12.8;
-    let camY = 5.0;
-    let camFov = 84;
+    // ---- Camera state (player più in basso)
+    let camZ = 15.6;
+    let camY = 6.2;
+    let camFov = 92;
 
-    // ---- Utility: “quali X usare per collisioni”
     function activeRunnerXs(){
-      if(game.trioT>0){
-        return [lanesX[0], lanesX[1], lanesX[2]];
-      }
+      if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
     }
 
     // ---- Update loop
     let tPrev=performance.now();
-    let stepTimer=0;
 
     function update(dt, tNow){
       if(game.paused) return;
 
       // slowmo salto leggero
       const inAir = (game.y < -0.01) || game.jumping;
-      const slowmo = inAir ? 0.90 : 1.0;
-      dt *= slowmo;
+      dt *= (inAir ? 0.90 : 1.0);
 
       // timers
       if(game.invincibleT>0){
         game.invincibleT -= dt;
-        if(game.invincibleT<=0){ game.invincibleT=0; bubble.visible=false; miniL.bubble.visible=false; miniR.bubble.visible=false; }
+        if(game.invincibleT<=0){
+          game.invincibleT=0;
+          bubble.visible=false;
+          miniL.bubble.visible=false;
+          miniR.bubble.visible=false;
+        }
       }
       if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt);
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt);
-      if(game.magnetT>0) game.magnetT = Math.max(0, game.magnetT-dt);
+      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt);
+
       if(game.trioT>0){
         game.trioT = Math.max(0, game.trioT-dt);
         if(game.trioT===0){
@@ -857,15 +848,12 @@
           miniR.pivot.visible=false;
           miniL.bubble.visible=false;
           miniR.bubble.visible=false;
-          // quando finisce trio, ringBoost può finire anche lui se vuoi (qui lo lasciamo com'è)
         }
       }
 
       // speed: cumulativo
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
-
-      // se entrambi attivi -> pazzesco
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
       const crazyMul = both ? 1.8 : 1.0;
 
@@ -886,22 +874,25 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timer
+      // slide timers
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
+      if(game.autoSlideT>0){
+        game.autoSlideT -= dt;
+      }
 
       // runner positions
-      const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane]; // trio: main in centro
+      const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      // scivolata: ROTAZIONE DAL CENTRO (runnerCenter), non spostamenti strani
+      // scivolata: ruota dal centro
       const slidePitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
-      // contatto ombra
+      // contact shadow
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runnerPivot.position.x;
@@ -936,22 +927,27 @@
         game.spawnT = rnd(0.45, 0.85);
       }
 
-      // move entities + magnet (solo coin/food/heart/magnet) — NO rings, NO turtles, NO obstacles
+      // magnet effect (NO rings, NO turtles, NO obstacles)
       const magnetOn = game.magnetT > 0;
+
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        if(e.type==='turtle'){
-          if(e.state==='projectile'){
-            // “proiettile” avanti: avanza più veloce rispetto al mondo
-            e.z += (speed*2.2)*dt;
-            e.obj.position.z = e.z;
+        // ✅ turtle projectile: ora va sempre
+        if(e.type==='turtle' && e.state==='projectile'){
+          e.projT -= dt;
+          // avanza in avanti rispetto al mondo
+          e.z += (speed*3.4)*dt;
+          e.obj.position.z = e.z;
+
+          if(e.projT <= 0){
+            // fine proiettile -> sparisce
+            e.projT = 0;
           }
         }
 
         if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
-          // magnete super potente, ma NON per anelli
           const dx = lanesX[(game.trioT>0)?1:game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
@@ -962,15 +958,20 @@
         }
       }
 
-      // despawn
+      // despawn (turtle projectile auto-remove)
       for(let i=game.entities.length-1;i>=0;i--){
-        if(game.entities[i].z > 6.0){
-          scene.remove(game.entities[i].obj);
+        const e = game.entities[i];
+        if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
+          scene.remove(e.obj); game.entities.splice(i,1);
+          continue;
+        }
+        if(e.z > 6.0){
+          scene.remove(e.obj);
           game.entities.splice(i,1);
         }
       }
 
-      // collisions: controlliamo su 1 o 3 “corsie attive”
+      // collisions helper
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -981,7 +982,28 @@
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
 
-      // turtle projectile demolition (se proiettile, distrugge ostacoli davanti sulla stessa corsia)
+      // ✅ AUTO-PIEGA: se un anello della tua corsia è vicino → scivolata automatica breve
+      // (non serve swipe giù per gli anelli)
+      if(!game.sliding && game.y===0){
+        const checkLane = (game.trioT>0) ? null : game.lane;
+        for(const e of game.entities){
+          if(e.type!=='ring') continue;
+          // trio: niente auto (sono 3 corsie), usi swipe giù se vuoi, ma gli anelli li prendono comunque quando tocchi
+          if(game.trioT>0) break;
+          if(e.lane !== checkLane) continue;
+
+          const dz = Math.abs(e.z - 0.25);
+          // quando è vicino abbastanza, piega da solo
+          if(dz < 1.05){
+            game.sliding = true;
+            game.slideT  = 0.38; // breve e secco, solo per passare
+            game.autoSlideT = game.slideT;
+            break;
+          }
+        }
+      }
+
+      // turtle projectile demolition (solo ostacoli nella stessa corsia)
       for(const e of game.entities){
         if(e.type==='turtle' && e.state==='projectile'){
           for(let j=game.entities.length-1;j>=0;j--){
@@ -989,7 +1011,7 @@
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
             const dz = Math.abs(o.z - e.z);
-            if(dz < 1.2){
+            if(dz < 1.25){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -997,26 +1019,27 @@
         }
       }
 
-      // handle pickups / hits
+      // pickups / hits
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
-        // se ring: si prende solo se sliding, e senza magnete influisce comunque (ring è fisso)
+        // ring: NON attratto dal magnete. Si prende automaticamente (auto-slide) oppure se sei in slide.
         if(e.type==='ring'){
-          if(!game.sliding) continue;
-          // collisione su una delle corsie attive
+          // collisione su corsie attive (trio = 3 corsie)
           let got=false;
           for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
           if(!got) continue;
+
+          // se trio: ok. se non trio: richiedi che sia in slide (auto o manuale)
+          if(game.trioT<=0 && !game.sliding) continue;
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ogni 15 anelli: trio mode + ring boost
           if(game.ringCount % 15 === 0){
-            game.trioT = 10.0;        // trio attivo 10s
-            game.ringBoostT = 10.0;   // boost anelli 10s
+            game.trioT = 10.0;
+            game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
             bubble.visible=true;
             miniL.bubble.visible=true;
@@ -1048,7 +1071,6 @@
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.food();
 
-          // 10 food => food boost 10s, reset counter (come richiesto)
           if(game.foodCount >= 10){
             game.foodBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1069,26 +1091,24 @@
         }
 
         if(e.type==='magnet'){
-          game.magnetT = 8.0; // magnete 8s
+          game.magnetT = 8.0;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.magnet();
           continue;
         }
 
         if(e.type==='turtle'){
-          // se invincibile o trio o normale: colpendo la tartaruga diventa proiettile
+          // ✅ solo quando la tocchi: diventa proiettile SEMPRE
           if(e.state==='idle'){
             e.state='projectile';
-            e.vz = speed*3.0;
-            // imposta lane dalla sua posizione
-            e.lane = (Math.abs(e.obj.position.x-lanesX[0])<0.4) ? 0 : (Math.abs(e.obj.position.x-lanesX[2])<0.4 ? 2 : 1);
+            e.projT = 2.6; // durata proiettile
+            // lane già salvata nello spawn, resta quella
             sfx.boost();
           }
           continue;
         }
 
         if(e.type==='obst'){
-          // se invincibile o trio: demolisce
           const inv = (game.invincibleT>0);
           if(inv || game.trioT>0){
             scene.remove(e.obj); game.entities.splice(i,1);
@@ -1114,15 +1134,12 @@
 
       setBoostUI();
 
-      // bubble pulse
       if(bubble.visible){
         bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
       }
 
-      // motion feel
       tiltTarget *= 0.92;
       camRoll = camRoll*0.90 + tiltTarget*0.10;
-      camShake = Math.max(0, camShake - dt*0.9);
     }
 
     function animate(tNow){
@@ -1134,10 +1151,10 @@
       const inAir = (game.y < -0.01) || game.jumping;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
 
-      // CAMERA: player molto più in basso e strada lunghissima
-      const targetFov = both ? 98 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 92 : (inAir ? 82 : 88));
-      const targetZ   = both ? 14.5 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 13.2 : 13.6);
-      const targetY   = both ? 5.6  : 5.3;
+      // ✅ CAMERA: ancora più “player in basso” (lookAt molto avanti e basso)
+      const targetFov = both ? 102 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 96 : (inAir ? 88 : 92));
+      const targetZ   = both ? 17.2 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 16.2 : 16.6);
+      const targetY   = both ? 6.6  : 6.4;
 
       camFov = lerp(camFov, targetFov, 0.08);
       camZ   = lerp(camZ,   targetZ,   0.08);
@@ -1148,11 +1165,10 @@
 
       const bob = Math.sin(tNow*0.0022) * 0.01;
       camera.position.set(0, camY + bob, camZ);
-
       camera.rotation.z = camRoll;
 
-      // guarda molto avanti e basso => player “in basso sul telefono”
-      camera.lookAt(0, 0.22, -24.0);
+      // ✅ guarda più avanti e più in basso -> player “molto in basso” sul telefono
+      camera.lookAt(0, 0.18, -34.0);
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
