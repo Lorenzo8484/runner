@@ -1152,9 +1152,9 @@
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
 
       // ✅ CAMERA: ancora più “player in basso” (lookAt molto avanti e basso)
-      const targetFov = both ? 102 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 96 : (inAir ? 88 : 92));
-      const targetZ   = both ? 17.2 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 16.2 : 16.6);
-      const targetY   = both ? 6.6  : 6.4;
+      const targetFov = both ? 92 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 86 : (inAir ? 80 : 82));
+      const targetZ   = both ? 12.0 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 11.2 : 11.0);
+      const targetY   = both ? 4.6  : 4.2;
 
       camFov = lerp(camFov, targetFov, 0.08);
       camZ   = lerp(camZ,   targetZ,   0.08);
@@ -1168,7 +1168,7 @@
       camera.rotation.z = camRoll;
 
       // ✅ guarda più avanti e più in basso -> player “molto in basso” sul telefono
-      camera.lookAt(0, 0.18, -34.0);
+      camera.lookAt(0, 0.05, -18.0);
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
