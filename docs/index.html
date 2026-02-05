@@ -753,8 +753,70 @@
       else { if(dy<0) jump(); else slideManual(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
-    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    // ===== DEBUG A SCHERMO (iPhone) + START ROBUSTO =====
+const dbg = document.createElement('div');
+dbg.style.cssText = `
+  position:fixed; left:10px; right:10px; top:10px; z-index:99999;
+  background:rgba(0,0,0,.75); color:#fff; padding:10px 12px; border-radius:12px;
+  font:12px/1.35 system-ui; display:none; white-space:pre-wrap;
+`;
+document.body.appendChild(dbg);
+
+function showDbg(msg){
+  dbg.style.display = 'block';
+  dbg.textContent = String(msg);
+}
+function hideDbg(){
+  dbg.style.display = 'none';
+  dbg.textContent = '';
+}
+
+window.addEventListener('error', (ev)=> showDbg('ERRORE JS:\n' + (ev.error?.stack || ev.message || String(ev))));
+window.addEventListener('unhandledrejection', (ev)=> showDbg('PROMISE ERROR:\n' + (ev.reason?.stack || ev.reason || String(ev.reason))));
+
+// Start che parte sempre: prima chiude menu, poi reset
+function hardStart(){
+  hideDbg();
+  try{
+    // prova a mostrare che il click è arrivato
+    showDbg('CLICK OK → avvio...');
+
+    // chiudi menu SUBITO (così se reset crasha almeno lo vedi)
+    menu.style.display = 'none';
+
+    // sblocca il gioco
+    game.over = false;
+    game.paused = false;
+    pauseBtn.textContent = 'Pausa';
+
+    // audio solo se l’utente ha cliccato (ok su iOS)
+    initAudio();
+    setEngine(true);
+
+    // reset
+    reset();
+
+    // sicurezza extra
+    game.paused = false;
+    setEngine(true);
+
+    hideDbg();
+  }catch(e){
+    showDbg('ERRORE IN START:\n' + (e?.stack || e?.message || String(e)));
+    // se c'è errore riapri menu per non restare “nero”
+    menu.style.display = 'flex';
+    game.paused = true;
+    setEngine(false);
+  }
+}
+
+// IMPORTANTISSIMO: usa pointerup/click su iOS per affidabilità
+startBtn.addEventListener('click', hardStart, { passive:false });
+startBtn.addEventListener('pointerup', hardStart, { passive:false });
+
+restartBtn.addEventListener('click', hardStart, { passive:false });
+restartBtn.addEventListener('pointerup', hardStart, { passive:false });
+    
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     audioToggle.addEventListener('click', ()=>{
