@@ -9,18 +9,35 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;}
+    .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;}
     .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:220px;}
     .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
     .small{font-size:12px;opacity:.86;line-height:1.2}
     .btn{pointer-events:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf1ff;padding:10px 12px;border-radius:14px;font-weight:800;cursor:pointer;user-select:none;}
     .btn:active{transform:scale(.98);}
+    .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
 
     .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
     .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* right side vertical food column (più piccola e più a destra) */
+    /* floating home/settings (sempre visibili) */
+    .floatBtns{
+      position:fixed; top:10px; right:10px;
+      display:flex; flex-direction:column; gap:8px;
+      z-index:25; pointer-events:none;
+    }
+    .iconBtn{
+      pointer-events:auto;
+      width:44px;height:44px;
+      padding:0;
+      border-radius:14px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      backdrop-filter:blur(10px);
+    }
+
+    /* right side vertical food column */
     .rightCol{
       position:fixed; top:70px; right:4px; width:58px;
       display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -77,25 +94,25 @@
     .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
-    /* sliders piccoli */
-    input[type="range"]{
-      width:100%;
-      height:18px;
-      accent-color: rgba(255,255,255,.85);
-    }
+    /* sliders */
+    input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
     .settingsBox{
       display:none;
       flex-direction:column;
       gap:10px;
       align-items:stretch;
       padding:10px 12px;
+      cursor:default; user-select:auto;
     }
-    .settingsRow{
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-      font-size:13px;
-    }
+    .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;}
     .settingsRow small{opacity:.8}
     .settingsVal{font-weight:950}
+
+    @media (max-width:430px){
+      .btn{padding:8px 10px;border-radius:12px;font-size:13px;}
+      .card{min-width:200px;padding:9px 10px;}
+      .iconBtn{width:42px;height:42px;border-radius:12px;}
+    }
   </style>
 
   <script type="importmap">
@@ -108,6 +125,7 @@
   </script>
 </head>
 <body>
+
   <div class="hud">
     <div class="card">
       <div class="row">
@@ -130,12 +148,16 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;">
+    <div class="controls">
       <button class="btn" id="pause">Pausa</button>
       <button class="btn" id="restart">Restart</button>
-      <button class="btn" id="btnSettings">⚙️</button>
-      <button class="btn" id="btnHome">🏠</button>
     </div>
+  </div>
+
+  <!-- floating buttons always visible -->
+  <div class="floatBtns">
+    <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
+    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
   <div class="rightCol">
@@ -147,7 +169,7 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli: auto-piega quando arrivano nella tua corsia.</span>
+      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia.</span>
     </div>
   </div>
 
@@ -163,8 +185,7 @@
 
         <button class="btn full" id="openSettings">⚙️ Impostazioni</button>
 
-        <!-- SETTINGS -->
-        <div class="toggle full settingsBox" id="settingsPanel" style="cursor:default;user-select:auto;">
+        <div class="toggle full settingsBox" id="settingsPanel">
           <div class="settingsRow">
             <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
             <div class="settingsVal" id="fovVal">60</div>
@@ -172,23 +193,26 @@
           <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
 
           <div class="settingsRow" style="margin-top:4px;">
-            <div><label>Distanza camera</label><br><small>2–15 (base 8)</small></div>
-            <div class="settingsVal" id="camVal">8.0</div>
+            <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
+            <div class="settingsVal" id="camVal">5.0</div>
           </div>
-          <input id="camSlider" type="range" min="2" max="15" step="0.1" value="8.0" />
+          <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
 
           <div class="settingsRow" style="margin-top:4px;">
             <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
-            <div class="settingsVal" id="frameVal">0.70</div>
+            <div class="settingsVal" id="frameVal">0.06</div>
           </div>
-          <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.70" />
+          <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
 
           <div class="toggle" id="audioToggle" style="margin-top:6px;">
             <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
             <div class="switch on" id="audioSwitch"><i></i></div>
           </div>
 
-          <button class="btn" id="closeSettings">Chiudi</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;">
+            <button class="btn" id="resetCam">Reset camera</button>
+            <button class="btn" id="closeSettings">Chiudi</button>
+          </div>
         </div>
 
         <div class="toggle full">
@@ -233,6 +257,7 @@
 
     const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
+    const resetCamBtn = document.getElementById('resetCam');
     const settingsPanel = document.getElementById('settingsPanel');
 
     const audioToggle= document.getElementById('audioToggle');
@@ -250,14 +275,15 @@
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    // === SETTINGS PERSISTENTI ===
-    const CAM_KEY = 'jr_cam_settings_v4';
+    // === SETTINGS (BASE come la tua foto) ===
+    const CAM_KEY = 'jr_cam_settings_v5';
+    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
+
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
-    // richiesto: FOV 30-110 base 60; distanza 2-15 base 8
-    let baseFov  = Number(saved.baseFov ?? 60);
-    let baseCamZ = Number(saved.baseCamZ ?? 8.0);
-    let framing  = Number(saved.framing ?? 0.70); // 0..1
+    let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
+    let baseCamZ = Number(saved.baseCamZ ?? DEFAULTS.baseCamZ);
+    let framing  = Number(saved.framing ?? DEFAULTS.framing);
 
     baseFov  = clamp(baseFov, 30, 110);
     baseCamZ = clamp(baseCamZ, 2, 15);
@@ -294,10 +320,17 @@
       saveCam();
     });
 
+    resetCamBtn.addEventListener('click', ()=>{
+      baseFov = DEFAULTS.baseFov;
+      baseCamZ = DEFAULTS.baseCamZ;
+      framing = DEFAULTS.framing;
+      saveCam();
+      syncCamUI();
+    });
+
     function toggleSettings(open){
       settingsPanel.style.display = open ? 'flex' : 'none';
     }
-
     openSettingsBtn.addEventListener('click', ()=>{
       toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
       syncCamUI();
@@ -359,7 +392,6 @@
     scene.background = new THREE.Color(0x08120b);
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
-    // Camera (valori base controllati dagli slider)
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
 
     // lights
@@ -543,7 +575,6 @@
       return g;
     }
 
-    // Vertical Ring (in piedi)
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -560,34 +591,22 @@
       return ring;
     }
 
-    // Runner: pivot + model (così ruota dal CENTRO)
-    const runnerPivot = new THREE.Group();
-    runnerPivot.position.set(0,0,0);
-    scene.add(runnerPivot);
-
-    const runnerCenter = new THREE.Group();
-    runnerCenter.position.set(0, 0.95, 0);
-    runnerPivot.add(runnerCenter);
-
-    const runnerModel = new THREE.Group();
-    runnerModel.position.set(0, -0.95, 0);
-    runnerCenter.add(runnerModel);
+    // Runner
+    const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
+    const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
+    const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
-    dummyBody.position.y=0.85;
-    dummyBody.castShadow=true;
-    runnerModel.add(dummyBody);
+    dummyBody.position.y=0.85; dummyBody.castShadow=true; runnerModel.add(dummyBody);
 
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
     );
-    dummyHead.position.set(0, 1.25, 0.05);
-    dummyHead.castShadow=true;
-    runnerModel.add(dummyHead);
+    dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
 
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
@@ -605,16 +624,12 @@
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
-
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
-
       p.visible=false;
-      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone();
-      bb.material.opacity = 0.18;
+      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone(); bb.material.opacity = 0.18;
       p.add(bb);
-
       return { pivot:p, center:c, model:m, bubble:bb };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
@@ -633,9 +648,8 @@
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
-
       sliding:false, slideT:0,
-      autoSlideT:0,
+      autoSlideCooldown:0,
 
       baseSpeed: 12.9,
       score:0, coins:0, best: loadBest(),
@@ -688,16 +702,9 @@
       pillBoost.style.display='inline-flex';
 
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      if(both){
-        boostIcon.textContent='🔥';
-        boostName.textContent='MEGA';
-      }else if(game.foodBoostT>0){
-        boostIcon.textContent='🍔';
-        boostName.textContent='FOOD';
-      }else{
-        boostIcon.textContent='⭕️';
-        boostName.textContent='RING';
-      }
+      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
 
       const dur = 10.0;
       const pct = clamp((t/dur)*100,0,100);
@@ -708,7 +715,6 @@
       menu.style.display='flex';
       game.paused=true;
       toggleSettings(false);
-
       const st = `Score ${Math.floor(game.score)} • Emoji ${game.coins} • Anelli ${game.ringCount} • Cibo ${game.foodCount}`;
       overStats.textContent = game.over ? st : "—";
       overBig.textContent = game.over ? "GAME OVER" : "";
@@ -719,7 +725,7 @@
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
-      game.autoSlideT=0;
+      game.autoSlideCooldown=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -777,26 +783,21 @@
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
-      // meno ostacoli
       const blocked=new Set();
       const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
-      // coins
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
-      // obstacles
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.55?'low':'high');
         const obj = spawnObstacleVisual();
         obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
-        game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
+        game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
-      // emojis
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
@@ -804,7 +805,6 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      // FOOD
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -815,7 +815,6 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // MAGNET power-up
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -825,7 +824,6 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // HEARTS: ogni 25 emoji + extra
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
@@ -853,7 +851,7 @@
         game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // RINGS: 3 dietro l’altro nella STESSA corsia
+      // RINGS: 3 dietro l’altro nella stessa corsia
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
@@ -869,6 +867,7 @@
 
     // ---- Controls
     let tiltTarget=0, camRoll=0;
+
     function moveLane(dir){
       if(game.over||game.paused) return;
       if(game.trioT>0) return;
@@ -888,7 +887,6 @@
       if(game.over||game.paused) return;
       game.sliding=true;
       game.slideT=0.55;
-      game.autoSlideT=0;
       sfx.slide();
     }
 
@@ -923,7 +921,7 @@
     restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-    // HUD buttons
+    // Floating buttons
     btnSettings.addEventListener('click', ()=>{
       initAudio();
       game.paused = true;
@@ -936,7 +934,6 @@
 
     btnHome.addEventListener('click', ()=>{
       initAudio();
-      // Home = torna al menu e resetta la run (più pulito e stabile)
       resetRun();
       game.paused = true;
       game.over = false;
@@ -944,9 +941,9 @@
       openMenu();
     });
 
-    // ---- Camera state (controllati dagli slider)
+    // ---- Camera state (sliders)
     let camZ = baseCamZ;
-    let camY = 4.8;
+    let camY = 4.6;
     let camFov = baseFov;
 
     function activeRunnerXs(){
@@ -960,11 +957,9 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // slowmo salto leggero
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
 
-      // timers
       if(game.invincibleT>0){
         game.invincibleT -= dt;
         if(game.invincibleT<=0){
@@ -988,7 +983,8 @@
         }
       }
 
-      // speed: cumulativo
+      if(game.autoSlideCooldown>0) game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
+
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -997,7 +993,6 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
 
-      // invincibile quando c'è un boost attivo
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
@@ -1011,21 +1006,17 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timers
+      // slide
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
-      if(game.autoSlideT>0){
-        game.autoSlideT -= dt;
-      }
 
-      // runner positions
+      // runner
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      // scivolata: ruota dal centro
       const slidePitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
@@ -1036,13 +1027,12 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis (trio)
+      // minis
       if(game.trioT>0){
         miniL.pivot.visible=true;
         miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
-
         miniL.center.rotation.x = runnerCenter.rotation.x;
         miniR.center.rotation.x = runnerCenter.rotation.x;
       }
@@ -1050,7 +1040,6 @@
       // road scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
-
       for(const mesh of segments){
         mesh.position.z += scroll;
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
@@ -1064,22 +1053,20 @@
         game.spawnT = rnd(0.45, 0.85);
       }
 
-      // magnet effect (NO rings, NO turtles, NO obstacles)
+      // magnet effect
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
+        // normal world move towards player
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // turtle projectile
+        // ✅ turtle projectile: corre IN AVANTI (più negativo) e non viene verso il player
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
-          e.z += (speed*3.4)*dt;
+          e.z -= (speed*3.4)*dt;   // <-- avanti (verso fondo strada)
           e.obj.position.z = e.z;
-
-          if(e.projT <= 0){
-            e.projT = 0;
-          }
+          if(e.projT <= 0) e.projT = 0;
         }
 
         if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
@@ -1093,7 +1080,7 @@
         }
       }
 
-      // despawn (turtle projectile auto-remove)
+      // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
         if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
@@ -1104,38 +1091,46 @@
           scene.remove(e.obj);
           game.entities.splice(i,1);
         }
+        // se va troppo avanti, rimuovi
+        if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
+          scene.remove(e.obj); game.entities.splice(i,1);
+        }
       }
 
-      // collisions helper
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
       function collideAtX(ex, e){
         const dz = Math.abs(e.z - 0.25);
         const dx = Math.abs(e.obj.position.x - ex);
-        const dy = Math.abs(e.obj.position.y - py);
+        const dy = Math.abs((e.obj.position.y ?? 0) - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
 
-      // AUTO-PIEGA: anello vicino nella tua corsia -> slide automatica breve
-      if(!game.sliding && game.y===0){
-        const checkLane = (game.trioT>0) ? null : game.lane;
+      // ✅ collisione turtle più “generosa” così non ci passi sopra senza trigger
+      function collideTurtle(ex, e){
+        const dz = Math.abs(e.z - 0.35);
+        const dx = Math.abs(e.obj.position.x - ex);
+        return (dz < 1.05 && dx < 0.72);
+      }
+
+      // ✅ AUTO-PIEGA PIÙ PRESTO (per prendere il PRIMO anello senza ritardo)
+      if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
-          if(game.trioT>0) break;
-          if(e.lane !== checkLane) continue;
+          if(e.lane !== game.lane) continue;
 
           const dz = Math.abs(e.z - 0.25);
-          if(dz < 1.05){
+          if(dz < 2.05){               // <-- prima era 1.05 (troppo tardi)
             game.sliding = true;
-            game.slideT  = 0.38;
-            game.autoSlideT = game.slideT;
+            game.slideT  = 0.45;       // un filo più lungo
+            game.autoSlideCooldown = 0.30;
             break;
           }
         }
       }
 
-      // turtle projectile demolition
+      // turtle projectile demolition (stessa corsia)
       for(const e of game.entities){
         if(e.type==='turtle' && e.state==='projectile'){
           for(let j=game.entities.length-1;j>=0;j--){
@@ -1143,7 +1138,7 @@
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
             const dz = Math.abs(o.z - e.z);
-            if(dz < 1.25){
+            if(dz < 1.35){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -1155,12 +1150,13 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
-        // ring: NON magnet. Si prende se collide e (no trio -> devi essere in slide; trio -> ok)
+        // ring
         if(e.type==='ring'){
           let got=false;
           for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
           if(!got) continue;
 
+          // no trio -> deve essere in slide (auto o manuale)
           if(game.trioT<=0 && !game.sliding) continue;
 
           game.ringCount += 1;
@@ -1179,7 +1175,21 @@
           continue;
         }
 
-        // altri: collisione su corsie attive
+        // turtle touch -> projectile
+        if(e.type==='turtle' && e.state==='idle'){
+          let hitT=false;
+          for(const ex of xs){
+            if(collideTurtle(ex, e)){ hitT=true; break; }
+          }
+          if(hitT){
+            e.state='projectile';
+            e.projT = 2.8;
+            sfx.boost();
+          }
+          continue;
+        }
+
+        // altri: collisione normale
         let hit=false;
         for(const ex of xs){
           if(collideAtX(ex,e)){ hit=true; break; }
@@ -1227,15 +1237,6 @@
           continue;
         }
 
-        if(e.type==='turtle'){
-          if(e.state==='idle'){
-            e.state='projectile';
-            e.projT = 2.6;
-            sfx.boost();
-          }
-          continue;
-        }
-
         if(e.type==='obst'){
           const inv = (game.invincibleT>0);
           if(inv || game.trioT>0){
@@ -1270,32 +1271,30 @@
       camRoll = camRoll*0.90 + tiltTarget*0.10;
     }
 
-    // CAMERA: base slider + framing che mette il player in basso davvero
     function animate(tNow){
       const dt=Math.min(0.033,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
 
+      // camera (slider base)
       const inAir = (game.y < -0.01) || game.jumping;
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      // piccoli extra in boost (non rompe)
       const fovBoost = bothBoost ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
-      const zBoost   = bothBoost ? 1.5 : (anyBoost ? 0.8 : 0.0);
+      const zBoost   = bothBoost ? 1.3 : (anyBoost ? 0.6 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
 
-      // framing 0..1 => player più in basso
       const lookAtY = lerp(0.05, 1.45, framing);
       const lookAtZ = lerp(-22.0, -38.0, framing);
       const camYBase = lerp(3.9, 5.8, framing);
 
       camFov = lerp(camFov, targetFov, 0.08);
       camZ   = lerp(camZ,   targetZ,   0.08);
-      camY   = lerp(camY,   camYBase + (bothBoost?0.25:0), 0.08);
+      camY   = lerp(camY,   camYBase + (bothBoost?0.15:0), 0.08);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
@@ -1316,9 +1315,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
     window.addEventListener('resize', onResize);
-
-    // Menu / start
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
 
     // start
     (async ()=>{
