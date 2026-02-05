@@ -124,7 +124,7 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli si prendono solo scivolando.</span>
+      <span style="opacity:.75">Anelli: piega automatica quando arrivi vicino (niente tasto giù).</span>
     </div>
   </div>
 
@@ -132,11 +132,9 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle">
-        ✅ Scivolata: ruota dal centro (orizzontale).<br>
-        ✅ Magnete: solo quando prendi 🧲.<br>
-        ✅ Anelli: fissi, NON attratti dal magnete. Spawn a triplette.<br>
-        ✅ Ogni <strong>15 anelli</strong> → 3 runner in corsia (raccolgono/demoliscono/spingono tartarughe).<br>
-        ✅ Boost cibo e boost anelli sono cumulativi: entrambi attivi → velocità pazzesca.
+        ✅ Player in basso (più strada visibile).<br>
+        ✅ Anelli: 3 dietro all’altro nella stessa corsia, piega automatica.<br>
+        ✅ Tartarughe: ferme, se le tocchi partono avanti e demoliscono ostacoli della loro corsia.
       </div>
 
       <div class="grid">
@@ -158,7 +156,12 @@
   <script type="module">
     import * as THREE from 'three';
 
+    // --- basics
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const rnd=(a,b)=>a+Math.random()*(b-a);
+    const rndi=(a,b)=>Math.floor(rnd(a,b+1));
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const lerp=(a,b,t)=>a+(b-a)*t;
 
     // UI
     const scoreEl = document.getElementById('score');
@@ -184,11 +187,6 @@
     const audioSwitch= document.getElementById('audioSwitch');
     const overStats  = document.getElementById('overStats');
     const overBig    = document.getElementById('overBig');
-
-    const rnd=(a,b)=>a+Math.random()*(b-a);
-    const rndi=(a,b)=>Math.floor(rnd(a,b+1));
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    const lerp=(a,b,t)=>a+(b-a)*t;
 
     // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -237,25 +235,25 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08120b);
-    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
+    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 120) : new THREE.FogExp2(0x06110a, 0.034);
 
-    const camera = new THREE.PerspectiveCamera(78, window.innerWidth/window.innerHeight, 0.1, 280);
+    const camera = new THREE.PerspectiveCamera(82, window.innerWidth/window.innerHeight, 0.1, 320);
 
     // lights
-    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
+    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.2);
     sun.position.set(6, 10, 6);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048,2048);
     sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 80;
+    sun.shadow.camera.far = 90;
     sun.shadow.camera.left = -12;
     sun.shadow.camera.right=  12;
     sun.shadow.camera.top  =  12;
     sun.shadow.camera.bottom=-12;
-    sun.shadow.bias = -0.00023;
+    sun.shadow.bias = -0.00022;
     scene.add(sun);
-    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
-    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.24));
+    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.80));
+    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.25));
     const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.25 : 0.55);
     front.position.set(0, 4, 9);
     scene.add(front);
@@ -302,7 +300,6 @@
       return t;
     }
     const dirtTex = makeDirtTexture(1024);
-
     const roadMat = new THREE.MeshStandardMaterial({
       map: dirtTex,
       roughness: 0.95,
@@ -419,6 +416,7 @@
       head.position.set(0,0.25,0.42);
       head.castShadow=true;
       g.add(head);
+      g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
       return g;
     }
 
@@ -435,27 +433,22 @@
         })
       );
       ring.castShadow=true; ring.receiveShadow=true;
-      // ✅ VERTICALE: niente rotateX(Math.PI/2)
-      ring.rotation.set(0,0,0);
+      ring.rotation.set(0,0,0); // ✅ verticale
       return ring;
     }
 
-    // Runner: pivot + model (così ruota dal CENTRO)
-    const runnerPivot = new THREE.Group(); // posizione del player nel mondo
-    runnerPivot.position.set(0,0,0);
+    // Runner: pivot + model
+    const runnerPivot = new THREE.Group();
     scene.add(runnerPivot);
 
-    // centro “fisico” per ruotare (altezza media del corpo)
     const runnerCenter = new THREE.Group();
-    runnerCenter.position.set(0, 0.95, 0); // punto intorno a cui ruota la scivolata
+    runnerCenter.position.set(0, 0.95, 0);
     runnerPivot.add(runnerCenter);
 
-    // model group (spostato sotto il centro, così ruota sul suo centro)
     const runnerModel = new THREE.Group();
     runnerModel.position.set(0, -0.95, 0);
     runnerCenter.add(runnerModel);
 
-    // dummy body
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
@@ -472,7 +465,6 @@
     dummyHead.castShadow=true;
     runnerModel.add(dummyHead);
 
-    // invincibility bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -485,41 +477,24 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // extra 2 runners (per modalità 3 corsie)
-    function makeMiniRunner(){
-      const p = new THREE.Group();
-      const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
-      const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
-
-      const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
-      const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
-      m.add(b); m.add(h);
-
-      p.visible=false;
-      // bubble for minis (we reuse 1 material)
-      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone();
-      bb.material.opacity = 0.18;
-      p.add(bb);
-
-      return { pivot:p, center:c, model:m, bubble:bb };
-    }
-    const miniL = makeMiniRunner(); scene.add(miniL.pivot);
-    const miniR = makeMiniRunner(); scene.add(miniR.pivot);
-
     // --- Game data
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
     const HEART  = "❤️";
     const MAGNET = "🧲";
 
-    const BEST_KEY='jungle_runner_best_v3';
+    const BEST_KEY='jungle_runner_best_v4';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
-      sliding:false, slideT:0,
+
+      // slide states (manual for obstacles, AUTO for rings)
+      sliding:false,
+      slideT:0,
+      autoSlideLockT:0, // evita loop
 
       baseSpeed: 12.9, // +50% permanente
       score:0, coins:0, best: loadBest(),
@@ -531,19 +506,11 @@
       foodCount:0,
       foodHistory:[],
 
-      // power timers
       invincibleT:0,
+      foodBoostT:0,
+      ringBoostT:0,
+      magnetT:0,
 
-      // boosts (cumulativi)
-      foodBoostT:0,   // ✅ 10 cibo -> tripla
-      ringBoostT:0,   // ✅ attivato quando “modalità 3 runner” è attiva (o se vuoi puoi farlo separato)
-      // magnet
-      magnetT:0,      // ✅ attivo solo quando prendi 🧲
-
-      // “3 runner” mode
-      trioT:0,        // attivo dopo 15 anelli
-
-      // entities
       entities:[],
       spawnT:0.30,
       paused:true,
@@ -568,9 +535,7 @@
       }
       foodCountEl.textContent = String(game.foodCount);
     }
-
     function setBoostUI(){
-      // mostra una pill se c'è qualsiasi timer importante
       const t = Math.max(game.foodBoostT, game.ringBoostT);
       if(t <= 0){
         pillBoost.style.display='none';
@@ -578,19 +543,10 @@
         return;
       }
       pillBoost.style.display='inline-flex';
-
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      if(both){
-        boostIcon.textContent='🔥';
-        boostName.textContent='MEGA';
-      }else if(game.foodBoostT>0){
-        boostIcon.textContent='🍔';
-        boostName.textContent='FOOD';
-      }else{
-        boostIcon.textContent='⭕️';
-        boostName.textContent='RING';
-      }
-
+      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+      else{ boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
       const dur = 10.0;
       const pct = clamp((t/dur)*100,0,100);
       boostBar.style.width = pct.toFixed(1)+'%';
@@ -608,7 +564,10 @@
     function resetRun(){
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
-      game.sliding=false; game.slideT=0;
+
+      game.sliding=false;
+      game.slideT=0;
+      game.autoSlideLockT=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -619,7 +578,6 @@
       game.foodBoostT=0;
       game.ringBoostT=0;
       game.magnetT=0;
-      game.trioT=0;
 
       game.spawnT=0.30;
       game.over=false;
@@ -631,11 +589,6 @@
       pauseBtn.textContent='Pausa';
 
       bubble.visible=false;
-      miniL.pivot.visible=false;
-      miniR.pivot.visible=false;
-      miniL.bubble.visible=false;
-      miniR.bubble.visible=false;
-
       game.lives=3;
     }
 
@@ -668,24 +621,21 @@
 
       // meno ostacoli
       const blocked=new Set();
-      const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
+      const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.80 ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
-      // coins
+      // emojis
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
-      // obstacles
       blocked.forEach(l=>{
-        const kind = (Math.random()<0.55?'low':'high');
         const obj = spawnObstacleVisual();
         obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
-        game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
+        game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
-      // emojis
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
@@ -704,7 +654,7 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // MAGNET power-up (ogni tanto)
+      // MAGNET (ogni tanto)
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -714,8 +664,8 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // HEARTS: ogni 25 emoji + qualche extra
-      if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
+      // HEARTS: spesso (25 emoji + extra)
+      if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.8){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
@@ -723,7 +673,7 @@
         scene.add(spr);
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
-      if(Math.random() < 0.07){
+      if(Math.random() < 0.08){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
@@ -732,37 +682,33 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // TURTLES: ferme, se le colpisci partono avanti demolendo ostacoli
-      if(Math.random() < 0.12){
+      // TURTLES: PIÙ (ferme). Se le tocchi => proiettile avanti.
+      if(Math.random() < 0.22){
         const lane=rndi(0,2);
         const t = makeTurtle();
         t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
-        t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
         scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', vz:0 });
+        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projSpeed:0 });
       }
 
-      // RINGS: triplette (3 vicini)
+      // RINGS: 3 dietro all’altro nella STESSA corsia (verticali)
       if(Math.random() < 0.24){
+        const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        for(let l=0;l<3;l++){
+        const gap = 1.25;
+        for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
-          ring.position.set(lanesX[l], 0.55, baseZ);
+          ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
           scene.add(ring);
-          game.entities.push({ type:'ring', lane:l, z:ring.position.z, obj:ring });
+          game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
         }
       }
     }
 
     // ---- Controls
-    let tiltTarget=0, camRoll=0, camShake=0;
     function moveLane(dir){
       if(game.over||game.paused) return;
-      // se trio attivo, i 3 runner coprono già le corsie → lasciamo lane “fermo”
-      if(game.trioT>0) return;
-
       game.lane = clamp(game.lane+dir,0,2);
-      tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
     }
     function jump(){
@@ -773,7 +719,7 @@
         sfx.jump();
       }
     }
-    function slide(){
+    function slideManual(){
       if(game.over||game.paused) return;
       game.sliding=true;
       game.slideT=0.55;
@@ -785,7 +731,7 @@
       if(k==='arrowleft') moveLane(-1);
       if(k==='arrowright') moveLane(1);
       if(k==='arrowup' || k===' ') jump();
-      if(k==='arrowdown') slide();
+      if(k==='arrowdown') slideManual(); // ✅ rimane solo per ostacoli
       if(k==='p') togglePause();
       if(k==='r') { initAudio(); closeMenu(); resetRun(); }
     });
@@ -804,7 +750,7 @@
       const min=30;
       if(adx<min && ady<min) return;
       if(adx>ady) moveLane(dx>0?1:-1);
-      else { if(dy<0) jump(); else slide(); }
+      else { if(dy<0) jump(); else slideManual(); }
     });
 
     startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
@@ -817,67 +763,53 @@
       audioSwitch.classList.toggle('on',!!audioEnabled);
     });
 
-    // ---- Camera state (player MOLTO più in basso)
-    let camZ = 12.8;
-    let camY = 5.0;
-    let camFov = 84;
+    // ---- Camera (player in basso)
+    let camZ = 14.0;
+    let camY = 6.2;
+    let camFov = 86;
 
-    // ---- Utility: “quali X usare per collisioni”
-    function activeRunnerXs(){
-      if(game.trioT>0){
-        return [lanesX[0], lanesX[1], lanesX[2]];
-      }
-      return [lanesX[game.lane]];
+    // ---- Auto-slide per ring (solo se ring nella TUA corsia e vicino)
+    function autoSlideForRing(){
+      if(game.autoSlideLockT>0) return;
+      game.sliding=true;
+      game.slideT=Math.max(game.slideT, 0.50);
+      game.autoSlideLockT=0.35; // evita auto-trigger continuo
+      sfx.slide();
     }
 
     // ---- Update loop
     let tPrev=performance.now();
-    let stepTimer=0;
 
     function update(dt, tNow){
       if(game.paused) return;
 
       // slowmo salto leggero
       const inAir = (game.y < -0.01) || game.jumping;
-      const slowmo = inAir ? 0.90 : 1.0;
-      dt *= slowmo;
+      dt *= (inAir ? 0.90 : 1.0);
 
       // timers
       if(game.invincibleT>0){
         game.invincibleT -= dt;
-        if(game.invincibleT<=0){ game.invincibleT=0; bubble.visible=false; miniL.bubble.visible=false; miniR.bubble.visible=false; }
+        if(game.invincibleT<=0){ game.invincibleT=0; bubble.visible=false; }
       }
       if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt);
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt);
       if(game.magnetT>0) game.magnetT = Math.max(0, game.magnetT-dt);
-      if(game.trioT>0){
-        game.trioT = Math.max(0, game.trioT-dt);
-        if(game.trioT===0){
-          miniL.pivot.visible=false;
-          miniR.pivot.visible=false;
-          miniL.bubble.visible=false;
-          miniR.bubble.visible=false;
-          // quando finisce trio, ringBoost può finire anche lui se vuoi (qui lo lasciamo com'è)
-        }
-      }
 
-      // speed: cumulativo
+      if(game.autoSlideLockT>0) game.autoSlideLockT = Math.max(0, game.autoSlideLockT-dt);
+
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
-
-      // se entrambi attivi -> pazzesco
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
       const crazyMul = both ? 1.8 : 1.0;
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
 
-      // invincibile quando c'è un boost attivo
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
         bubble.visible=true;
-        if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
       }
 
       // gravity
@@ -892,37 +824,24 @@
         if(game.slideT<=0) game.sliding=false;
       }
 
-      // runner positions
-      const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane]; // trio: main in centro
-      runnerPivot.position.x = mainX;
+      // runner transform
+      runnerPivot.position.x = lanesX[game.lane];
       runnerPivot.position.y = (-game.y);
 
-      // scivolata: ROTAZIONE DAL CENTRO (runnerCenter), non spostamenti strani
+      // scivolata: ROTAZIONE dal centro (orizzontale)
       const slidePitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
-      // contatto ombra
+      // contact shadow
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runnerPivot.position.x;
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis (trio)
-      if(game.trioT>0){
-        miniL.pivot.visible=true;
-        miniR.pivot.visible=true;
-        miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
-        miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
-
-        miniL.center.rotation.x = runnerCenter.rotation.x;
-        miniR.center.rotation.x = runnerCenter.rotation.x;
-      }
-
       // road scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
-
       for(const mesh of segments){
         mesh.position.z += scroll;
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
@@ -936,23 +855,32 @@
         game.spawnT = rnd(0.45, 0.85);
       }
 
-      // move entities + magnet (solo coin/food/heart/magnet) — NO rings, NO turtles, NO obstacles
+      // move entities + magnet (solo coin/food/heart/magnet) — NO rings/turtles/obstacles
       const magnetOn = game.magnetT > 0;
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        if(e.type==='turtle'){
-          if(e.state==='projectile'){
-            // “proiettile” avanti: avanza più veloce rispetto al mondo
-            e.z += (speed*2.2)*dt;
-            e.obj.position.z = e.z;
+        if(e.type==='turtle' && e.state==='projectile'){
+          // ✅ proiettile: va "in avanti" (più negativo) con velocità costante
+          e.z -= e.projSpeed * dt; // andare avanti = diminuire z
+          e.obj.position.z = e.z;
+
+          // demolisce ostacoli nella sua corsia
+          for(let j=game.entities.length-1;j>=0;j--){
+            const o = game.entities[j];
+            if(o.type!=='obst') continue;
+            if(o.lane!==e.lane) continue;
+            const dz = Math.abs(o.z - e.z);
+            if(dz < 1.25){
+              scene.remove(o.obj);
+              game.entities.splice(j,1);
+            }
           }
         }
 
         if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
-          // magnete super potente, ma NON per anelli
-          const dx = lanesX[(game.trioT>0)?1:game.lane] - e.obj.position.x;
+          const dx = lanesX[game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
           if(dist < 12.0){
@@ -970,68 +898,31 @@
         }
       }
 
-      // collisions: controlliamo su 1 o 3 “corsie attive”
-      const xs = activeRunnerXs();
+      // AUTO-SLIDE per ring nella tua corsia quando vicino
+      for(const e of game.entities){
+        if(e.type!=='ring') continue;
+        if(e.lane !== game.lane) continue;
+        // vicino al player (zona di trigger)
+        if(e.z > -1.2 && e.z < 0.9){
+          autoSlideForRing();
+          break;
+        }
+      }
+
+      // collisions
+      const px = runnerPivot.position.x;
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
-      function collideAtX(ex, e){
-        const dz = Math.abs(e.z - 0.25);
-        const dx = Math.abs(e.obj.position.x - ex);
-        const dy = Math.abs(e.obj.position.y - py);
+      function hitEntity(e){
+        const dz=Math.abs(e.z - 0.25);
+        const dx=Math.abs(e.obj.position.x - px);
+        const dy=Math.abs(e.obj.position.y - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
 
-      // turtle projectile demolition (se proiettile, distrugge ostacoli davanti sulla stessa corsia)
-      for(const e of game.entities){
-        if(e.type==='turtle' && e.state==='projectile'){
-          for(let j=game.entities.length-1;j>=0;j--){
-            const o = game.entities[j];
-            if(o.type!=='obst') continue;
-            if(o.lane!==e.lane) continue;
-            const dz = Math.abs(o.z - e.z);
-            if(dz < 1.2){
-              scene.remove(o.obj);
-              game.entities.splice(j,1);
-            }
-          }
-        }
-      }
-
-      // handle pickups / hits
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
-
-        // se ring: si prende solo se sliding, e senza magnete influisce comunque (ring è fisso)
-        if(e.type==='ring'){
-          if(!game.sliding) continue;
-          // collisione su una delle corsie attive
-          let got=false;
-          for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
-          if(!got) continue;
-
-          game.ringCount += 1;
-          scene.remove(e.obj); game.entities.splice(i,1);
-          sfx.ring();
-
-          // ogni 15 anelli: trio mode + ring boost
-          if(game.ringCount % 15 === 0){
-            game.trioT = 10.0;        // trio attivo 10s
-            game.ringBoostT = 10.0;   // boost anelli 10s
-            game.invincibleT = Math.max(game.invincibleT, 10.0);
-            bubble.visible=true;
-            miniL.bubble.visible=true;
-            miniR.bubble.visible=true;
-            sfx.boost();
-          }
-          continue;
-        }
-
-        // altri tipi: collisione su una delle corsie attive
-        let hit=false;
-        for(const ex of xs){
-          if(collideAtX(ex,e)){ hit=true; break; }
-        }
-        if(!hit) continue;
+        if(!hitEntity(e)) continue;
 
         if(e.type==='coin'){
           game.coins += 1;
@@ -1040,20 +931,16 @@
           sfx.coin();
           continue;
         }
-
         if(e.type==='food'){
           game.foodCount += 1;
           game.foodHistory.push(e.emo);
           refreshFoodUI();
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.food();
-
-          // 10 food => food boost 10s, reset counter (come richiesto)
           if(game.foodCount >= 10){
             game.foodBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
             bubble.visible=true;
-            if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
             game.foodCount = 0;
             game.foodHistory = [];
             refreshFoodUI();
@@ -1061,36 +948,42 @@
           }
           continue;
         }
-
         if(e.type==='heart'){
           if(game.lives < game.maxLives) addLife();
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
-
         if(e.type==='magnet'){
-          game.magnetT = 8.0; // magnete 8s
+          game.magnetT = 8.0;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.magnet();
           continue;
         }
-
-        if(e.type==='turtle'){
-          // se invincibile o trio o normale: colpendo la tartaruga diventa proiettile
-          if(e.state==='idle'){
-            e.state='projectile';
-            e.vz = speed*3.0;
-            // imposta lane dalla sua posizione
-            e.lane = (Math.abs(e.obj.position.x-lanesX[0])<0.4) ? 0 : (Math.abs(e.obj.position.x-lanesX[2])<0.4 ? 2 : 1);
+        if(e.type==='ring'){
+          // ring si prende solo se scivolata (ma è auto, quindi ok)
+          if(!game.sliding) continue;
+          game.ringCount += 1;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          sfx.ring();
+          if(game.ringCount % 15 === 0){
+            game.ringBoostT = 10.0;
+            game.invincibleT = Math.max(game.invincibleT, 10.0);
+            bubble.visible=true;
             sfx.boost();
           }
           continue;
         }
-
+        if(e.type==='turtle'){
+          // ✅ ferma: se la tocchi, scappa avanti e demolisce ostacoli della corsia
+          if(e.state==='idle'){
+            e.state='projectile';
+            e.projSpeed = Math.max(24, game.baseSpeed * 3.8); // forte e stabile
+            sfx.boost();
+          }
+          continue;
+        }
         if(e.type==='obst'){
-          // se invincibile o trio: demolisce
-          const inv = (game.invincibleT>0);
-          if(inv || game.trioT>0){
+          if(game.invincibleT>0){
             scene.remove(e.obj); game.entities.splice(i,1);
           }else{
             scene.remove(e.obj); game.entities.splice(i,1);
@@ -1111,18 +1004,11 @@
       ringsEl.textContent = String(game.ringCount);
       hpTxt.textContent   = hpString();
       magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
-
       setBoostUI();
 
-      // bubble pulse
       if(bubble.visible){
         bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
       }
-
-      // motion feel
-      tiltTarget *= 0.92;
-      camRoll = camRoll*0.90 + tiltTarget*0.10;
-      camShake = Math.max(0, camShake - dt*0.9);
     }
 
     function animate(tNow){
@@ -1134,10 +1020,10 @@
       const inAir = (game.y < -0.01) || game.jumping;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
 
-      // CAMERA: player molto più in basso e strada lunghissima
+      // CAMERA: runner “in basso” -> lookAt più alto e più lontano (così il runner scende nello schermo)
       const targetFov = both ? 98 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 92 : (inAir ? 82 : 88));
-      const targetZ   = both ? 14.5 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 13.2 : 13.6);
-      const targetY   = both ? 5.6  : 5.3;
+      const targetZ   = both ? 15.2 : ((game.foodBoostT>0 || game.ringBoostT>0) ? 14.6 : 14.9);
+      const targetY   = both ? 6.6  : 6.3;
 
       camFov = lerp(camFov, targetFov, 0.08);
       camZ   = lerp(camZ,   targetZ,   0.08);
@@ -1146,13 +1032,11 @@
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0022) * 0.01;
-      camera.position.set(0, camY + bob, camZ);
+      camera.position.set(0, camY, camZ);
 
-      camera.rotation.z = camRoll;
-
-      // guarda molto avanti e basso => player “in basso sul telefono”
-      camera.lookAt(0, 0.22, -24.0);
+      // ✅ questo è il trucco per mettere il player molto in basso:
+      // guardiamo un punto "più alto" e molto lontano
+      camera.lookAt(0, 2.25, -42.0);
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -1165,13 +1049,34 @@
     }
     window.addEventListener('resize', onResize);
 
-    // start
+    // menu/start
     (async ()=>{
       refreshFoodUI();
       hpTxt.textContent = hpString();
       openMenu();
       requestAnimationFrame(animate);
     })();
+
+    // --- UI buttons
+    function openMenu(){
+      menu.style.display='flex';
+      game.paused=true;
+      const st = `Score ${Math.floor(game.score)} • Emoji ${game.coins} • Anelli ${game.ringCount} • Cibo ${game.foodCount}`;
+      overStats.textContent = game.over ? st : "—";
+      overBig.textContent = game.over ? "GAME OVER" : "";
+    }
+    function closeMenu(){ menu.style.display='none'; }
+
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
+
+    audioToggle.addEventListener('click', ()=>{
+      initAudio();
+      audioEnabled=!audioEnabled;
+      audioSwitch.classList.toggle('on',!!audioEnabled);
+    });
+
   </script>
 </body>
 </html>
