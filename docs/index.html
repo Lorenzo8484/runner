@@ -1095,7 +1095,7 @@
       const z0 = -52 - rnd(0,18);
       const lane = rndi(0,2);
       const ring = makeLowRing();
-      ring.position.set(lanesX[lane], 0.62, z0); // ✅ low/ground level
+      ring.position.set(lanesX[lane], 0.55, z0); // un filo più basso
       ring.rotation.x = Math.PI/2; // like a hoop you slide through
       scene.add(ring);
       game.entities.push({ type:'ring', lane, z:z0, obj:ring });
@@ -1438,6 +1438,13 @@
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
+      
+      // ✅ Scivolata: inclinazione in avanti (orizzontale) + abbassa il corpo
+const slidePitchTarget = game.sliding ? -1.15 : 0.0;   // -1.15 rad ~ 66°
+runner.rotation.x = lerp(runner.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
+
+const slideYTarget = game.sliding ? -0.22 : 0.0;       // abbassa un po'
+runner.position.y += slideYTarget;
 
       // size: keep smaller for visibility during boosts
       const boostOn = (game.foodBoostT>0 || game.ringBoostT>0);
@@ -1577,7 +1584,7 @@
 
       // collisions
       const px = runner.position.x;
-      const py = runner.position.y + 0.95;
+      const py = runner.position.y + (game.sliding ? 0.70 : 0.95);
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
@@ -1728,7 +1735,7 @@
 
       // More visibility always
       const targetFov = boostOn ? 82 : (inAir ? 64 : 70);
-      const targetZ   = boostOn ? 7.20 : (inAir ? 6.10 : 6.55);
+      const targetZ   = boostOn ? 7.80 : (inAir ? 6.80 : 7.10);
       const targetY   = boostOn ? 2.80 : (inAir ? 2.45 : 2.65);
 
       camFov = lerp(camFov, targetFov, 1 - Math.pow(0.0001, dt));
@@ -1749,7 +1756,7 @@
       camera.rotation.z = camRoll;
 
       // look further ahead so runner stays lower on screen
-      camera.lookAt(0, 1.10, -4.2);
+      camera.lookAt(0, 0.70, -8.2); // guarda più in basso e più avanti => player più in basso sullo schermo
 
       if(shieldRing && shieldRing.visible){
         shieldRing.material.opacity = 0.55 + 0.18*Math.sin(tNow*0.008);
