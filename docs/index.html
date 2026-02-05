@@ -753,7 +753,29 @@
       else { if(dy<0) jump(); else slideManual(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    function hardStart(){
+  try{
+    initAudio();
+    // chiudi menu e sblocca gioco
+    menu.style.display = 'none';
+    game.over = false;
+    game.paused = false;
+    pauseBtn.textContent = 'Pausa';
+    setEngine(true);
+
+    // reset totale (spawn, score, entities)
+    reset();
+
+    // sicurezza: se per qualunque motivo reset rimette paused, lo forziamo
+    game.paused = false;
+    setEngine(true);
+  }catch(err){
+    showFatal(err);
+  }
+}
+
+startBtn.addEventListener('click', hardStart);
+restartBtn.addEventListener('click', hardStart);
     restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
