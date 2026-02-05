@@ -20,84 +20,53 @@
     .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    .life{display:flex;align-items:center;gap:8px;margin-top:8px;}
-    .ticks{display:flex;gap:6px;}
-    .tick{width:14px;height:10px;border-radius:5px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.10);}
-    .tick.on{background:rgba(255,90,120,.78);border-color:rgba(255,90,120,.55);box-shadow:0 0 10px rgba(255,90,120,.28);}
-
-    /* FOOD COLUMN (right) - smaller & more right */
-    .foodHud{
-      position:fixed;
-      top:88px;
-      right:4px;
-      width:38px;
-      z-index:11;
-      pointer-events:none;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      align-items:stretch;
-      transform:scale(.92);
-      transform-origin: top right;
+    /* right side vertical food column */
+    .rightCol{
+      position:fixed; top:70px; right:8px; width:72px;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      pointer-events:none; z-index:10;
     }
     .foodStack{
+      width:64px; max-height:260px; overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:6px 5px;
+      border-radius:14px;
+      padding:8px 6px;
       backdrop-filter:blur(10px);
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      align-items:center;
-      min-height:170px;
     }
     .foodItem{
-      width:26px;height:26px;
-      border-radius:10px;
+      width:46px;height:46px;border-radius:14px;
       display:flex;align-items:center;justify-content:center;
-      background:rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.10);
-      font-size:16px;
-      box-shadow:0 10px 24px rgba(0,0,0,.22);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:24px;
     }
-    .foodCountBox{
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:7px 6px;
-      backdrop-filter:blur(10px);
+    .foodCount{
+      margin-top:6px;
+      width:64px;
       text-align:center;
       font-weight:900;
-    }
-    .foodCountBox .lbl{font-size:9px;opacity:.80;font-weight:800;}
-    .foodCountBox .num{font-size:14px;line-height:1.1;margin-top:1px;}
-
-    /* RINGS HUD (under food) */
-    .ringsBox{
-      background:rgba(255,255,255,.05);
+      background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:7px 6px;
-      backdrop-filter:blur(10px);
-      text-align:center;
-      font-weight:900;
+      border-radius:999px;
+      padding:6px 0;
     }
-    .ringsBox .ico{font-size:14px;line-height:1;}
-    .ringsBox .num{font-size:14px;line-height:1.1;margin-top:2px;}
-    .ringsBox .lbl{font-size:9px;opacity:.80;font-weight:800;margin-top:1px;}
 
     .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
-    .panel{width:min(560px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
+    .panel{width:min(680px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
       background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
-    .title{font-size:22px;font-weight:900;margin:4px 0 10px;}
+    .title{font-size:20px;font-weight:950;margin:4px 0 6px;}
+    .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
+
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
+
     .toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.16);
       border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);cursor:pointer;user-select:none;}
-    .toggle label{font-weight:800;}
+    .toggle label{font-weight:900;}
     .toggle span{opacity:.85;font-size:12px;}
     .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
     .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
@@ -106,11 +75,6 @@
 
     .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
-
-    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
-    .stat{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;padding:10px 12px;}
-    .stat .k{opacity:.78;font-size:12px;}
-    .stat .v{font-weight:900;font-size:18px;margin-top:2px;}
 
     input[type="file"]{display:none;}
   </style>
@@ -127,30 +91,23 @@
 <body>
   <div class="hud">
     <div class="card">
-      <div class="row"><div><strong>Score</strong>: <span id="score">0</span></div><div class="small">x<span id="mult">1.0</span></div></div>
-      <div class="row"><div><strong>Emoji</strong>: <span id="coins">0</span></div><div class="small">Record: <span id="best">0</span></div></div>
-
-      <div class="small">Velocità: <span id="spd">1.00</span>x</div>
-
-      <div class="life">
-        <div class="small" style="min-width:44px;">Vita</div>
-        <div class="ticks" id="lifeTicks"></div>
+      <div class="row">
+        <div><strong>Score</strong>: <span id="score">0</span></div>
+        <div class="small">Rings: <span id="rings">0</span>/10</div>
+      </div>
+      <div class="row">
+        <div><strong>Emoji</strong>: <span id="coins">0</span></div>
+        <div class="small">Record: <span id="best">0</span></div>
       </div>
 
-      <div class="pill" id="pillNone">Power-up: <strong>—</strong></div>
-      <div class="pill" id="pillPower" style="display:none;">
-        <span id="pEmoji">🚀</span><strong id="pName">Boost</strong>
-        <div class="bar"><i id="pBar"></i></div>
+      <div class="row small" style="margin-top:6px;">
+        <div><strong>Vita</strong>: <span id="hpTxt">♥♥♥</span></div>
+        <div>Boost: <span id="boostTxt">—</span></div>
       </div>
 
-      <div class="pill" id="pillInv" style="display:none;">
-        <span>🫧</span><strong>Supercarica</strong>
-        <div class="bar"><i id="invBar"></i></div>
-      </div>
-
-      <div class="pill" id="pillTri" style="display:none;">
-        <span>👥</span><strong>Triplo Runner</strong>
-        <div class="bar"><i id="triBar"></i></div>
+      <div class="pill" id="pillBoost" style="display:none;">
+        <span id="boostIcon">⚡️</span><strong id="boostName">Super</strong>
+        <div class="bar"><i id="boostBar"></i></div>
       </div>
     </div>
 
@@ -160,86 +117,49 @@
     </div>
   </div>
 
-  <!-- RIGHT HUD -->
-  <div class="foodHud">
+  <div class="rightCol">
     <div class="foodStack" id="foodStack"></div>
-    <div class="foodCountBox">
-      <div class="lbl">CIBI</div>
-      <div class="num"><span id="foodTotal">0</span>/10</div>
-    </div>
-    <div class="ringsBox">
-      <div class="ico">⭕️</div>
-      <div class="num"><span id="ringTotal">0</span>/10</div>
-      <div class="lbl">ANELLI</div>
-    </div>
+    <div class="foodCount"><span id="foodCount">0</span>/10</div>
   </div>
 
   <div class="help">
     <div class="card small">
-      Desktop: ← →, ↑ salto, ↓ scivolata, P pausa, R restart • Mobile: swipe sx/dx, su (salto), giù (scivolata)
+      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
+      Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
     </div>
   </div>
 
-  <!-- MENU -->
   <div class="overlay" id="menu">
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
+      <div class="subtitle">
+        ✅ Anelli verticali: si prendono solo scivolando (↓ / swipe giù).<br>
+        ✅ Supercarica: 10 cibi <strong>o</strong> 10 anelli → invincibile + tripla velocità per 10s (FOV ampio).
+      </div>
+
       <div class="grid">
         <button class="btn full" id="startBtn">▶️ Inizia</button>
 
         <div class="toggle full" id="audioToggle">
-          <div><label>Suoni</label><br/><span>On/Off</span></div>
+          <div><label>Suoni</label><br/><span>Fallback semplice (beep leggeri).</span></div>
           <div class="switch on" id="audioSwitch"><i></i></div>
         </div>
 
-        <div class="toggle full" id="qualityToggle">
-          <div><label>Qualità</label><br/><span>Alto / Medio</span></div>
-          <div class="switch on" id="qualitySwitch"><i></i></div>
+        <div class="toggle full">
+          <div><label>Record</label><br/><span>Salvato in locale.</span></div>
+          <div style="font-weight:950;font-size:18px;" id="bestBig">0</div>
         </div>
-
-        <button class="btn full" id="loadRunnerBtn">🏃 Carica runner (.glb)</button>
-        <input id="runnerFile" type="file" accept=".glb,.gltf" />
-
-        <button class="btn full" id="loadObstacleBtn">🪵 Carica ostacoli (.glb)</button>
-        <input id="obstacleFiles" type="file" accept=".glb,.gltf" multiple />
-
-        <button class="btn full" id="loadTreeBtn">🌴 Carica albero (.glb)</button>
-        <input id="treeFile" type="file" accept=".glb,.gltf" />
 
         <div class="toggle full">
-          <div><label>Record</label><br/><span>Salvato in locale</span></div>
-          <div style="font-weight:900;font-size:18px;" id="bestBig">0</div>
+          <div><label>Game Over</label><br/><span id="overStats">—</span></div>
+          <div style="font-weight:950;font-size:18px;" id="overBig"> </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- GAME OVER -->
-  <div class="overlay" id="gameover" style="display:none;">
-    <div class="panel">
-      <div class="title">Game Over</div>
-      <div class="stats">
-        <div class="stat"><div class="k">Score</div><div class="v" id="goScore">0</div></div>
-        <div class="stat"><div class="k">Emoji raccolte</div><div class="v" id="goCoins">0</div></div>
-        <div class="stat"><div class="k">Tempo</div><div class="v" id="goTime">0:00</div></div>
-        <div class="stat"><div class="k">Vita rimasta</div><div class="v" id="goLives">0</div></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:12px;">
-        <button class="btn" id="goRetry" style="flex:1;">🔁 Riprova</button>
-        <button class="btn" id="goMenu" style="flex:1;">☰ Menu</button>
-      </div>
-      <div class="small" style="opacity:.78;margin-top:10px;">
-        Vita: 5 tacche (parti con 3). Cuori ❤️ ogni 25 emoji. Anelli ⭕️: a terra, prendili SOLO scivolando.
       </div>
     </div>
   </div>
 
   <script type="module">
     import * as THREE from 'three';
-    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-    import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -249,51 +169,26 @@
     const coinsEl = document.getElementById('coins');
     const bestEl  = document.getElementById('best');
     const bestBig = document.getElementById('bestBig');
-    const spdEl   = document.getElementById('spd');
-    const multEl  = document.getElementById('mult');
+    const ringsEl = document.getElementById('rings');
 
-    const pillNone = document.getElementById('pillNone');
-    const pillPower= document.getElementById('pillPower');
-    const pEmoji   = document.getElementById('pEmoji');
-    const pName    = document.getElementById('pName');
-    const pBar     = document.getElementById('pBar');
+    const hpTxt   = document.getElementById('hpTxt');
+    const boostTxt= document.getElementById('boostTxt');
+    const pillBoost = document.getElementById('pillBoost');
+    const boostIcon = document.getElementById('boostIcon');
+    const boostName = document.getElementById('boostName');
+    const boostBar  = document.getElementById('boostBar');
 
-    const pillInv  = document.getElementById('pillInv');
-    const invBar   = document.getElementById('invBar');
-
-    const pillTri  = document.getElementById('pillTri');
-    const triBar   = document.getElementById('triBar');
-
-    const lifeTicks = document.getElementById('lifeTicks');
-
-    const foodStackEl = document.getElementById('foodStack');
-    const foodTotalEl = document.getElementById('foodTotal');
-    const ringTotalEl = document.getElementById('ringTotal');
+    const foodStack = document.getElementById('foodStack');
+    const foodCountEl = document.getElementById('foodCount');
 
     const menu = document.getElementById('menu');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
-
-    const gameover = document.getElementById('gameover');
-    const goScore = document.getElementById('goScore');
-    const goCoins = document.getElementById('goCoins');
-    const goTime  = document.getElementById('goTime');
-    const goLives = document.getElementById('goLives');
-    const goRetry = document.getElementById('goRetry');
-    const goMenu  = document.getElementById('goMenu');
-
-    const audioToggle = document.getElementById('audioToggle');
-    const audioSwitch = document.getElementById('audioSwitch');
-    const qualityToggle = document.getElementById('qualityToggle');
-    const qualitySwitch = document.getElementById('qualitySwitch');
-
-    const loadRunnerBtn = document.getElementById('loadRunnerBtn');
-    const runnerFile = document.getElementById('runnerFile');
-    const loadObstacleBtn = document.getElementById('loadObstacleBtn');
-    const obstacleFiles = document.getElementById('obstacleFiles');
-    const loadTreeBtn = document.getElementById('loadTreeBtn');
-    const treeFile = document.getElementById('treeFile');
+    const audioToggle= document.getElementById('audioToggle');
+    const audioSwitch= document.getElementById('audioSwitch');
+    const overStats  = document.getElementById('overStats');
+    const overBig    = document.getElementById('overBig');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
@@ -302,115 +197,24 @@
 
     function toggleSwitch(el,on){ el.classList.toggle('on',!!on); return on; }
     function menuIsOpen(){ return menu.style.display !== 'none'; }
-    function fmtTime(sec){
-      sec = Math.max(0, sec|0);
-      const m = (sec/60)|0;
-      const s = sec%60;
-      return `${m}:${String(s).padStart(2,'0')}`;
-    }
 
-    // ---------- Life UI
-    const LIVES_MAX = 5;
-    function buildLifeUI(){
-      lifeTicks.innerHTML = '';
-      for(let i=0;i<LIVES_MAX;i++){
-        const d=document.createElement('div');
-        d.className='tick';
-        lifeTicks.appendChild(d);
-      }
-    }
-    buildLifeUI();
-    function renderLife(lives){
-      const kids=[...lifeTicks.children];
-      for(let i=0;i<kids.length;i++){
-        kids[i].classList.toggle('on', i < lives);
-      }
-    }
-
-    // ---------- Food UI
-    function renderFoodColumn(list){
-      foodStackEl.innerHTML = '';
-      const max = 10;
-      for(let i=0;i<max;i++){
-        const d=document.createElement('div');
-        d.className='foodItem';
-        d.textContent = list[i] || ' ';
-        foodStackEl.appendChild(d);
-      }
-    }
-
-    // ---------- Difficulty + rates
-    const DIFF = {
-      obstacleChanceRow: 0.45,
-      maxObstaclesRow: 1,
-      doubleObstacleChance: 0.01,
-      spawnPowerChance: 0.14,
-      heartEvery: 25,
-      turtleChance: 0.16,
-      ringChance: 0.22 // rings more frequent
-    };
-
-    // ---------- Audio (fallback)
+    // ---------- Audio (simple + safe)
     let audioEnabled=true;
     let audioReady=false;
     let actx=null, master=null;
-    let engineGain=null, engineOscA=null, engineOscB=null, engineFilter=null, engineNoise=null;
 
     function initAudio(){
       if(audioReady) return;
       try{
         actx = new (window.AudioContext||window.webkitAudioContext)();
         master = actx.createGain();
-        master.gain.value = 0.45;
+        master.gain.value = 0.55;
         master.connect(actx.destination);
-
-        engineGain = actx.createGain(); engineGain.gain.value=0.0;
-        engineFilter = actx.createBiquadFilter(); engineFilter.type='lowpass'; engineFilter.frequency.value=220;
-        engineOscA = actx.createOscillator(); engineOscA.type='sawtooth'; engineOscA.frequency.value=60;
-        engineOscB = actx.createOscillator(); engineOscB.type='square'; engineOscB.frequency.value=30;
-
-        const noiseBuf = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
-        const data = noiseBuf.getChannelData(0);
-        for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.16;
-        engineNoise = actx.createBufferSource(); engineNoise.buffer=noiseBuf; engineNoise.loop=true;
-
-        const noiseHP = actx.createBiquadFilter(); noiseHP.type='highpass'; noiseHP.frequency.value=160;
-
-        const mix = actx.createGain(); mix.gain.value=0.14;
-        engineOscA.connect(mix); engineOscB.connect(mix);
-        engineNoise.connect(noiseHP); noiseHP.connect(mix);
-        mix.connect(engineFilter);
-        engineFilter.connect(engineGain);
-        engineGain.connect(master);
-
-        engineOscA.start(); engineOscB.start(); engineNoise.start();
         audioReady=true;
-      }catch(e){
-        audioEnabled=false;
-      }
+      }catch(e){ audioEnabled=false; }
       audioSwitch.classList.toggle('on',!!audioEnabled);
     }
-
-    function setEngine(on){
-      if(!audioEnabled) return;
-      initAudio(); if(!audioReady) return;
-      const t=actx.currentTime;
-      const target= on ? 0.13 : 0.0;
-      engineGain.gain.cancelScheduledValues(t);
-      engineGain.gain.setValueAtTime(engineGain.gain.value,t);
-      engineGain.gain.linearRampToValueAtTime(target, t+(on?0.25:0.15));
-    }
-
-    function updateEngine(mul){
-      if(!audioEnabled||!audioReady) return;
-      const t=actx.currentTime;
-      const rpm = 1 + mul*0.22;
-      engineOscA.frequency.setValueAtTime(60*rpm, t);
-      engineOscB.frequency.setValueAtTime(30*rpm, t);
-      engineFilter.frequency.setValueAtTime(220 + 160*rpm, t);
-    }
-
-    function beep(type,freq,dur=0.08,g=0.14){
+    function beep(type,freq,dur=0.06,g=0.10){
       if(!audioEnabled) return;
       initAudio(); if(!audioReady) return;
       const t0=actx.currentTime;
@@ -423,16 +227,16 @@
       o.connect(gg); gg.connect(master);
       o.start(t0); o.stop(t0+dur+0.02);
     }
-
-    function playFootstep(){ beep('sine', 145 + Math.random()*35, 0.040, 0.030); }
-    function playCoin(){ beep('triangle', 900, 0.055, 0.08); beep('sine', 1320, 0.06, 0.05); }
-    function playPower(){ beep('sawtooth', 520, 0.09, 0.07); beep('triangle', 880, 0.10, 0.05); }
-    function playHit(){ beep('square', 120, 0.14, 0.10); }
-    function playHeart(){ beep('sine', 520, 0.07, 0.10); beep('sine', 820, 0.07, 0.07); }
-    function playInvincible(){ beep('triangle', 980, 0.08, 0.10); beep('sine', 1500, 0.10, 0.07); }
-    function playTurtleKick(){ beep('square', 220, 0.08, 0.08); beep('triangle', 620, 0.08, 0.06); }
-    function playRing(){ beep('sine', 1050, 0.06, 0.09); beep('triangle', 1550, 0.05, 0.06); }
-    function playTriple(){ beep('triangle', 650, 0.09, 0.10); beep('sawtooth', 980, 0.12, 0.07); }
+    const sfx = {
+      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
+      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
+      ring: ()=>{ beep('triangle', 700, 0.06, 0.10); },
+      hit:  ()=>{ beep('square', 120, 0.12, 0.11); },
+      boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
+      lane: ()=>{ beep('sine', 160, 0.05, 0.05); },
+      jump: ()=>{ beep('square', 420, 0.05, 0.08); },
+      slide:()=>{ beep('sine', 220, 0.06, 0.06); },
+    };
 
     // ---------- Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -440,79 +244,53 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    if(IS_IOS){
-      renderer.physicallyCorrectLights = false;
-      renderer.toneMapping = THREE.LinearToneMapping;
-      renderer.toneMappingExposure = 1.8;
-    }else{
-      renderer.physicallyCorrectLights = true;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.05;
-    }
-
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08120b);
+    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 22, 80) : new THREE.FogExp2(0x06110a, 0.040);
 
-    if(IS_IOS){
-      scene.fog = new THREE.Fog(0x08120b, 18, 60);
-    }else{
-      scene.fog = new THREE.FogExp2(0x06110a, 0.040);
-    }
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 240);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 260);
-
-    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 1.9);
-    sun.position.set(5, 9, 4);
+    // lights
+    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.0);
+    sun.position.set(6, 10, 6);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048,2048);
     sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 55;
-    sun.shadow.camera.left = -9;
-    sun.shadow.camera.right=  9;
-    sun.shadow.camera.top  =  9;
-    sun.shadow.camera.bottom=-9;
-    sun.shadow.bias = -0.00028;
+    sun.shadow.camera.far = 60;
+    sun.shadow.camera.left = -10;
+    sun.shadow.camera.right=  10;
+    sun.shadow.camera.top  =  10;
+    sun.shadow.camera.bottom=-10;
+    sun.shadow.bias = -0.00025;
     scene.add(sun);
 
-    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.70));
-    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.65 : 0.18));
-
-    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.35 : 0.45);
-    front.position.set(0, 3.5, 6);
+    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.75));
+    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.22));
+    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.25 : 0.55);
+    front.position.set(0, 4, 7);
     scene.add(front);
 
-    let composer=null, bloomPass=null, afterPass=null;
-    if(!IS_IOS){
-      composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-      bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.18, 0.22, 0.92);
-      composer.addPass(bloomPass);
-      afterPass = new AfterimagePass();
-      afterPass.uniforms['damp'].value = 0.94;
-      composer.addPass(afterPass);
-    }
-
-    // Contact shadow
+    // ---------- Contact shadow under runner
     function makeContactShadowTexture(size=512){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
       const grd=g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
-      grd.addColorStop(0,'rgba(0,0,0,0.40)');
+      grd.addColorStop(0,'rgba(0,0,0,0.38)');
       grd.addColorStop(0.55,'rgba(0,0,0,0.10)');
       grd.addColorStop(1,'rgba(0,0,0,0)');
       g.fillStyle=grd; g.fillRect(0,0,size,size);
       const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
       return t;
     }
-    const contactTex = makeContactShadowTexture(512);
     const contact = new THREE.Mesh(
       new THREE.PlaneGeometry(1.5,1.5),
-      new THREE.MeshBasicMaterial({ map:contactTex, transparent:true, opacity:0.58, depthWrite:false })
+      new THREE.MeshBasicMaterial({ map:makeContactShadowTexture(512), transparent:true, opacity:0.55, depthWrite:false })
     );
     contact.rotation.x = -Math.PI/2;
     contact.position.set(0, 0.02, 0.2);
@@ -522,6 +300,7 @@
     const lanesX = [-1.15, 0, 1.15];
     const segLen = 9.0, segCount = 9, roadWidth = 4.2;
 
+    // cheap dirt texture
     function makeDirtTexture(size=512){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
@@ -566,233 +345,108 @@
     side.receiveShadow = true;
     scene.add(side);
 
-    // Jungle props
-    let treeProto=null;
-    function makeTreePrimitive(){
+    // ---------- Simple jungle trees (lightweight)
+    const jungle = new THREE.Group(); scene.add(jungle);
+    function makeTree(){
       const g = new THREE.Group();
       const trunk = new THREE.Mesh(
         new THREE.CylinderGeometry(0.11, 0.16, 1.6, 10),
         new THREE.MeshStandardMaterial({ color:0x4a3523, roughness:1, metalness:0 })
       );
-      trunk.castShadow=true; trunk.receiveShadow=true;
-      trunk.position.y = 0.8;
-      g.add(trunk);
+      trunk.position.y=0.8; trunk.castShadow=true; trunk.receiveShadow=true; g.add(trunk);
 
       const crown = new THREE.Mesh(
         new THREE.ConeGeometry(0.75, 1.6, 12),
         new THREE.MeshStandardMaterial({ color:0x1c6b33, roughness:1, metalness:0 })
       );
-      crown.castShadow=true; crown.receiveShadow=true;
-      crown.position.y = 1.9;
-      g.add(crown);
+      crown.position.y=1.9; crown.castShadow=true; crown.receiveShadow=true; g.add(crown);
 
       const crown2 = new THREE.Mesh(
         new THREE.ConeGeometry(0.6, 1.3, 12),
         new THREE.MeshStandardMaterial({ color:0x135226, roughness:1, metalness:0 })
       );
-      crown2.castShadow=true; crown2.receiveShadow=true;
-      crown2.position.y = 2.3;
-      g.add(crown2);
-
+      crown2.position.y=2.3; crown2.castShadow=true; crown2.receiveShadow=true; g.add(crown2);
       return g;
     }
-    treeProto = makeTreePrimitive();
-
-    const jungle = new THREE.Group();
-    scene.add(jungle);
-
-    function spawnTree(x,z){
-      const obj = treeProto.clone(true);
-      obj.position.set(x, 0, z);
-      obj.scale.setScalar(rnd(0.8, 1.25));
-      obj.rotation.y = rnd(0, Math.PI*2);
-      obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-      jungle.add(obj);
-      return obj;
-    }
-
+    const treeProto = makeTree();
     const treePool=[];
     const treeSpacing=2.8;
     const treeSideX = roadWidth/2 + 1.7;
-    for(let i=0;i<Math.floor((segLen*segCount)/treeSpacing);i++){
+    const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
+    for(let i=0;i<jungleCount;i++){
       const z = -i*treeSpacing;
-      treePool.push(spawnTree(-treeSideX - rnd(0,1.8), z));
-      treePool.push(spawnTree( treeSideX + rnd(0,1.8), z));
-      if(Math.random()<0.35){
-        const bush = new THREE.Mesh(
-          new THREE.SphereGeometry(rnd(0.35,0.65), 10, 8),
-          new THREE.MeshStandardMaterial({ color:0x1b6a32, roughness:1, metalness:0 })
-        );
-        bush.position.set((Math.random()<0.5?-1:1)*(treeSideX-0.4 + rnd(0,1.2)), 0.35, z + rnd(-0.7,0.7));
-        bush.castShadow=true; bush.receiveShadow=true;
-        jungle.add(bush);
-        treePool.push(bush);
+      for(const sideSign of [-1,1]){
+        const t = treeProto.clone(true);
+        t.position.set(sideSign*(treeSideX + rnd(0,1.8)), 0, z);
+        t.scale.setScalar(rnd(0.8,1.2));
+        t.rotation.y = rnd(0,Math.PI*2);
+        t.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+        jungle.add(t); treePool.push(t);
       }
     }
-
     function loopJungle(scroll){
       const wrapZ = segLen*segCount;
       for(const obj of treePool){
         obj.position.z += scroll;
-        if(obj.position.z > 6){
-          obj.position.z -= wrapZ;
-        }
+        if(obj.position.z > 8) obj.position.z -= wrapZ;
       }
     }
 
-    // ---------- Runner + loader
-    const gltfLoader = new GLTFLoader();
+    // ---------- Runner
     let runner = new THREE.Group();
     scene.add(runner);
 
-    // dummy runner
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
-    dummyBody.position.y=0.85;
-    dummyBody.castShadow=true;
-    runner.add(dummyBody);
+    dummyBody.position.y=0.85; dummyBody.castShadow=true; runner.add(dummyBody);
 
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
     );
-    dummyHead.position.set(0, 1.25, 0.05);
-    dummyHead.castShadow=true;
-    runner.add(dummyHead);
+    dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runner.add(dummyHead);
 
-    // clones for triple mode
-    let cloneL=null, cloneR=null;
-    function setClonesVisible(on){
-      if(!cloneL || !cloneR) return;
-      cloneL.visible = on;
-      cloneR.visible = on;
-    }
+    // invincibility bubble
+    const bubble = new THREE.Mesh(
+      new THREE.SphereGeometry(0.62, 24, 18),
+      new THREE.MeshStandardMaterial({
+        color:0x66ffcc, roughness:0.25, metalness:0.0,
+        emissive:0x33ffaa, emissiveIntensity:0.7,
+        transparent:true, opacity:0.22
+      })
+    );
+    bubble.position.y=0.95;
+    bubble.visible=false;
+    runner.add(bubble);
 
-    let mixer=null;
+    // ---------- Entities
+    const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
+    const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
+    const HEART_EMOJI = "❤️";
+    const RING_ICON = "⭕️";
 
-    let shieldRing=null;
-    function attachShieldToRunner(){
-      if(shieldRing && shieldRing.parent) shieldRing.parent.remove(shieldRing);
-      shieldRing = new THREE.Mesh(
-        new THREE.TorusGeometry(0.48, 0.03, 10, 64),
-        new THREE.MeshStandardMaterial({
-          color:0x1b3a22, metalness:0.1, roughness:0.25,
-          emissive:0x44ff88, emissiveIntensity:1.05,
-          transparent:true, opacity:0.62
-        })
-      );
-      shieldRing.rotation.x = Math.PI/2;
-      shieldRing.position.y = 0.95;
-      shieldRing.visible=false;
-      runner.add(shieldRing);
-    }
-
-    let bubbleMain=null, bubbleL=null, bubbleR=null;
-    function makeBubble(){
-      const b = new THREE.Mesh(
-        new THREE.SphereGeometry(0.58, 26, 18),
-        new THREE.MeshStandardMaterial({
-          color:0x7ee6ff,
-          roughness:0.10,
-          metalness:0.0,
-          emissive:0x3ad6ff,
-          emissiveIntensity:0.55,
-          transparent:true,
-          opacity:0.16
-        })
-      );
-      b.position.y = 0.95;
-      b.visible = false;
-      return b;
-    }
-    function attachBubbles(){
-      if(bubbleMain && bubbleMain.parent) bubbleMain.parent.remove(bubbleMain);
-      bubbleMain = makeBubble();
-      runner.add(bubbleMain);
-
-      // rebuild clone bubbles
-      bubbleL = makeBubble();
-      bubbleR = makeBubble();
-      scene.add(bubbleL);
-      scene.add(bubbleR);
-      bubbleL.visible=false; bubbleR.visible=false;
-    }
-
-    attachShieldToRunner();
-    attachBubbles();
-
-    function rebuildClones(){
-      if(cloneL) scene.remove(cloneL);
-      if(cloneR) scene.remove(cloneR);
-
-      cloneL = runner.clone(true);
-      cloneR = runner.clone(true);
-      cloneL.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-      cloneR.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-      cloneL.scale.multiplyScalar(0.72);
-      cloneR.scale.multiplyScalar(0.72);
-      cloneL.visible=false;
-      cloneR.visible=false;
-      scene.add(cloneL);
-      scene.add(cloneR);
-    }
-    rebuildClones();
-
-    function setRunnerTo(obj, animations){
-      scene.remove(runner);
-      runner = obj;
-      runner.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-      runner.position.set(0,0,0);
-      scene.add(runner);
-
-      mixer=null;
-      if(animations && animations.length){
-        mixer = new THREE.AnimationMixer(runner);
-        const a = mixer.clipAction(animations[0]);
-        a.play();
-      }
-
-      attachShieldToRunner();
-      attachBubbles();
-      rebuildClones();
-      loadRunnerBtn.textContent = "✅ Runner caricato";
-    }
-
-    async function tryLoadRunnerFromPath(){
-      try{
-        const gltf = await gltfLoader.loadAsync('./assets/models/runner.glb');
-        setRunnerTo(gltf.scene, gltf.animations);
-      }catch(e){}
-    }
-
-    // ---------- Obstacles
-    const obstacleProtos=[];
-    function addObstacleProto(sceneObj){
-      sceneObj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-      obstacleProtos.push(sceneObj);
-    }
-    async function tryLoadObstacleDefaults(){
-      const tryOne = async (p)=>{
-        try{
-          const gltf = await gltfLoader.loadAsync(p);
-          addObstacleProto(gltf.scene);
-        }catch(e){}
-      };
-      await tryOne('./assets/models/rock_01.glb');
-      await tryOne('./assets/models/log_01.glb');
+    function makeEmojiSprite(emoji, size=256){
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
+      g.clearRect(0,0,size,size);
+      g.globalAlpha=0.18;
+      g.fillStyle='#cfefff';
+      g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
+      g.globalAlpha=1;
+      g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+      g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(emoji, size/2, size/2+8);
+      const tex=new THREE.CanvasTexture(c);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
+      const spr=new THREE.Sprite(mat);
+      spr.scale.set(0.78,0.78,1);
+      return spr;
     }
 
     function spawnObstacleVisual(){
-      if(obstacleProtos.length){
-        const proto = obstacleProtos[rndi(0, obstacleProtos.length-1)];
-        const obj = proto.clone(true);
-        obj.scale.setScalar(rnd(0.45, 0.80));
-        obj.rotation.y = rnd(0, Math.PI*2);
-        obj.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-        return obj;
-      }
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(rnd(0.6,0.9), rnd(0.7,1.2), rnd(0.6,0.9)),
         new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
@@ -801,95 +455,36 @@
       return box;
     }
 
-    // ---------- Turtle
-    function makeTurtle(){
-      const g = new THREE.Group();
-
-      const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 18, 12),
-        new THREE.MeshStandardMaterial({ color:0x2c6d3b, roughness:0.9, metalness:0.0 })
-      );
-      shell.scale.set(1.0, 0.7, 1.1);
-      shell.position.y = 0.45;
-      shell.castShadow = true;
-      shell.receiveShadow = true;
-      g.add(shell);
-
-      const body = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.14, 0.35, 6, 10),
-        new THREE.MeshStandardMaterial({ color:0x6aa06c, roughness:0.95, metalness:0.0 })
-      );
-      body.rotation.z = Math.PI/2;
-      body.position.set(0, 0.28, 0.12);
-      body.castShadow = true;
-      body.receiveShadow = true;
-      g.add(body);
-
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.13, 14, 10),
-        new THREE.MeshStandardMaterial({ color:0x78b47a, roughness:0.95, metalness:0.0 })
-      );
-      head.position.set(0, 0.36, 0.34);
-      head.castShadow=true; head.receiveShadow=true;
-      g.add(head);
-
-      return g;
-    }
-
-    // ---------- Ring (low ground)
-    function makeLowRing(){
+    // ---------- VERTICAL RING (✅ in piedi)
+    function makeVerticalRing(){
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.40, 0.09, 12, 26),
+        new THREE.TorusGeometry(0.55, 0.09, 14, 44),
         new THREE.MeshStandardMaterial({
-          color:0xff2e3a,
+          color:0xff4444,
           roughness:0.35,
           metalness:0.05,
-          emissive:0xff0000,
-          emissiveIntensity:0.9
+          emissive:0x660000,
+          emissiveIntensity:0.55
         })
       );
-      ring.castShadow = true;
-      ring.receiveShadow = true;
+      ring.castShadow=true; ring.receiveShadow=true;
+
+      // ✅ IMPORTANTISSIMO: VERTICALE (in piedi), quindi nessun rotateX(Math.PI/2)
+      ring.rotation.set(0, 0, 0);
+
+      // un piccolo “cap” interno per visibilità
+      const inner = new THREE.Mesh(
+        new THREE.RingGeometry(0.34, 0.40, 28),
+        new THREE.MeshStandardMaterial({ color:0xff2222, roughness:0.8, metalness:0, side:THREE.DoubleSide, transparent:true, opacity:0.35 })
+      );
+      inner.rotation.set(0,0,0);
+      ring.add(inner);
+
       return ring;
     }
 
-    // ---------- Emoji sprites
-    function makeEmojiSprite(emoji, size=256, glow=false){
-      const c=document.createElement('canvas'); c.width=c.height=size;
-      const g=c.getContext('2d');
-      g.clearRect(0,0,size,size);
-
-      g.globalAlpha = glow ? 0.22 : 0.18;
-      g.fillStyle = glow ? '#ffffff' : '#cfefff';
-      g.beginPath(); g.arc(size/2,size/2,size*(glow?0.38:0.33),0,Math.PI*2); g.fill();
-
-      g.globalAlpha=1;
-      g.font=`${size*0.58}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-      g.textAlign='center'; g.textBaseline='middle';
-      g.fillText(emoji, size/2, size/2+8);
-
-      const tex=new THREE.CanvasTexture(c);
-      tex.colorSpace=THREE.SRGBColorSpace;
-      const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
-      const spr=new THREE.Sprite(mat);
-      spr.scale.set(0.75,0.75,1);
-      return spr;
-    }
-
-    const FOOD_SET = new Set(["🍕","🍔","🍟","🌭","🍩","🍰","🍦","🍫","🍪","🍉","🍓","🥝","🍋"]);
-    const EMOJIS = ["✨","🍀","🔥","🍕","🎯","💎","⚡️","🌈","🍋","⭐️","🍓","🥝","🍔","🍟","🍩","🍰","🍦","🍫"];
-
-    // ✅ removed slow motion power-up
-    const POWERUPS = [
-      { key:"magnet", emoji:"🧲", name:"Magnete", dur:9.0 },
-      { key:"shield", emoji:"🛡️", name:"Scudo",   dur:10.0 },
-      { key:"double", emoji:"✖️2", name:"Doppio",  dur:9.0 },
-      { key:"trail",  emoji:"🌟", name:"Emoji Trail", dur:7.0 },
-      { key:"boost",  emoji:"🚀", name:"Boost",       dur:5.0 }
-    ];
-
     // ---------- Game state
-    const BEST_KEY='jungle_runner_best_v7';
+    const BEST_KEY='jungle_runner_best_v2';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
@@ -898,288 +493,220 @@
       y:0, vy:0, jumping:false,
       sliding:false, slideT:0,
 
-      // ✅ +50% permanent speed
-      baseSpeed: 13.5,
-
-      score:0, coins:0,
+      baseSpeed: 12.9,      // ✅ +50% (permanente)
+      score:0,
+      coins:0,
       best: loadBest(),
 
-      over:false, paused:true,
+      // lives
+      maxLives:5,
+      lives:3,
 
+      // counters
+      ringCount:0,
+      foodCount:0,
+      foodHistory: [],
+
+      // boosts
+      invincibleT:0,
+      boostType:null,     // 'food' | 'ring'
+      boostT:0,
+
+      // gameplay
+      over:false,
+      paused:true,
       entities: [],
-      spawnT:0.30,
+      spawnT:0.28,        // un po’ più facile
+      heartSpawnAcc:0,    // accumulo per cuori
 
-      active:null,
-      hasShield:false,
-
-      magnet:false,
-      double:false,
-      boost:false,
-      trail:false,
-
-      lives: 3,
-      invuln: 0.0,
-      stun: 0.0,
-      runTime: 0.0,
-
-      nextHeartAt: DIFF.heartEvery,
-
-      // food
-      foodList: [],
-      foodCount: 0,
-      foodBoostT: 0.0,
-
-      // rings
-      ringCount: 0,
-      ringBoostT: 0.0,
-
-      runnerScale: 1.0,
-      runnerScaleTarget: 1.0
+      // magnet
+      magnet: true,       // sempre attivo
     };
 
     bestEl.textContent = String(game.best);
     bestBig.textContent = String(game.best);
-    renderLife(game.lives);
-    renderFoodColumn(game.foodList);
-    foodTotalEl.textContent = String(game.foodCount);
-    ringTotalEl.textContent = String(game.ringCount);
 
-    function setActivePower(p){
-      game.active = { ...p, t:p.dur };
-      pillNone.style.display='none';
-      pillPower.style.display='inline-flex';
-      pEmoji.textContent = p.emoji;
-      pName.textContent  = p.name;
-      playPower();
+    function hpString(){
+      let s="";
+      for(let i=0;i<game.maxLives;i++){
+        s += (i<game.lives) ? "❤️" : "🖤";
+      }
+      return s;
     }
 
-    function clearActivePower(){
-      game.active=null;
-      pillNone.style.display='inline-flex';
-      pillPower.style.display='none';
-      pBar.style.width='0%';
-      game.magnet=false; game.double=false; game.boost=false; game.trail=false;
+    function setBoostUI(on, icon, name, t, dur){
+      if(!on){
+        pillBoost.style.display='none';
+        boostTxt.textContent='—';
+        boostBar.style.width='0%';
+        return;
+      }
+      pillBoost.style.display='inline-flex';
+      boostIcon.textContent=icon;
+      boostName.textContent=name;
+      boostTxt.textContent=name;
+      const pct = clamp((t/dur)*100,0,100);
+      boostBar.style.width = pct.toFixed(1)+'%';
     }
 
-    function applyPowerFlags(){
-      game.magnet=false; game.double=false; game.boost=false; game.trail=false;
-      if(!game.active) return;
-      if(game.active.key==='magnet') game.magnet=true;
-      if(game.active.key==='double') game.double=true;
-      if(game.active.key==='boost')  game.boost=true;
-      if(game.active.key==='trail')  game.trail=true;
-      if(game.active.key==='shield') game.hasShield=true;
+    function refreshFoodUI(){
+      foodStack.innerHTML = "";
+      // mostra ultimi 6, piccoli e a destra
+      const show = game.foodHistory.slice(-6).reverse();
+      for(const emo of show){
+        const d=document.createElement('div');
+        d.className='foodItem';
+        d.textContent=emo;
+        foodStack.appendChild(d);
+      }
+      foodCountEl.textContent = String(game.foodCount);
     }
 
     function openMenu(){
       menu.style.display='flex';
-      gameover.style.display='none';
       game.paused=true;
       bestBig.textContent=String(game.best);
-      setEngine(false);
+      const st = `Score ${Math.floor(game.score)} • Emoji ${game.coins} • Anelli ${game.ringCount} • Cibo ${game.foodCount}`;
+      overStats.textContent = game.over ? st : "—";
+      overBig.textContent = game.over ? "GAME OVER" : "";
     }
     function closeMenu(){ menu.style.display='none'; }
 
-    function openGameOver(){
-      gameover.style.display='flex';
-      menu.style.display='none';
-      setEngine(false);
-
-      goScore.textContent = String(Math.floor(game.score));
-      goCoins.textContent = String(game.coins);
-      goTime.textContent  = fmtTime(game.runTime);
-      goLives.textContent = String(game.lives);
-
-      if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
-      bestEl.textContent = String(game.best);
-      bestBig.textContent = String(game.best);
-    }
-
-    function resetRun(full=true){
+    function resetRun(){
       game.lane=1; game.targetLane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
 
-      game.baseSpeed=13.5;
-      game.score=0; game.coins=0;
-      game.spawnT=0.30;
+      game.score=0;
+      game.coins=0;
 
-      game.invuln=0.0; game.stun=0.0;
-      game.runTime=0.0;
+      game.ringCount=0;
+      game.foodCount=0;
+      game.foodHistory=[];
+      refreshFoodUI();
+
+      game.invincibleT=0;
+      game.boostType=null;
+      game.boostT=0;
+
+      game.over=false;
+      game.spawnT=0.28;
+      game.heartSpawnAcc=0;
 
       for(const e of game.entities) scene.remove(e.obj);
       game.entities.length=0;
 
-      clearActivePower();
-      game.hasShield=false;
-      if(shieldRing) shieldRing.visible=false;
-
-      game.nextHeartAt = DIFF.heartEvery;
-
-      // food & ring counters reset
-      game.foodList = [];
-      game.foodCount = 0;
-      game.foodBoostT = 0.0;
-      pillInv.style.display = 'none';
-      invBar.style.width = '0%';
-
-      game.ringCount = 0;
-      game.ringBoostT = 0.0;
-      pillTri.style.display = 'none';
-      triBar.style.width = '0%';
-
-      renderFoodColumn(game.foodList);
-      foodTotalEl.textContent = String(game.foodCount);
-      ringTotalEl.textContent = String(game.ringCount);
-
-      game.runnerScale = 1.0;
-      game.runnerScaleTarget = 1.0;
-      runner.scale.setScalar(1.0);
-
-      setClonesVisible(false);
-      bubbleMain.visible=false;
-      bubbleL.visible=false;
-      bubbleR.visible=false;
-
-      if(full){
-        game.lives = 3;
-      }
-      renderLife(game.lives);
-
-      game.over=false;
       game.paused=false;
       pauseBtn.textContent='Pausa';
-      closeMenu();
-      gameover.style.display='none';
-      setEngine(true);
+
+      bubble.visible=false;
+      setBoostUI(false);
+
+      // start with 3 lives always (as requested)
+      game.lives=3;
     }
 
     function togglePause(){
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      setEngine(!game.paused && !menuIsOpen() && gameover.style.display==='none');
     }
 
-    // ---------- Visual feedback
-    function setRunnerFlash(hex=0xff3355, intensity=1.2){
-      runner.traverse(o=>{
-        if(o.isMesh && o.material){
-          o.material.emissive = o.material.emissive || new THREE.Color(0x000000);
-          o.material.emissiveIntensity = intensity;
-          o.material.emissive.setHex(hex);
-        }
-      });
-    }
-    function clearFlash(){
-      runner.traverse(o=>{
-        if(o.isMesh && o.material && o.material.emissive){
-          o.material.emissiveIntensity = 0.0;
-        }
-      });
-    }
-
-    // ---------- Spawn helpers
-    function spawnHeart(){
-      if(game.lives >= 5) return;
-      const z0 = -50 - rnd(0,14);
-      const lane = rndi(0,2);
-      const spr = makeEmojiSprite('❤️', 420, true);
-      spr.position.set(lanesX[lane], 1.28, z0);
-      spr.scale.set(1.45, 1.45, 1);
-      scene.add(spr);
-      game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
-    }
-
-    function spawnLowRing(){
-      const z0 = -52 - rnd(0,18);
-      const lane = rndi(0,2);
-      const ring = makeLowRing();
-      ring.position.set(lanesX[lane], 0.55, z0); // un filo più basso
-      ring.rotation.x = Math.PI/2; // like a hoop you slide through
-      scene.add(ring);
-      game.entities.push({ type:'ring', lane, z:z0, obj:ring });
-    }
-
-    // ---------- Spawning rows
+    // ---------- Spawning
     function spawnRow(){
-      const hasObstacles = Math.random() < DIFF.obstacleChanceRow;
+      const z0 = -52 - rnd(0,16);
 
+      // fewer obstacles (easier)
       const blocked=new Set();
-      if(hasObstacles){
-        const wantTwo = (Math.random() < DIFF.doubleObstacleChance);
-        const oCount = wantTwo ? 2 : 1;
-        while(blocked.size<Math.min(oCount,DIFF.maxObstaclesRow)) blocked.add(rndi(0,2));
-      }
+      const oCount = Math.random()<0.55 ? 0 : (Math.random()<0.75 ? 1 : 2);
+      while(blocked.size<oCount) blocked.add(rndi(0,2));
 
+      // coins
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
-      const z0 = -48 - rnd(0,18);
-
+      // obstacles
       blocked.forEach(l=>{
-        if(Math.random() < DIFF.turtleChance){
-          const t = makeTurtle();
-          t.position.set(lanesX[l], 0, z0);
-          scene.add(t);
-          // stationary until hit -> shell projectile
-          game.entities.push({ type:'turtle', lane:l, z:z0, obj:t, shell:false, shellV:0 });
-        } else {
-          const kind = (Math.random()<0.58?'low':'high');
-          const obj = spawnObstacleVisual();
-          obj.position.set(lanesX[l], 0.65, z0);
-          scene.add(obj);
-          game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
-        }
+        const kind = (Math.random()<0.55?'low':'high'); // low=jump, high=slide
+        const obj = spawnObstacleVisual();
+        obj.position.set(lanesX[l], 0.65, z0);
+        scene.add(obj);
+        game.entities.push({ type:'obst', lane:l, z:z0, obj, kind, dead:false });
       });
 
+      // emojis
       coinLanes.forEach(l=>{
-        const em = EMOJIS[rndi(0,EMOJIS.length-1)];
-        const spr = makeEmojiSprite(em);
-        spr.userData.emoji = em;
-        spr.position.set(lanesX[l], 1.10, z0 - rnd(0,3));
-        spr.scale.set(0.78,0.78,1);
+        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
         scene.add(spr);
-        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr, emoji: em });
+        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      if(Math.random()<DIFF.spawnPowerChance){
-        const p = POWERUPS[rndi(0,POWERUPS.length-1)];
+      // FOOD (more frequent)
+      if(Math.random() < 0.28){
         const lane=rndi(0,2);
-        const spr=makeEmojiSprite(p.emoji, 256, true);
-        spr.position.set(lanesX[lane], 1.18, z0 - rnd(1,5));
-        spr.scale.set(0.88,0.88,1);
+        const emo = FOOD[rndi(0,FOOD.length-1)];
+        const spr = makeEmojiSprite(emo);
+        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+        spr.scale.set(0.82,0.82,1);
         scene.add(spr);
-        game.entities.push({ type:'power', lane, z:spr.position.z, obj:spr, key:p.key, dur:p.dur, name:p.name, emoji:p.emoji });
+        game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // rings on ground frequently
-      if(Math.random() < DIFF.ringChance){
-        spawnLowRing();
+      // VERTICAL RING (every now and then)
+      if(Math.random() < 0.22){
+        const lane=rndi(0,2);
+        const ring = makeVerticalRing();
+        // ✅ low on road (but in piedi)
+        ring.position.set(lanesX[lane], 0.55, z0 - rnd(2,8));
+        scene.add(ring);
+        game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
+      }
+
+      // Hearts: every 25 emoji (thicker / more frequent)
+      // we spawn based on coin accumulation, but also random safety net
+      if(game.coins > 0 && game.coins % 25 === 0 && Math.random() < 0.65){
+        const lane=rndi(0,2);
+        const spr = makeEmojiSprite(HEART_EMOJI);
+        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+        spr.scale.set(0.95,0.95,1);
+        scene.add(spr);
+        game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
+      }
+      // extra occasional heart
+      if(Math.random() < 0.08){
+        const lane=rndi(0,2);
+        const spr = makeEmojiSprite(HEART_EMOJI);
+        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+        spr.scale.set(0.90,0.90,1);
+        scene.add(spr);
+        game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
     }
 
     // ---------- Controls
     let tiltTarget=0, camRoll=0, camShake=0;
-
     function moveLane(dir){
       if(game.over||game.paused) return;
       game.targetLane = clamp(game.targetLane+dir,0,2);
       game.lane = game.targetLane;
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
+      sfx.lane();
     }
     function jump(){
       if(game.over||game.paused) return;
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
+        sfx.jump();
       }
     }
     function slide(){
       if(game.over||game.paused) return;
       game.sliding=true;
-      game.slideT=0.45;
+      game.slideT=0.50;
+      sfx.slide();
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -1189,8 +716,7 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
-      if(k==='r') { initAudio(); resetRun(true); }
-      if(k==='escape') openMenu();
+      if(k==='r') { initAudio(); closeMenu(); resetRun(); }
     });
 
     let touchStart=null;
@@ -1210,289 +736,116 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
-    restartBtn.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
-
-    goRetry.addEventListener('click', ()=>{ initAudio(); resetRun(true); });
-    goMenu.addEventListener('click', ()=>{ openMenu(); });
-
-    let highQuality=true;
-    qualityToggle.addEventListener('click', ()=>{
-      highQuality=!highQuality;
-      toggleSwitch(qualitySwitch,highQuality);
-      const pr = highQuality ? Math.min(2, window.devicePixelRatio||1) : 1;
-      renderer.setPixelRatio(pr);
-      if(composer) composer.setPixelRatio(pr);
-    });
 
     audioToggle.addEventListener('click', ()=>{
       initAudio();
       audioEnabled=!audioEnabled;
       toggleSwitch(audioSwitch,audioEnabled);
-      if(!audioEnabled) setEngine(false);
-      else setEngine(!game.paused && !menuIsOpen() && gameover.style.display==='none');
     });
 
-    // File loaders
-    loadRunnerBtn.addEventListener('click', ()=> runnerFile.click());
-    runnerFile.addEventListener('change', async (e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      const url=URL.createObjectURL(f);
-      try{
-        const gltf=await gltfLoader.loadAsync(url);
-        setRunnerTo(gltf.scene, gltf.animations);
-      } finally { URL.revokeObjectURL(url); }
-    });
-
-    loadObstacleBtn.addEventListener('click', ()=> obstacleFiles.click());
-    obstacleFiles.addEventListener('change', async (e)=>{
-      const files=[...(e.target.files||[])];
-      if(!files.length) return;
-      for(const f of files){
-        const url=URL.createObjectURL(f);
-        try{
-          const gltf=await gltfLoader.loadAsync(url);
-          addObstacleProto(gltf.scene);
-        } finally { URL.revokeObjectURL(url); }
-      }
-      loadObstacleBtn.textContent = `✅ Ostacoli (${obstacleProtos.length})`;
-    });
-
-    loadTreeBtn.addEventListener('click', ()=> treeFile.click());
-    treeFile.addEventListener('change', async (e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      const url=URL.createObjectURL(f);
-      try{
-        const gltf = await gltfLoader.loadAsync(url);
-        treeProto = gltf.scene;
-        treeProto.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-        for(const obj of treePool){ obj.parent && obj.parent.remove(obj); }
-        treePool.length=0;
-        const count = Math.floor((segLen*segCount)/treeSpacing);
-        for(let i=0;i<count;i++){
-          const z=-i*treeSpacing;
-          const left = treeProto.clone(true);
-          left.position.set(-treeSideX - rnd(0,1.8), 0, z);
-          left.scale.setScalar(rnd(0.55, 0.95));
-          left.rotation.y=rnd(0,Math.PI*2);
-          left.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-          jungle.add(left); treePool.push(left);
-
-          const right = treeProto.clone(true);
-          right.position.set(treeSideX + rnd(0,1.8), 0, z);
-          right.scale.setScalar(rnd(0.55, 0.95));
-          right.rotation.y=rnd(0,Math.PI*2);
-          right.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-          jungle.add(right); treePool.push(right);
-        }
-        loadTreeBtn.textContent = "✅ Alberi";
-      } finally { URL.revokeObjectURL(url); }
-    });
-
-    // ---------- Core mechanics
-    function startFoodBoost(){
-      game.foodBoostT = 10.0;
-      game.invuln = Math.max(game.invuln, 10.0);
-      bubbleMain.visible = true;
-      playInvincible();
-
-      pillInv.style.display = 'inline-flex';
-      invBar.style.width = '100%';
-
-      // ✅ reset accumulation immediately, so you can collect again during boost
-      game.foodList = [];
-      game.foodCount = 0;
-      renderFoodColumn(game.foodList);
-      foodTotalEl.textContent = String(game.foodCount);
-    }
-
-    function startRingTriple(){
-      game.ringBoostT = 10.0;
-      game.invuln = Math.max(game.invuln, 10.0);
-
-      // show clones and bubbles
-      setClonesVisible(true);
-      bubbleMain.visible=true;
-      bubbleL.visible=true;
-      bubbleR.visible=true;
-
-      playTriple();
-
-      pillTri.style.display = 'inline-flex';
-      triBar.style.width = '100%';
-
-      // ✅ reset rings accumulation immediately (cumulative again during boost)
-      game.ringCount = 0;
-      ringTotalEl.textContent = String(game.ringCount);
-    }
-
-    function damage(){
-      // if in any special boost, ignore
-      if(game.foodBoostT > 0 || game.ringBoostT > 0) return;
-
-      if(game.hasShield){
-        game.hasShield=false;
-        if(shieldRing) shieldRing.visible=false;
-        playHit();
-        camShake = 0.18;
-        game.invuln = 0.8;
-        setRunnerFlash(0x44ff88, 0.9);
-        return;
-      }
-
-      game.lives = Math.max(0, game.lives - 1);
-      renderLife(game.lives);
-
-      playHit();
-      camShake = 0.28;
-      game.invuln = 1.25;
-      game.stun = 0.18;
-      setRunnerFlash(0xff3355, 1.2);
+    // ---------- Gameplay helpers
+    function loseLife(){
+      if(game.invincibleT > 0) return; // invincible
+      game.lives = Math.max(0, game.lives-1);
+      camShake = 0.25;
+      sfx.hit();
 
       if(game.lives <= 0){
         game.over=true;
         game.paused=true;
-        openGameOver();
+        if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
+        openMenu();
+        startBtn.textContent='🔁 Riprova';
       }
+    }
+
+    function addLife(){
+      game.lives = Math.min(game.maxLives, game.lives+1);
+      sfx.boost();
+    }
+
+    function startSupercharge(type){
+      // type: 'food' | 'ring'
+      game.boostType = type;
+      game.boostT = 10.0;
+      game.invincibleT = Math.max(game.invincibleT, 10.0);
+      bubble.visible = true;
+      sfx.boost();
     }
 
     // ---------- Update loop
     let tPrev=performance.now();
     let stepTimer=0;
 
+    // camera state
+    let camZ = 9.6;
+    let camY = 3.8;
+    let camFov = 84;
+
     function update(dt, tNow){
       if(game.paused) return;
 
-      game.runTime += dt;
-
-      if(game.invuln > 0){
-        game.invuln = Math.max(0, game.invuln - dt);
-        if(game.invuln===0) clearFlash();
-      }
-      if(game.stun > 0){
-        game.stun = Math.max(0, game.stun - dt);
-        dt *= 0.22;
-      }
-
-      // timers
-      if(game.foodBoostT > 0){
-        game.foodBoostT = Math.max(0, game.foodBoostT - dt);
-        const pct = clamp((game.foodBoostT/10.0)*100, 0, 100);
-        invBar.style.width = pct.toFixed(1)+'%';
-        if(game.foodBoostT === 0){
-          pillInv.style.display='none';
-          invBar.style.width='0%';
-        }
-      }
-      if(game.ringBoostT > 0){
-        game.ringBoostT = Math.max(0, game.ringBoostT - dt);
-        const pct = clamp((game.ringBoostT/10.0)*100, 0, 100);
-        triBar.style.width = pct.toFixed(1)+'%';
-        if(game.ringBoostT === 0){
-          pillTri.style.display='none';
-          triBar.style.width='0%';
-          setClonesVisible(false);
-          bubbleL.visible=false; bubbleR.visible=false;
-        }
-      }
-
-      // active power
-      if(game.active){
-        game.active.t -= dt;
-        applyPowerFlags();
-        const pct = clamp((game.active.t/game.active.dur)*100,0,100);
-        pBar.style.width = pct.toFixed(1)+'%';
-        if(game.active.key==='shield' && shieldRing) shieldRing.visible=true;
-        if(game.active.t<=0){
-          clearActivePower();
-          if(shieldRing) shieldRing.visible = game.hasShield;
-        }
-      } else {
-        game.magnet=false; game.double=false; game.boost=false; game.trail=false;
-      }
-
-      // jump slow motion (still a bit, but not crazy)
+      // mild slowmo only while in air (NOT super slow)
       const inAir = (game.y < -0.01) || game.jumping;
-      let timeScale = 1.0;
-      if(inAir) timeScale *= 0.70;
-      dt *= timeScale;
+      const slowmo = inAir ? 0.88 : 1.0;
+      dt *= slowmo;
 
-      // speed multipliers
-      const boostMul = game.boost ? 1.35 : 1.0;
+      // boosts timers
+      if(game.boostT > 0){
+        game.boostT -= dt;
+        if(game.boostT <= 0){
+          game.boostT = 0;
+          game.boostType = null;
+        }
+      }
+      if(game.invincibleT > 0){
+        game.invincibleT -= dt;
+        if(game.invincibleT <= 0){
+          game.invincibleT = 0;
+          bubble.visible = false;
+        }
+      }
 
-      // ✅ special boosts
-      const foodMul  = (game.foodBoostT > 0) ? 4.5 : 1.0;
-      const ringMul  = (game.ringBoostT > 0) ? 3.0 : 1.0;
+      const boostOn = (game.boostT > 0);
+      const speedMul = boostOn ? 3.0 : 1.0; // ✅ TRIPLA velocità in supercarica
+      const speed = game.baseSpeed * speedMul;
 
-      const speed = game.baseSpeed * boostMul * foodMul * ringMul;
-      updateEngine(boostMul * foodMul * ringMul);
-
-      // physics
+      // gravity
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
+      // slide timer
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
-      
-      // ✅ Scivolata: inclinazione in avanti (orizzontale) + abbassa il corpo
-const slidePitchTarget = game.sliding ? -1.15 : 0.0;   // -1.15 rad ~ 66°
-runner.rotation.x = lerp(runner.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
-const slideYTarget = game.sliding ? -0.22 : 0.0;       // abbassa un po'
-runner.position.y += slideYTarget;
-
-      // size: keep smaller for visibility during boosts
-      const boostOn = (game.foodBoostT>0 || game.ringBoostT>0);
-      game.runnerScaleTarget = boostOn ? 0.78 : (1.0 + Math.min(0.16, game.foodCount * 0.016));
-      game.runnerScale = lerp(game.runnerScale, game.runnerScaleTarget, 1 - Math.pow(0.0001, dt));
-      runner.scale.setScalar(game.runnerScale);
-
+      // runner transform
       runner.position.x = lanesX[game.lane];
       runner.position.y = (-game.y);
 
+      // slide makes runner horizontal-ish
+      const slidePitchTarget = game.sliding ? -1.05 : 0.0;
+      runner.rotation.x = lerp(runner.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
+      runner.position.y += game.sliding ? -0.18 : 0.0;
+
+      // runner scale: in boost smaller for visibility
+      const targetScale = boostOn ? 0.78 : 1.0;
+      runner.scale.setScalar(lerp(runner.scale.x, targetScale, 1 - Math.pow(0.0001, dt)));
+
       // contact shadow
       const h = runner.position.y;
-      const s = (1.10 + clamp(h*0.65, 0, 0.85)) * (0.95 + game.runnerScale*0.10);
+      const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runner.position.x;
       contact.scale.set(s,s,1);
-      contact.material.opacity = clamp(0.58 - h*0.24, 0.12, 0.58);
+      contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // move clones (fill other lanes)
-      if(cloneL && cloneR){
-        cloneL.position.set(lanesX[0], runner.position.y, runner.position.z);
-        cloneR.position.set(lanesX[2], runner.position.y, runner.position.z);
-        cloneL.scale.setScalar(game.runnerScale*0.72);
-        cloneR.scale.setScalar(game.runnerScale*0.72);
-
-        bubbleL.position.set(lanesX[0], 0.0, 0.0);
-        bubbleR.position.set(lanesX[2], 0.0, 0.0);
-      }
-
-      // bubble pulse
-      if(bubbleMain.visible){
-        const p = 1.0 + 0.06*Math.sin(tNow*0.01);
-        bubbleMain.scale.set(p,p,p);
-        bubbleMain.material.opacity = 0.14 + 0.05*Math.sin(tNow*0.009);
-      }
-      if(bubbleL.visible){
-        const p = 1.0 + 0.05*Math.sin(tNow*0.012);
-        bubbleL.scale.set(p,p,p);
-        bubbleL.material.opacity = 0.13 + 0.05*Math.sin(tNow*0.010);
-      }
-      if(bubbleR.visible){
-        const p = 1.0 + 0.05*Math.sin(tNow*0.013);
-        bubbleR.scale.set(p,p,p);
-        bubbleR.material.opacity = 0.13 + 0.05*Math.sin(tNow*0.011);
-      }
-
-      if(mixer) mixer.update(dt);
-
-      // world scroll
+      // road scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
 
@@ -1504,81 +857,36 @@ runner.position.y += slideYTarget;
       }
       loopJungle(scroll);
 
-      // spawn pacing
+      // spawn
       game.spawnT -= dt;
-      const minGap = 0.82 / (boostMul*foodMul*ringMul);
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(minGap, minGap+0.58);
+        game.spawnT = rnd(0.42, 0.78); // easier spacing
       }
 
-      // hearts
-      if(game.coins >= game.nextHeartAt){
-        spawnHeart();
-        game.nextHeartAt += DIFF.heartEvery;
-      }
-
-      // move entities + MAGNET SUPER STRONG
+      // move entities + MAGNET STRONG
       for(const e of game.entities){
-        const extra = (e.type==='turtle' && e.shell) ? (e.shellV * dt) : 0;
-        e.z += scroll + extra;
+        e.z += scroll;
         e.obj.position.z = e.z;
 
-        if(e.type==='turtle'){
-          if(!e.shell){
-            e.obj.position.y = 0;
-          } else {
-            e.obj.rotation.y += dt*10.0;
-          }
-        }
-        if(e.type==='ring'){
-          e.obj.rotation.z += dt*2.2;
-        }
-
-        // ✅ magnet: stronger + bigger radius + faster pull
-        if(game.magnet && (e.type==='coin'||e.type==='power'||e.type==='heart')){
+        // super magnet for pickups (coin/food/heart/ring)
+        if(game.magnet && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='ring')){
           const dx = lanesX[game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
-          const radius = 16.0;
-          if(dist < radius){
-            const pull = 9.2 * (1 - dist/radius);
-            e.obj.position.x += dx * dt * pull;
-          }
-        }
-      }
-
-      // turtle shell demolishes obstacles ahead same lane
-      for(const t of game.entities){
-        if(t.type!=='turtle' || !t.shell) continue;
-        for(let j=game.entities.length-1;j>=0;j--){
-          const o = game.entities[j];
-          if(o.type!=='obst') continue;
-          if(o.lane !== t.lane) continue;
-          const d = Math.abs(o.z - t.z);
-          if(d < 1.35){
-            scene.remove(o.obj);
-            game.entities.splice(j,1);
-            game.score += 60;
-            camShake = Math.max(camShake, 0.14);
+          if(dist < 12.0){
+            // stronger pull
+            e.obj.position.x += dx * dt * (5.2*(1-dist/12.0));
+            if(e.obj.position.y < 1.1) e.obj.position.y += dt*0.6;
           }
         }
       }
 
       // despawn
       for(let i=game.entities.length-1;i>=0;i--){
-        if(game.entities[i].z > 4.2){
+        if(game.entities[i].z > 5.0){
           scene.remove(game.entities[i].obj);
           game.entities.splice(i,1);
-        }
-      }
-
-      // footsteps
-      if(game.y===0 && !game.paused){
-        stepTimer += dt * (speed/11.5);
-        if(stepTimer >= 1.05){
-          stepTimer = 0;
-          playFootstep();
         }
       }
 
@@ -1593,113 +901,77 @@ runner.position.y += slideYTarget;
         const dx=Math.abs(e.obj.position.x - px);
         const dy=Math.abs(e.obj.position.y - py);
 
-        // turtle hitbox bigger (fix pass-through)
-        const turtleHit = (e.type==='turtle') && (dz < 1.05 && dx < 0.75 && dy < 1.15);
-
-        // ring requires slide
-        if(e.type==='ring'){
-          const ringDz = Math.abs(e.z - 0.30);
-          const ringDx = Math.abs(e.obj.position.x - px);
-          const ringOK = (ringDz < 0.80 && ringDx < 0.58);
-          if(ringOK && game.sliding){
-            // collected ring by sliding through
-            game.score += 110;
-            playRing();
-            scene.remove(e.obj); game.entities.splice(i,1);
-
-            // accumulate rings
-            if(game.ringCount < 10) game.ringCount++;
-            ringTotalEl.textContent = String(game.ringCount);
-            if(game.ringCount >= 10 && game.ringBoostT <= 0){
-              startRingTriple();
-            }
-          }
-          continue;
-        }
-
-        const hit = (dz < 0.82 && dx < 0.62 && dy < 1.05);
-        if(!hit && !turtleHit) continue;
+        // base hitbox
+        const hit = (dz < 0.75 && dx < 0.60 && dy < 1.05);
+        if(!hit) continue;
 
         if(e.type==='coin'){
           game.coins += 1;
-          game.score += 28*(game.double?2:1);
-
-          const em = e.emoji || e.obj.userData.emoji;
-          if(FOOD_SET.has(em)){
-            if(game.foodCount < 10){
-              game.foodCount += 1;
-              game.foodList.unshift(em);
-              game.foodList = game.foodList.slice(0,10);
-              renderFoodColumn(game.foodList);
-              foodTotalEl.textContent = String(game.foodCount);
-
-              if(game.foodCount >= 10 && game.foodBoostT <= 0){
-                startFoodBoost();
-              }
-            }
-          }
-
+          game.score += 28;
           scene.remove(e.obj); game.entities.splice(i,1);
-          playCoin();
+          sfx.coin();
           continue;
         }
 
-        if(e.type==='power'){
-          const p = POWERUPS.find(p=>p.key===e.key) || POWERUPS[0];
-          setActivePower(p);
-          applyPowerFlags();
-          if(p.key==='shield'){ game.hasShield=true; if(shieldRing) shieldRing.visible=true; }
+        if(e.type==='food'){
+          game.foodCount += 1;
+          game.foodHistory.push(e.emo);
+          refreshFoodUI();
           scene.remove(e.obj); game.entities.splice(i,1);
+          sfx.food();
+
+          // 10 food => supercharge + reset food counter immediately
+          if(game.foodCount >= 10){
+            startSupercharge('food');
+            game.foodCount = 0;
+            game.foodHistory = [];
+            refreshFoodUI();
+          }
           continue;
         }
 
         if(e.type==='heart'){
-          if(game.lives < 5){
-            game.lives = Math.min(5, game.lives + 1);
-            renderLife(game.lives);
-            playHeart();
-          }
+          if(game.lives < game.maxLives) addLife();
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
-        if(e.type==='turtle'){
-          // if already shell -> ignore
-          if(!e.shell){
-            e.shell = true;
-            e.shellV = -85; // ✅ always a projectile now
-            playTurtleKick();
-            camShake = Math.max(camShake, 0.16);
-            game.score += 95;
-            game.invuln = Math.max(game.invuln, 0.18);
+        if(e.type==='ring'){
+          // ✅ Ring counts ONLY if sliding (pass through)
+          if(game.sliding){
+            game.ringCount += 1;
+            scene.remove(e.obj); game.entities.splice(i,1);
+            sfx.ring();
+
+            if(game.ringCount >= 10){
+              startSupercharge('ring');
+              game.ringCount = 0; // ✅ reset so you can collect again during boost
+            }
           }
           continue;
         }
 
         if(e.type==='obst'){
-          // invincible during boosts
-          if(game.foodBoostT > 0 || game.ringBoostT > 0){
-            scene.remove(e.obj); game.entities.splice(i,1);
-            camShake = Math.max(camShake, 0.10);
-            game.score += 45;
-            continue;
-          }
-          if(game.invuln > 0) continue;
-
           let mustHit=false;
           if(e.kind==='low'  && !game.jumping && game.y===0) mustHit=true;
           if(e.kind==='high' && !game.sliding) mustHit=true;
 
           if(mustHit){
-            scene.remove(e.obj); game.entities.splice(i,1);
-            damage();
+            // if invincible, destroy obstacle instead
+            if(game.invincibleT > 0){
+              scene.remove(e.obj); game.entities.splice(i,1);
+              camShake = 0.12;
+            }else{
+              scene.remove(e.obj); game.entities.splice(i,1);
+              loseLife();
+            }
           }
         }
       }
 
-      // score tick
-      const scoreBoost = (game.foodBoostT>0 ? 1.6 : 1.0) * (game.ringBoostT>0 ? 1.5 : 1.0);
-      game.score += 20*dt*scoreBoost*(game.double?2:1);
+      // score tick (no acceleration over time)
+      game.score += (18 * speedMul) * dt;
+
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
 
       // HUD
@@ -1707,22 +979,29 @@ runner.position.y += slideYTarget;
       coinsEl.textContent = String(game.coins);
       bestEl.textContent  = String(game.best);
       bestBig.textContent = String(game.best);
-      multEl.textContent  = (game.double?'2.0':'1.0');
+      ringsEl.textContent = String(game.ringCount);
 
-      // show total speed multiplier
-      const totalMul = (game.boost?1.35:1.0) * (game.foodBoostT>0?4.5:1.0) * (game.ringBoostT>0?3.0:1.0);
-      spdEl.textContent = totalMul.toFixed(2);
+      hpTxt.textContent = hpString();
 
-      // camera roll
+      // boost UI
+      if(boostOn){
+        const icon = (game.boostType==='ring') ? "⭕️" : "🍔";
+        const name = (game.boostType==='ring') ? "RING BOOST" : "FOOD BOOST";
+        setBoostUI(true, icon, name, game.boostT, 10.0);
+      }else{
+        setBoostUI(false);
+      }
+
+      // motion feel
       tiltTarget *= 0.92;
       camRoll = camRoll*0.90 + tiltTarget*0.10;
       camShake = Math.max(0, camShake - dt*0.9);
-    }
 
-    // Camera: player lower on screen => camera higher and look further ahead
-    let camZ = 6.35;
-    let camY = 2.55;
-    let camFov = 66;
+      // bubble pulse
+      if(bubble.visible){
+        bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
+      }
+    }
 
     function animate(tNow){
       const dt=Math.min(0.033,(tNow-tPrev)/1000);
@@ -1731,21 +1010,21 @@ runner.position.y += slideYTarget;
       update(dt,tNow);
 
       const inAir = (game.y < -0.01) || game.jumping;
-      const boostOn = (game.foodBoostT>0 || game.ringBoostT>0);
+      const boostOn = (game.boostT > 0);
 
-      // More visibility always
-      const targetFov = boostOn ? 82 : (inAir ? 64 : 70);
-      const targetZ   = boostOn ? 7.80 : (inAir ? 6.80 : 7.10);
-      const targetY   = boostOn ? 2.80 : (inAir ? 2.45 : 2.65);
+      // ===== CAMERA: player più in basso + più visibilità =====
+      const targetFov = boostOn ? 94 : (inAir ? 78 : 86);
+      const targetZ   = boostOn ? 10.6 : (inAir ? 9.4 : 9.9);
+      const targetY   = boostOn ? 4.05 : (inAir ? 3.70 : 3.90);
 
-      camFov = lerp(camFov, targetFov, 1 - Math.pow(0.0001, dt));
-      camZ   = lerp(camZ,   targetZ,   1 - Math.pow(0.0001, dt));
-      camY   = lerp(camY,   targetY,   1 - Math.pow(0.0001, dt));
+      camFov = lerp(camFov, targetFov, 0.08);
+      camZ   = lerp(camZ,   targetZ,   0.08);
+      camY   = lerp(camY,   targetY,   0.08);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0024)*0.02 * (inAir ? 0.55 : 1.0);
+      const bob = Math.sin(tNow*0.0022) * 0.01;
       camera.position.set(0, camY + bob, camZ);
 
       const sx = (Math.sin(tNow*0.031)+Math.sin(tNow*0.017))*0.02*camShake;
@@ -1755,20 +1034,10 @@ runner.position.y += slideYTarget;
 
       camera.rotation.z = camRoll;
 
-      // look further ahead so runner stays lower on screen
-      camera.lookAt(0, 0.70, -8.2); // guarda più in basso e più avanti => player più in basso sullo schermo
+      // guarda molto avanti e un filo più in basso => player scende nello schermo
+      camera.lookAt(0, 0.45, -15.5);
 
-      if(shieldRing && shieldRing.visible){
-        shieldRing.material.opacity = 0.55 + 0.18*Math.sin(tNow*0.008);
-        shieldRing.rotation.z += dt*1.2;
-      }
-
-      if(IS_IOS || !composer){
-        renderer.render(scene, camera);
-      }else{
-        composer.render();
-      }
-
+      renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 
@@ -1776,17 +1045,14 @@ runner.position.y += slideYTarget;
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      if(composer){
-        composer.setSize(window.innerWidth, window.innerHeight);
-        bloomPass.setSize(window.innerWidth, window.innerHeight);
-      }
     }
     window.addEventListener('resize', onResize);
 
-    // Boot
+    // menu + boot
     (async ()=>{
-      await tryLoadRunnerFromPath();
-      await tryLoadObstacleDefaults();
+      // init UI
+      refreshFoodUI();
+      hpTxt.textContent = hpString();
       openMenu();
       requestAnimationFrame(animate);
     })();
