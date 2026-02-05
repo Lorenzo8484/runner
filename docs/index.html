@@ -68,6 +68,7 @@
       border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);cursor:pointer;user-select:none;}
     .toggle label{font-weight:900;}
     .toggle span{opacity:.85;font-size:12px;}
+
     .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
     .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
@@ -76,8 +77,25 @@
     .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
-    /* slider styling minimal */
-    input[type="range"]{ width:100%; }
+    /* sliders piccoli */
+    input[type="range"]{
+      width:100%;
+      height:18px;
+      accent-color: rgba(255,255,255,.85);
+    }
+    .settingsBox{
+      display:none;
+      flex-direction:column;
+      gap:10px;
+      align-items:stretch;
+      padding:10px 12px;
+    }
+    .settingsRow{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      font-size:13px;
+    }
+    .settingsRow small{opacity:.8}
+    .settingsVal{font-weight:950}
   </style>
 
   <script type="importmap">
@@ -115,6 +133,8 @@
     <div style="display:flex;gap:10px;">
       <button class="btn" id="pause">Pausa</button>
       <button class="btn" id="restart">Restart</button>
+      <button class="btn" id="btnSettings">⚙️</button>
+      <button class="btn" id="btnHome">🏠</button>
     </div>
   </div>
 
@@ -127,62 +147,48 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli si prendono solo scivolando.</span>
+      <span style="opacity:.75">Anelli: auto-piega quando arrivano nella tua corsia.</span>
     </div>
   </div>
 
   <div class="overlay" id="menu">
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
-      <div class="subtitle">
-        ✅ Slider camera: FOV / distanza / altezza (player più in basso).<br>
-        ✅ Magnete: solo quando prendi 🧲.<br>
-        ✅ Anelli: NON attratti dal magnete.<br>
-        ✅ Tartarughe ferme: quando le tocchi diventano “proiettile” e demoliscono ostacoli della corsia.
+      <div class="subtitle small">
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 15 anelli → trio runner
       </div>
 
       <div class="grid">
         <button class="btn full" id="startBtn">▶️ Inizia</button>
 
-        <div class="toggle full" id="audioToggle">
-          <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
-          <div class="switch on" id="audioSwitch"><i></i></div>
-        </div>
+        <button class="btn full" id="openSettings">⚙️ Impostazioni</button>
 
-        <!-- SLIDER 1: FOV -->
-        <div class="toggle full" style="flex-direction:column;align-items:stretch;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <label>FOV (zoom)</label><br/>
-              <span>Più basso = più vicino.</span>
-            </div>
-            <div style="font-weight:950;" id="fovVal">82</div>
+        <!-- SETTINGS -->
+        <div class="toggle full settingsBox" id="settingsPanel" style="cursor:default;user-select:auto;">
+          <div class="settingsRow">
+            <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
+            <div class="settingsVal" id="fovVal">60</div>
           </div>
-          <input id="fovSlider" type="range" min="60" max="110" step="1" value="82">
-        </div>
+          <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
 
-        <!-- SLIDER 2: camera distance -->
-        <div class="toggle full" style="flex-direction:column;align-items:stretch;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <label>Distanza camera</label><br/>
-              <span>Più basso = più vicino al player.</span>
-            </div>
-            <div style="font-weight:950;" id="camVal">11.0</div>
+          <div class="settingsRow" style="margin-top:4px;">
+            <div><label>Distanza camera</label><br><small>2–15 (base 8)</small></div>
+            <div class="settingsVal" id="camVal">8.0</div>
           </div>
-          <input id="camSlider" type="range" min="8" max="18" step="0.1" value="11.0">
-        </div>
+          <input id="camSlider" type="range" min="2" max="15" step="0.1" value="8.0" />
 
-        <!-- SLIDER 3: player lower/higher on screen -->
-        <div class="toggle full" style="flex-direction:column;align-items:stretch;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <label>Altezza visuale</label><br/>
-              <span>Più basso = player più in basso sullo schermo.</span>
-            </div>
-            <div style="font-weight:950;" id="lookVal">0.10</div>
+          <div class="settingsRow" style="margin-top:4px;">
+            <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
+            <div class="settingsVal" id="frameVal">0.70</div>
           </div>
-          <input id="lookSlider" type="range" min="-0.60" max="1.10" step="0.02" value="0.10">
+          <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.70" />
+
+          <div class="toggle" id="audioToggle" style="margin-top:6px;">
+            <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
+            <div class="switch on" id="audioSwitch"><i></i></div>
+          </div>
+
+          <button class="btn" id="closeSettings">Chiudi</button>
         </div>
 
         <div class="toggle full">
@@ -218,60 +224,85 @@
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
-    const audioToggle= document.getElementById('audioToggle');
-    const audioSwitch= document.getElementById('audioSwitch');
+
     const overStats  = document.getElementById('overStats');
     const overBig    = document.getElementById('overBig');
 
-    // sliders
+    const btnSettings = document.getElementById('btnSettings');
+    const btnHome = document.getElementById('btnHome');
+
+    const openSettingsBtn = document.getElementById('openSettings');
+    const closeSettingsBtn = document.getElementById('closeSettings');
+    const settingsPanel = document.getElementById('settingsPanel');
+
+    const audioToggle= document.getElementById('audioToggle');
+    const audioSwitch= document.getElementById('audioSwitch');
+
     const fovSlider = document.getElementById('fovSlider');
     const camSlider = document.getElementById('camSlider');
-    const lookSlider= document.getElementById('lookSlider');
+    const frameSlider = document.getElementById('frameSlider');
     const fovVal = document.getElementById('fovVal');
     const camVal = document.getElementById('camVal');
-    const lookVal= document.getElementById('lookVal');
+    const frameVal = document.getElementById('frameVal');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    // ---- Camera settings (salvati)
-    const CAM_KEY = 'jr_cam_settings_v2';
-    const camSettings = (() => {
-      try { return JSON.parse(localStorage.getItem(CAM_KEY) || '{}'); }
-      catch { return {}; }
-    })();
+    // === SETTINGS PERSISTENTI ===
+    const CAM_KEY = 'jr_cam_settings_v4';
+    const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
-    let baseFov   = Number(camSettings.baseFov ?? 82);
-    let baseCamZ  = Number(camSettings.baseCamZ ?? 11.0);
-    let baseLookY = Number(camSettings.baseLookY ?? 0.10); // più basso = player più in basso
+    // richiesto: FOV 30-110 base 60; distanza 2-15 base 8
+    let baseFov  = Number(saved.baseFov ?? 60);
+    let baseCamZ = Number(saved.baseCamZ ?? 8.0);
+    let framing  = Number(saved.framing ?? 0.70); // 0..1
 
-    function syncCamUI(){
-      if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); fovVal.textContent = String(Math.round(baseFov)); }
-      if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); camVal.textContent = baseCamZ.toFixed(1); }
-      if(lookSlider){ lookSlider.value = String(baseLookY.toFixed(2)); lookVal.textContent = baseLookY.toFixed(2); }
+    baseFov  = clamp(baseFov, 30, 110);
+    baseCamZ = clamp(baseCamZ, 2, 15);
+    framing  = clamp(framing, 0, 1);
+
+    function saveCam(){
+      localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing }));
     }
-    function saveCamSettings(){
-      localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, baseLookY }));
+    function syncCamUI(){
+      fovSlider.value = String(Math.round(baseFov));
+      fovVal.textContent = String(Math.round(baseFov));
+
+      camSlider.value = String(baseCamZ.toFixed(1));
+      camVal.textContent = baseCamZ.toFixed(1);
+
+      frameSlider.value = String(framing.toFixed(2));
+      frameVal.textContent = framing.toFixed(2);
     }
     syncCamUI();
 
-    fovSlider?.addEventListener('input', ()=>{
-      baseFov = Number(fovSlider.value);
+    fovSlider.addEventListener('input', ()=>{
+      baseFov = clamp(Number(fovSlider.value), 30, 110);
       fovVal.textContent = String(Math.round(baseFov));
-      saveCamSettings();
+      saveCam();
     });
-    camSlider?.addEventListener('input', ()=>{
-      baseCamZ = Number(camSlider.value);
+    camSlider.addEventListener('input', ()=>{
+      baseCamZ = clamp(Number(camSlider.value), 2, 15);
       camVal.textContent = baseCamZ.toFixed(1);
-      saveCamSettings();
+      saveCam();
     });
-    lookSlider?.addEventListener('input', ()=>{
-      baseLookY = Number(lookSlider.value);
-      lookVal.textContent = baseLookY.toFixed(2);
-      saveCamSettings();
+    frameSlider.addEventListener('input', ()=>{
+      framing = clamp(Number(frameSlider.value), 0, 1);
+      frameVal.textContent = framing.toFixed(2);
+      saveCam();
     });
+
+    function toggleSettings(open){
+      settingsPanel.style.display = open ? 'flex' : 'none';
+    }
+
+    openSettingsBtn.addEventListener('click', ()=>{
+      toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
+      syncCamUI();
+    });
+    closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
 
     // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -309,6 +340,12 @@
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
     };
 
+    audioToggle.addEventListener('click', ()=>{
+      initAudio();
+      audioEnabled=!audioEnabled;
+      audioSwitch.classList.toggle('on',!!audioEnabled);
+    });
+
     // Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
@@ -322,7 +359,8 @@
     scene.background = new THREE.Color(0x08120b);
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
-    const camera = new THREE.PerspectiveCamera(78, window.innerWidth/window.innerHeight, 0.1, 280);
+    // Camera (valori base controllati dagli slider)
+    const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
 
     // lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
@@ -551,7 +589,6 @@
     dummyHead.castShadow=true;
     runnerModel.add(dummyHead);
 
-    // invincibility bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -564,7 +601,6 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // extra 2 runners (per modalità 3 corsie)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -597,7 +633,9 @@
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
+
       sliding:false, slideT:0,
+      autoSlideT:0,
 
       baseSpeed: 12.9,
       score:0, coins:0, best: loadBest(),
@@ -669,10 +707,11 @@
     function openMenu(){
       menu.style.display='flex';
       game.paused=true;
+      toggleSettings(false);
+
       const st = `Score ${Math.floor(game.score)} • Emoji ${game.coins} • Anelli ${game.ringCount} • Cibo ${game.foodCount}`;
       overStats.textContent = game.over ? st : "—";
       overBig.textContent = game.over ? "GAME OVER" : "";
-      syncCamUI();
     }
     function closeMenu(){ menu.style.display='none'; }
 
@@ -680,6 +719,7 @@
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
+      game.autoSlideT=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -737,14 +777,17 @@
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
+      // meno ostacoli
       const blocked=new Set();
       const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
+      // coins
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
+      // obstacles
       blocked.forEach(l=>{
         const kind = (Math.random()<0.55?'low':'high');
         const obj = spawnObstacleVisual();
@@ -753,6 +796,7 @@
         game.entities.push({ type:'obst', lane:l, z:z0, obj, kind });
       });
 
+      // emojis
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
@@ -760,6 +804,7 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
+      // FOOD
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -770,6 +815,7 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
+      // MAGNET power-up
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -779,6 +825,7 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
+      // HEARTS: ogni 25 emoji + extra
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
@@ -796,29 +843,32 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      if(Math.random() < 0.12){
+      // TURTLES: ferme
+      if(Math.random() < 0.14){
         const lane=rndi(0,2);
         const t = makeTurtle();
         t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
         t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
         scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', vz:0 });
+        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // rings (come nel tuo codice funzionante)
-      if(Math.random() < 0.24){
+      // RINGS: 3 dietro l’altro nella STESSA corsia
+      if(Math.random() < 0.26){
+        const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        for(let l=0;l<3;l++){
+        const gap = 1.75;
+        for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
-          ring.position.set(lanesX[l], 0.55, baseZ);
+          ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
           scene.add(ring);
-          game.entities.push({ type:'ring', lane:l, z:ring.position.z, obj:ring });
+          game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
         }
       }
     }
 
     // ---- Controls
-    let tiltTarget=0, camRoll=0, camShake=0;
+    let tiltTarget=0, camRoll=0;
     function moveLane(dir){
       if(game.over||game.paused) return;
       if(game.trioT>0) return;
@@ -838,6 +888,7 @@
       if(game.over||game.paused) return;
       game.sliding=true;
       game.slideT=0.55;
+      game.autoSlideT=0;
       sfx.slide();
     }
 
@@ -868,17 +919,36 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
     restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-    audioToggle.addEventListener('click', ()=>{
+    // HUD buttons
+    btnSettings.addEventListener('click', ()=>{
       initAudio();
-      audioEnabled=!audioEnabled;
-      audioSwitch.classList.toggle('on',!!audioEnabled);
+      game.paused = true;
+      menu.style.display = 'flex';
+      toggleSettings(true);
+      overBig.textContent = '';
+      overStats.textContent = 'Impostazioni';
+      syncCamUI();
     });
 
-    // ---- Utility: “quali X usare per collisioni”
+    btnHome.addEventListener('click', ()=>{
+      initAudio();
+      // Home = torna al menu e resetta la run (più pulito e stabile)
+      resetRun();
+      game.paused = true;
+      game.over = false;
+      startBtn.textContent='▶️ Inizia';
+      openMenu();
+    });
+
+    // ---- Camera state (controllati dagli slider)
+    let camZ = baseCamZ;
+    let camY = 4.8;
+    let camFov = baseFov;
+
     function activeRunnerXs(){
       if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
@@ -886,25 +956,27 @@
 
     // ---- Update loop
     let tPrev=performance.now();
-    let stepTimer=0;
 
     function update(dt, tNow){
       if(game.paused) return;
 
+      // slowmo salto leggero
       const inAir = (game.y < -0.01) || game.jumping;
-      const slowmo = inAir ? 0.90 : 1.0;
-      dt *= slowmo;
+      dt *= (inAir ? 0.90 : 1.0);
 
+      // timers
       if(game.invincibleT>0){
         game.invincibleT -= dt;
         if(game.invincibleT<=0){
           game.invincibleT=0;
-          bubble.visible=false; miniL.bubble.visible=false; miniR.bubble.visible=false;
+          bubble.visible=false;
+          miniL.bubble.visible=false;
+          miniR.bubble.visible=false;
         }
       }
       if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt);
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt);
-      if(game.magnetT>0) game.magnetT = Math.max(0, game.magnetT-dt);
+      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt);
 
       if(game.trioT>0){
         game.trioT = Math.max(0, game.trioT-dt);
@@ -916,6 +988,7 @@
         }
       }
 
+      // speed: cumulativo
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -924,6 +997,7 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
 
+      // invincibile quando c'è un boost attivo
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
@@ -931,38 +1005,49 @@
         if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
       }
 
+      // gravity
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
+      // slide timers
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
+      if(game.autoSlideT>0){
+        game.autoSlideT -= dt;
+      }
 
+      // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
+      // scivolata: ruota dal centro
       const slidePitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
+      // contact shadow
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runnerPivot.position.x;
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
+      // minis (trio)
       if(game.trioT>0){
         miniL.pivot.visible=true;
         miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
+
         miniL.center.rotation.x = runnerCenter.rotation.x;
         miniR.center.rotation.x = runnerCenter.rotation.x;
       }
 
+      // road scroll
       const scroll = speed*dt;
       dirtTex.offset.y -= scroll*0.085;
 
@@ -972,21 +1057,28 @@
       }
       loopJungle(scroll);
 
+      // spawn
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
         game.spawnT = rnd(0.45, 0.85);
       }
 
+      // magnet effect (NO rings, NO turtles, NO obstacles)
       const magnetOn = game.magnetT > 0;
+
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        if(e.type==='turtle'){
-          if(e.state==='projectile'){
-            e.z += (speed*2.2)*dt;
-            e.obj.position.z = e.z;
+        // turtle projectile
+        if(e.type==='turtle' && e.state==='projectile'){
+          e.projT -= dt;
+          e.z += (speed*3.4)*dt;
+          e.obj.position.z = e.z;
+
+          if(e.projT <= 0){
+            e.projT = 0;
           }
         }
 
@@ -1001,13 +1093,20 @@
         }
       }
 
+      // despawn (turtle projectile auto-remove)
       for(let i=game.entities.length-1;i>=0;i--){
-        if(game.entities[i].z > 6.0){
-          scene.remove(game.entities[i].obj);
+        const e = game.entities[i];
+        if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
+          scene.remove(e.obj); game.entities.splice(i,1);
+          continue;
+        }
+        if(e.z > 6.0){
+          scene.remove(e.obj);
           game.entities.splice(i,1);
         }
       }
 
+      // collisions helper
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -1018,6 +1117,25 @@
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
 
+      // AUTO-PIEGA: anello vicino nella tua corsia -> slide automatica breve
+      if(!game.sliding && game.y===0){
+        const checkLane = (game.trioT>0) ? null : game.lane;
+        for(const e of game.entities){
+          if(e.type!=='ring') continue;
+          if(game.trioT>0) break;
+          if(e.lane !== checkLane) continue;
+
+          const dz = Math.abs(e.z - 0.25);
+          if(dz < 1.05){
+            game.sliding = true;
+            game.slideT  = 0.38;
+            game.autoSlideT = game.slideT;
+            break;
+          }
+        }
+      }
+
+      // turtle projectile demolition
       for(const e of game.entities){
         if(e.type==='turtle' && e.state==='projectile'){
           for(let j=game.entities.length-1;j>=0;j--){
@@ -1025,7 +1143,7 @@
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
             const dz = Math.abs(o.z - e.z);
-            if(dz < 1.2){
+            if(dz < 1.25){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -1033,14 +1151,17 @@
         }
       }
 
+      // pickups / hits
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
+        // ring: NON magnet. Si prende se collide e (no trio -> devi essere in slide; trio -> ok)
         if(e.type==='ring'){
-          if(!game.sliding) continue;
           let got=false;
           for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
           if(!got) continue;
+
+          if(game.trioT<=0 && !game.sliding) continue;
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
@@ -1058,6 +1179,7 @@
           continue;
         }
 
+        // altri: collisione su corsie attive
         let hit=false;
         for(const ex of xs){
           if(collideAtX(ex,e)){ hit=true; break; }
@@ -1108,8 +1230,7 @@
         if(e.type==='turtle'){
           if(e.state==='idle'){
             e.state='projectile';
-            e.vz = speed*3.0;
-            e.lane = (Math.abs(e.obj.position.x-lanesX[0])<0.4) ? 0 : (Math.abs(e.obj.position.x-lanesX[2])<0.4 ? 2 : 1);
+            e.projT = 2.6;
             sfx.boost();
           }
           continue;
@@ -1127,9 +1248,11 @@
         }
       }
 
+      // score tick
       game.score += (18 * speedMul) * dt;
       if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
 
+      // HUD
       scoreEl.textContent = String(Math.floor(game.score));
       coinsEl.textContent = String(game.coins);
       bestEl.textContent  = String(game.best);
@@ -1145,14 +1268,9 @@
 
       tiltTarget *= 0.92;
       camRoll = camRoll*0.90 + tiltTarget*0.10;
-      camShake = Math.max(0, camShake - dt*0.9);
     }
 
-    // ---- Camera state
-    let camZ = baseCamZ;
-    let camY = 4.2;
-    let camFov = baseFov;
-
+    // CAMERA: base slider + framing che mette il player in basso davvero
     function animate(tNow){
       const dt=Math.min(0.033,(tNow-tPrev)/1000);
       tPrev=tNow;
@@ -1160,33 +1278,33 @@
       update(dt,tNow);
 
       const inAir = (game.y < -0.01) || game.jumping;
-      const both = (game.foodBoostT>0 && game.ringBoostT>0);
+      const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      // slider base + piccoli delta in boost (non rompe nulla)
-      const fovBoost = both ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
-      const zBoost   = both ? 1.8 : (anyBoost ? 1.0 : 0.0);
+      // piccoli extra in boost (non rompe)
+      const fovBoost = bothBoost ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
+      const zBoost   = bothBoost ? 1.5 : (anyBoost ? 0.8 : 0.0);
 
-      const targetFov = clamp(baseFov + fovBoost, 55, 120);
-      const targetZ   = clamp(baseCamZ + zBoost, 6, 22);
-      const targetY   = 4.2 + (both ? 0.4 : 0.0);
+      const targetFov = clamp(baseFov + fovBoost, 30, 110);
+      const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
+
+      // framing 0..1 => player più in basso
+      const lookAtY = lerp(0.05, 1.45, framing);
+      const lookAtZ = lerp(-22.0, -38.0, framing);
+      const camYBase = lerp(3.9, 5.8, framing);
 
       camFov = lerp(camFov, targetFov, 0.08);
       camZ   = lerp(camZ,   targetZ,   0.08);
-      camY   = lerp(camY,   targetY,   0.08);
+      camY   = lerp(camY,   camYBase + (bothBoost?0.25:0), 0.08);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
       const bob = Math.sin(tNow*0.0022) * 0.01;
       camera.position.set(0, camY + bob, camZ);
-
       camera.rotation.z = camRoll;
 
-      // ✅ Terzo slider: lookAtY (player più in basso/alto sullo schermo)
-      // Più basso = player più in basso (guardi più "giù")
-      const lookAtY = baseLookY;
-      camera.lookAt(0, lookAtY, -24.0);
+      camera.lookAt(0, lookAtY, lookAtZ);
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -1198,6 +1316,9 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
     window.addEventListener('resize', onResize);
+
+    // Menu / start
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
 
     // start
     (async ()=>{
