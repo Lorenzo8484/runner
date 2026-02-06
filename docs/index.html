@@ -618,8 +618,12 @@
     const RUNNER_GLB_URL = './running.glb';
 
     let runnerGLTF = null;
-    let runnerMixer = null;
-    let runnerAction = null;
+let runnerMixer = null;
+let runnerAction = null;
+
+let mixamoRoot = null;   // il gltf.scene del personaggio
+let mixamoHips = null;   // osso Hips (se presente)
+
 
     const gltfLoader = new GLTFLoader();
 
@@ -641,25 +645,70 @@
             runnerGLTF = gltf;
             const model = gltf.scene;
 
-            // valori tipici per Mixamo: potresti ritoccarli se lo vedi grande/piccolo
-            model.scale.setScalar(0.85);
-            model.position.set(0, 0.0, 0.0);
-            model.rotation.y = Math.PI;
+// salva riferimenti per bloccare root motion
+mixamoRoot = model;
+mixamoHips = null;
 
-            setShadows(model);
+// trova l’osso Hips (Mixamo spesso usa: "Hips" o "mixamorigHips")
+model.traverse((o)=>{
+  if(o.isBone){
+    const n = (o.name || '').toLowerCase();
+    if(n === 'hips' || n.includes('mixamorig') && n.includes('hips')){
+      mixamoHips = o;
+    }
+  }
+});
 
-            // nascondi placeholder
-            fallbackRunner.visible = false;
+// valori tipici per Mixamo (puoi ritoccarli dopo)
+model.scale.setScalar(0.85);
+model.position.set(0, 0.0, 0.0);
+model.rotation.y = Math.PI;
 
-            runnerModel.add(model);
+setShadows(model);
 
-            // animazione (prende la prima clip del file running.glb)
-            runnerMixer = new THREE.AnimationMixer(model);
-            const clip = gltf.animations && gltf.animations[0];
-            if(clip){
-              runnerAction = runnerMixer.clipAction(clip);
-              runnerAction.play();
-            }
+// ✅ rimuove/nasconde “plane/quadrato” esportati nel glb
+(function hideWeirdPlanes(root){
+  // dimensione complessiva del modello
+  const wholeBox = new THREE.Box3().setFromObject(root);
+  const wholeSize = new THREE.Vector3();
+  wholeBox.getSize(wholeSize);
+  const maxDim = Math.max(wholeSize.x, wholeSize.y, wholeSize.z) || 1;
+
+  root.traverse((o)=>{
+    if(!o.isMesh) return;
+
+    // se ha nome sospetto
+    const name = (o.name || '').toLowerCase();
+
+    // bbox mesh
+    const b = new THREE.Box3().setFromObject(o);
+    const s = new THREE.Vector3(); b.getSize(s);
+
+    const veryFlat = s.y < maxDim * 0.02; // quasi piatto
+    const veryWide = (s.x > maxDim * 0.80 && s.z > maxDim * 0.80); // grande quasi quanto il modello
+
+    const isPlaneGeo = o.geometry && (o.geometry.type === 'PlaneGeometry');
+    const isWhiteMat = o.material && o.material.color && o.material.color.getHexString && (o.material.color.getHexString().toLowerCase() === 'ffffff');
+
+    if(isPlaneGeo || name.includes('plane') || (veryFlat && veryWide) || isWhiteMat){
+      o.visible = false;
+    }
+  });
+})(model);
+
+// nascondi placeholder
+fallbackRunner.visible = false;
+
+runnerModel.add(model);
+
+// animazione
+runnerMixer = new THREE.AnimationMixer(model);
+const clip = gltf.animations && gltf.animations[0];
+if(clip){
+  runnerAction = runnerMixer.clipAction(clip);
+  runnerAction.play();
+}
+
 
             resolve();
           },
@@ -1074,8 +1123,23 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // update Mixamo animation
-      if(runnerMixer) runnerMixer.update(dt);
+      if(runnerMixer){
+  runnerMixer.update(dt);
+
+  // ✅ blocca root motion dell’animazione (niente avanzamento/ritorno)
+  if(mixamoRoot){
+    mixamoRoot.position.x = 0;
+    mixamoRoot.position.z = 0;
+    // y la lasciamo a 0 per sicurezza
+    mixamoRoot.position.y = 0;
+  }
+  // a volte Mixamo spinge anche gli Hips: blocchiamo X/Z pure lì
+  if(mixamoHips){
+    mixamoHips.position.x = 0;
+    mixamoHips.position.z = 0;
+  }
+}
+
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
