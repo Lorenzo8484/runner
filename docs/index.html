@@ -36,7 +36,6 @@
     .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* floating home/settings/pause (sempre visibili) - ORIZZONTALE in alto a destra */
     .floatBtns{
       position:fixed; top:8px; right:8px;
       display:flex; flex-direction:row; gap:8px;
@@ -53,7 +52,6 @@
       line-height:1;
     }
 
-    /* right side vertical food column */
     .rightCol{
       position:fixed; top:62px; right:4px; width:56px;
       display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -110,7 +108,6 @@
     .help{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
-    /* sliders */
     input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
     .settingsBox{
       display:none;
@@ -171,7 +168,6 @@
     </div>
   </div>
 
-  <!-- floating buttons -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
@@ -587,7 +583,7 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // (fallback) semplice placeholder, lo nascondiamo quando il GLB è caricato
+    // Placeholder (fallback)
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
@@ -614,18 +610,12 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // === MIXAMO PLAYER (running.glb in docs/) ===
+    // === MIXAMO PLAYER (running.glb) ===
     const RUNNER_GLB_URL = './running.glb';
-
-    let runnerGLTF = null;
-let runnerMixer = null;
-let runnerAction = null;
-
-let mixamoRoot = null;   // il gltf.scene del personaggio
-let mixamoHips = null;   // osso Hips (se presente)
-
-
     const gltfLoader = new GLTFLoader();
+
+    let runnerMixer = null;
+    let runnerAction = null;
 
     function setShadows(root){
       root.traverse((o)=>{
@@ -637,70 +627,57 @@ let mixamoHips = null;   // osso Hips (se presente)
       });
     }
 
+    // ✅ rimuove root motion: azzera X/Z su tracce di posizione root/hips/armature
+    function stripRootMotion(clip){
+      const c = clip.clone();
+      for(const t of c.tracks){
+        if(!t.name.endsWith('.position')) continue;
+        const n = t.name.toLowerCase();
+        const isLikelyRoot =
+          n.includes('hips') || n.includes('mixamorig') || n.includes('armature') || n.includes('root');
+        if(!isLikelyRoot) continue;
+
+        const v = t.values;
+        for(let i=0;i<v.length;i+=3){
+          v[i] = 0;     // x
+          v[i+2] = 0;   // z
+        }
+      }
+      return c;
+    }
+
     async function loadMixamoRunner(){
       return new Promise((resolve, reject)=>{
         gltfLoader.load(
           RUNNER_GLB_URL,
           (gltf)=>{
-            runnerGLTF = gltf;
             const model = gltf.scene;
 
-// salva riferimenti per bloccare root motion
-mixamoRoot = model;
-mixamoHips = null;
+            // set base transforms (ritoccabili)
+            model.scale.setScalar(0.85);
+            model.position.set(0, 0.0, 0.0);
+            model.rotation.y = Math.PI;
 
-// trova l’osso Hips (Mixamo spesso usa: "Hips" o "mixamorigHips")
-model.traverse((o)=>{
-  if(o.isBone){
-    const n = (o.name || '').toLowerCase();
-    if(n === 'hips' || n.includes('mixamorig') && n.includes('hips')){
-      mixamoHips = o;
-    }
-  }
-});
+            setShadows(model);
 
-// valori tipici per Mixamo (puoi ritoccarli dopo)
-model.scale.setScalar(0.85);
-model.position.set(0, 0.0, 0.0);
-model.rotation.y = Math.PI;
+            // ✅ elimina "quadrati/ground": mostra SOLO mesh skinnate (il personaggio vero)
+            model.traverse((o)=>{
+              if(o.isMesh && !o.isSkinnedMesh){
+                o.visible = false;
+              }
+            });
 
-setShadows(model);
+            fallbackRunner.visible = false;
+            runnerModel.add(model);
 
-// ✅ nasconde SOLO i "piani" inutili, senza toccare il personaggio
-model.traverse((o)=>{
-  if(!o.isMesh) return;
-
-  // NON toccare mai il vero personaggio
-  if(o.isSkinnedMesh) return;
-
-  const name = (o.name || '').toLowerCase();
-  const geoType = o.geometry?.type || '';
-
-  const looksLikePlane =
-    geoType === 'PlaneGeometry' ||
-    name.includes('plane') ||
-    name.includes('floor') ||
-    name.includes('ground');
-
-  if(looksLikePlane){
-    o.visible = false;
-  }
-});
-
-
-// nascondi placeholder
-fallbackRunner.visible = false;
-
-runnerModel.add(model);
-
-// animazione
-runnerMixer = new THREE.AnimationMixer(model);
-const clip = gltf.animations && gltf.animations[0];
-if(clip){
-  runnerAction = runnerMixer.clipAction(clip);
-  runnerAction.play();
-}
-
+            // animazione
+            runnerMixer = new THREE.AnimationMixer(model);
+            const clip0 = gltf.animations && gltf.animations[0];
+            if(clip0){
+              const clip = stripRootMotion(clip0); // ✅ niente avanti/indietro
+              runnerAction = runnerMixer.clipAction(clip);
+              runnerAction.play();
+            }
 
             resolve();
           },
@@ -888,31 +865,26 @@ if(clip){
       sfx.boost();
     }
 
-    // ---- Difficoltà ostacoli: +10% ogni 15000 punti
+    // ✅ +10% ostacoli ogni 15000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 15000);
-      return 1 + 0.10 * steps; // 1.0, 1.1, 1.2, ...
+      return 1 + 0.10 * steps;
     }
 
-    // ---- Spawns (più ostacoli + più tartarughe) + scaling ostacoli
+    // ---- Spawns
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
       const blocked=new Set();
-
-      // ✅ scaling ostacoli
       const mult = obstacleMultiplier();
 
       // base: 0 ostacoli 22%, altrimenti 1 o 2
-      // con mult crescente, 0 ostacoli diventa più raro e 2 ostacoli più frequente.
-      const p0 = clamp(0.22 / mult, 0.05, 0.22); // minimo 5% per non impazzire
+      const p0 = clamp(0.22 / mult, 0.05, 0.22);
       let oCount = 0;
       if(Math.random() >= p0){
-        // condizionato: base 2 ostacoli = 38% (perché 1 se <0.62, 2 altrimenti)
         const p2 = clamp(0.38 * mult, 0.18, 0.90);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
-
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
@@ -969,7 +941,7 @@ if(clip){
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // più tartarughe (come prima)
+      // tartarughe
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
@@ -982,7 +954,7 @@ if(clip){
         }
       }
 
-      // RINGS: 3 vicini
+      // rings
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
@@ -1084,7 +1056,7 @@ if(clip){
       openMenu();
     });
 
-    // ---- Camera state (sliders)
+    // ---- Camera state
     let camZ = baseCamZ;
     let camY = 4.6;
     let camFov = baseFov;
@@ -1115,23 +1087,8 @@ if(clip){
     function update(dt, tNow){
       if(game.paused) return;
 
-      if(runnerMixer){
-  runnerMixer.update(dt);
-
-  // ✅ blocca root motion dell’animazione (niente avanzamento/ritorno)
-  if(mixamoRoot){
-    mixamoRoot.position.x = 0;
-    mixamoRoot.position.z = 0;
-    // y la lasciamo a 0 per sicurezza
-    mixamoRoot.position.y = 0;
-  }
-  // a volte Mixamo spinge anche gli Hips: blocchiamo X/Z pure lì
-  if(mixamoHips){
-    mixamoHips.position.x = 0;
-    mixamoHips.position.z = 0;
-  }
-}
-
+      // update animation Mixamo
+      if(runnerMixer) runnerMixer.update(dt);
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
@@ -1162,7 +1119,6 @@ if(clip){
       miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
       miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
 
-      // speed: cumulativo (MEGA ancora più basso)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -1359,7 +1315,7 @@ if(clip){
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ ogni 50 anelli -> boost anelli + trio (reset contatore)
+          // ✅ 50 anelli -> ring boost + trio + reset contatore
           if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
@@ -1368,7 +1324,7 @@ if(clip){
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
 
-            game.ringCount = 0; // azzera
+            game.ringCount = 0;
             sfx.boost();
           }
           continue;
@@ -1513,12 +1469,10 @@ if(clip){
       refreshFoodUI();
       hpTxt.textContent = hpString();
 
-      // carica subito il player Mixamo (running.glb)
       try{
         await loadMixamoRunner();
       }catch(e){
         console.warn('Errore caricamento running.glb', e);
-        // resta il runner fallback
       }
 
       openMenu();
