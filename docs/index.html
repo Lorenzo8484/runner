@@ -1133,11 +1133,6 @@ if(clips.length){
       if(runnerMixer){
   runnerMixer.update(dt);
 
-  // ✅ blocca root motion sul model (alcuni GLB muovono la scena)
-  if(mixamoModel){
-    mixamoModel.position.x = 0;
-    mixamoModel.position.z = 0;
-  }
 
   // ✅ blocca root motion sugli Hips (Mixamo quasi sempre è qui)
   if(mixamoHips){
