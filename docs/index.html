@@ -183,7 +183,7 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia (anche i bambini).</span>
+      <span style="opacity:.75">Anelli: auto-piega quando arrivano in corsia.</span>
     </div>
   </div>
 
@@ -191,7 +191,7 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • <strong>50 anelli → trio + boost</strong>
       </div>
 
       <div class="grid">
@@ -583,18 +583,20 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // Placeholder (fallback)
+    // Fallback runner
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
     dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
+
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
+
     runnerModel.add(fallbackRunner);
 
     // Bubble (main)
@@ -610,13 +612,15 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // === MIXAMO PLAYER (running.glb) ===
+    // === MIXAMO ===
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
-    let mixamoModel = null;       // riferimento al model scene
-    let mixamoHips = null;        // bone hips
-    let hipsBaseX = 0, hipsBaseZ = 0; // valori base da mantenere
+    let runnerMixer = null;
+    let runnerAction = null;
+
+    let mixamoHips = null;
+    let hipsBaseX = 0, hipsBaseZ = 0;
 
     function setShadows(root){
       root.traverse((o)=>{
@@ -628,20 +632,17 @@
       });
     }
 
-    // ✅ rimuove root motion: azzera X/Z su tracce di posizione root/hips/armature
     function stripRootMotion(clip){
       const c = clip.clone();
       for(const t of c.tracks){
         if(!t.name.endsWith('.position')) continue;
         const n = t.name.toLowerCase();
-        const isLikelyRoot =
-          n.includes('hips') || n.includes('mixamorig') || n.includes('armature') || n.includes('root');
-        if(!isLikelyRoot) continue;
-
+        const isRootish = n.includes('hips') || n.includes('mixamorig') || n.includes('armature') || n.includes('root');
+        if(!isRootish) continue;
         const v = t.values;
         for(let i=0;i<v.length;i+=3){
-          v[i] = 0;     // x
-          v[i+2] = 0;   // z
+          v[i] = 0;
+          v[i+2] = 0;
         }
       }
       return c;
@@ -653,73 +654,59 @@
           RUNNER_GLB_URL,
           (gltf)=>{
             const model = gltf.scene;
-mixamoModel = model;
 
-// set base transforms (ritoccabili)
-model.scale.setScalar(0.85);
-model.position.set(0, 0.0, 0.0);
-model.rotation.y = Math.PI;
-
-// ✅ trova Hips (Mixamo: "Hips" o "mixamorigHips" ecc.)
-mixamoHips = null;
-model.traverse((o)=>{
-  if(o.isBone){
-    const n = (o.name || '').toLowerCase();
-    if(n === 'hips' || n.includes('mixamorig') && n.includes('hips')){
-      mixamoHips = o;
-    }
-  }
-});
-
-// ✅ auto-allinea al terreno: porta il punto più basso del modello a y=0
-{
-  const box = new THREE.Box3().setFromObject(model);
-  const yLift = -box.min.y;        // quanto devo alzare per far toccare a terra
-  model.position.y += yLift;
-}
-
-// ✅ salva valori base Hips per bloccare root motion (solo X/Z)
-if(mixamoHips){
-  hipsBaseX = mixamoHips.position.x;
-  hipsBaseZ = mixamoHips.position.z;
-}
-
+            model.scale.setScalar(0.85);
+            model.rotation.y = Math.PI;
+            model.position.set(0, 0, 0);
 
             setShadows(model);
 
-            // ✅ elimina "quadrati/ground": mostra SOLO mesh skinnate (il personaggio vero)
+            // ✅ niente quadrati / mesh extra: lascia visibili solo SkinnedMesh
             model.traverse((o)=>{
-              if(o.isMesh && !o.isSkinnedMesh){
-                o.visible = false;
-              }
+              if(o.isMesh && !o.isSkinnedMesh) o.visible = false;
             });
 
+            // ✅ piedi a terra: minY -> 0
+            {
+              const box = new THREE.Box3().setFromObject(model);
+              const lift = -box.min.y;
+              model.position.y += lift + 0.01;
+            }
+
+            // ✅ trova Hips per lock X/Z
+            mixamoHips = null;
+            model.traverse((o)=>{
+              if(!o.isBone) return;
+              const n = (o.name || '').toLowerCase();
+              if(n === 'hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+            });
+
+            // swap
             fallbackRunner.visible = false;
             runnerModel.add(model);
 
+            const clips = (gltf.animations || []).filter(c=>c && c.tracks && c.tracks.length);
+            if(!clips.length){
+              console.warn('running.glb non contiene animazioni');
+              resolve();
+              return;
+            }
+
+            const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
+            const clip = stripRootMotion(runClip);
+
             runnerMixer = new THREE.AnimationMixer(model);
+            runnerAction = runnerMixer.clipAction(clip);
+            runnerAction.reset();
+            runnerAction.enabled = true;
+            runnerAction.setEffectiveTimeScale(1);
+            runnerAction.setEffectiveWeight(1);
+            runnerAction.play();
 
-// ✅ scegli un clip valido (il primo con tracce)
-const clips = (gltf.animations || []).filter(c => c && c.tracks && c.tracks.length > 0);
-
-if(clips.length){
-  // preferisci un clip che sembra "run"
-  const runClip = clips.find(c => (c.name || '').toLowerCase().includes('run')) || clips[0];
-
-  const clip = stripRootMotion(runClip);
-
-  runnerAction = runnerMixer.clipAction(clip);
-  runnerAction.reset();
-  runnerAction.enabled = true;
-  runnerAction.setEffectiveTimeScale(1);
-  runnerAction.setEffectiveWeight(1);
-  runnerAction.play();
-
-  console.log('✅ Animazione avviata:', clip.name, 'tracks:', clip.tracks.length);
-} else {
-  console.warn('⚠️ Nessuna animazione trovata dentro running.glb. (gltf.animations vuoto)');
-}
-
+            if(mixamoHips){
+              hipsBaseX = mixamoHips.position.x;
+              hipsBaseZ = mixamoHips.position.z;
+            }
 
             resolve();
           },
@@ -873,6 +860,7 @@ if(clips.length){
 
       game.paused=false;
       pauseBtn.textContent='Pausa';
+      btnPause.textContent='⏸️';
 
       bubble.visible=false;
       miniL.pivot.visible=false;
@@ -920,18 +908,17 @@ if(clips.length){
       const blocked=new Set();
       const mult = obstacleMultiplier();
 
-      // base: 0 ostacoli 22%, altrimenti 1 o 2
-      const p0 = clamp(0.22 / mult, 0.05, 0.22);
+      const p0 = clamp(0.22 / mult, 0.04, 0.22);
       let oCount = 0;
       if(Math.random() >= p0){
         const p2 = clamp(0.38 * mult, 0.18, 0.90);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
-      while(blocked.size<oCount) blocked.add(rndi(0,2));
+      while(blocked.size<oCount) blocked.add(Math.floor(rnd(0,3)));
 
       const coinLanes=new Set();
-      const cCount = rndi(1,2);
-      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
+      const cCount = Math.floor(rnd(1,3));
+      while(coinLanes.size<cCount) coinLanes.add(Math.floor(rnd(0,3)));
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
@@ -941,15 +928,15 @@ if(clips.length){
       });
 
       coinLanes.forEach(l=>{
-        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        const spr = makeEmojiSprite(EMOJIS[Math.floor(rnd(0,EMOJIS.length))]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
         scene.add(spr);
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
       if(Math.random() < 0.30){
-        const lane=rndi(0,2);
-        const emo = FOOD[rndi(0,FOOD.length-1)];
+        const lane=Math.floor(rnd(0,3));
+        const emo = FOOD[Math.floor(rnd(0,FOOD.length))];
         const spr = makeEmojiSprite(emo);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.82,0.82,1);
@@ -958,7 +945,7 @@ if(clips.length){
       }
 
       if(Math.random() < 0.10){
-        const lane=rndi(0,2);
+        const lane=Math.floor(rnd(0,3));
         const spr = makeEmojiSprite(MAGNET);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
         spr.scale.set(0.90,0.90,1);
@@ -967,7 +954,7 @@ if(clips.length){
       }
 
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
-        const lane=rndi(0,2);
+        const lane=Math.floor(rnd(0,3));
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.95,0.95,1);
@@ -975,7 +962,7 @@ if(clips.length){
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
       if(Math.random() < 0.07){
-        const lane=rndi(0,2);
+        const lane=Math.floor(rnd(0,3));
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.90,0.90,1);
@@ -983,11 +970,10 @@ if(clips.length){
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // tartarughe
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
-          const lane=rndi(0,2);
+          const lane=Math.floor(rnd(0,3));
           const t = makeTurtle();
           t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
@@ -996,9 +982,8 @@ if(clips.length){
         }
       }
 
-      // rings
       if(Math.random() < 0.26){
-        const lane = rndi(0,2);
+        const lane = Math.floor(rnd(0,3));
         const baseZ = z0 - rnd(2,9);
         const gap = 1.15;
         for(let k=0;k<3;k++){
@@ -1062,22 +1047,13 @@ if(clips.length){
     });
 
     startBtn.addEventListener('click', ()=>{
-  initAudio();
-  closeMenu();
-  resetRun();
-
-  // ✅ forza lo start anche se qualcosa ha lasciato paused=true
-  game.paused = false;
-  game.over = false;
-  pauseBtn.textContent = 'Pausa';
-  btnPause.textContent = '⏸️';
-
-  startBtn.textContent='▶️ Inizia';
-});
-
+      initAudio();
+      closeMenu();
+      resetRun();
+      startBtn.textContent='▶️ Inizia';
+    });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-    // Floating buttons
     btnSettings.addEventListener('click', ()=>{
       initAudio();
       game.paused = true;
@@ -1142,18 +1118,14 @@ if(clips.length){
     function update(dt, tNow){
       if(game.paused) return;
 
-      // update animation Mixamo
+      // mixer update + lock hips x/z
       if(runnerMixer){
-  runnerMixer.update(dt);
-
-
-  // ✅ blocca root motion sugli Hips (Mixamo quasi sempre è qui)
-  if(mixamoHips){
-    mixamoHips.position.x = hipsBaseX;
-    mixamoHips.position.z = hipsBaseZ;
-  }
-}
-
+        runnerMixer.update(dt);
+        if(mixamoHips){
+          mixamoHips.position.x = hipsBaseX;
+          mixamoHips.position.z = hipsBaseZ;
+        }
+      }
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
@@ -1215,8 +1187,7 @@ if(clips.length){
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const jumpPitch = (game.y < -0.2) ? 0.25 : 0.0;
-      const mainPitchTarget = game.sliding ? -1.20 : (0.0 + jumpPitch);
+      const mainPitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
       // contact shadow
@@ -1312,7 +1283,7 @@ if(clips.length){
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto-slide
+      // auto-slide rings
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1380,7 +1351,7 @@ if(clips.length){
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ 50 anelli -> ring boost + trio + reset contatore
+          // ✅ 50 anelli -> trio + ring boost + reset
           if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
@@ -1388,7 +1359,6 @@ if(clips.length){
             bubble.visible=true;
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
-
             game.ringCount = 0;
             sfx.boost();
           }
@@ -1478,8 +1448,6 @@ if(clips.length){
       setBoostUI();
 
       if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
-      if(miniL.bubble.visible){ miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
-      if(miniR.bubble.visible){ miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
 
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
@@ -1534,11 +1502,7 @@ if(clips.length){
       refreshFoodUI();
       hpTxt.textContent = hpString();
 
-      try{
-        await loadMixamoRunner();
-      }catch(e){
-        console.warn('Errore caricamento running.glb', e);
-      }
+      try{ await loadMixamoRunner(); } catch(e){ console.warn('Errore loading running.glb', e); }
 
       openMenu();
       requestAnimationFrame(animate);
