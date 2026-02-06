@@ -697,14 +697,29 @@ if(mixamoHips){
             fallbackRunner.visible = false;
             runnerModel.add(model);
 
-            // animazione
             runnerMixer = new THREE.AnimationMixer(model);
-            const clip0 = gltf.animations && gltf.animations[0];
-            if(clip0){
-              const clip = stripRootMotion(clip0); // ✅ niente avanti/indietro
-              runnerAction = runnerMixer.clipAction(clip);
-              runnerAction.play();
-            }
+
+// ✅ scegli un clip valido (il primo con tracce)
+const clips = (gltf.animations || []).filter(c => c && c.tracks && c.tracks.length > 0);
+
+if(clips.length){
+  // preferisci un clip che sembra "run"
+  const runClip = clips.find(c => (c.name || '').toLowerCase().includes('run')) || clips[0];
+
+  const clip = stripRootMotion(runClip);
+
+  runnerAction = runnerMixer.clipAction(clip);
+  runnerAction.reset();
+  runnerAction.enabled = true;
+  runnerAction.setEffectiveTimeScale(1);
+  runnerAction.setEffectiveWeight(1);
+  runnerAction.play();
+
+  console.log('✅ Animazione avviata:', clip.name, 'tracks:', clip.tracks.length);
+} else {
+  console.warn('⚠️ Nessuna animazione trovata dentro running.glb. (gltf.animations vuoto)');
+}
+
 
             resolve();
           },
