@@ -9,75 +9,59 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    .hud{
-      position:fixed;top:8px;left:8px;right:8px;
-      display:flex;justify-content:space-between;gap:8px;
-      pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;
-    }
-    .card{
-      pointer-events:none;background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;padding:8px 10px;color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      min-width:180px; max-width:62vw;
-    }
-    .row{display:flex;justify-content:space-between;gap:8px;align-items:center;}
-    .small{font-size:11px;opacity:.86;line-height:1.2}
-    .btn{
-      pointer-events:auto;background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.16);
-      color:#eaf1ff;padding:9px 11px;border-radius:12px;
-      font-weight:800;cursor:pointer;user-select:none;
-    }
+    .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;}
+    .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:220px;}
+    .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+    .small{font-size:12px;opacity:.86;line-height:1.2}
+    .btn{pointer-events:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf1ff;padding:10px 12px;border-radius:14px;font-weight:800;cursor:pointer;user-select:none;}
     .btn:active{transform:scale(.98);}
     .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
 
-    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;}
-    .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
+    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
+    .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* floating home/settings/pause (sempre visibili) - ORIZZONTALE in alto a destra */
+    /* floating home/settings (sempre visibili) */
     .floatBtns{
-      position:fixed; top:8px; right:8px;
-      display:flex; flex-direction:row; gap:8px;
+      position:fixed; top:10px; right:10px;
+      display:flex; flex-direction:column; gap:8px;
       z-index:25; pointer-events:none;
     }
     .iconBtn{
       pointer-events:auto;
-      width:40px;height:40px;
+      width:44px;height:44px;
       padding:0;
-      border-radius:12px;
+      border-radius:14px;
       display:flex;align-items:center;justify-content:center;
-      font-size:17px;
+      font-size:18px;
       backdrop-filter:blur(10px);
-      line-height:1;
     }
 
     /* right side vertical food column */
     .rightCol{
-      position:fixed; top:62px; right:4px; width:56px;
+      position:fixed; top:70px; right:4px; width:58px;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       pointer-events:none; z-index:10;
     }
     .foodStack{
-      width:50px; max-height:210px; overflow:hidden;
+      width:52px; max-height:220px; overflow:hidden;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:7px 6px;
+      border-radius:14px;
+      padding:8px 6px;
       backdrop-filter:blur(10px);
     }
     .foodItem{
-      width:36px;height:36px;border-radius:11px;
+      width:38px;height:38px;border-radius:12px;
       display:flex;align-items:center;justify-content:center;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
-      font-size:19px;
+      font-size:20px;
     }
     .foodCount{
       margin-top:6px;
-      width:50px;
+      width:52px;
       text-align:center;
       font-weight:900;
       background:rgba(255,255,255,.06);
@@ -87,13 +71,13 @@
       font-size:12px;
     }
 
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
     .panel{width:min(680px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:14px;color:#eaf1ff;}
+      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
     .title{font-size:20px;font-weight:950;margin:4px 0 6px;}
-    .subtitle{opacity:.88;font-size:13px;margin:0 0 10px;line-height:1.35;}
+    .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
 
@@ -107,7 +91,7 @@
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
 
-    .help{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
+    .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
     /* sliders */
@@ -126,10 +110,8 @@
 
     @media (max-width:430px){
       .btn{padding:8px 10px;border-radius:12px;font-size:13px;}
-      .card{min-width:170px;max-width:64vw;padding:7px 9px;}
-      .iconBtn{width:38px;height:38px;border-radius:11px;font-size:16px;}
-      .pill{font-size:10.5px}
-      .bar{width:100px}
+      .card{min-width:200px;padding:9px 10px;}
+      .iconBtn{width:42px;height:42px;border-radius:12px;}
     }
   </style>
 
@@ -168,14 +150,12 @@
 
     <div class="controls">
       <button class="btn" id="pause">Pausa</button>
-      <!-- ✅ Restart rimosso -->
     </div>
   </div>
 
-  <!-- ✅ floating buttons (orizzontale) sempre visibili -->
+  <!-- floating buttons always visible -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
-    <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
     <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
@@ -186,9 +166,9 @@
 
   <div class="help">
     <div class="card small">
-      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
+      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia (anche i bambini).</span>
+      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia.</span>
     </div>
   </div>
 
@@ -196,7 +176,7 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 30 anelli → trio runner
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner + boost
       </div>
 
       <div class="grid">
@@ -222,6 +202,12 @@
             <div class="settingsVal" id="frameVal">0.06</div>
           </div>
           <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+
+          <!-- ✅ HAPTIC SWITCH -->
+          <div class="toggle" id="hapticToggle" style="margin-top:6px;">
+            <div><label>Haptic feedback</label><br/><span>Vibrazione leggera su raccolte / colpi (se supportata).</span></div>
+            <div class="switch" id="hapticSwitch"><i></i></div>
+          </div>
 
           <div class="toggle" id="audioToggle" style="margin-top:6px;">
             <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
@@ -272,7 +258,6 @@
 
     const btnSettings = document.getElementById('btnSettings');
     const btnHome = document.getElementById('btnHome');
-    const btnPause = document.getElementById('btnPause');
 
     const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
@@ -281,6 +266,9 @@
 
     const audioToggle= document.getElementById('audioToggle');
     const audioSwitch= document.getElementById('audioSwitch');
+
+    const hapticToggle = document.getElementById('hapticToggle');
+    const hapticSwitch = document.getElementById('hapticSwitch');
 
     const fovSlider = document.getElementById('fovSlider');
     const camSlider = document.getElementById('camSlider');
@@ -294,11 +282,10 @@
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
-
-    // === SETTINGS ===
+    // === SETTINGS (CAM) ===
     const CAM_KEY = 'jr_cam_settings_v5';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
+
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
@@ -309,29 +296,83 @@
     baseCamZ = clamp(baseCamZ, 2, 15);
     framing  = clamp(framing, 0, 1);
 
-    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing })); }
+    function saveCam(){
+      localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing }));
+    }
     function syncCamUI(){
       fovSlider.value = String(Math.round(baseFov));
       fovVal.textContent = String(Math.round(baseFov));
+
       camSlider.value = String(baseCamZ.toFixed(1));
       camVal.textContent = baseCamZ.toFixed(1);
+
       frameSlider.value = String(framing.toFixed(2));
       frameVal.textContent = framing.toFixed(2);
     }
     syncCamUI();
 
-    fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
-    camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
-    frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
-
-    resetCamBtn.addEventListener('click', ()=>{
-      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing;
-      saveCam(); syncCamUI();
+    fovSlider.addEventListener('input', ()=>{
+      baseFov = clamp(Number(fovSlider.value), 30, 110);
+      fovVal.textContent = String(Math.round(baseFov));
+      saveCam();
+    });
+    camSlider.addEventListener('input', ()=>{
+      baseCamZ = clamp(Number(camSlider.value), 2, 15);
+      camVal.textContent = baseCamZ.toFixed(1);
+      saveCam();
+    });
+    frameSlider.addEventListener('input', ()=>{
+      framing = clamp(Number(frameSlider.value), 0, 1);
+      frameVal.textContent = framing.toFixed(2);
+      saveCam();
     });
 
-    function toggleSettings(open){ settingsPanel.style.display = open ? 'flex' : 'none'; }
-    openSettingsBtn.addEventListener('click', ()=>{ toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === ''); syncCamUI(); });
+    resetCamBtn.addEventListener('click', ()=>{
+      baseFov = DEFAULTS.baseFov;
+      baseCamZ = DEFAULTS.baseCamZ;
+      framing = DEFAULTS.framing;
+      saveCam();
+      syncCamUI();
+    });
+
+    function toggleSettings(open){
+      settingsPanel.style.display = open ? 'flex' : 'none';
+    }
+    openSettingsBtn.addEventListener('click', ()=>{
+      toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
+      syncCamUI();
+    });
     closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
+
+    // === HAPTIC SETTINGS ===
+    const HAPTIC_KEY = 'jr_haptic_v1';
+    const supportsVibrate = !!navigator.vibrate;
+    let hapticEnabled = (() => {
+      const v = localStorage.getItem(HAPTIC_KEY);
+      if(v === null) return supportsVibrate; // default: ON se supportato
+      return v === '1' && supportsVibrate;
+    })();
+    function syncHapticUI(){
+      hapticSwitch.classList.toggle('on', !!hapticEnabled);
+    }
+    function saveHaptic(){
+      localStorage.setItem(HAPTIC_KEY, hapticEnabled ? '1' : '0');
+    }
+    function haptic(pattern){
+      if(!hapticEnabled) return;
+      if(!supportsVibrate) return;
+      try{ navigator.vibrate(pattern); }catch(e){}
+    }
+    syncHapticUI();
+
+    hapticToggle.addEventListener('click', ()=>{
+      hapticEnabled = !hapticEnabled && supportsVibrate;
+      if(!supportsVibrate) hapticEnabled = false;
+      syncHapticUI();
+      saveHaptic();
+      // piccolo feedback quando toggli
+      haptic(18);
+    });
 
     // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -358,17 +399,23 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
     const sfx = {
-      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
-      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
-      ring: ()=>{ beep('triangle', 700, 0.06, 0.10); },
-      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
-      hit:  ()=>{ beep('square', 120, 0.12, 0.11); },
-      lane: ()=>{ beep('sine', 160, 0.05, 0.05); },
-      jump: ()=>{ beep('square', 420, 0.05, 0.08); },
-      slide:()=>{ beep('sine', 220, 0.06, 0.06); },
-      boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
+      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); haptic(10); },
+      food: ()=>{ beep('sine', 520, 0.06, 0.09); haptic(12); },
+      ring: ()=>{ beep('triangle', 700, 0.06, 0.10); haptic(14); },
+      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); haptic([10,20,10]); },
+      hit:  ()=>{ beep('square', 120, 0.12, 0.11); haptic([20,30,20]); },
+      lane: ()=>{ beep('sine', 160, 0.05, 0.05); haptic(6); },
+      jump: ()=>{ beep('square', 420, 0.05, 0.08); haptic(8); },
+      slide:()=>{ beep('sine', 220, 0.06, 0.06); haptic(8); },
+      boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); haptic([15,25,15,25,15]); },
     };
-    audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
+
+    audioToggle.addEventListener('click', ()=>{
+      initAudio();
+      audioEnabled=!audioEnabled;
+      audioSwitch.classList.toggle('on',!!audioEnabled);
+      haptic(14);
+    });
 
     // Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -537,15 +584,16 @@
       return spr;
     }
 
-    // Obstacles / Turtle
-    function spawnObstacleVisual(){
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
-        new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
-      );
-      box.castShadow=true; box.receiveShadow=true;
-      return box;
+    // ✅ OBSTACOLI come EMOJI (faccia verso di te)
+    const OBST_EMOJIS = ["🦍","🦧","🦬","🪲","🐙","🐘","🦝","🦏","🦢","🦬","🐅","🐆","🦖","🦞","🐐","🦒","🦣"];
+    function makeObstacleEmoji(){
+      const emo = OBST_EMOJIS[rndi(0, OBST_EMOJIS.length-1)];
+      const spr = makeEmojiSprite(emo);
+      spr.scale.set(0.92,0.92,1);
+      return spr;
     }
+
+    // Turtle
     function makeTurtle(){
       const g = new THREE.Group();
       const shell = new THREE.Mesh(
@@ -582,7 +630,7 @@
       return ring;
     }
 
-    // Runner (main)
+    // Runner
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
@@ -599,7 +647,6 @@
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
 
-    // Bubble (main)
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -612,28 +659,17 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // Mini runners (kids)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
-
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
-
-      p.scale.setScalar(0.72);
-
-      const bb = bubble.clone();
-      bb.material = bubble.material.clone();
-      bb.material.opacity = 0.20;
-      bb.scale.setScalar(0.90);
-      bb.visible=false;
-      p.add(bb);
-
       p.visible=false;
-
-      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
+      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone(); bb.material.opacity = 0.18;
+      p.add(bb);
+      return { pivot:p, center:c, model:m, bubble:bb };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
@@ -648,10 +684,11 @@
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
+    const RING_THRESHOLD = 50; // ✅ boost anelli a 50
+
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
-
       sliding:false, slideT:0,
       autoSlideCooldown:0,
 
@@ -669,7 +706,6 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
-
       trioT:0,
 
       entities:[],
@@ -729,12 +765,8 @@
     function resetRun(){
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
-
       game.sliding=false; game.slideT=0;
       game.autoSlideCooldown=0;
-
-      miniL.sliding=false; miniL.slideT=0; miniL.autoCooldown=0;
-      miniR.sliding=false; miniR.slideT=0; miniR.autoCooldown=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -745,7 +777,6 @@
       game.foodBoostT=0;
       game.ringBoostT=0;
       game.magnetT=0;
-
       game.trioT=0;
 
       game.spawnT=0.30;
@@ -770,8 +801,7 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      // icona flottante cambia
-      btnPause.textContent = game.paused ? '▶️' : '⏸️';
+      haptic(game.paused ? 12 : 10);
     }
 
     function loseLife(){
@@ -791,26 +821,35 @@
       sfx.boost();
     }
 
-    // ---- Spawns (più ostacoli + più tartarughe)
+    // ---- Spawns (con difficoltà: +10% ostacoli ogni 15000 score)
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
+      const diffStep = Math.floor(game.score / 15000);
+      const factor = 1 + 0.10 * diffStep;
+
+      // più ostacoli col tempo
+      let p0 = clamp(0.62 / factor, 0.18, 0.75);          // prob "0 ostacoli"
+      let p1 = clamp(0.78 / factor, p0 + 0.08, 0.92);     // soglia per "1 ostacolo" (altrimenti 2)
+
       const blocked=new Set();
-      // ✅ più ostacoli
-      const oCount = (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
+      const r = Math.random();
+      const oCount = (r < p0) ? 0 : ((r < p1) ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
+      // ✅ OSTACOLI EMOJI
       blocked.forEach(l=>{
-        const obj = spawnObstacleVisual();
-        obj.position.set(lanesX[l], 0.65, z0);
+        const obj = makeObstacleEmoji();
+        obj.position.set(lanesX[l], 1.05, z0);
         scene.add(obj);
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
+      // emojis (coin)
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
@@ -818,6 +857,7 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
+      // FOOD
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -828,6 +868,7 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
+      // MAGNET
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -837,6 +878,7 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
+      // HEARTS
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
@@ -854,24 +896,22 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // ✅ più tartarughe
-      if(Math.random() < 0.26){
-        const count = (Math.random()<0.72) ? 1 : 2;
-        for(let n=0;n<count;n++){
-          const lane=rndi(0,2);
-          const t = makeTurtle();
-          t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
-          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-          scene.add(t);
-          game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
-        }
+      // TURTLES: un po’ più frequenti col tempo
+      const turtleP = clamp(0.14 * factor, 0.14, 0.34);
+      if(Math.random() < turtleP){
+        const lane=rndi(0,2);
+        const t = makeTurtle();
+        t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
+        t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+        scene.add(t);
+        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // RINGS: 3 vicini
+      // RINGS: 3 dietro l’altro stessa corsia
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.15;
+        const gap = 1.55;
         for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -913,6 +953,7 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
+      if(k==='r') { initAudio(); closeMenu(); resetRun(); }
     });
 
     let touchStart=null;
@@ -939,32 +980,18 @@
     btnSettings.addEventListener('click', ()=>{
       initAudio();
       game.paused = true;
-      btnPause.textContent = '▶️';
       menu.style.display = 'flex';
       toggleSettings(true);
       overBig.textContent = '';
       overStats.textContent = 'Impostazioni';
       syncCamUI();
-    });
-
-    btnPause.addEventListener('click', ()=>{
-      initAudio();
-      // se menu aperto -> chiudi e riprendi
-      if(menu.style.display !== 'none'){
-        closeMenu();
-        game.paused = false;
-        btnPause.textContent = '⏸️';
-        pauseBtn.textContent = 'Pausa';
-        return;
-      }
-      togglePause();
+      syncHapticUI();
     });
 
     btnHome.addEventListener('click', ()=>{
       initAudio();
       resetRun();
       game.paused = true;
-      btnPause.textContent = '▶️';
       game.over = false;
       startBtn.textContent='▶️ Inizia';
       openMenu();
@@ -978,21 +1005,6 @@
     function activeRunnerXs(){
       if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
-    }
-
-    function isLaneSliding(lane){
-      if(game.trioT<=0) return (lane === game.lane) && game.sliding;
-      if(lane===0) return miniL.sliding;
-      if(lane===1) return game.sliding;
-      if(lane===2) return miniR.sliding;
-      return false;
-    }
-
-    function triggerSlide(obj, duration=0.42, cooldown=0.22){
-      obj.sliding = true;
-      obj.slideT = duration;
-      obj.autoCooldown = cooldown;
-      obj.center.rotation.x = -1.20;
     }
 
     // ---- Update loop
@@ -1020,21 +1032,19 @@
       if(game.trioT>0){
         game.trioT = Math.max(0, game.trioT-dt);
         if(game.trioT===0){
-          miniL.pivot.visible=false; miniR.pivot.visible=false;
-          miniL.bubble.visible=false; miniR.bubble.visible=false;
-          miniL.sliding=false; miniR.sliding=false;
+          miniL.pivot.visible=false;
+          miniR.pivot.visible=false;
+          miniL.bubble.visible=false;
+          miniR.bubble.visible=false;
         }
       }
 
-      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
-      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
-      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
+      if(game.autoSlideCooldown>0) game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
-      // speed: cumulativo (MEGA ancora più basso)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.06 : 1.0; // ✅ abbassato (prima 1.12)
+      const crazyMul = both ? 1.8 : 1.0;
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
@@ -1052,18 +1062,19 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timers
-      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
-      if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
-      if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
+      // slide
+      if(game.sliding){
+        game.slideT -= dt;
+        if(game.slideT<=0) game.sliding=false;
+      }
 
-      // runner positions
+      // runner
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const mainPitchTarget = game.sliding ? -1.20 : 0.0;
-      runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
+      const slidePitchTarget = game.sliding ? -1.20 : 0.0;
+      runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
 
       // contact shadow
       const h = runnerPivot.position.y;
@@ -1074,14 +1085,12 @@
 
       // minis
       if(game.trioT>0){
-        miniL.pivot.visible=true; miniR.pivot.visible=true;
+        miniL.pivot.visible=true;
+        miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
-
-        const lPitchTarget = miniL.sliding ? -1.20 : 0.0;
-        const rPitchTarget = miniR.sliding ? -1.20 : 0.0;
-        miniL.center.rotation.x = damp(miniL.center.rotation.x, lPitchTarget, 18, dt);
-        miniR.center.rotation.x = damp(miniR.center.rotation.x, rPitchTarget, 18, dt);
+        miniL.center.rotation.x = runnerCenter.rotation.x;
+        miniR.center.rotation.x = runnerCenter.rotation.x;
       }
 
       // road scroll
@@ -1097,16 +1106,18 @@
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(0.40, 0.75); // un po' più frequente
+        game.spawnT = rnd(0.45, 0.85);
       }
 
       // magnet effect
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
+        // normal world move towards player
         e.z += scroll;
         e.obj.position.z = e.z;
 
+        // turtle projectile: corre avanti
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
           e.z -= (speed*3.4)*dt;
@@ -1141,16 +1152,14 @@
         }
       }
 
-      // collisions
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
       function collideAtX(ex, e){
         const dz = Math.abs(e.z - 0.25);
         const dx = Math.abs(e.obj.position.x - ex);
-        const ey = (e.obj.position.y ?? 0);
-        const dy = Math.abs(ey - py);
-        return (dz < 0.75 && dx < 0.60 && dy < 1.05);
+        const dy = Math.abs((e.obj.position.y ?? 0) - py);
+        return (dz < 0.75 && dx < 0.62 && dy < 1.15);
       }
       function collideTurtle(ex, e){
         const dz = Math.abs(e.z - 0.35);
@@ -1158,37 +1167,17 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto-slide
+      // AUTO-PIEGA PRESTO
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
           const dz = Math.abs(e.z - 0.25);
-          if(dz < 2.55){
+          if(dz < 2.05){
             game.sliding = true;
-            game.slideT  = 0.48;
-            game.autoSlideCooldown = 0.24;
-            runnerCenter.rotation.x = -1.20;
+            game.slideT  = 0.45;
+            game.autoSlideCooldown = 0.30;
             break;
-          }
-        }
-      }
-      if(game.trioT>0 && game.y===0){
-        if(!miniL.sliding && miniL.autoCooldown<=0){
-          for(const e of game.entities){
-            if(e.type==='ring' && e.lane===0 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniL, 0.46, 0.22); break; }
-          }
-        }
-        if(!game.sliding && game.autoSlideCooldown<=0){
-          for(const e of game.entities){
-            if(e.type==='ring' && e.lane===1 && Math.abs(e.z-0.25) < 2.55){
-              game.sliding=true; game.slideT=0.46; game.autoSlideCooldown=0.22; runnerCenter.rotation.x=-1.20; break;
-            }
-          }
-        }
-        if(!miniR.sliding && miniR.autoCooldown<=0){
-          for(const e of game.entities){
-            if(e.type==='ring' && e.lane===2 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniR, 0.46, 0.22); break; }
           }
         }
       }
@@ -1200,7 +1189,8 @@
             const o = game.entities[j];
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
-            if(Math.abs(o.z - e.z) < 1.35){
+            const dz = Math.abs(o.z - e.z);
+            if(dz < 1.35){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -1212,38 +1202,38 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
+        // ring
         if(e.type==='ring'){
-          const laneX = lanesX[e.lane];
-          if(!collideAtX(laneX, e)) continue;
+          let got=false;
+          for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
+          if(!got) continue;
 
-          if(game.trioT<=0){
-            if(!game.sliding) continue;
-          }else{
-            if(!isLaneSliding(e.lane)) continue;
-          }
+          if(game.trioT<=0 && !game.sliding) continue;
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ ogni 30 anelli -> boost anelli + trio (reset contatore)
-          if(game.ringCount >= 30){
+          // ✅ a 50 anelli -> boost + trio, e azzera contatore
+          if(game.ringCount >= RING_THRESHOLD){
+            game.ringCount = 0;      // azzera
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
             bubble.visible=true;
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
-
-            game.ringCount = 0;
             sfx.boost();
           }
           continue;
         }
 
+        // turtle touch -> projectile
         if(e.type==='turtle' && e.state==='idle'){
           let hitT=false;
-          for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
+          for(const ex of xs){
+            if(collideTurtle(ex, e)){ hitT=true; break; }
+          }
           if(hitT){
             e.state='projectile';
             e.projT = 2.8;
@@ -1252,8 +1242,11 @@
           continue;
         }
 
+        // altri: collisione normale
         let hit=false;
-        for(const ex of xs){ if(collideAtX(ex,e)){ hit=true; break; } }
+        for(const ex of xs){
+          if(collideAtX(ex,e)){ hit=true; break; }
+        }
         if(!hit) continue;
 
         if(e.type==='coin'){
@@ -1323,26 +1316,27 @@
 
       setBoostUI();
 
-      if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
-      if(miniL.bubble.visible){ miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
-      if(miniR.bubble.visible){ miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
+      if(bubble.visible){
+        bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
+      }
 
       tiltTarget *= 0.92;
-      camRoll = damp(camRoll, tiltTarget, 10, dt);
+      camRoll = camRoll*0.90 + tiltTarget*0.10;
     }
 
     function animate(tNow){
-      const dt=Math.min(0.030,(tNow-tPrev)/1000);
+      const dt=Math.min(0.033,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
 
+      // camera (slider base)
       const inAir = (game.y < -0.01) || game.jumping;
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : (inAir ? -2 : 0));
-      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+      const fovBoost = bothBoost ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
+      const zBoost   = bothBoost ? 1.3 : (anyBoost ? 0.6 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
@@ -1351,14 +1345,14 @@
       const lookAtZ = lerp(-22.0, -38.0, framing);
       const camYBase = lerp(3.9, 5.8, framing);
 
-      camFov = damp(camFov, targetFov, 8, dt);
-      camZ   = damp(camZ,   targetZ,   8, dt);
-      camY   = damp(camY,   camYBase + (bothBoost?0.10:0), 8, dt);
+      camFov = lerp(camFov, targetFov, 0.08);
+      camZ   = lerp(camZ,   targetZ,   0.08);
+      camY   = lerp(camY,   camYBase + (bothBoost?0.15:0), 0.08);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0020) * 0.005;
+      const bob = Math.sin(tNow*0.0022) * 0.01;
       camera.position.set(0, camY + bob, camZ);
       camera.rotation.z = camRoll;
 
