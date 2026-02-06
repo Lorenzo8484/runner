@@ -120,14 +120,6 @@
     .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;}
     .settingsRow small{opacity:.8}
     .settingsVal{font-weight:950}
-
-    @media (max-width:430px){
-      .btn{padding:8px 10px;border-radius:12px;font-size:13px;}
-      .card{min-width:170px;max-width:64vw;padding:7px 9px;}
-      .iconBtn{width:38px;height:38px;border-radius:11px;font-size:16px;}
-      .pill{font-size:10.5px}
-      .bar{width:100px}
-    }
   </style>
 
   <script type="importmap">
@@ -196,7 +188,6 @@
 
       <div class="grid">
         <button class="btn full" id="startBtn">▶️ Inizia</button>
-
         <button class="btn full" id="openSettings">⚙️ Impostazioni</button>
 
         <div class="toggle full settingsBox" id="settingsPanel">
@@ -532,7 +523,6 @@
       return spr;
     }
 
-    // Obstacles / Turtle
     function spawnObstacleVisual(){
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
@@ -560,7 +550,6 @@
       g.add(head);
       return g;
     }
-
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -573,11 +562,10 @@
         })
       );
       ring.castShadow=true; ring.receiveShadow=true;
-      ring.rotation.set(0,0,0);
       return ring;
     }
 
-    // Runner (main)
+    // Runner
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
@@ -589,7 +577,6 @@
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
     dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
-
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
@@ -597,7 +584,7 @@
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
     runnerModel.add(fallbackRunner);
 
-    // Bubble (main)
+    // Bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -610,34 +597,38 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // === MIXAMO robust ===
+    // MIXAMO
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
-    let runnerMixer = null;
-    let runnerAction = null;
-
-    let mixamoHips = null;
-    let hipsBaseX = 0, hipsBaseZ = 0;
-
-    let mixamoModelRoot = null;
-    let modelBaseX = 0, modelBaseZ = 0;
+    let runnerMixer=null, runnerAction=null;
+    let mixamoHips=null, mixamoRootNode=null;
+    let hipsBaseX=0, hipsBaseZ=0;
+    let rootBaseX=0, rootBaseZ=0;
 
     function setShadows(root){
-      root.traverse((o)=>{
-        if(o.isMesh){
-          o.castShadow = true;
-          o.receiveShadow = true;
-        }
+      root.traverse(o=>{
+        if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
       });
     }
 
-    // ✅ elimina root motion X/Z da QUALUNQUE position-track
+    function isRootTrack(trackName){
+      const n = (trackName||'').toLowerCase();
+      if(!n.endsWith('.position')) return false;
+      // prendo SOLO root/hips/armature, non gambe/braccia
+      return (
+        n.includes('hips') ||
+        n.includes('mixamorig:hips') ||
+        n.includes('root') ||
+        n.includes('armature')
+      );
+    }
+
+    // ✅ strip root motion SOLO per root/hips/armature
     function stripRootMotion(clip){
       const c = clip.clone();
       for(const t of c.tracks){
-        const name = (t.name||'').toLowerCase();
-        if(!name.endsWith('.position')) continue;
+        if(!isRootTrack(t.name)) continue;
         const v = t.values;
         for(let i=0;i<v.length;i+=3){
           v[i] = 0;     // X
@@ -647,30 +638,32 @@
       return c;
     }
 
-    function hideWhiteOrHugeMeshes(model){
-      // Nasconde “quadroni”/plane/box bianchi o troppo grandi (debug/backdrop)
-      model.traverse((o)=>{
+    function isWhiteishMaterial(mat){
+      if(!mat || !mat.color) return false;
+      const r=mat.color.r, g=mat.color.g, b=mat.color.b;
+      return (r>0.92 && g>0.92 && b>0.92);
+    }
+
+    function killWhiteQuad(model){
+      // ✅ regole più dure: plane/box enormi e bianchi = OFF
+      model.traverse(o=>{
         if(!o.isMesh) return;
 
         const mats = Array.isArray(o.material) ? o.material : [o.material].filter(Boolean);
-        let isWhiteish = false;
-        for(const m of mats){
-          if(m && m.color){
-            const r=m.color.r, g=m.color.g, b=m.color.b;
-            if(r>0.92 && g>0.92 && b>0.92) isWhiteish = true;
-          }
-        }
+        const whiteish = mats.some(isWhiteishMaterial);
 
-        // dimensione (se enorme rispetto al runner)
+        // bbox size
         const box = new THREE.Box3().setFromObject(o);
         const s = new THREE.Vector3();
         box.getSize(s);
-        const huge = (s.x > 3.0 || s.y > 3.0 || s.z > 3.0);
+
+        const huge = (s.x>3.5 || s.y>3.5 || s.z>3.5);
+        const flat = (Math.min(s.x,s.y,s.z) < 0.02 && Math.max(s.x,s.y,s.z) > 2.5);
 
         const name = (o.name||'').toLowerCase();
-        const suspiciousName = name.includes('plane') || name.includes('cube') || name.includes('box') || name.includes('helper') || name.includes('rig');
+        const suspicious = name.includes('plane') || name.includes('ground') || name.includes('quad') || name.includes('helper') || name.includes('box');
 
-        if((isWhiteish && huge) || (huge && suspiciousName)){
+        if((whiteish && huge) || (whiteish && flat) || (flat && suspicious)){
           o.visible = false;
         }
       });
@@ -683,65 +676,62 @@
           (gltf)=>{
             const model = gltf.scene;
 
-            // base transform
-            model.scale.setScalar(0.90);
-            model.rotation.y = Math.PI; // verso camera
+            // orientamento: NON forzo PI (molti Mixamo già ok)
             model.position.set(0,0,0);
+            model.scale.setScalar(0.95);
 
             setShadows(model);
 
-            // ✅ evita pezzi “spariti” (backface culling)
-            model.traverse((o)=>{
+            // DoubleSide per sicurezza
+            model.traverse(o=>{
               if(o.isMesh && o.material){
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
-                for(const m of mats){
-                  if(m) m.side = THREE.DoubleSide;
-                }
+                for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
               }
             });
 
-            // ✅ nasconde SOLO eventuali quadroni “sporchi”
-            hideWhiteOrHugeMeshes(model);
+            // ✅ rimuove quadri bianchi/helper
+            killWhiteQuad(model);
 
-            // ✅ porta i piedi a terra (bbox minY -> 0)
+            // porta piedi a terra (bbox)
             {
               const box = new THREE.Box3().setFromObject(model);
               const lift = -box.min.y;
               model.position.y += lift + 0.01;
             }
 
-            // trova Hips (per sicurezza)
+            // trova hips + root
             mixamoHips = null;
-            model.traverse((o)=>{
-              if(!o.isBone) return;
-              const n = (o.name || '').toLowerCase();
-              if(n === 'hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+            mixamoRootNode = null;
+
+            model.traverse(o=>{
+              const n = (o.name||'').toLowerCase();
+              if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
+              if(o.isBone){
+                if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+              }
             });
+
             if(mixamoHips){
               hipsBaseX = mixamoHips.position.x;
               hipsBaseZ = mixamoHips.position.z;
             }
+            if(mixamoRootNode){
+              rootBaseX = mixamoRootNode.position.x;
+              rootBaseZ = mixamoRootNode.position.z;
+            }
 
-            // swap
             fallbackRunner.visible = false;
             runnerModel.add(model);
 
-            mixamoModelRoot = model;
-            modelBaseX = model.position.x;
-            modelBaseZ = model.position.z;
-
-            const clips = (gltf.animations || []).filter(c=>c && c.tracks && c.tracks.length);
-            if(!clips.length){
-              console.warn('running.glb non contiene animazioni: uso dummy');
-              resolve();
-              return;
-            }
+            const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
+            if(!clips.length){ resolve(); return; }
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
-            const clip = stripRootMotion(runClip);
+            const fixed = stripRootMotion(runClip);
 
             runnerMixer = new THREE.AnimationMixer(model);
-            runnerAction = runnerMixer.clipAction(clip);
+            runnerAction = runnerMixer.clipAction(fixed);
 
             runnerAction.reset();
             runnerAction.enabled = true;
@@ -754,12 +744,12 @@
             resolve();
           },
           undefined,
-          ()=>{ console.warn('Errore caricando running.glb: uso dummy'); resolve(); }
+          ()=>{ resolve(); }
         );
       });
     }
 
-    // Mini runners (kids)
+    // Mini runners
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -779,13 +769,12 @@
       p.add(bb);
 
       p.visible=false;
-
       return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
 
-    // --- Game data
+    // Game data
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
     const HEART  = "❤️";
@@ -938,13 +927,12 @@
       sfx.boost();
     }
 
-    // ✅ +10% ostacoli ogni 15000 punti
+    // +10% ostacoli ogni 15000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 15000);
       return 1 + 0.10 * steps;
     }
 
-    // ---- Spawns
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
@@ -1038,7 +1026,7 @@
       }
     }
 
-    // ---- Controls
+    // Controls
     let tiltTarget=0, camRoll=0;
 
     function moveLane(dir){
@@ -1130,7 +1118,7 @@
       openMenu();
     });
 
-    // ---- Camera state
+    // Camera state
     let camZ = baseCamZ;
     let camY = 4.6;
     let camFov = baseFov;
@@ -1139,7 +1127,6 @@
       if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
     }
-
     function isLaneSliding(lane){
       if(game.trioT<=0) return (lane === game.lane) && game.sliding;
       if(lane===0) return miniL.sliding;
@@ -1147,7 +1134,6 @@
       if(lane===2) return miniR.sliding;
       return false;
     }
-
     function triggerSlide(obj, duration=0.42, cooldown=0.22){
       obj.sliding = true;
       obj.slideT = duration;
@@ -1155,22 +1141,22 @@
       obj.center.rotation.x = -1.20;
     }
 
-    // ---- Update loop
+    // Update loop
     let tPrev=performance.now();
 
     function update(dt, tNow){
       if(game.paused) return;
 
-      // ✅ mixer + lock (extra-sicurezza)
+      // ✅ aggiorna animazione + blocca avanti/indietro (hips + root)
       if(runnerMixer){
         runnerMixer.update(dt);
         if(mixamoHips){
           mixamoHips.position.x = hipsBaseX;
           mixamoHips.position.z = hipsBaseZ;
         }
-        if(mixamoModelRoot){
-          mixamoModelRoot.position.x = modelBaseX;
-          mixamoModelRoot.position.z = modelBaseZ;
+        if(mixamoRootNode){
+          mixamoRootNode.position.x = rootBaseX;
+          mixamoRootNode.position.z = rootBaseZ;
         }
       }
 
@@ -1398,7 +1384,7 @@
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ 50 anelli -> trio + ring boost + reset
+          // 50 rings -> trio + ring boost + reset
           if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
@@ -1530,7 +1516,6 @@
       const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(0, camY + bob, camZ);
       camera.rotation.z = camRoll;
-
       camera.lookAt(0, lookAtY, lookAtZ);
 
       renderer.render(scene, camera);
@@ -1548,9 +1533,7 @@
     (async ()=>{
       refreshFoodUI();
       hpTxt.textContent = hpString();
-
       await loadMixamoRunner();
-
       openMenu();
       requestAnimationFrame(animate);
     })();
