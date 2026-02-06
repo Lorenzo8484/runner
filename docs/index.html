@@ -168,11 +168,10 @@
 
     <div class="controls">
       <button class="btn" id="pause">Pausa</button>
-      <!-- ✅ Restart rimosso -->
     </div>
   </div>
 
-  <!-- ✅ floating buttons (orizzontale) sempre visibili -->
+  <!-- floating buttons -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
@@ -196,7 +195,7 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 30 anelli → trio runner
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner
       </div>
 
       <div class="grid">
@@ -244,6 +243,7 @@
 
   <script type="module">
     import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -587,17 +587,19 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
+    // (fallback) semplice placeholder, lo nascondiamo quando il GLB è caricato
+    const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
-    dummyBody.position.y=0.85; dummyBody.castShadow=true; runnerModel.add(dummyBody);
-
+    dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
     );
-    dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
+    dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
+    runnerModel.add(fallbackRunner);
 
     // Bubble (main)
     const bubble = new THREE.Mesh(
@@ -611,6 +613,61 @@
     bubble.position.set(0, 0.95, 0);
     bubble.visible=false;
     runnerPivot.add(bubble);
+
+    // === MIXAMO PLAYER (running.glb in docs/) ===
+    const RUNNER_GLB_URL = './running.glb';
+
+    let runnerGLTF = null;
+    let runnerMixer = null;
+    let runnerAction = null;
+
+    const gltfLoader = new GLTFLoader();
+
+    function setShadows(root){
+      root.traverse((o)=>{
+        if(o.isMesh){
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if(o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
+        }
+      });
+    }
+
+    async function loadMixamoRunner(){
+      return new Promise((resolve, reject)=>{
+        gltfLoader.load(
+          RUNNER_GLB_URL,
+          (gltf)=>{
+            runnerGLTF = gltf;
+            const model = gltf.scene;
+
+            // valori tipici per Mixamo: potresti ritoccarli se lo vedi grande/piccolo
+            model.scale.setScalar(0.85);
+            model.position.set(0, 0.0, 0.0);
+            model.rotation.y = Math.PI;
+
+            setShadows(model);
+
+            // nascondi placeholder
+            fallbackRunner.visible = false;
+
+            runnerModel.add(model);
+
+            // animazione (prende la prima clip del file running.glb)
+            runnerMixer = new THREE.AnimationMixer(model);
+            const clip = gltf.animations && gltf.animations[0];
+            if(clip){
+              runnerAction = runnerMixer.clipAction(clip);
+              runnerAction.play();
+            }
+
+            resolve();
+          },
+          undefined,
+          (err)=>reject(err)
+        );
+      });
+    }
 
     // Mini runners (kids)
     function makeMiniRunner(){
@@ -770,7 +827,6 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      // icona flottante cambia
       btnPause.textContent = game.paused ? '▶️' : '⏸️';
     }
 
@@ -791,13 +847,31 @@
       sfx.boost();
     }
 
-    // ---- Spawns (più ostacoli + più tartarughe)
+    // ---- Difficoltà ostacoli: +10% ogni 15000 punti
+    function obstacleMultiplier(){
+      const steps = Math.floor(game.score / 15000);
+      return 1 + 0.10 * steps; // 1.0, 1.1, 1.2, ...
+    }
+
+    // ---- Spawns (più ostacoli + più tartarughe) + scaling ostacoli
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
       const blocked=new Set();
-      // ✅ più ostacoli
-      const oCount = (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
+
+      // ✅ scaling ostacoli
+      const mult = obstacleMultiplier();
+
+      // base: 0 ostacoli 22%, altrimenti 1 o 2
+      // con mult crescente, 0 ostacoli diventa più raro e 2 ostacoli più frequente.
+      const p0 = clamp(0.22 / mult, 0.05, 0.22); // minimo 5% per non impazzire
+      let oCount = 0;
+      if(Math.random() >= p0){
+        // condizionato: base 2 ostacoli = 38% (perché 1 se <0.62, 2 altrimenti)
+        const p2 = clamp(0.38 * mult, 0.18, 0.90);
+        oCount = (Math.random() < p2) ? 2 : 1;
+      }
+
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
@@ -854,7 +928,7 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // ✅ più tartarughe
+      // più tartarughe (come prima)
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
@@ -949,7 +1023,6 @@
 
     btnPause.addEventListener('click', ()=>{
       initAudio();
-      // se menu aperto -> chiudi e riprendi
       if(menu.style.display !== 'none'){
         closeMenu();
         game.paused = false;
@@ -1001,6 +1074,9 @@
     function update(dt, tNow){
       if(game.paused) return;
 
+      // update Mixamo animation
+      if(runnerMixer) runnerMixer.update(dt);
+
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
 
@@ -1034,7 +1110,7 @@
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.06 : 1.0; // ✅ abbassato (prima 1.12)
+      const crazyMul = both ? 1.06 : 1.0;
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
@@ -1062,7 +1138,8 @@
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const mainPitchTarget = game.sliding ? -1.20 : 0.0;
+      const jumpPitch = (game.y < -0.2) ? 0.25 : 0.0;
+      const mainPitchTarget = game.sliding ? -1.20 : (0.0 + jumpPitch);
       runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
       // contact shadow
@@ -1097,7 +1174,7 @@
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(0.40, 0.75); // un po' più frequente
+        game.spawnT = rnd(0.40, 0.75);
       }
 
       // magnet effect
@@ -1226,8 +1303,8 @@
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ ogni 30 anelli -> boost anelli + trio (reset contatore)
-          if(game.ringCount >= 30){
+          // ✅ ogni 50 anelli -> boost anelli + trio (reset contatore)
+          if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1235,7 +1312,7 @@
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
 
-            game.ringCount = 0;
+            game.ringCount = 0; // azzera
             sfx.boost();
           }
           continue;
@@ -1379,6 +1456,15 @@
     (async ()=>{
       refreshFoodUI();
       hpTxt.textContent = hpString();
+
+      // carica subito il player Mixamo (running.glb)
+      try{
+        await loadMixamoRunner();
+      }catch(e){
+        console.warn('Errore caricamento running.glb', e);
+        // resta il runner fallback
+      }
+
       openMenu();
       requestAnimationFrame(animate);
     })();
