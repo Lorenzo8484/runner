@@ -289,7 +289,6 @@
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
-
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // === SETTINGS ===
@@ -583,7 +582,7 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // Fallback runner
+    // fallback dummy
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
@@ -596,7 +595,6 @@
       new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
-
     runnerModel.add(fallbackRunner);
 
     // Bubble (main)
@@ -612,7 +610,7 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // === MIXAMO ===
+    // === MIXAMO robust ===
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
@@ -622,72 +620,119 @@
     let mixamoHips = null;
     let hipsBaseX = 0, hipsBaseZ = 0;
 
+    let mixamoModelRoot = null;
+    let modelBaseX = 0, modelBaseZ = 0;
+
     function setShadows(root){
       root.traverse((o)=>{
         if(o.isMesh){
           o.castShadow = true;
           o.receiveShadow = true;
-          if(o.material && o.material.map) o.material.map.colorSpace = THREE.SRGBColorSpace;
         }
       });
     }
 
+    // ✅ elimina root motion X/Z da QUALUNQUE position-track
     function stripRootMotion(clip){
       const c = clip.clone();
       for(const t of c.tracks){
-        if(!t.name.endsWith('.position')) continue;
-        const n = t.name.toLowerCase();
-        const isRootish = n.includes('hips') || n.includes('mixamorig') || n.includes('armature') || n.includes('root');
-        if(!isRootish) continue;
+        const name = (t.name||'').toLowerCase();
+        if(!name.endsWith('.position')) continue;
         const v = t.values;
         for(let i=0;i<v.length;i+=3){
-          v[i] = 0;
-          v[i+2] = 0;
+          v[i] = 0;     // X
+          v[i+2] = 0;   // Z
         }
       }
       return c;
     }
 
+    function hideWhiteOrHugeMeshes(model){
+      // Nasconde “quadroni”/plane/box bianchi o troppo grandi (debug/backdrop)
+      model.traverse((o)=>{
+        if(!o.isMesh) return;
+
+        const mats = Array.isArray(o.material) ? o.material : [o.material].filter(Boolean);
+        let isWhiteish = false;
+        for(const m of mats){
+          if(m && m.color){
+            const r=m.color.r, g=m.color.g, b=m.color.b;
+            if(r>0.92 && g>0.92 && b>0.92) isWhiteish = true;
+          }
+        }
+
+        // dimensione (se enorme rispetto al runner)
+        const box = new THREE.Box3().setFromObject(o);
+        const s = new THREE.Vector3();
+        box.getSize(s);
+        const huge = (s.x > 3.0 || s.y > 3.0 || s.z > 3.0);
+
+        const name = (o.name||'').toLowerCase();
+        const suspiciousName = name.includes('plane') || name.includes('cube') || name.includes('box') || name.includes('helper') || name.includes('rig');
+
+        if((isWhiteish && huge) || (huge && suspiciousName)){
+          o.visible = false;
+        }
+      });
+    }
+
     async function loadMixamoRunner(){
-      return new Promise((resolve, reject)=>{
+      return new Promise((resolve)=>{
         gltfLoader.load(
           RUNNER_GLB_URL,
           (gltf)=>{
             const model = gltf.scene;
 
-            model.scale.setScalar(0.85);
-            model.rotation.y = Math.PI;
-            model.position.set(0, 0, 0);
+            // base transform
+            model.scale.setScalar(0.90);
+            model.rotation.y = Math.PI; // verso camera
+            model.position.set(0,0,0);
 
             setShadows(model);
 
-            // ✅ niente quadrati / mesh extra: lascia visibili solo SkinnedMesh
+            // ✅ evita pezzi “spariti” (backface culling)
             model.traverse((o)=>{
-              if(o.isMesh && !o.isSkinnedMesh) o.visible = false;
+              if(o.isMesh && o.material){
+                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                for(const m of mats){
+                  if(m) m.side = THREE.DoubleSide;
+                }
+              }
             });
 
-            // ✅ piedi a terra: minY -> 0
+            // ✅ nasconde SOLO eventuali quadroni “sporchi”
+            hideWhiteOrHugeMeshes(model);
+
+            // ✅ porta i piedi a terra (bbox minY -> 0)
             {
               const box = new THREE.Box3().setFromObject(model);
               const lift = -box.min.y;
               model.position.y += lift + 0.01;
             }
 
-            // ✅ trova Hips per lock X/Z
+            // trova Hips (per sicurezza)
             mixamoHips = null;
             model.traverse((o)=>{
               if(!o.isBone) return;
               const n = (o.name || '').toLowerCase();
               if(n === 'hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
             });
+            if(mixamoHips){
+              hipsBaseX = mixamoHips.position.x;
+              hipsBaseZ = mixamoHips.position.z;
+            }
 
             // swap
             fallbackRunner.visible = false;
             runnerModel.add(model);
 
+            mixamoModelRoot = model;
+            modelBaseX = model.position.x;
+            modelBaseZ = model.position.z;
+
             const clips = (gltf.animations || []).filter(c=>c && c.tracks && c.tracks.length);
             if(!clips.length){
-              console.warn('running.glb non contiene animazioni');
+              console.warn('running.glb non contiene animazioni: uso dummy');
               resolve();
               return;
             }
@@ -697,21 +742,19 @@
 
             runnerMixer = new THREE.AnimationMixer(model);
             runnerAction = runnerMixer.clipAction(clip);
+
             runnerAction.reset();
             runnerAction.enabled = true;
-            runnerAction.setEffectiveTimeScale(1);
-            runnerAction.setEffectiveWeight(1);
+            runnerAction.setEffectiveTimeScale(1.0);
+            runnerAction.setEffectiveWeight(1.0);
+            runnerAction.setLoop(THREE.LoopRepeat, Infinity);
+            runnerAction.clampWhenFinished = false;
             runnerAction.play();
-
-            if(mixamoHips){
-              hipsBaseX = mixamoHips.position.x;
-              hipsBaseZ = mixamoHips.position.z;
-            }
 
             resolve();
           },
           undefined,
-          (err)=>reject(err)
+          ()=>{ console.warn('Errore caricando running.glb: uso dummy'); resolve(); }
         );
       });
     }
@@ -914,11 +957,11 @@
         const p2 = clamp(0.38 * mult, 0.18, 0.90);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
-      while(blocked.size<oCount) blocked.add(Math.floor(rnd(0,3)));
+      while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
-      const cCount = Math.floor(rnd(1,3));
-      while(coinLanes.size<cCount) coinLanes.add(Math.floor(rnd(0,3)));
+      const cCount = rndi(1,2);
+      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
@@ -928,15 +971,15 @@
       });
 
       coinLanes.forEach(l=>{
-        const spr = makeEmojiSprite(EMOJIS[Math.floor(rnd(0,EMOJIS.length))]);
+        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
         scene.add(spr);
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
       if(Math.random() < 0.30){
-        const lane=Math.floor(rnd(0,3));
-        const emo = FOOD[Math.floor(rnd(0,FOOD.length))];
+        const lane=rndi(0,2);
+        const emo = FOOD[rndi(0,FOOD.length-1)];
         const spr = makeEmojiSprite(emo);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.82,0.82,1);
@@ -945,7 +988,7 @@
       }
 
       if(Math.random() < 0.10){
-        const lane=Math.floor(rnd(0,3));
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
         spr.scale.set(0.90,0.90,1);
@@ -954,7 +997,7 @@
       }
 
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
-        const lane=Math.floor(rnd(0,3));
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.95,0.95,1);
@@ -962,7 +1005,7 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
       if(Math.random() < 0.07){
-        const lane=Math.floor(rnd(0,3));
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.90,0.90,1);
@@ -973,7 +1016,7 @@
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
-          const lane=Math.floor(rnd(0,3));
+          const lane=rndi(0,2);
           const t = makeTurtle();
           t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
@@ -983,7 +1026,7 @@
       }
 
       if(Math.random() < 0.26){
-        const lane = Math.floor(rnd(0,3));
+        const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
         const gap = 1.15;
         for(let k=0;k<3;k++){
@@ -1118,12 +1161,16 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // mixer update + lock hips x/z
+      // ✅ mixer + lock (extra-sicurezza)
       if(runnerMixer){
         runnerMixer.update(dt);
         if(mixamoHips){
           mixamoHips.position.x = hipsBaseX;
           mixamoHips.position.z = hipsBaseZ;
+        }
+        if(mixamoModelRoot){
+          mixamoModelRoot.position.x = modelBaseX;
+          mixamoModelRoot.position.z = modelBaseZ;
         }
       }
 
@@ -1502,7 +1549,7 @@
       refreshFoodUI();
       hpTxt.textContent = hpString();
 
-      try{ await loadMixamoRunner(); } catch(e){ console.warn('Errore loading running.glb', e); }
+      await loadMixamoRunner();
 
       openMenu();
       requestAnimationFrame(animate);
