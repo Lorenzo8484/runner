@@ -9,59 +9,75 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;}
-    .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:220px;}
-    .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
-    .small{font-size:12px;opacity:.86;line-height:1.2}
-    .btn{pointer-events:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf1ff;padding:10px 12px;border-radius:14px;font-weight:800;cursor:pointer;user-select:none;}
+    .hud{
+      position:fixed;top:8px;left:8px;right:8px;
+      display:flex;justify-content:space-between;gap:8px;
+      pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;
+    }
+    .card{
+      pointer-events:none;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;padding:8px 10px;color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      min-width:180px; max-width:62vw;
+    }
+    .row{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+    .small{font-size:11px;opacity:.86;line-height:1.2}
+    .btn{
+      pointer-events:auto;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      color:#eaf1ff;padding:9px 11px;border-radius:12px;
+      font-weight:800;cursor:pointer;user-select:none;
+    }
     .btn:active{transform:scale(.98);}
     .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
 
-    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
-    .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
+    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;}
+    .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* floating home/settings (sempre visibili) */
+    /* floating home/settings/pause (sempre visibili) - ORIZZONTALE in alto a destra */
     .floatBtns{
-      position:fixed; top:10px; right:10px;
-      display:flex; flex-direction:column; gap:8px;
+      position:fixed; top:8px; right:8px;
+      display:flex; flex-direction:row; gap:8px;
       z-index:25; pointer-events:none;
     }
     .iconBtn{
       pointer-events:auto;
-      width:44px;height:44px;
+      width:40px;height:40px;
       padding:0;
-      border-radius:14px;
+      border-radius:12px;
       display:flex;align-items:center;justify-content:center;
-      font-size:18px;
+      font-size:17px;
       backdrop-filter:blur(10px);
+      line-height:1;
     }
 
     /* right side vertical food column */
     .rightCol{
-      position:fixed; top:70px; right:4px; width:58px;
+      position:fixed; top:62px; right:4px; width:56px;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       pointer-events:none; z-index:10;
     }
     .foodStack{
-      width:52px; max-height:220px; overflow:hidden;
+      width:50px; max-height:210px; overflow:hidden;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
-      padding:8px 6px;
+      border-radius:12px;
+      padding:7px 6px;
       backdrop-filter:blur(10px);
     }
     .foodItem{
-      width:38px;height:38px;border-radius:12px;
+      width:36px;height:36px;border-radius:11px;
       display:flex;align-items:center;justify-content:center;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
-      font-size:20px;
+      font-size:19px;
     }
     .foodCount{
       margin-top:6px;
-      width:52px;
+      width:50px;
       text-align:center;
       font-weight:900;
       background:rgba(255,255,255,.06);
@@ -71,13 +87,13 @@
       font-size:12px;
     }
 
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
     .panel{width:min(680px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
+      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:14px;color:#eaf1ff;}
     .title{font-size:20px;font-weight:950;margin:4px 0 6px;}
-    .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
+    .subtitle{opacity:.88;font-size:13px;margin:0 0 10px;line-height:1.35;}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
 
@@ -91,7 +107,7 @@
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
 
-    .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
+    .help{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
     /* sliders */
@@ -110,8 +126,10 @@
 
     @media (max-width:430px){
       .btn{padding:8px 10px;border-radius:12px;font-size:13px;}
-      .card{min-width:200px;padding:9px 10px;}
-      .iconBtn{width:42px;height:42px;border-radius:12px;}
+      .card{min-width:170px;max-width:64vw;padding:7px 9px;}
+      .iconBtn{width:38px;height:38px;border-radius:11px;font-size:16px;}
+      .pill{font-size:10.5px}
+      .bar{width:100px}
     }
   </style>
 
@@ -150,13 +168,13 @@
 
     <div class="controls">
       <button class="btn" id="pause">Pausa</button>
-      <button class="btn" id="restart">Restart</button>
     </div>
   </div>
 
-  <!-- floating buttons always visible -->
+  <!-- ✅ floating buttons (orizzontale) sempre visibili -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
+    <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
     <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
@@ -167,17 +185,17 @@
 
   <div class="help">
     <div class="card small">
-      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
+      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia.</span>
+      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia (anche i bambini).</span>
     </div>
   </div>
 
   <div class="overlay" id="menu">
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
-      <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 15 anelli → trio runner
+      <div class="subtitle small" id="subtitleTxt">
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner
       </div>
 
       <div class="grid">
@@ -203,6 +221,12 @@
             <div class="settingsVal" id="frameVal">0.06</div>
           </div>
           <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+
+          <!-- ✅ HAPTIC SWITCH -->
+          <div class="toggle" id="hapticToggle" style="margin-top:6px;">
+            <div><label>Haptic</label><br/><span>Vibrazione feedback (se supportata).</span></div>
+            <div class="switch on" id="hapticSwitch"><i></i></div>
+          </div>
 
           <div class="toggle" id="audioToggle" style="margin-top:6px;">
             <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
@@ -247,7 +271,6 @@
 
     const menu = document.getElementById('menu');
     const startBtn = document.getElementById('startBtn');
-    const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
 
     const overStats  = document.getElementById('overStats');
@@ -255,6 +278,7 @@
 
     const btnSettings = document.getElementById('btnSettings');
     const btnHome = document.getElementById('btnHome');
+    const btnPause = document.getElementById('btnPause');
 
     const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
@@ -263,6 +287,9 @@
 
     const audioToggle= document.getElementById('audioToggle');
     const audioSwitch= document.getElementById('audioSwitch');
+
+    const hapticToggle= document.getElementById('hapticToggle');
+    const hapticSwitch= document.getElementById('hapticSwitch');
 
     const fovSlider = document.getElementById('fovSlider');
     const camSlider = document.getElementById('camSlider');
@@ -275,6 +302,8 @@
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
+
+    const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // === SETTINGS ===
     const CAM_KEY = 'jr_cam_settings_v5';
@@ -310,11 +339,37 @@
     });
 
     function toggleSettings(open){ settingsPanel.style.display = open ? 'flex' : 'none'; }
-    openSettingsBtn.addEventListener('click', ()=>{
-      toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
-      syncCamUI();
-    });
+    openSettingsBtn.addEventListener('click', ()=>{ toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === ''); syncCamUI(); });
     closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
+
+    // === HAPTIC ===
+    const HAPTIC_KEY = 'jr_haptic_v1';
+    let hapticEnabled = (() => {
+      const v = localStorage.getItem(HAPTIC_KEY);
+      return (v === null) ? true : (v === '1');
+    })();
+    function syncHapticUI(){
+      hapticSwitch.classList.toggle('on', !!hapticEnabled);
+    }
+    function saveHaptic(){
+      localStorage.setItem(HAPTIC_KEY, hapticEnabled ? '1' : '0');
+    }
+    syncHapticUI();
+
+    function haptic(pattern){
+      if(!hapticEnabled) return;
+      // iOS spesso non supporta Vibration API: in quel caso non fa nulla (ma non rompe niente)
+      if(typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'){
+        try{ navigator.vibrate(pattern); }catch(_){}
+      }
+    }
+
+    hapticToggle.addEventListener('click', ()=>{
+      hapticEnabled = !hapticEnabled;
+      syncHapticUI();
+      saveHaptic();
+      haptic(18);
+    });
 
     // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -548,6 +603,7 @@
       g.add(head);
       return g;
     }
+
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -564,12 +620,12 @@
       return ring;
     }
 
-    // Runner rig
+    // Runner (main)
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // Dummy (fallback + minis). Rimane, ma lo nascondiamo quando carica l'FBX.
+    // Dummy (fallback)
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
@@ -582,7 +638,7 @@
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
 
-    // Invincibility bubble
+    // Bubble (main)
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -595,63 +651,93 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // Minis (ancora col dummy, così non rompiamo nulla)
+    // ✅ FBX Runner (Mixamo)
+    let runnerFBX = null;
+    let runnerMixer = null;
+    let runnerAction = null;
+
+    async function loadRunnerFBX(url='Runner.fbx'){
+      return new Promise((resolve)=>{
+        const loader = new FBXLoader();
+        loader.load(url, (fbx)=>{
+          runnerFBX = fbx;
+
+          // ombre + qualità
+          runnerFBX.traverse((o)=>{
+            if(o.isMesh){
+              o.castShadow = true;
+              o.receiveShadow = true;
+              if(o.material){
+                o.material.transparent = false;
+              }
+            }
+          });
+
+          // fit dimensione: altezza circa 1.9
+          const box = new THREE.Box3().setFromObject(runnerFBX);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const height = Math.max(0.0001, size.y);
+          const targetH = 1.9;
+          const scale = targetH / height;
+          runnerFBX.scale.setScalar(scale);
+
+          // centra a terra
+          const box2 = new THREE.Box3().setFromObject(runnerFBX);
+          const min = new THREE.Vector3(); box2.getMin(min);
+          runnerFBX.position.y += (-min.y);
+
+          // orientamento: il player deve guardare verso -Z (verso la strada)
+          runnerFBX.rotation.y = Math.PI;
+
+          // sostituisci dummy (senza rompere niente)
+          dummyBody.visible = false;
+          dummyHead.visible = false;
+          runnerModel.add(runnerFBX);
+
+          // animazione
+          if(fbx.animations && fbx.animations.length){
+            runnerMixer = new THREE.AnimationMixer(runnerFBX);
+            runnerAction = runnerMixer.clipAction(fbx.animations[0]);
+            runnerAction.play();
+          }
+
+          resolve(true);
+        }, undefined, (err)=>{
+          console.warn('FBX non caricato:', err);
+          // resta dummy
+          dummyBody.visible = true;
+          dummyHead.visible = true;
+          resolve(false);
+        });
+      });
+    }
+
+    // Mini runners (kids) (restano dummy, già ok)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
+
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
-      p.visible=false;
-      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone(); bb.material.opacity = 0.18;
+
+      p.scale.setScalar(0.72);
+
+      const bb = bubble.clone();
+      bb.material = bubble.material.clone();
+      bb.material.opacity = 0.20;
+      bb.scale.setScalar(0.90);
+      bb.visible=false;
       p.add(bb);
-      return { pivot:p, center:c, model:m, bubble:bb };
+
+      p.visible=false;
+
+      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
-
-    // ✅ FBX Runner (Runner.fbx)
-    let runnerFbx = null;
-    let runnerMixer = null;
-
-    const fbxLoader = new FBXLoader();
-    fbxLoader.load(
-      'Runner.fbx', // <-- NOME ESATTO come mi hai detto
-      (fbx) => {
-        runnerFbx = fbx;
-
-        // Scala tipica Mixamo FBX: prova 0.01 / 0.02 se serve
-        runnerFbx.scale.setScalar(0.01);
-        runnerFbx.position.set(0, 0, 0);
-
-        // Se è girato “al contrario” prova a scommentare:
-        // runnerFbx.rotation.y = Math.PI;
-
-        runnerFbx.traverse((o)=>{
-          if(o.isMesh){
-            o.castShadow = true;
-            o.receiveShadow = true;
-          }
-        });
-
-        // Nascondi dummy principale (mini restano dummy)
-        dummyBody.visible = false;
-        dummyHead.visible = false;
-
-        runnerModel.add(runnerFbx);
-
-        if (fbx.animations && fbx.animations.length > 0) {
-          runnerMixer = new THREE.AnimationMixer(runnerFbx);
-          const action = runnerMixer.clipAction(fbx.animations[0]);
-          action.play();
-        }
-
-        console.log('Runner.fbx caricato ✅', fbx);
-      },
-      undefined,
-      (err) => console.error('Errore caricamento Runner.fbx:', err)
-    );
 
     // --- Game data
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
@@ -663,9 +749,12 @@
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
+    const RING_TRIGGER = 50; // ✅ boost anelli a 50
+
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
+
       sliding:false, slideT:0,
       autoSlideCooldown:0,
 
@@ -683,6 +772,7 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
+
       trioT:0,
 
       entities:[],
@@ -742,8 +832,12 @@
     function resetRun(){
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
+
       game.sliding=false; game.slideT=0;
       game.autoSlideCooldown=0;
+
+      miniL.sliding=false; miniL.slideT=0; miniL.autoCooldown=0;
+      miniR.sliding=false; miniR.slideT=0; miniR.autoCooldown=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -754,6 +848,7 @@
       game.foodBoostT=0;
       game.ringBoostT=0;
       game.magnetT=0;
+
       game.trioT=0;
 
       game.spawnT=0.30;
@@ -778,12 +873,15 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
+      btnPause.textContent = game.paused ? '▶️' : '⏸️';
+      haptic(game.paused ? 12 : 18);
     }
 
     function loseLife(){
       if(game.invincibleT>0) return;
       game.lives = Math.max(0, game.lives-1);
       sfx.hit();
+      haptic([20, 30, 20]);
       if(game.lives<=0){
         game.over=true;
         game.paused=true;
@@ -795,14 +893,38 @@
     function addLife(){
       game.lives = Math.min(game.maxLives, game.lives+1);
       sfx.boost();
+      haptic([15, 25, 15]);
     }
 
-    // ---- Spawns
+    // ---- Spawns (con difficoltà: +10% ostacoli ogni 15.000 punti)
+    function obstacleFactor(){
+      const steps = Math.floor(game.score / 15000);
+      // 1.1^steps, ma evitiamo di esagerare
+      return Math.min(2.6, Math.pow(1.10, steps));
+    }
+
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
+      const of = obstacleFactor();
+
       const blocked=new Set();
-      const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
+
+      // base: (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
+      // qui riduciamo p0 e aumentiamo p2 col fattore
+      let p0 = clamp(0.22 / of, 0.05, 0.22);
+      let p2 = clamp(0.38 * of, 0.38, 0.80);
+      let p1 = 1 - p0 - p2;
+      if(p1 < 0.12){
+        // se p1 va troppo basso, ribilancia
+        const extra = 0.12 - p1;
+        p1 = 0.12;
+        p2 = clamp(p2 - extra, 0.25, 0.80);
+      }
+
+      const r = Math.random();
+      const oCount = (r < p0) ? 0 : (r < p0 + p1 ? 1 : 2);
+
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
@@ -859,21 +981,24 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // TURTLES: ferme
-      if(Math.random() < 0.14){
-        const lane=rndi(0,2);
-        const t = makeTurtle();
-        t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
-        t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-        scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
+      // tartarughe (lasciate come erano: già tante)
+      if(Math.random() < 0.26){
+        const count = (Math.random()<0.72) ? 1 : 2;
+        for(let n=0;n<count;n++){
+          const lane=rndi(0,2);
+          const t = makeTurtle();
+          t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
+          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          scene.add(t);
+          game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
+        }
       }
 
-      // RINGS: 3 dietro l’altro nella stessa corsia
+      // RINGS: 3 vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.75;
+        const gap = 1.15;
         for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -892,6 +1017,7 @@
       game.lane = clamp(game.lane+dir,0,2);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
+      haptic(12);
     }
     function jump(){
       if(game.over||game.paused) return;
@@ -899,6 +1025,7 @@
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
+        haptic(10);
       }
     }
     function slide(){
@@ -906,6 +1033,7 @@
       game.sliding=true;
       game.slideT=0.55;
       sfx.slide();
+      haptic(12);
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -915,7 +1043,6 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
-      if(k==='r') { initAudio(); closeMenu(); resetRun(); }
     });
 
     let touchStart=null;
@@ -935,31 +1062,48 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
-    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; haptic(18); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     // Floating buttons
     btnSettings.addEventListener('click', ()=>{
       initAudio();
       game.paused = true;
+      btnPause.textContent = '▶️';
       menu.style.display = 'flex';
       toggleSettings(true);
       overBig.textContent = '';
       overStats.textContent = 'Impostazioni';
       syncCamUI();
+      syncHapticUI();
+      haptic(12);
+    });
+
+    btnPause.addEventListener('click', ()=>{
+      initAudio();
+      if(menu.style.display !== 'none'){
+        closeMenu();
+        game.paused = false;
+        btnPause.textContent = '⏸️';
+        pauseBtn.textContent = 'Pausa';
+        haptic(18);
+        return;
+      }
+      togglePause();
     });
 
     btnHome.addEventListener('click', ()=>{
       initAudio();
       resetRun();
       game.paused = true;
+      btnPause.textContent = '▶️';
       game.over = false;
       startBtn.textContent='▶️ Inizia';
       openMenu();
+      haptic(12);
     });
 
-    // ---- Camera state
+    // ---- Camera state (sliders)
     let camZ = baseCamZ;
     let camY = 4.6;
     let camFov = baseFov;
@@ -969,17 +1113,32 @@
       return [lanesX[game.lane]];
     }
 
+    function isLaneSliding(lane){
+      if(game.trioT<=0) return (lane === game.lane) && game.sliding;
+      if(lane===0) return miniL.sliding;
+      if(lane===1) return game.sliding;
+      if(lane===2) return miniR.sliding;
+      return false;
+    }
+
+    function triggerSlide(obj, duration=0.42, cooldown=0.22){
+      obj.sliding = true;
+      obj.slideT = duration;
+      obj.autoCooldown = cooldown;
+      obj.center.rotation.x = -1.20;
+    }
+
     // ---- Update loop
     let tPrev=performance.now();
 
     function update(dt, tNow){
       if(game.paused) return;
 
+      // animazione FBX
+      if(runnerMixer) runnerMixer.update(dt);
+
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
-
-      // ✅ anima FBX (se presente)
-      if (runnerMixer) runnerMixer.update(dt);
 
       if(game.invincibleT>0){
         game.invincibleT -= dt;
@@ -997,19 +1156,21 @@
       if(game.trioT>0){
         game.trioT = Math.max(0, game.trioT-dt);
         if(game.trioT===0){
-          miniL.pivot.visible=false;
-          miniR.pivot.visible=false;
-          miniL.bubble.visible=false;
-          miniR.bubble.visible=false;
+          miniL.pivot.visible=false; miniR.pivot.visible=false;
+          miniL.bubble.visible=false; miniR.bubble.visible=false;
+          miniL.sliding=false; miniR.sliding=false;
         }
       }
 
-      if(game.autoSlideCooldown>0) game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
+      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
+      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
+      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
 
+      // speed: cumulativo (MEGA già basso)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.8 : 1.0;
+      const crazyMul = both ? 1.06 : 1.0;
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
@@ -1027,19 +1188,18 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide
-      if(game.sliding){
-        game.slideT -= dt;
-        if(game.slideT<=0) game.sliding=false;
-      }
+      // slide timers
+      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+      if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
+      if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
 
-      // runner
+      // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const slidePitchTarget = game.sliding ? -1.20 : 0.0;
-      runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
+      const mainPitchTarget = game.sliding ? -1.20 : 0.0;
+      runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
       // contact shadow
       const h = runnerPivot.position.y;
@@ -1050,12 +1210,14 @@
 
       // minis
       if(game.trioT>0){
-        miniL.pivot.visible=true;
-        miniR.pivot.visible=true;
+        miniL.pivot.visible=true; miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
-        miniL.center.rotation.x = runnerCenter.rotation.x;
-        miniR.center.rotation.x = runnerCenter.rotation.x;
+
+        const lPitchTarget = miniL.sliding ? -1.20 : 0.0;
+        const rPitchTarget = miniR.sliding ? -1.20 : 0.0;
+        miniL.center.rotation.x = damp(miniL.center.rotation.x, lPitchTarget, 18, dt);
+        miniR.center.rotation.x = damp(miniR.center.rotation.x, rPitchTarget, 18, dt);
       }
 
       // road scroll
@@ -1071,21 +1233,19 @@
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(0.45, 0.85);
+        game.spawnT = rnd(0.40, 0.75);
       }
 
       // magnet effect
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
-        // normal world move towards player
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // turtle projectile
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
-          e.z -= (speed*3.4)*dt;   // avanti
+          e.z -= (speed*3.4)*dt;
           e.obj.position.z = e.z;
           if(e.projT <= 0) e.projT = 0;
         }
@@ -1117,13 +1277,15 @@
         }
       }
 
+      // collisions
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
       function collideAtX(ex, e){
         const dz = Math.abs(e.z - 0.25);
         const dx = Math.abs(e.obj.position.x - ex);
-        const dy = Math.abs((e.obj.position.y ?? 0) - py);
+        const ey = (e.obj.position.y ?? 0);
+        const dy = Math.abs(ey - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
       function collideTurtle(ex, e){
@@ -1132,17 +1294,37 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // AUTO-PIEGA presto
+      // auto-slide
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
           const dz = Math.abs(e.z - 0.25);
-          if(dz < 2.05){
+          if(dz < 2.55){
             game.sliding = true;
-            game.slideT  = 0.45;
-            game.autoSlideCooldown = 0.30;
+            game.slideT  = 0.48;
+            game.autoSlideCooldown = 0.24;
+            runnerCenter.rotation.x = -1.20;
             break;
+          }
+        }
+      }
+      if(game.trioT>0 && game.y===0){
+        if(!miniL.sliding && miniL.autoCooldown<=0){
+          for(const e of game.entities){
+            if(e.type==='ring' && e.lane===0 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniL, 0.46, 0.22); break; }
+          }
+        }
+        if(!game.sliding && game.autoSlideCooldown<=0){
+          for(const e of game.entities){
+            if(e.type==='ring' && e.lane===1 && Math.abs(e.z-0.25) < 2.55){
+              game.sliding=true; game.slideT=0.46; game.autoSlideCooldown=0.22; runnerCenter.rotation.x=-1.20; break;
+            }
+          }
+        }
+        if(!miniR.sliding && miniR.autoCooldown<=0){
+          for(const e of game.entities){
+            if(e.type==='ring' && e.lane===2 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniR, 0.46, 0.22); break; }
           }
         }
       }
@@ -1154,8 +1336,7 @@
             const o = game.entities[j];
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
-            const dz = Math.abs(o.z - e.z);
-            if(dz < 1.35){
+            if(Math.abs(o.z - e.z) < 1.35){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -1168,44 +1349,50 @@
         const e=game.entities[i];
 
         if(e.type==='ring'){
-          let got=false;
-          for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
-          if(!got) continue;
-          if(game.trioT<=0 && !game.sliding) continue;
+          const laneX = lanesX[e.lane];
+          if(!collideAtX(laneX, e)) continue;
+
+          if(game.trioT<=0){
+            if(!game.sliding) continue;
+          }else{
+            if(!isLaneSliding(e.lane)) continue;
+          }
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
+          haptic(10);
 
-          if(game.ringCount % 15 === 0){
+          // ✅ boost anelli a 50 -> trio + ring boost + reset contatore
+          if(game.ringCount >= RING_TRIGGER){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
             bubble.visible=true;
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
+
+            game.ringCount = 0;
             sfx.boost();
+            haptic([20, 20, 35]);
           }
           continue;
         }
 
         if(e.type==='turtle' && e.state==='idle'){
           let hitT=false;
-          for(const ex of xs){
-            if(collideTurtle(ex, e)){ hitT=true; break; }
-          }
+          for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
           if(hitT){
             e.state='projectile';
             e.projT = 2.8;
             sfx.boost();
+            haptic(18);
           }
           continue;
         }
 
         let hit=false;
-        for(const ex of xs){
-          if(collideAtX(ex,e)){ hit=true; break; }
-        }
+        for(const ex of xs){ if(collideAtX(ex,e)){ hit=true; break; } }
         if(!hit) continue;
 
         if(e.type==='coin'){
@@ -1213,6 +1400,7 @@
           game.score += 28;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.coin();
+          haptic(8);
           continue;
         }
 
@@ -1222,6 +1410,7 @@
           refreshFoodUI();
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.food();
+          haptic(10);
 
           if(game.foodCount >= 10){
             game.foodBoostT = 10.0;
@@ -1232,6 +1421,7 @@
             game.foodHistory = [];
             refreshFoodUI();
             sfx.boost();
+            haptic([15, 25, 15]);
           }
           continue;
         }
@@ -1239,6 +1429,7 @@
         if(e.type==='heart'){
           if(game.lives < game.maxLives) addLife();
           scene.remove(e.obj); game.entities.splice(i,1);
+          haptic(14);
           continue;
         }
 
@@ -1246,6 +1437,7 @@
           game.magnetT = 8.0;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.magnet();
+          haptic([12, 18, 12]);
           continue;
         }
 
@@ -1253,6 +1445,7 @@
           const inv = (game.invincibleT>0);
           if(inv || game.trioT>0){
             scene.remove(e.obj); game.entities.splice(i,1);
+            haptic(10);
           }else{
             scene.remove(e.obj); game.entities.splice(i,1);
             loseLife();
@@ -1275,27 +1468,26 @@
 
       setBoostUI();
 
-      if(bubble.visible){
-        bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
-      }
+      if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
+      if(miniL.bubble.visible){ miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
+      if(miniR.bubble.visible){ miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
 
       tiltTarget *= 0.92;
-      camRoll = camRoll*0.90 + tiltTarget*0.10;
+      camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
 
     function animate(tNow){
-      const dt=Math.min(0.033,(tNow-tPrev)/1000);
+      const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
 
-      // camera (slider base)
       const inAir = (game.y < -0.01) || game.jumping;
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
-      const zBoost   = bothBoost ? 1.3 : (anyBoost ? 0.6 : 0.0);
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : (inAir ? -2 : 0));
+      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
@@ -1304,14 +1496,14 @@
       const lookAtZ = lerp(-22.0, -38.0, framing);
       const camYBase = lerp(3.9, 5.8, framing);
 
-      camFov = lerp(camFov, targetFov, 0.08);
-      camZ   = lerp(camZ,   targetZ,   0.08);
-      camY   = lerp(camY,   camYBase + (bothBoost?0.15:0), 0.08);
+      camFov = damp(camFov, targetFov, 8, dt);
+      camZ   = damp(camZ,   targetZ,   8, dt);
+      camY   = damp(camY,   camYBase + (bothBoost?0.10:0), 8, dt);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0022) * 0.01;
+      const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(0, camY + bob, camZ);
       camera.rotation.z = camRoll;
 
@@ -1333,6 +1525,11 @@
       refreshFoodUI();
       hpTxt.textContent = hpString();
       openMenu();
+
+      // ✅ prova a caricare Runner.fbx (stessa cartella dell’HTML)
+      // Se non si vede: controlla che il nome sia ESATTAMENTE "Runner.fbx" e che sia servito da un server (non file://)
+      await loadRunnerFBX('Runner.fbx');
+
       requestAnimationFrame(animate);
     })();
   </script>
