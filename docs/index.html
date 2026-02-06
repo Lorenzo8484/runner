@@ -36,7 +36,7 @@
     .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* floating home/settings/pause (sempre visibili) - ORIZZONTALE in alto a destra */
+    /* floating home/settings/pause - ORIZZONTALE in alto a destra */
     .floatBtns{
       position:fixed; top:8px; right:8px;
       display:flex; flex-direction:row; gap:8px;
@@ -171,7 +171,7 @@
     </div>
   </div>
 
-  <!-- ✅ floating buttons (orizzontale) sempre visibili -->
+  <!-- floating buttons -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
@@ -194,8 +194,8 @@
   <div class="overlay" id="menu">
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
-      <div class="subtitle small" id="subtitleTxt">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner
+      <div class="subtitle small">
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • <strong>50 anelli</strong> → boost anelli + trio
       </div>
 
       <div class="grid">
@@ -222,9 +222,9 @@
           </div>
           <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
 
-          <!-- ✅ HAPTIC SWITCH -->
+          <!-- ✅ HAPTICS -->
           <div class="toggle" id="hapticToggle" style="margin-top:6px;">
-            <div><label>Haptic</label><br/><span>Vibrazione feedback (se supportata).</span></div>
+            <div><label>Haptic</label><br/><span>Vibrazione su azioni/pickup.</span></div>
             <div class="switch on" id="hapticSwitch"><i></i></div>
           </div>
 
@@ -250,6 +250,7 @@
   <script type="module">
     import * as THREE from 'three';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { SkeletonUtils } from 'three/addons/utils/SkeletonUtils.js';
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -342,33 +343,29 @@
     openSettingsBtn.addEventListener('click', ()=>{ toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === ''); syncCamUI(); });
     closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
 
-    // === HAPTIC ===
-    const HAPTIC_KEY = 'jr_haptic_v1';
-    let hapticEnabled = (() => {
-      const v = localStorage.getItem(HAPTIC_KEY);
-      return (v === null) ? true : (v === '1');
-    })();
-    function syncHapticUI(){
-      hapticSwitch.classList.toggle('on', !!hapticEnabled);
-    }
-    function saveHaptic(){
-      localStorage.setItem(HAPTIC_KEY, hapticEnabled ? '1' : '0');
-    }
+    // === HAPTICS ===
+    const HAPTIC_KEY = 'jr_haptics_v1';
+    let hapticsEnabled = (localStorage.getItem(HAPTIC_KEY) ?? '1') === '1';
+    function syncHapticUI(){ hapticSwitch.classList.toggle('on', !!hapticsEnabled); }
     syncHapticUI();
+    function saveHaptics(){ localStorage.setItem(HAPTIC_KEY, hapticsEnabled ? '1' : '0'); }
 
-    function haptic(pattern){
-      if(!hapticEnabled) return;
-      // iOS spesso non supporta Vibration API: in quel caso non fa nulla (ma non rompe niente)
-      if(typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'){
-        try{ navigator.vibrate(pattern); }catch(_){}
-      }
+    function hapticPulse(kind='tap'){
+      if(!hapticsEnabled) return;
+      if(!navigator.vibrate) return; // su iOS spesso è assente/limitato
+      // pattern piccoli (non fastidiosi)
+      if(kind==='hit') navigator.vibrate([30]);
+      else if(kind==='boost') navigator.vibrate([12, 20, 18]);
+      else if(kind==='pickup') navigator.vibrate([10]);
+      else if(kind==='slide') navigator.vibrate([14]);
+      else navigator.vibrate([8]);
     }
 
     hapticToggle.addEventListener('click', ()=>{
-      hapticEnabled = !hapticEnabled;
+      hapticsEnabled = !hapticsEnabled;
       syncHapticUI();
-      saveHaptic();
-      haptic(18);
+      saveHaptics();
+      hapticPulse('tap');
     });
 
     // Audio minimal
@@ -620,7 +617,9 @@
       return ring;
     }
 
-    // Runner (main)
+    // =========================
+    // RUNNER (dummy + FBX swap)
+    // =========================
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
@@ -651,74 +650,57 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // ✅ FBX Runner (Mixamo)
+    // FBX state
     let runnerFBX = null;
     let runnerMixer = null;
-    let runnerAction = null;
+    let runnerHasFBX = false;
 
-    async function loadRunnerFBX(url='Runner.fbx'){
-      return new Promise((resolve)=>{
-        const loader = new FBXLoader();
-        loader.load(url, (fbx)=>{
-          runnerFBX = fbx;
-
-          // ombre + qualità
-          runnerFBX.traverse((o)=>{
-            if(o.isMesh){
-              o.castShadow = true;
-              o.receiveShadow = true;
-              if(o.material){
-                o.material.transparent = false;
-              }
-            }
-          });
-
-          // fit dimensione: altezza circa 1.9
-          const box = new THREE.Box3().setFromObject(runnerFBX);
-          const size = new THREE.Vector3();
-          box.getSize(size);
-          const height = Math.max(0.0001, size.y);
-          const targetH = 1.9;
-          const scale = targetH / height;
-          runnerFBX.scale.setScalar(scale);
-
-          // centra a terra
-          const box2 = new THREE.Box3().setFromObject(runnerFBX);
-          const min = new THREE.Vector3(); box2.getMin(min);
-          runnerFBX.position.y += (-min.y);
-
-          // orientamento: il player deve guardare verso -Z (verso la strada)
-          runnerFBX.rotation.y = Math.PI;
-
-          // sostituisci dummy (senza rompere niente)
-          dummyBody.visible = false;
-          dummyHead.visible = false;
-          runnerModel.add(runnerFBX);
-
-          // animazione
-          if(fbx.animations && fbx.animations.length){
-            runnerMixer = new THREE.AnimationMixer(runnerFBX);
-            runnerAction = runnerMixer.clipAction(fbx.animations[0]);
-            runnerAction.play();
+    function prepFBX(obj){
+      obj.traverse(o=>{
+        if(o.isMesh){
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if(o.material){
+            o.material.side = THREE.FrontSide;
           }
-
-          resolve(true);
-        }, undefined, (err)=>{
-          console.warn('FBX non caricato:', err);
-          // resta dummy
-          dummyBody.visible = true;
-          dummyHead.visible = true;
-          resolve(false);
-        });
+        }
       });
     }
 
-    // Mini runners (kids) (restano dummy, già ok)
+    function attachFBXTo(group, fbx, scale=0.010, yOffset=0.0){
+      // Pulisci il gruppo (toglie dummy o precedente)
+      while(group.children.length) group.remove(group.children[0]);
+
+      const clone = SkeletonUtils.clone(fbx);
+      prepFBX(clone);
+
+      clone.scale.setScalar(scale);
+
+      // posizionamento: spesso gli FBX Mixamo sono “in piedi” e alti
+      clone.position.set(0, yOffset, 0);
+
+      group.add(clone);
+
+      // animation
+      let mixer=null;
+      if(fbx.animations && fbx.animations.length){
+        mixer = new THREE.AnimationMixer(clone);
+        const clip = fbx.animations[0];
+        const action = mixer.clipAction(clip);
+        action.reset();
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.play();
+      }
+      return mixer;
+    }
+
+    // Mini runners (kids)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
 
+      // dummy fallback per i mini
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
@@ -734,10 +716,23 @@
 
       p.visible=false;
 
-      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
+      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0, mixer:null };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
+
+    // Load Runner.fbx (same folder)
+    async function loadRunnerFBX(){
+      const loader = new FBXLoader();
+      return new Promise((resolve, reject)=>{
+        loader.load(
+          './Runner.fbx',
+          (fbx)=>resolve(fbx),
+          undefined,
+          (err)=>reject(err)
+        );
+      });
+    }
 
     // --- Game data
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
@@ -748,8 +743,6 @@
     const BEST_KEY='jungle_runner_best_v3';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
-
-    const RING_TRIGGER = 50; // ✅ boost anelli a 50
 
     const game = {
       lane:1,
@@ -874,14 +867,14 @@
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
       btnPause.textContent = game.paused ? '▶️' : '⏸️';
-      haptic(game.paused ? 12 : 18);
+      hapticPulse('tap');
     }
 
     function loseLife(){
       if(game.invincibleT>0) return;
       game.lives = Math.max(0, game.lives-1);
       sfx.hit();
-      haptic([20, 30, 20]);
+      hapticPulse('hit');
       if(game.lives<=0){
         game.over=true;
         game.paused=true;
@@ -893,37 +886,31 @@
     function addLife(){
       game.lives = Math.min(game.maxLives, game.lives+1);
       sfx.boost();
-      haptic([15, 25, 15]);
+      hapticPulse('boost');
     }
 
-    // ---- Spawns (con difficoltà: +10% ostacoli ogni 15.000 punti)
+    // ---- Spawns (+ ostacoli progressivi ogni 15000 punti)
     function obstacleFactor(){
-      const steps = Math.floor(game.score / 15000);
-      // 1.1^steps, ma evitiamo di esagerare
-      return Math.min(2.6, Math.pow(1.10, steps));
+      const step = Math.floor(game.score / 15000);
+      // +10% per step
+      return 1 + 0.10 * step;
     }
 
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
-      const of = obstacleFactor();
-
+      const factor = obstacleFactor();
       const blocked=new Set();
 
-      // base: (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
-      // qui riduciamo p0 e aumentiamo p2 col fattore
-      let p0 = clamp(0.22 / of, 0.05, 0.22);
-      let p2 = clamp(0.38 * of, 0.38, 0.80);
-      let p1 = 1 - p0 - p2;
-      if(p1 < 0.12){
-        // se p1 va troppo basso, ribilancia
-        const extra = 0.12 - p1;
-        p1 = 0.12;
-        p2 = clamp(p2 - extra, 0.25, 0.80);
-      }
+      // base (come tua versione)
+      let oCount = (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
 
-      const r = Math.random();
-      const oCount = (r < p0) ? 0 : (r < p0 + p1 ? 1 : 2);
+      // ✅ aumento progressivo: chance extra ostacolo
+      const extraChance = clamp((factor - 1) * 0.35, 0, 0.75); // cresce piano
+      if(Math.random() < extraChance) oCount += 1;
+
+      // max 3 corsie
+      oCount = clamp(oCount, 0, 3);
 
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
@@ -981,7 +968,7 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // tartarughe (lasciate come erano: già tante)
+      // più tartarughe (come tua base)
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
@@ -1017,7 +1004,7 @@
       game.lane = clamp(game.lane+dir,0,2);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
-      haptic(12);
+      hapticPulse('tap');
     }
     function jump(){
       if(game.over||game.paused) return;
@@ -1025,7 +1012,7 @@
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
-        haptic(10);
+        hapticPulse('tap');
       }
     }
     function slide(){
@@ -1033,7 +1020,7 @@
       game.sliding=true;
       game.slideT=0.55;
       sfx.slide();
-      haptic(12);
+      hapticPulse('slide');
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -1062,7 +1049,7 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; haptic(18); });
+    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     // Floating buttons
@@ -1076,7 +1063,7 @@
       overStats.textContent = 'Impostazioni';
       syncCamUI();
       syncHapticUI();
-      haptic(12);
+      hapticPulse('tap');
     });
 
     btnPause.addEventListener('click', ()=>{
@@ -1086,7 +1073,7 @@
         game.paused = false;
         btnPause.textContent = '⏸️';
         pauseBtn.textContent = 'Pausa';
-        haptic(18);
+        hapticPulse('tap');
         return;
       }
       togglePause();
@@ -1100,7 +1087,7 @@
       game.over = false;
       startBtn.textContent='▶️ Inizia';
       openMenu();
-      haptic(12);
+      hapticPulse('tap');
     });
 
     // ---- Camera state (sliders)
@@ -1126,6 +1113,7 @@
       obj.slideT = duration;
       obj.autoCooldown = cooldown;
       obj.center.rotation.x = -1.20;
+      hapticPulse('slide');
     }
 
     // ---- Update loop
@@ -1134,11 +1122,13 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // animazione FBX
-      if(runnerMixer) runnerMixer.update(dt);
-
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
+
+      // update animations
+      if(runnerMixer) runnerMixer.update(dt);
+      if(miniL.mixer) miniL.mixer.update(dt);
+      if(miniR.mixer) miniR.mixer.update(dt);
 
       if(game.invincibleT>0){
         game.invincibleT -= dt;
@@ -1166,7 +1156,7 @@
       miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
       miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
 
-      // speed: cumulativo (MEGA già basso)
+      // speed: cumulativo (MEGA più basso)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -1294,7 +1284,7 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto-slide
+      // auto-slide (anche kids)
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1361,10 +1351,10 @@
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
-          haptic(10);
+          hapticPulse('pickup');
 
-          // ✅ boost anelli a 50 -> trio + ring boost + reset contatore
-          if(game.ringCount >= RING_TRIGGER){
+          // ✅ ogni 50 anelli -> boost anelli + trio (reset contatore)
+          if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1374,7 +1364,7 @@
 
             game.ringCount = 0;
             sfx.boost();
-            haptic([20, 20, 35]);
+            hapticPulse('boost');
           }
           continue;
         }
@@ -1386,7 +1376,7 @@
             e.state='projectile';
             e.projT = 2.8;
             sfx.boost();
-            haptic(18);
+            hapticPulse('boost');
           }
           continue;
         }
@@ -1400,7 +1390,7 @@
           game.score += 28;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.coin();
-          haptic(8);
+          hapticPulse('pickup');
           continue;
         }
 
@@ -1410,7 +1400,7 @@
           refreshFoodUI();
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.food();
-          haptic(10);
+          hapticPulse('pickup');
 
           if(game.foodCount >= 10){
             game.foodBoostT = 10.0;
@@ -1421,7 +1411,7 @@
             game.foodHistory = [];
             refreshFoodUI();
             sfx.boost();
-            haptic([15, 25, 15]);
+            hapticPulse('boost');
           }
           continue;
         }
@@ -1429,7 +1419,7 @@
         if(e.type==='heart'){
           if(game.lives < game.maxLives) addLife();
           scene.remove(e.obj); game.entities.splice(i,1);
-          haptic(14);
+          hapticPulse('pickup');
           continue;
         }
 
@@ -1437,7 +1427,7 @@
           game.magnetT = 8.0;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.magnet();
-          haptic([12, 18, 12]);
+          hapticPulse('boost');
           continue;
         }
 
@@ -1445,7 +1435,6 @@
           const inv = (game.invincibleT>0);
           if(inv || game.trioT>0){
             scene.remove(e.obj); game.entities.splice(i,1);
-            haptic(10);
           }else{
             scene.remove(e.obj); game.entities.splice(i,1);
             loseLife();
@@ -1526,9 +1515,26 @@
       hpTxt.textContent = hpString();
       openMenu();
 
-      // ✅ prova a caricare Runner.fbx (stessa cartella dell’HTML)
-      // Se non si vede: controlla che il nome sia ESATTAMENTE "Runner.fbx" e che sia servito da un server (non file://)
-      await loadRunnerFBX('Runner.fbx');
+      // prova a caricare FBX (non blocca il gioco)
+      try{
+        const fbx = await loadRunnerFBX();
+        runnerFBX = fbx;
+
+        // sostituisci MAIN
+        runnerMixer = attachFBXTo(runnerModel, runnerFBX, 0.010, 0.0);
+        runnerHasFBX = true;
+
+        // sostituisci MINI (kids) con clone FBX
+        miniL.mixer = attachFBXTo(miniL.model, runnerFBX, 0.010, 0.0);
+        miniR.mixer = attachFBXTo(miniR.model, runnerFBX, 0.010, 0.0);
+
+        // color tint leggero per differenziare kids (opzionale e safe)
+        miniL.model.traverse(o=>{ if(o.isMesh && o.material && o.material.color){ o.material = o.material.clone(); o.material.color.offsetHSL(0.05, -0.05, 0.02); }});
+        miniR.model.traverse(o=>{ if(o.isMesh && o.material && o.material.color){ o.material = o.material.clone(); o.material.color.offsetHSL(-0.05, -0.05, 0.02); }});
+
+      }catch(err){
+        console.warn('Runner.fbx non caricato, resto sul dummy:', err);
+      }
 
       requestAnimationFrame(animate);
     })();
