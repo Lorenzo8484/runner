@@ -169,7 +169,7 @@
     <div class="card small">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
-      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia.</span>
+      <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia (anche i bambini).</span>
     </div>
   </div>
 
@@ -275,7 +275,10 @@
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    // === SETTINGS (BASE come la tua foto) ===
+    // smoother lerp that respects dt (anti-tremolio)
+    const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
+
+    // === SETTINGS ===
     const CAM_KEY = 'jr_cam_settings_v5';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
 
@@ -591,7 +594,7 @@
       return ring;
     }
 
-    // Runner
+    // Runner (main)
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
@@ -608,6 +611,7 @@
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
 
+    // Bubble (main)
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -620,17 +624,32 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
+    // Mini runners (kids) + independent slide + independent bubble
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
+
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
-      p.visible=false;
-      const bb = bubble.clone(); bb.visible=false; bb.material = bubble.material.clone(); bb.material.opacity = 0.18;
+
+      // smaller "kids"
+      p.scale.setScalar(0.72);
+
+      const bb = bubble.clone();
+      bb.material = bubble.material.clone();
+      bb.material.opacity = 0.20;
+      bb.scale.setScalar(0.90); // bubble proportion for kids
+      bb.visible=false;
       p.add(bb);
-      return { pivot:p, center:c, model:m, bubble:bb };
+
+      p.visible=false;
+
+      return {
+        pivot:p, center:c, model:m, bubble:bb,
+        sliding:false, slideT:0, autoCooldown:0
+      };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
@@ -648,8 +667,9 @@
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
+
       sliding:false, slideT:0,
-      autoSlideCooldown:0,
+      autoSlideCooldown:0, // main cooldown
 
       baseSpeed: 12.9,
       score:0, coins:0, best: loadBest(),
@@ -665,6 +685,7 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
+
       trioT:0,
 
       entities:[],
@@ -724,8 +745,12 @@
     function resetRun(){
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
+
       game.sliding=false; game.slideT=0;
       game.autoSlideCooldown=0;
+
+      miniL.sliding=false; miniL.slideT=0; miniL.autoCooldown=0;
+      miniR.sliding=false; miniR.slideT=0; miniR.autoCooldown=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
@@ -736,6 +761,7 @@
       game.foodBoostT=0;
       game.ringBoostT=0;
       game.magnetT=0;
+
       game.trioT=0;
 
       game.spawnT=0.30;
@@ -851,11 +877,11 @@
         game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // RINGS: 3 dietro l’altro nella stessa corsia
+      // RINGS: 3 dietro l’altro nella stessa corsia (più vicini)
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.75;
+        const gap = 1.15; // ✅ più vicini (prima 1.75)
         for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -951,6 +977,26 @@
       return [lanesX[game.lane]];
     }
 
+    // which runner controls a lane for "must-be-sliding" checks
+    function isLaneSliding(lane){
+      if(game.trioT<=0){
+        return (lane === game.lane) && game.sliding;
+      }
+      if(lane===0) return miniL.sliding;
+      if(lane===1) return game.sliding;   // main is middle
+      if(lane===2) return miniR.sliding;
+      return false;
+    }
+
+    // instant auto-slide trigger (no ritardo)
+    function triggerSlide(obj, duration=0.42, cooldown=0.22){
+      obj.sliding = true;
+      obj.slideT = duration;
+      obj.autoCooldown = cooldown;
+      // ✅ immediate rotation so first ring is perfect
+      obj.center.rotation.x = -1.20;
+    }
+
     // ---- Update loop
     let tPrev=performance.now();
 
@@ -980,19 +1026,25 @@
           miniR.pivot.visible=false;
           miniL.bubble.visible=false;
           miniR.bubble.visible=false;
+          miniL.sliding=false; miniR.sliding=false;
         }
       }
 
-      if(game.autoSlideCooldown>0) game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
+      // cooldowns
+      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
+      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
+      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
 
+      // speed: cumulativo (MEGA ridotto ma sempre > singoli)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.8 : 1.0;
+      const crazyMul = both ? 1.12 : 1.0; // ✅ MEGA più basso (prima 1.8)
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
 
+      // invincibile quando c'è un boost attivo (scudo su tutti e tre)
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
@@ -1006,19 +1058,28 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide
+      // slide timers (main + kids)
       if(game.sliding){
         game.slideT -= dt;
         if(game.slideT<=0) game.sliding=false;
       }
+      if(miniL.sliding){
+        miniL.slideT -= dt;
+        if(miniL.slideT<=0) miniL.sliding=false;
+      }
+      if(miniR.sliding){
+        miniR.slideT -= dt;
+        if(miniR.slideT<=0) miniR.sliding=false;
+      }
 
-      // runner
+      // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const slidePitchTarget = game.sliding ? -1.20 : 0.0;
-      runnerCenter.rotation.x = lerp(runnerCenter.rotation.x, slidePitchTarget, 1 - Math.pow(0.0001, dt));
+      // ✅ scivolata: damping (anti-tremolio)
+      const mainPitchTarget = game.sliding ? -1.20 : 0.0;
+      runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
       // contact shadow
       const h = runnerPivot.position.y;
@@ -1027,14 +1088,18 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis
+      // minis (trio) + independent rotations
       if(game.trioT>0){
         miniL.pivot.visible=true;
         miniR.pivot.visible=true;
+
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
-        miniL.center.rotation.x = runnerCenter.rotation.x;
-        miniR.center.rotation.x = runnerCenter.rotation.x;
+
+        const lPitchTarget = miniL.sliding ? -1.20 : 0.0;
+        const rPitchTarget = miniR.sliding ? -1.20 : 0.0;
+        miniL.center.rotation.x = damp(miniL.center.rotation.x, lPitchTarget, 18, dt);
+        miniR.center.rotation.x = damp(miniR.center.rotation.x, rPitchTarget, 18, dt);
       }
 
       // road scroll
@@ -1061,10 +1126,10 @@
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // ✅ turtle projectile: corre IN AVANTI (più negativo) e non viene verso il player
+        // turtle projectile: corre IN AVANTI (più negativo) e non viene verso il player
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
-          e.z -= (speed*3.4)*dt;   // <-- avanti (verso fondo strada)
+          e.z -= (speed*3.4)*dt;
           e.obj.position.z = e.z;
           if(e.projT <= 0) e.projT = 0;
         }
@@ -1091,41 +1156,86 @@
           scene.remove(e.obj);
           game.entities.splice(i,1);
         }
-        // se va troppo avanti, rimuovi
         if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
           scene.remove(e.obj); game.entities.splice(i,1);
         }
       }
 
+      // collision helpers
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
       function collideAtX(ex, e){
         const dz = Math.abs(e.z - 0.25);
         const dx = Math.abs(e.obj.position.x - ex);
-        const dy = Math.abs((e.obj.position.y ?? 0) - py);
+        const ey = (e.obj.position.y ?? 0);
+        const dy = Math.abs(ey - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
 
-      // ✅ collisione turtle più “generosa” così non ci passi sopra senza trigger
       function collideTurtle(ex, e){
         const dz = Math.abs(e.z - 0.35);
         const dx = Math.abs(e.obj.position.x - ex);
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // ✅ AUTO-PIEGA PIÙ PRESTO (per prendere il PRIMO anello senza ritardo)
+      // ✅ AUTO-PIEGA: MAIN + KIDS (immediata e in anticipo)
+      // main (solo se non trio: usa la corsia scelta)
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
-
           const dz = Math.abs(e.z - 0.25);
-          if(dz < 2.05){               // <-- prima era 1.05 (troppo tardi)
+          if(dz < 2.55){
             game.sliding = true;
-            game.slideT  = 0.45;       // un filo più lungo
-            game.autoSlideCooldown = 0.30;
+            game.slideT  = 0.48;
+            game.autoSlideCooldown = 0.24;
+            // ✅ immediate rotation = niente ritardo sul primo anello
+            runnerCenter.rotation.x = -1.20;
             break;
+          }
+        }
+      }
+
+      // trio mode: each lane auto-slides independently (kids + main middle)
+      if(game.trioT>0 && game.y===0){
+        // lane 0 kid
+        if(!miniL.sliding && miniL.autoCooldown<=0){
+          for(const e of game.entities){
+            if(e.type!=='ring') continue;
+            if(e.lane!==0) continue;
+            const dz = Math.abs(e.z - 0.25);
+            if(dz < 2.55){
+              triggerSlide(miniL, 0.46, 0.22);
+              break;
+            }
+          }
+        }
+        // lane 1 main
+        if(!game.sliding && game.autoSlideCooldown<=0){
+          for(const e of game.entities){
+            if(e.type!=='ring') continue;
+            if(e.lane!==1) continue;
+            const dz = Math.abs(e.z - 0.25);
+            if(dz < 2.55){
+              game.sliding = true;
+              game.slideT  = 0.46;
+              game.autoSlideCooldown = 0.22;
+              runnerCenter.rotation.x = -1.20;
+              break;
+            }
+          }
+        }
+        // lane 2 kid
+        if(!miniR.sliding && miniR.autoCooldown<=0){
+          for(const e of game.entities){
+            if(e.type!=='ring') continue;
+            if(e.lane!==2) continue;
+            const dz = Math.abs(e.z - 0.25);
+            if(dz < 2.55){
+              triggerSlide(miniR, 0.46, 0.22);
+              break;
+            }
           }
         }
       }
@@ -1150,32 +1260,44 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
-        // ring
+        // ring pickup:
+        // - no trio: must be sliding (auto/manual)
+        // - trio: must be sliding for THAT lane (kids/main)
         if(e.type==='ring'){
-          let got=false;
-          for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
+          // collision in its lane only (more reliable than scanning xs)
+          const laneX = lanesX[e.lane];
+          const got = collideAtX(laneX, e);
           if(!got) continue;
 
-          // no trio -> deve essere in slide (auto o manuale)
-          if(game.trioT<=0 && !game.sliding) continue;
+          if(game.trioT<=0){
+            if(!game.sliding) continue;
+          }else{
+            if(!isLaneSliding(e.lane)) continue;
+          }
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          if(game.ringCount % 15 === 0){
+          // every 15 rings -> trio + ring boost + reset ringCount
+          if(game.ringCount >= 15){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
+
             bubble.visible=true;
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
+
+            // ✅ reset rings counter when boost triggers
+            game.ringCount = 0;
+
             sfx.boost();
           }
           continue;
         }
 
-        // turtle touch -> projectile
+        // turtle touch -> projectile (all 3 players can push)
         if(e.type==='turtle' && e.state==='idle'){
           let hitT=false;
           for(const ex of xs){
@@ -1189,7 +1311,7 @@
           continue;
         }
 
-        // altri: collisione normale
+        // other pickups/hits: collision on any active runner x
         let hit=false;
         for(const ex of xs){
           if(collideAtX(ex,e)){ hit=true; break; }
@@ -1263,16 +1385,25 @@
 
       setBoostUI();
 
+      // bubble pulse (stable)
       if(bubble.visible){
-        bubble.material.opacity = 0.18 + 0.08*Math.sin(tNow*0.01);
+        bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
+      }
+      if(miniL.bubble.visible){
+        miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105);
+      }
+      if(miniR.bubble.visible){
+        miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105);
       }
 
+      // camera roll smoothing (anti tremolio)
       tiltTarget *= 0.92;
-      camRoll = camRoll*0.90 + tiltTarget*0.10;
+      camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
 
     function animate(tNow){
-      const dt=Math.min(0.033,(tNow-tPrev)/1000);
+      // tighter dt cap helps stability
+      const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
@@ -1282,8 +1413,8 @@
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 10 : (anyBoost ? 6 : (inAir ? -2 : 0));
-      const zBoost   = bothBoost ? 1.3 : (anyBoost ? 0.6 : 0.0);
+      const fovBoost = bothBoost ? 8 : (anyBoost ? 5 : (inAir ? -2 : 0));
+      const zBoost   = bothBoost ? 1.0 : (anyBoost ? 0.5 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
@@ -1292,14 +1423,15 @@
       const lookAtZ = lerp(-22.0, -38.0, framing);
       const camYBase = lerp(3.9, 5.8, framing);
 
-      camFov = lerp(camFov, targetFov, 0.08);
-      camZ   = lerp(camZ,   targetZ,   0.08);
-      camY   = lerp(camY,   camYBase + (bothBoost?0.15:0), 0.08);
+      camFov = damp(camFov, targetFov, 8, dt);
+      camZ   = damp(camZ,   targetZ,   8, dt);
+      camY   = damp(camY,   camYBase + (bothBoost?0.12:0), 8, dt);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      const bob = Math.sin(tNow*0.0022) * 0.01;
+      // reduced bob (anti tremolio)
+      const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(0, camY + bob, camZ);
       camera.rotation.z = camRoll;
 
