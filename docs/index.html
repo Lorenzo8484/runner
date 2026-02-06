@@ -614,8 +614,9 @@
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
-    let runnerMixer = null;
-    let runnerAction = null;
+    let mixamoModel = null;       // riferimento al model scene
+    let mixamoHips = null;        // bone hips
+    let hipsBaseX = 0, hipsBaseZ = 0; // valori base da mantenere
 
     function setShadows(root){
       root.traverse((o)=>{
@@ -652,11 +653,37 @@
           RUNNER_GLB_URL,
           (gltf)=>{
             const model = gltf.scene;
+mixamoModel = model;
 
-            // set base transforms (ritoccabili)
-            model.scale.setScalar(0.85);
-            model.position.set(0, 0.0, 0.0);
-            model.rotation.y = Math.PI;
+// set base transforms (ritoccabili)
+model.scale.setScalar(0.85);
+model.position.set(0, 0.0, 0.0);
+model.rotation.y = Math.PI;
+
+// ✅ trova Hips (Mixamo: "Hips" o "mixamorigHips" ecc.)
+mixamoHips = null;
+model.traverse((o)=>{
+  if(o.isBone){
+    const n = (o.name || '').toLowerCase();
+    if(n === 'hips' || n.includes('mixamorig') && n.includes('hips')){
+      mixamoHips = o;
+    }
+  }
+});
+
+// ✅ auto-allinea al terreno: porta il punto più basso del modello a y=0
+{
+  const box = new THREE.Box3().setFromObject(model);
+  const yLift = -box.min.y;        // quanto devo alzare per far toccare a terra
+  model.position.y += yLift;
+}
+
+// ✅ salva valori base Hips per bloccare root motion (solo X/Z)
+if(mixamoHips){
+  hipsBaseX = mixamoHips.position.x;
+  hipsBaseZ = mixamoHips.position.z;
+}
+
 
             setShadows(model);
 
@@ -1088,7 +1115,22 @@
       if(game.paused) return;
 
       // update animation Mixamo
-      if(runnerMixer) runnerMixer.update(dt);
+      if(runnerMixer){
+  runnerMixer.update(dt);
+
+  // ✅ blocca root motion sul model (alcuni GLB muovono la scena)
+  if(mixamoModel){
+    mixamoModel.position.x = 0;
+    mixamoModel.position.z = 0;
+  }
+
+  // ✅ blocca root motion sugli Hips (Mixamo quasi sempre è qui)
+  if(mixamoHips){
+    mixamoHips.position.x = hipsBaseX;
+    mixamoHips.position.z = hipsBaseZ;
+  }
+}
+
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
