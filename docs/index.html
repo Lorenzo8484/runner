@@ -150,6 +150,7 @@
 
     <div class="controls">
       <button class="btn" id="pause">Pausa</button>
+      <button class="btn" id="restart">Restart</button>
     </div>
   </div>
 
@@ -176,7 +177,7 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 50 anelli → trio runner + boost
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 15 anelli → trio runner
       </div>
 
       <div class="grid">
@@ -203,12 +204,6 @@
           </div>
           <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
 
-          <!-- ✅ HAPTIC SWITCH -->
-          <div class="toggle" id="hapticToggle" style="margin-top:6px;">
-            <div><label>Haptic feedback</label><br/><span>Vibrazione leggera su raccolte / colpi (se supportata).</span></div>
-            <div class="switch" id="hapticSwitch"><i></i></div>
-          </div>
-
           <div class="toggle" id="audioToggle" style="margin-top:6px;">
             <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
             <div class="switch on" id="audioSwitch"><i></i></div>
@@ -230,7 +225,6 @@
 
   <script type="module">
     import * as THREE from 'three';
-    
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -253,6 +247,7 @@
 
     const menu = document.getElementById('menu');
     const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
 
     const overStats  = document.getElementById('overStats');
@@ -269,9 +264,6 @@
     const audioToggle= document.getElementById('audioToggle');
     const audioSwitch= document.getElementById('audioSwitch');
 
-    const hapticToggle = document.getElementById('hapticToggle');
-    const hapticSwitch = document.getElementById('hapticSwitch');
-
     const fovSlider = document.getElementById('fovSlider');
     const camSlider = document.getElementById('camSlider');
     const frameSlider = document.getElementById('frameSlider');
@@ -284,10 +276,9 @@
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    // === SETTINGS (CAM) ===
+    // === SETTINGS ===
     const CAM_KEY = 'jr_cam_settings_v5';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
-
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
@@ -298,83 +289,32 @@
     baseCamZ = clamp(baseCamZ, 2, 15);
     framing  = clamp(framing, 0, 1);
 
-    function saveCam(){
-      localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing }));
-    }
+    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing })); }
     function syncCamUI(){
       fovSlider.value = String(Math.round(baseFov));
       fovVal.textContent = String(Math.round(baseFov));
-
       camSlider.value = String(baseCamZ.toFixed(1));
       camVal.textContent = baseCamZ.toFixed(1);
-
       frameSlider.value = String(framing.toFixed(2));
       frameVal.textContent = framing.toFixed(2);
     }
     syncCamUI();
 
-    fovSlider.addEventListener('input', ()=>{
-      baseFov = clamp(Number(fovSlider.value), 30, 110);
-      fovVal.textContent = String(Math.round(baseFov));
-      saveCam();
-    });
-    camSlider.addEventListener('input', ()=>{
-      baseCamZ = clamp(Number(camSlider.value), 2, 15);
-      camVal.textContent = baseCamZ.toFixed(1);
-      saveCam();
-    });
-    frameSlider.addEventListener('input', ()=>{
-      framing = clamp(Number(frameSlider.value), 0, 1);
-      frameVal.textContent = framing.toFixed(2);
-      saveCam();
-    });
+    fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
+    camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
 
     resetCamBtn.addEventListener('click', ()=>{
-      baseFov = DEFAULTS.baseFov;
-      baseCamZ = DEFAULTS.baseCamZ;
-      framing = DEFAULTS.framing;
-      saveCam();
-      syncCamUI();
+      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing;
+      saveCam(); syncCamUI();
     });
 
-    function toggleSettings(open){
-      settingsPanel.style.display = open ? 'flex' : 'none';
-    }
+    function toggleSettings(open){ settingsPanel.style.display = open ? 'flex' : 'none'; }
     openSettingsBtn.addEventListener('click', ()=>{
       toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
       syncCamUI();
     });
     closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
-
-    // === HAPTIC SETTINGS ===
-    const HAPTIC_KEY = 'jr_haptic_v1';
-    const supportsVibrate = !!navigator.vibrate;
-    let hapticEnabled = (() => {
-      const v = localStorage.getItem(HAPTIC_KEY);
-      if(v === null) return supportsVibrate; // default: ON se supportato
-      return v === '1' && supportsVibrate;
-    })();
-    function syncHapticUI(){
-      hapticSwitch.classList.toggle('on', !!hapticEnabled);
-    }
-    function saveHaptic(){
-      localStorage.setItem(HAPTIC_KEY, hapticEnabled ? '1' : '0');
-    }
-    function haptic(pattern){
-      if(!hapticEnabled) return;
-      if(!supportsVibrate) return;
-      try{ navigator.vibrate(pattern); }catch(e){}
-    }
-    syncHapticUI();
-
-    hapticToggle.addEventListener('click', ()=>{
-      hapticEnabled = !hapticEnabled && supportsVibrate;
-      if(!supportsVibrate) hapticEnabled = false;
-      syncHapticUI();
-      saveHaptic();
-      // piccolo feedback quando toggli
-      haptic(18);
-    });
 
     // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -401,23 +341,17 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
     const sfx = {
-      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); haptic(10); },
-      food: ()=>{ beep('sine', 520, 0.06, 0.09); haptic(12); },
-      ring: ()=>{ beep('triangle', 700, 0.06, 0.10); haptic(14); },
-      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); haptic([10,20,10]); },
-      hit:  ()=>{ beep('square', 120, 0.12, 0.11); haptic([20,30,20]); },
-      lane: ()=>{ beep('sine', 160, 0.05, 0.05); haptic(6); },
-      jump: ()=>{ beep('square', 420, 0.05, 0.08); haptic(8); },
-      slide:()=>{ beep('sine', 220, 0.06, 0.06); haptic(8); },
-      boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); haptic([15,25,15,25,15]); },
+      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
+      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
+      ring: ()=>{ beep('triangle', 700, 0.06, 0.10); },
+      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
+      hit:  ()=>{ beep('square', 120, 0.12, 0.11); },
+      lane: ()=>{ beep('sine', 160, 0.05, 0.05); },
+      jump: ()=>{ beep('square', 420, 0.05, 0.08); },
+      slide:()=>{ beep('sine', 220, 0.06, 0.06); },
+      boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
     };
-
-    audioToggle.addEventListener('click', ()=>{
-      initAudio();
-      audioEnabled=!audioEnabled;
-      audioSwitch.classList.toggle('on',!!audioEnabled);
-      haptic(14);
-    });
+    audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -586,16 +520,15 @@
       return spr;
     }
 
-    // ✅ OBSTACOLI come EMOJI (faccia verso di te)
-    const OBST_EMOJIS = ["🦍","🦧","🦬","🪲","🐙","🐘","🦝","🦏","🦢","🦬","🐅","🐆","🦖","🦞","🐐","🦒","🦣"];
-    function makeObstacleEmoji(){
-      const emo = OBST_EMOJIS[rndi(0, OBST_EMOJIS.length-1)];
-      const spr = makeEmojiSprite(emo);
-      spr.scale.set(0.92,0.92,1);
-      return spr;
+    // Obstacles / Turtle
+    function spawnObstacleVisual(){
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
+        new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
+      );
+      box.castShadow=true; box.receiveShadow=true;
+      return box;
     }
-
-    // Turtle
     function makeTurtle(){
       const g = new THREE.Group();
       const shell = new THREE.Mesh(
@@ -615,7 +548,6 @@
       g.add(head);
       return g;
     }
-
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -632,11 +564,12 @@
       return ring;
     }
 
-    // Runner
+    // Runner rig
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
+    // Dummy (fallback + minis). Rimane, ma lo nascondiamo quando carica l'FBX.
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
@@ -649,6 +582,7 @@
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; runnerModel.add(dummyHead);
 
+    // Invincibility bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -661,6 +595,7 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
+    // Minis (ancora col dummy, così non rompiamo nulla)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -676,6 +611,48 @@
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
 
+    // ✅ FBX Runner (Runner.fbx)
+    let runnerFbx = null;
+    let runnerMixer = null;
+
+    const fbxLoader = new FBXLoader();
+    fbxLoader.load(
+      'Runner.fbx', // <-- NOME ESATTO come mi hai detto
+      (fbx) => {
+        runnerFbx = fbx;
+
+        // Scala tipica Mixamo FBX: prova 0.01 / 0.02 se serve
+        runnerFbx.scale.setScalar(0.01);
+        runnerFbx.position.set(0, 0, 0);
+
+        // Se è girato “al contrario” prova a scommentare:
+        // runnerFbx.rotation.y = Math.PI;
+
+        runnerFbx.traverse((o)=>{
+          if(o.isMesh){
+            o.castShadow = true;
+            o.receiveShadow = true;
+          }
+        });
+
+        // Nascondi dummy principale (mini restano dummy)
+        dummyBody.visible = false;
+        dummyHead.visible = false;
+
+        runnerModel.add(runnerFbx);
+
+        if (fbx.animations && fbx.animations.length > 0) {
+          runnerMixer = new THREE.AnimationMixer(runnerFbx);
+          const action = runnerMixer.clipAction(fbx.animations[0]);
+          action.play();
+        }
+
+        console.log('Runner.fbx caricato ✅', fbx);
+      },
+      undefined,
+      (err) => console.error('Errore caricamento Runner.fbx:', err)
+    );
+
     // --- Game data
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
@@ -685,8 +662,6 @@
     const BEST_KEY='jungle_runner_best_v3';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
-
-    const RING_THRESHOLD = 50; // ✅ boost anelli a 50
 
     const game = {
       lane:1,
@@ -803,7 +778,6 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
-      haptic(game.paused ? 12 : 10);
     }
 
     function loseLife(){
@@ -823,35 +797,25 @@
       sfx.boost();
     }
 
-    // ---- Spawns (con difficoltà: +10% ostacoli ogni 15000 score)
+    // ---- Spawns
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
-      const diffStep = Math.floor(game.score / 15000);
-      const factor = 1 + 0.10 * diffStep;
-
-      // più ostacoli col tempo
-      let p0 = clamp(0.62 / factor, 0.18, 0.75);          // prob "0 ostacoli"
-      let p1 = clamp(0.78 / factor, p0 + 0.08, 0.92);     // soglia per "1 ostacolo" (altrimenti 2)
-
       const blocked=new Set();
-      const r = Math.random();
-      const oCount = (r < p0) ? 0 : ((r < p1) ? 1 : 2);
+      const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
-      // ✅ OSTACOLI EMOJI
       blocked.forEach(l=>{
-        const obj = makeObstacleEmoji();
-        obj.position.set(lanesX[l], 1.05, z0);
+        const obj = spawnObstacleVisual();
+        obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
-      // emojis (coin)
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
         spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
@@ -859,7 +823,6 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      // FOOD
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -870,7 +833,6 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // MAGNET
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -880,7 +842,6 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // HEARTS
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
@@ -898,9 +859,8 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // TURTLES: un po’ più frequenti col tempo
-      const turtleP = clamp(0.14 * factor, 0.14, 0.34);
-      if(Math.random() < turtleP){
+      // TURTLES: ferme
+      if(Math.random() < 0.14){
         const lane=rndi(0,2);
         const t = makeTurtle();
         t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
@@ -909,11 +869,11 @@
         game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
       }
 
-      // RINGS: 3 dietro l’altro stessa corsia
+      // RINGS: 3 dietro l’altro nella stessa corsia
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.55;
+        const gap = 1.75;
         for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -976,6 +936,7 @@
     });
 
     startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
+    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     // Floating buttons
@@ -987,7 +948,6 @@
       overBig.textContent = '';
       overStats.textContent = 'Impostazioni';
       syncCamUI();
-      syncHapticUI();
     });
 
     btnHome.addEventListener('click', ()=>{
@@ -999,7 +959,7 @@
       openMenu();
     });
 
-    // ---- Camera state (sliders)
+    // ---- Camera state
     let camZ = baseCamZ;
     let camY = 4.6;
     let camFov = baseFov;
@@ -1017,6 +977,9 @@
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
+
+      // ✅ anima FBX (se presente)
+      if (runnerMixer) runnerMixer.update(dt);
 
       if(game.invincibleT>0){
         game.invincibleT -= dt;
@@ -1119,10 +1082,10 @@
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // turtle projectile: corre avanti
+        // turtle projectile
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
-          e.z -= (speed*3.4)*dt;
+          e.z -= (speed*3.4)*dt;   // avanti
           e.obj.position.z = e.z;
           if(e.projT <= 0) e.projT = 0;
         }
@@ -1161,7 +1124,7 @@
         const dz = Math.abs(e.z - 0.25);
         const dx = Math.abs(e.obj.position.x - ex);
         const dy = Math.abs((e.obj.position.y ?? 0) - py);
-        return (dz < 0.75 && dx < 0.62 && dy < 1.15);
+        return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
       function collideTurtle(ex, e){
         const dz = Math.abs(e.z - 0.35);
@@ -1169,7 +1132,7 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // AUTO-PIEGA PRESTO
+      // AUTO-PIEGA presto
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1204,21 +1167,17 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
-        // ring
         if(e.type==='ring'){
           let got=false;
           for(const ex of xs){ if(collideAtX(ex,e)){ got=true; break; } }
           if(!got) continue;
-
           if(game.trioT<=0 && !game.sliding) continue;
 
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ a 50 anelli -> boost + trio, e azzera contatore
-          if(game.ringCount >= RING_THRESHOLD){
-            game.ringCount = 0;      // azzera
+          if(game.ringCount % 15 === 0){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1230,7 +1189,6 @@
           continue;
         }
 
-        // turtle touch -> projectile
         if(e.type==='turtle' && e.state==='idle'){
           let hitT=false;
           for(const ex of xs){
@@ -1244,7 +1202,6 @@
           continue;
         }
 
-        // altri: collisione normale
         let hit=false;
         for(const ex of xs){
           if(collideAtX(ex,e)){ hit=true; break; }
