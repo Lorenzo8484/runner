@@ -666,35 +666,27 @@ model.rotation.y = Math.PI;
 
 setShadows(model);
 
-// ✅ rimuove/nasconde “plane/quadrato” esportati nel glb
-(function hideWeirdPlanes(root){
-  // dimensione complessiva del modello
-  const wholeBox = new THREE.Box3().setFromObject(root);
-  const wholeSize = new THREE.Vector3();
-  wholeBox.getSize(wholeSize);
-  const maxDim = Math.max(wholeSize.x, wholeSize.y, wholeSize.z) || 1;
+// ✅ nasconde SOLO i "piani" inutili, senza toccare il personaggio
+model.traverse((o)=>{
+  if(!o.isMesh) return;
 
-  root.traverse((o)=>{
-    if(!o.isMesh) return;
+  // NON toccare mai il vero personaggio
+  if(o.isSkinnedMesh) return;
 
-    // se ha nome sospetto
-    const name = (o.name || '').toLowerCase();
+  const name = (o.name || '').toLowerCase();
+  const geoType = o.geometry?.type || '';
 
-    // bbox mesh
-    const b = new THREE.Box3().setFromObject(o);
-    const s = new THREE.Vector3(); b.getSize(s);
+  const looksLikePlane =
+    geoType === 'PlaneGeometry' ||
+    name.includes('plane') ||
+    name.includes('floor') ||
+    name.includes('ground');
 
-    const veryFlat = s.y < maxDim * 0.02; // quasi piatto
-    const veryWide = (s.x > maxDim * 0.80 && s.z > maxDim * 0.80); // grande quasi quanto il modello
+  if(looksLikePlane){
+    o.visible = false;
+  }
+});
 
-    const isPlaneGeo = o.geometry && (o.geometry.type === 'PlaneGeometry');
-    const isWhiteMat = o.material && o.material.color && o.material.color.getHexString && (o.material.color.getHexString().toLowerCase() === 'ffffff');
-
-    if(isPlaneGeo || name.includes('plane') || (veryFlat && veryWide) || isWhiteMat){
-      o.visible = false;
-    }
-  });
-})(model);
 
 // nascondi placeholder
 fallbackRunner.visible = false;
