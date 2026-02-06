@@ -1061,7 +1061,20 @@ if(clips.length){
       else { if(dy<0) jump(); else slide(); }
     });
 
-    startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
+    startBtn.addEventListener('click', ()=>{
+  initAudio();
+  closeMenu();
+  resetRun();
+
+  // ✅ forza lo start anche se qualcosa ha lasciato paused=true
+  game.paused = false;
+  game.over = false;
+  pauseBtn.textContent = 'Pausa';
+  btnPause.textContent = '⏸️';
+
+  startBtn.textContent='▶️ Inizia';
+});
+
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     // Floating buttons
