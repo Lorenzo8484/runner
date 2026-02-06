@@ -1516,8 +1516,8 @@
       openMenu();
 
       // prova a caricare FBX (non blocca il gioco)
-      try{
-        const fbx = await loadRunnerFBX();
+      - await loadRunnerFBX('Runner.fbx');
+      + await loadRunnerFBX('./Runner.fbx')
         runnerFBX = fbx;
 
         // sostituisci MAIN
