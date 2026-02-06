@@ -9,59 +9,75 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    .hud{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;}
-    .card{pointer-events:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;color:#eaf1ff;backdrop-filter:blur(10px);min-width:220px;}
-    .row{display:flex;justify-content:space-between;gap:10px;align-items:center;}
-    .small{font-size:12px;opacity:.86;line-height:1.2}
-    .btn{pointer-events:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf1ff;padding:10px 12px;border-radius:14px;font-weight:800;cursor:pointer;user-select:none;}
+    .hud{
+      position:fixed;top:8px;left:8px;right:8px;
+      display:flex;justify-content:space-between;gap:8px;
+      pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;
+    }
+    .card{
+      pointer-events:none;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;padding:8px 10px;color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      min-width:180px; max-width:62vw;
+    }
+    .row{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+    .small{font-size:11px;opacity:.86;line-height:1.2}
+    .btn{
+      pointer-events:auto;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      color:#eaf1ff;padding:9px 11px;border-radius:12px;
+      font-weight:800;cursor:pointer;user-select:none;
+    }
     .btn:active{transform:scale(.98);}
     .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
 
-    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:12px;white-space:nowrap;}
-    .bar{height:6px;width:120px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
+    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;}
+    .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
     .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* floating home/settings (sempre visibili) */
+    /* floating home/settings/pause (sempre visibili) - ORIZZONTALE in alto a destra */
     .floatBtns{
-      position:fixed; top:10px; right:10px;
-      display:flex; flex-direction:column; gap:8px;
+      position:fixed; top:8px; right:8px;
+      display:flex; flex-direction:row; gap:8px;
       z-index:25; pointer-events:none;
     }
     .iconBtn{
       pointer-events:auto;
-      width:44px;height:44px;
+      width:40px;height:40px;
       padding:0;
-      border-radius:14px;
+      border-radius:12px;
       display:flex;align-items:center;justify-content:center;
-      font-size:18px;
+      font-size:17px;
       backdrop-filter:blur(10px);
+      line-height:1;
     }
 
     /* right side vertical food column */
     .rightCol{
-      position:fixed; top:70px; right:4px; width:58px;
+      position:fixed; top:62px; right:4px; width:56px;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       pointer-events:none; z-index:10;
     }
     .foodStack{
-      width:52px; max-height:220px; overflow:hidden;
+      width:50px; max-height:210px; overflow:hidden;
       display:flex; flex-direction:column; align-items:center; gap:6px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
-      padding:8px 6px;
+      border-radius:12px;
+      padding:7px 6px;
       backdrop-filter:blur(10px);
     }
     .foodItem{
-      width:38px;height:38px;border-radius:12px;
+      width:36px;height:36px;border-radius:11px;
       display:flex;align-items:center;justify-content:center;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
-      font-size:20px;
+      font-size:19px;
     }
     .foodCount{
       margin-top:6px;
-      width:52px;
+      width:50px;
       text-align:center;
       font-weight:900;
       background:rgba(255,255,255,.06);
@@ -71,13 +87,13 @@
       font-size:12px;
     }
 
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
     .panel{width:min(680px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:16px;color:#eaf1ff;}
+      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:14px;color:#eaf1ff;}
     .title{font-size:20px;font-weight:950;margin:4px 0 6px;}
-    .subtitle{opacity:.88;font-size:13px;margin:0 0 12px;line-height:1.35;}
+    .subtitle{opacity:.88;font-size:13px;margin:0 0 10px;line-height:1.35;}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .full{grid-column:1/-1;}
 
@@ -91,7 +107,7 @@
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
 
-    .help{position:fixed;bottom:10px;left:10px;right:10px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
+    .help{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
     .help .card{max-width:980px;text-align:center;}
 
     /* sliders */
@@ -110,8 +126,10 @@
 
     @media (max-width:430px){
       .btn{padding:8px 10px;border-radius:12px;font-size:13px;}
-      .card{min-width:200px;padding:9px 10px;}
-      .iconBtn{width:42px;height:42px;border-radius:12px;}
+      .card{min-width:170px;max-width:64vw;padding:7px 9px;}
+      .iconBtn{width:38px;height:38px;border-radius:11px;font-size:16px;}
+      .pill{font-size:10.5px}
+      .bar{width:100px}
     }
   </style>
 
@@ -150,13 +168,14 @@
 
     <div class="controls">
       <button class="btn" id="pause">Pausa</button>
-      <button class="btn" id="restart">Restart</button>
+      <!-- ✅ Restart rimosso -->
     </div>
   </div>
 
-  <!-- floating buttons always visible -->
+  <!-- ✅ floating buttons (orizzontale) sempre visibili -->
   <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
+    <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
     <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
@@ -167,7 +186,7 @@
 
   <div class="help">
     <div class="card small">
-      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa, R restart.
+      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
       <span style="opacity:.75">Anelli: auto-piega subito quando arrivano nella tua corsia (anche i bambini).</span>
     </div>
@@ -177,7 +196,7 @@
     <div class="panel">
       <div class="title">Jungle Emoji Runner</div>
       <div class="subtitle small">
-        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 15 anelli → trio runner
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • 30 anelli → trio runner
       </div>
 
       <div class="grid">
@@ -246,7 +265,6 @@
 
     const menu = document.getElementById('menu');
     const startBtn = document.getElementById('startBtn');
-    const restartBtn = document.getElementById('restart');
     const pauseBtn   = document.getElementById('pause');
 
     const overStats  = document.getElementById('overStats');
@@ -254,6 +272,7 @@
 
     const btnSettings = document.getElementById('btnSettings');
     const btnHome = document.getElementById('btnHome');
+    const btnPause = document.getElementById('btnPause');
 
     const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
@@ -275,13 +294,11 @@
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp=(a,b,t)=>a+(b-a)*t;
 
-    // smoother lerp that respects dt (anti-tremolio)
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // === SETTINGS ===
     const CAM_KEY = 'jr_cam_settings_v5';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
-
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
@@ -292,52 +309,28 @@
     baseCamZ = clamp(baseCamZ, 2, 15);
     framing  = clamp(framing, 0, 1);
 
-    function saveCam(){
-      localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing }));
-    }
+    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing })); }
     function syncCamUI(){
       fovSlider.value = String(Math.round(baseFov));
       fovVal.textContent = String(Math.round(baseFov));
-
       camSlider.value = String(baseCamZ.toFixed(1));
       camVal.textContent = baseCamZ.toFixed(1);
-
       frameSlider.value = String(framing.toFixed(2));
       frameVal.textContent = framing.toFixed(2);
     }
     syncCamUI();
 
-    fovSlider.addEventListener('input', ()=>{
-      baseFov = clamp(Number(fovSlider.value), 30, 110);
-      fovVal.textContent = String(Math.round(baseFov));
-      saveCam();
-    });
-    camSlider.addEventListener('input', ()=>{
-      baseCamZ = clamp(Number(camSlider.value), 2, 15);
-      camVal.textContent = baseCamZ.toFixed(1);
-      saveCam();
-    });
-    frameSlider.addEventListener('input', ()=>{
-      framing = clamp(Number(frameSlider.value), 0, 1);
-      frameVal.textContent = framing.toFixed(2);
-      saveCam();
-    });
+    fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
+    camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
 
     resetCamBtn.addEventListener('click', ()=>{
-      baseFov = DEFAULTS.baseFov;
-      baseCamZ = DEFAULTS.baseCamZ;
-      framing = DEFAULTS.framing;
-      saveCam();
-      syncCamUI();
+      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing;
+      saveCam(); syncCamUI();
     });
 
-    function toggleSettings(open){
-      settingsPanel.style.display = open ? 'flex' : 'none';
-    }
-    openSettingsBtn.addEventListener('click', ()=>{
-      toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === '');
-      syncCamUI();
-    });
+    function toggleSettings(open){ settingsPanel.style.display = open ? 'flex' : 'none'; }
+    openSettingsBtn.addEventListener('click', ()=>{ toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === ''); syncCamUI(); });
     closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
 
     // Audio minimal
@@ -375,12 +368,7 @@
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
     };
-
-    audioToggle.addEventListener('click', ()=>{
-      initAudio();
-      audioEnabled=!audioEnabled;
-      audioSwitch.classList.toggle('on',!!audioEnabled);
-    });
+    audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -624,7 +612,7 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // Mini runners (kids) + independent slide + independent bubble
+    // Mini runners (kids)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -634,22 +622,18 @@
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
 
-      // smaller "kids"
       p.scale.setScalar(0.72);
 
       const bb = bubble.clone();
       bb.material = bubble.material.clone();
       bb.material.opacity = 0.20;
-      bb.scale.setScalar(0.90); // bubble proportion for kids
+      bb.scale.setScalar(0.90);
       bb.visible=false;
       p.add(bb);
 
       p.visible=false;
 
-      return {
-        pivot:p, center:c, model:m, bubble:bb,
-        sliding:false, slideT:0, autoCooldown:0
-      };
+      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
@@ -669,7 +653,7 @@
       y:0, vy:0, jumping:false,
 
       sliding:false, slideT:0,
-      autoSlideCooldown:0, // main cooldown
+      autoSlideCooldown:0,
 
       baseSpeed: 12.9,
       score:0, coins:0, best: loadBest(),
@@ -786,6 +770,8 @@
       if(game.over) return;
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
+      // icona flottante cambia
+      btnPause.textContent = game.paused ? '▶️' : '⏸️';
     }
 
     function loseLife(){
@@ -805,12 +791,13 @@
       sfx.boost();
     }
 
-    // ---- Spawns
+    // ---- Spawns (più ostacoli + più tartarughe)
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
       const blocked=new Set();
-      const oCount = Math.random()<0.62 ? 0 : (Math.random()<0.78 ? 1 : 2);
+      // ✅ più ostacoli
+      const oCount = (Math.random()<0.22) ? 0 : (Math.random()<0.62 ? 1 : 2);
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
@@ -867,21 +854,24 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
 
-      // TURTLES: ferme
-      if(Math.random() < 0.14){
-        const lane=rndi(0,2);
-        const t = makeTurtle();
-        t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
-        t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-        scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
+      // ✅ più tartarughe
+      if(Math.random() < 0.26){
+        const count = (Math.random()<0.72) ? 1 : 2;
+        for(let n=0;n<count;n++){
+          const lane=rndi(0,2);
+          const t = makeTurtle();
+          t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
+          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          scene.add(t);
+          game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
+        }
       }
 
-      // RINGS: 3 dietro l’altro nella stessa corsia (più vicini)
+      // RINGS: 3 vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.15; // ✅ più vicini (prima 1.75)
+        const gap = 1.15;
         for(let k=0;k<3;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -923,7 +913,6 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
-      if(k==='r') { initAudio(); closeMenu(); resetRun(); }
     });
 
     let touchStart=null;
@@ -944,13 +933,13 @@
     });
 
     startBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); startBtn.textContent='▶️ Inizia'; });
-    restartBtn.addEventListener('click', ()=>{ initAudio(); closeMenu(); resetRun(); });
     pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     // Floating buttons
     btnSettings.addEventListener('click', ()=>{
       initAudio();
       game.paused = true;
+      btnPause.textContent = '▶️';
       menu.style.display = 'flex';
       toggleSettings(true);
       overBig.textContent = '';
@@ -958,10 +947,24 @@
       syncCamUI();
     });
 
+    btnPause.addEventListener('click', ()=>{
+      initAudio();
+      // se menu aperto -> chiudi e riprendi
+      if(menu.style.display !== 'none'){
+        closeMenu();
+        game.paused = false;
+        btnPause.textContent = '⏸️';
+        pauseBtn.textContent = 'Pausa';
+        return;
+      }
+      togglePause();
+    });
+
     btnHome.addEventListener('click', ()=>{
       initAudio();
       resetRun();
       game.paused = true;
+      btnPause.textContent = '▶️';
       game.over = false;
       startBtn.textContent='▶️ Inizia';
       openMenu();
@@ -977,23 +980,18 @@
       return [lanesX[game.lane]];
     }
 
-    // which runner controls a lane for "must-be-sliding" checks
     function isLaneSliding(lane){
-      if(game.trioT<=0){
-        return (lane === game.lane) && game.sliding;
-      }
+      if(game.trioT<=0) return (lane === game.lane) && game.sliding;
       if(lane===0) return miniL.sliding;
-      if(lane===1) return game.sliding;   // main is middle
+      if(lane===1) return game.sliding;
       if(lane===2) return miniR.sliding;
       return false;
     }
 
-    // instant auto-slide trigger (no ritardo)
     function triggerSlide(obj, duration=0.42, cooldown=0.22){
       obj.sliding = true;
       obj.slideT = duration;
       obj.autoCooldown = cooldown;
-      // ✅ immediate rotation so first ring is perfect
       obj.center.rotation.x = -1.20;
     }
 
@@ -1022,29 +1020,25 @@
       if(game.trioT>0){
         game.trioT = Math.max(0, game.trioT-dt);
         if(game.trioT===0){
-          miniL.pivot.visible=false;
-          miniR.pivot.visible=false;
-          miniL.bubble.visible=false;
-          miniR.bubble.visible=false;
+          miniL.pivot.visible=false; miniR.pivot.visible=false;
+          miniL.bubble.visible=false; miniR.bubble.visible=false;
           miniL.sliding=false; miniR.sliding=false;
         }
       }
 
-      // cooldowns
       game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
       miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
       miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
 
-      // speed: cumulativo (MEGA ridotto ma sempre > singoli)
+      // speed: cumulativo (MEGA ancora più basso)
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.12 : 1.0; // ✅ MEGA più basso (prima 1.8)
+      const crazyMul = both ? 1.06 : 1.0; // ✅ abbassato (prima 1.12)
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul;
 
-      // invincibile quando c'è un boost attivo (scudo su tutti e tre)
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
@@ -1058,26 +1052,16 @@
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timers (main + kids)
-      if(game.sliding){
-        game.slideT -= dt;
-        if(game.slideT<=0) game.sliding=false;
-      }
-      if(miniL.sliding){
-        miniL.slideT -= dt;
-        if(miniL.slideT<=0) miniL.sliding=false;
-      }
-      if(miniR.sliding){
-        miniR.slideT -= dt;
-        if(miniR.slideT<=0) miniR.sliding=false;
-      }
+      // slide timers
+      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+      if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
+      if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
 
       // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      // ✅ scivolata: damping (anti-tremolio)
       const mainPitchTarget = game.sliding ? -1.20 : 0.0;
       runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
@@ -1088,11 +1072,9 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis (trio) + independent rotations
+      // minis
       if(game.trioT>0){
-        miniL.pivot.visible=true;
-        miniR.pivot.visible=true;
-
+        miniL.pivot.visible=true; miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
 
@@ -1115,18 +1097,16 @@
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
-        game.spawnT = rnd(0.45, 0.85);
+        game.spawnT = rnd(0.40, 0.75); // un po' più frequente
       }
 
       // magnet effect
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
-        // normal world move towards player
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // turtle projectile: corre IN AVANTI (più negativo) e non viene verso il player
         if(e.type==='turtle' && e.state==='projectile'){
           e.projT -= dt;
           e.z -= (speed*3.4)*dt;
@@ -1161,7 +1141,7 @@
         }
       }
 
-      // collision helpers
+      // collisions
       const xs = activeRunnerXs();
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -1172,15 +1152,13 @@
         const dy = Math.abs(ey - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
-
       function collideTurtle(ex, e){
         const dz = Math.abs(e.z - 0.35);
         const dx = Math.abs(e.obj.position.x - ex);
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // ✅ AUTO-PIEGA: MAIN + KIDS (immediata e in anticipo)
-      // main (solo se non trio: usa la corsia scelta)
+      // auto-slide
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1190,65 +1168,39 @@
             game.sliding = true;
             game.slideT  = 0.48;
             game.autoSlideCooldown = 0.24;
-            // ✅ immediate rotation = niente ritardo sul primo anello
             runnerCenter.rotation.x = -1.20;
             break;
           }
         }
       }
-
-      // trio mode: each lane auto-slides independently (kids + main middle)
       if(game.trioT>0 && game.y===0){
-        // lane 0 kid
         if(!miniL.sliding && miniL.autoCooldown<=0){
           for(const e of game.entities){
-            if(e.type!=='ring') continue;
-            if(e.lane!==0) continue;
-            const dz = Math.abs(e.z - 0.25);
-            if(dz < 2.55){
-              triggerSlide(miniL, 0.46, 0.22);
-              break;
-            }
+            if(e.type==='ring' && e.lane===0 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniL, 0.46, 0.22); break; }
           }
         }
-        // lane 1 main
         if(!game.sliding && game.autoSlideCooldown<=0){
           for(const e of game.entities){
-            if(e.type!=='ring') continue;
-            if(e.lane!==1) continue;
-            const dz = Math.abs(e.z - 0.25);
-            if(dz < 2.55){
-              game.sliding = true;
-              game.slideT  = 0.46;
-              game.autoSlideCooldown = 0.22;
-              runnerCenter.rotation.x = -1.20;
-              break;
+            if(e.type==='ring' && e.lane===1 && Math.abs(e.z-0.25) < 2.55){
+              game.sliding=true; game.slideT=0.46; game.autoSlideCooldown=0.22; runnerCenter.rotation.x=-1.20; break;
             }
           }
         }
-        // lane 2 kid
         if(!miniR.sliding && miniR.autoCooldown<=0){
           for(const e of game.entities){
-            if(e.type!=='ring') continue;
-            if(e.lane!==2) continue;
-            const dz = Math.abs(e.z - 0.25);
-            if(dz < 2.55){
-              triggerSlide(miniR, 0.46, 0.22);
-              break;
-            }
+            if(e.type==='ring' && e.lane===2 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniR, 0.46, 0.22); break; }
           }
         }
       }
 
-      // turtle projectile demolition (stessa corsia)
+      // turtle projectile demolition
       for(const e of game.entities){
         if(e.type==='turtle' && e.state==='projectile'){
           for(let j=game.entities.length-1;j>=0;j--){
             const o = game.entities[j];
             if(o.type!=='obst') continue;
             if(o.lane!==e.lane) continue;
-            const dz = Math.abs(o.z - e.z);
-            if(dz < 1.35){
+            if(Math.abs(o.z - e.z) < 1.35){
               scene.remove(o.obj);
               game.entities.splice(j,1);
             }
@@ -1260,14 +1212,9 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
-        // ring pickup:
-        // - no trio: must be sliding (auto/manual)
-        // - trio: must be sliding for THAT lane (kids/main)
         if(e.type==='ring'){
-          // collision in its lane only (more reliable than scanning xs)
           const laneX = lanesX[e.lane];
-          const got = collideAtX(laneX, e);
-          if(!got) continue;
+          if(!collideAtX(laneX, e)) continue;
 
           if(game.trioT<=0){
             if(!game.sliding) continue;
@@ -1279,30 +1226,24 @@
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // every 15 rings -> trio + ring boost + reset ringCount
-          if(game.ringCount >= 15){
+          // ✅ ogni 30 anelli -> boost anelli + trio (reset contatore)
+          if(game.ringCount >= 30){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
-
             bubble.visible=true;
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
 
-            // ✅ reset rings counter when boost triggers
             game.ringCount = 0;
-
             sfx.boost();
           }
           continue;
         }
 
-        // turtle touch -> projectile (all 3 players can push)
         if(e.type==='turtle' && e.state==='idle'){
           let hitT=false;
-          for(const ex of xs){
-            if(collideTurtle(ex, e)){ hitT=true; break; }
-          }
+          for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
           if(hitT){
             e.state='projectile';
             e.projT = 2.8;
@@ -1311,11 +1252,8 @@
           continue;
         }
 
-        // other pickups/hits: collision on any active runner x
         let hit=false;
-        for(const ex of xs){
-          if(collideAtX(ex,e)){ hit=true; break; }
-        }
+        for(const ex of xs){ if(collideAtX(ex,e)){ hit=true; break; } }
         if(!hit) continue;
 
         if(e.type==='coin'){
@@ -1385,36 +1323,26 @@
 
       setBoostUI();
 
-      // bubble pulse (stable)
-      if(bubble.visible){
-        bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
-      }
-      if(miniL.bubble.visible){
-        miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105);
-      }
-      if(miniR.bubble.visible){
-        miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105);
-      }
+      if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
+      if(miniL.bubble.visible){ miniL.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
+      if(miniR.bubble.visible){ miniR.bubble.material.opacity = 0.16 + 0.05*Math.sin(tNow*0.0105); }
 
-      // camera roll smoothing (anti tremolio)
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
 
     function animate(tNow){
-      // tighter dt cap helps stability
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
 
       update(dt,tNow);
 
-      // camera (slider base)
       const inAir = (game.y < -0.01) || game.jumping;
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 8 : (anyBoost ? 5 : (inAir ? -2 : 0));
-      const zBoost   = bothBoost ? 1.0 : (anyBoost ? 0.5 : 0.0);
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : (inAir ? -2 : 0));
+      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
@@ -1425,12 +1353,11 @@
 
       camFov = damp(camFov, targetFov, 8, dt);
       camZ   = damp(camZ,   targetZ,   8, dt);
-      camY   = damp(camY,   camYBase + (bothBoost?0.12:0), 8, dt);
+      camY   = damp(camY,   camYBase + (bothBoost?0.10:0), 8, dt);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      // reduced bob (anti tremolio)
       const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(0, camY + bob, camZ);
       camera.rotation.z = camRoll;
