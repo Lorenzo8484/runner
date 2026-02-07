@@ -36,51 +36,42 @@
       line-height:1;
     }
 
-    /* --- Barra comandi in basso: Start/Stop + Dance (piccoli) --- */
-    .bottomBar{
+    /* ✅ PULSANTI COME NEL CERCHIO: in basso a destra, verticali */
+    .rightStack{
       position:fixed;
-      left:10px; right:10px;
-      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      right:12px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
       z-index:30;
-      pointer-events:none;
       display:flex;
-      justify-content:center;
-    }
-    .bottomCard{
-      pointer-events:auto;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      padding:10px;
-      display:flex;
+      flex-direction:column;
       gap:10px;
-      align-items:center;
-      backdrop-filter:blur(10px);
-      max-width:680px;
-      width:min(680px,100%);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      pointer-events:auto;
     }
-    .miniBtn{
-      flex:1;
-      height:46px;
+    .bigBtn{
+      width:140px;
+      height:56px;
       border-radius:14px;
       font-weight:950;
+      letter-spacing:.2px;
       display:flex;
       align-items:center;
       justify-content:center;
       gap:10px;
-    }
-    .miniBtn.secondary{
       background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
     }
-    .dot{
-      width:14px;height:14px;border-radius:5px;
-      background:#34c759;
-      box-shadow:0 0 0 2px rgba(255,255,255,.12) inset;
+    .pillDot{
+      width:12px;height:12px;border-radius:4px;
+      background:#ff3b30;
+      box-shadow:0 0 0 2px rgba(255,255,255,.10) inset;
+      flex:0 0 auto;
     }
-    .dot.red{ background:#ff3b30; }
+    .pillDot.green{ background:#34c759; }
 
-    /* --- Pannello impostazioni (solo quando apri ⚙️) --- */
+    /* --- Pannello impostazioni --- */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -136,16 +127,13 @@
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
   </div>
 
-  <!-- ✅ START/STOP + DANCE SEMPRE VISIBILI -->
-  <div class="bottomBar">
-    <div class="bottomCard">
-      <button class="btn miniBtn" id="btnStartMain">▶️ Start</button>
-      <button class="btn miniBtn secondary" id="btnStopMain" title="Ferma traffico (idle random)">
-        <span class="dot red" id="stopDot"></span>
-        <span id="stopLbl">STOP</span>
-      </button>
-      <button class="btn miniBtn secondary" id="btnDance">🕺 Dance</button>
-    </div>
+  <!-- ✅ PULSANTE PRINCIPALE (Start/Stop/Restart) + Dance sotto -->
+  <div class="rightStack">
+    <button class="bigBtn" id="btnMain">
+      <span class="pillDot" id="mainDot"></span>
+      <span id="mainLbl">AVVIA</span>
+    </button>
+    <button class="bigBtn" id="btnDance">🕺 Dance</button>
   </div>
 
   <!-- ✅ SETTINGS -->
@@ -199,12 +187,10 @@
     const btnSettings = document.getElementById('btnSettings');
     const btnPause = document.getElementById('btnPause');
 
-    const btnStartMain = document.getElementById('btnStartMain');
-    const btnStopMain  = document.getElementById('btnStopMain');
-    const btnDance     = document.getElementById('btnDance');
-
-    const stopLbl = document.getElementById('stopLbl');
-    const stopDot = document.getElementById('stopDot');
+    const btnMain = document.getElementById('btnMain');
+    const mainLbl = document.getElementById('mainLbl');
+    const mainDot = document.getElementById('mainDot');
+    const btnDance = document.getElementById('btnDance');
 
     const settingsOverlay = document.getElementById('settingsOverlay');
     const closeSettingsBtn = document.getElementById('closeSettings');
@@ -295,10 +281,7 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
     const sfx = {
-      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
-      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
       ring: ()=>{ beep('triangle', 700, 0.06, 0.10); },
-      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
       hit:  ()=>{ beep('square', 120, 0.12, 0.11); },
       lane: ()=>{ beep('sine', 160, 0.05, 0.05); },
       jump: ()=>{ beep('square', 420, 0.05, 0.08); },
@@ -362,7 +345,7 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // ===== STRADA (come nel tuo codice) =====
+    // ===== STRADA =====
     const segLen = 9.0, segCount = 10;
     const laneW = 1.35;
     const mainRoadWidth = laneW * 3;
@@ -380,7 +363,6 @@
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
-
       g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
 
@@ -675,10 +657,7 @@
     // ===== GLB loader + Animations =====
     const gltfLoader = new GLTFLoader();
 
-    // Base model (skeleton) + animations
     const RUNNER_GLB_URL = './running.glb';
-
-    // Extra animation files (come hai chiesto)
     const ANIM_FILES = {
       idle: ['./DwarfIdle.glb', './WarriorIdle.glb', './HappyIdle.glb'],
       jump: './JumpOver.glb',
@@ -742,7 +721,6 @@
       return c;
     }
 
-    // Mixer + actions
     let runnerMixer=null;
     let actions = {
       run:null,
@@ -754,45 +732,22 @@
       dance:null
     };
 
-    let runnerModelLoaded=null;
-    let runClipDuration=1.0;
-
-    // Root-motion guards (come prima)
     let mixamoHips=null, mixamoRootNode=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
 
-    // --- Playback state ---
     const animState = {
-      mode:'idle',              // 'idle' | 'run' | 'oneShot' | 'dead' | 'dance'
-      currentIdle:null,
-      oneShot:null,
-      idlePendingPick:false
+      mode:'idle'
     };
-
-    function stopAllActions(){
-      const all = [];
-      if(actions.run) all.push(actions.run);
-      if(actions.jump) all.push(actions.jump);
-      if(actions.flip) all.push(actions.flip);
-      if(actions.kick) all.push(actions.kick);
-      if(actions.die) all.push(actions.die);
-      if(actions.dance) all.push(actions.dance);
-      for(const a of actions.idles) all.push(a);
-      for(const a of all){
-        try{ a.stop(); }catch{}
-      }
-    }
 
     function fadeTo(next, fade=0.18){
       if(!next) return;
-      // fade out everything else
       const all = [];
       if(actions.run) all.push(actions.run);
       if(actions.jump) all.push(actions.jump);
       if(actions.flip) all.push(actions.flip);
       if(actions.kick) all.push(actions.kick);
-      if(actions.die) all.push(actions.die);
-      if(actions.dance) all.push(actions.dance);
+      if(actions.die)  all.push(actions.die);
+      if(actions.dance)all.push(actions.dance);
       for(const a of actions.idles) all.push(a);
 
       for(const a of all){
@@ -812,7 +767,6 @@
     function playRun(){
       if(!actions.run || animState.mode==='dead') return;
       animState.mode='run';
-      animState.oneShot=null;
       fadeTo(actions.run, 0.12);
       actions.run.setLoop(THREE.LoopRepeat, Infinity);
       actions.run.clampWhenFinished = false;
@@ -821,40 +775,32 @@
     function pickRandomIdle(){
       if(!actions.idles.length || animState.mode==='dead') return;
       const a = actions.idles[rndi(0, actions.idles.length-1)];
-      animState.currentIdle = a;
-
       a.setLoop(THREE.LoopOnce, 1);
       a.clampWhenFinished = true;
       a.time = 0;
+      animState.mode='idle';
       fadeTo(a, 0.20);
     }
 
     function startIdleRandom(){
       if(animState.mode==='dead') return;
-      animState.mode='idle';
-      animState.oneShot=null;
       pickRandomIdle();
     }
 
-    function playOneShot(action, {fade=0.08, lock='oneShot'} = {}){
+    function playOneShot(action, fade=0.08){
       if(!action || animState.mode==='dead') return;
-      animState.mode = lock;
-      animState.oneShot = action;
-
+      animState.mode='oneShot';
       action.reset();
       action.setLoop(THREE.LoopOnce, 1);
       action.clampWhenFinished = true;
       action.enabled = true;
       action.setEffectiveWeight(1.0);
-
-      // crossfade from current
       fadeTo(action, fade);
     }
 
     function playDance(){
       if(!actions.dance || animState.mode==='dead') return;
       animState.mode='dance';
-      animState.oneShot = null;
       actions.dance.setLoop(THREE.LoopRepeat, Infinity);
       actions.dance.clampWhenFinished = false;
       fadeTo(actions.dance, 0.18);
@@ -863,7 +809,6 @@
     function playDie(){
       if(!actions.die) return;
       animState.mode='dead';
-      animState.oneShot = actions.die;
       actions.die.reset();
       actions.die.setLoop(THREE.LoopOnce, 1);
       actions.die.clampWhenFinished = true;
@@ -883,12 +828,10 @@
     }
 
     async function loadAllAnimations(){
-      // idle clips
       for(const u of ANIM_FILES.idle){
         const c = await loadAnimClip(u);
         if(c) actions.idles.push(c);
       }
-      // oneshots / specials
       actions.jump = await loadAnimClip(ANIM_FILES.jump);
       actions.flip = await loadAnimClip(ANIM_FILES.flip);
       actions.kick = await loadAnimClip(ANIM_FILES.kick);
@@ -913,8 +856,7 @@
 
           removeBigNonSkinnedPlanes(model);
 
-          // piedi a terra
-          {
+          { // piedi a terra
             const box = new THREE.Box3().setFromObject(model);
             const lift = -box.min.y;
             model.position.y += lift + 0.01;
@@ -922,7 +864,6 @@
 
           model.rotation.y = Math.PI;
 
-          // hips/root
           mixamoHips = null; mixamoRootNode = null;
           model.traverse(o=>{
             const n = (o.name||'').toLowerCase();
@@ -936,32 +877,23 @@
 
           while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
           runnerModel.add(model);
-          runnerModelLoaded = model;
 
-          // Mixer on base model
           runnerMixer = new THREE.AnimationMixer(model);
 
-          // Load extra clips first
           await loadAllAnimations();
 
-          // base run clip from running.glb
           const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
           const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
           const fixedRun = runClip ? stripRootMotion(runClip) : null;
           if(fixedRun){
-            runClipDuration = Math.max(0.2, fixedRun.duration || 1.0);
             actions.run = runnerMixer.clipAction(fixedRun);
             actions.run.enabled = true;
             actions.run.setEffectiveWeight(1.0);
             actions.run.setEffectiveTimeScale(1.0);
           }
 
-          // build clipActions for extras
-          // (qui assumiamo che siano compatibili con lo stesso rig)
           const idleActions = [];
-          for(const clip of actions.idles){
-            idleActions.push(runnerMixer.clipAction(clip));
-          }
+          for(const clip of actions.idles) idleActions.push(runnerMixer.clipAction(clip));
           actions.idles = idleActions;
 
           if(actions.jump) actions.jump = runnerMixer.clipAction(actions.jump);
@@ -970,29 +902,22 @@
           if(actions.die)  actions.die  = runnerMixer.clipAction(actions.die);
           if(actions.dance)actions.dance= runnerMixer.clipAction(actions.dance);
 
-          // finished event: se era idle/oneshot torna a idle random o run
-          runnerMixer.addEventListener('finished', (ev)=>{
-            const a = ev.action;
+          runnerMixer.addEventListener('finished', ()=>{
             if(animState.mode==='dead') return;
-
             if(animState.mode==='oneShot'){
-              // dopo flip/jump/kick torna a run o idle (dipende)
-              if(game.started && !game.stopped && !game.paused) playRun();
+              if(game.started && !game.stopped && !game.paused && !game.over) playRun();
               else startIdleRandom();
               return;
             }
             if(animState.mode==='idle'){
-              // idle random chain
               pickRandomIdle();
               return;
             }
           });
 
-          // ✅ all'avvio: idle random fluido
           startIdleRandom();
           resolve();
-        }, undefined, (err)=>{
-          console.warn('GLB load error:', err);
+        }, undefined, ()=>{
           resolve();
         });
       });
@@ -1024,27 +949,44 @@
       entities:[],
       spawnT:0.30,
 
-      paused:false,    // pausa "UI"
-      started:false,   // ✅ parte SOLO quando premi Start
+      paused:false,
+      started:false,
       over:false,
 
-      stopped:true,    // ✅ all'avvio traffico fermo
+      stopped:true,
       stopBlend:1.0,
 
       lastTurtleZ: [-99999, -99999, -99999],
     };
 
-    function updateStartButtonLabel(){
-      btnStartMain.textContent = game.over ? '🔁 Restart' : (game.started ? '▶️ Start' : '▶️ Start');
+    // ✅ LABEL + DOT del pulsante principale (Start / Stop / Restart)
+    function updateMainButton(){
+      if(game.over){
+        mainLbl.textContent = 'RESTART';
+        mainDot.classList.remove('green');
+        return;
+      }
+      if(!game.started){
+        mainLbl.textContent = 'AVVIA';
+        mainDot.classList.remove('green');
+        return;
+      }
+      if(game.stopped){
+        mainLbl.textContent = 'AVVIA';
+        mainDot.classList.add('green');
+        return;
+      }
+      mainLbl.textContent = 'STOP';
+      mainDot.classList.remove('green');
     }
 
-    // ✅ +5% ostacoli ogni 5000 punti (come avevi)
+    // ✅ +5% ostacoli ogni 5000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 5000);
       return 1 + 0.05 * steps;
     }
 
-    // ===== Spawn (come tuo, già “pulito”) =====
+    // ===== Spawn =====
     const TURTLE_VIS_Z = 70;
     const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
 
@@ -1073,7 +1015,6 @@
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
-      // tartaruga controllata (max 1 / row)
       if(Math.random() < 0.18){
         const lane=rndi(0,2);
         const tz = z0 - rnd(3,11);
@@ -1082,12 +1023,11 @@
           t.position.set(lanesX[lane], 0, tz);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
           scene.add(t);
-          game.entities.push({ type:'turtle', lane, z:tz, obj:t, state:'idle', projT:0 });
+          game.entities.push({ type:'turtle', lane, z:tz, obj:t });
           game.lastTurtleZ[lane] = tz;
         }
       }
 
-      // anelli: 2 e vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
@@ -1107,6 +1047,7 @@
     function moveLane(dir){
       if(game.over||game.paused) return;
       if(!game.started) return;
+      if(game.stopped) return;
       if(game.trioT>0) return;
       game.lane = clamp(game.lane+dir, 0, 3);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
@@ -1121,8 +1062,7 @@
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
-        // ✅ anim salto
-        playOneShot(actions.jump, {fade:0.06, lock:'oneShot'});
+        playOneShot(actions.jump, 0.06);
       }
     }
 
@@ -1164,17 +1104,12 @@
     // ===== Start/Stop/Pause/Home/Dance =====
     function setStop(on){
       game.stopped = !!on;
-      stopLbl.textContent = game.stopped ? 'GO' : 'STOP';
-      stopDot.classList.toggle('red', !game.stopped);
-      stopDot.classList.toggle('green', game.stopped);
-
       if(game.stopped){
-        // ✅ stop = idle random
-        startIdleRandom();
+        startIdleRandom(); // ✅ stop = player fermo + idle random
       }else{
-        // riprende: run (se started)
         if(game.started && !game.paused && !game.over) playRun();
       }
+      updateMainButton();
     }
 
     function resetRun(){
@@ -1202,23 +1137,19 @@
 
       game.lastTurtleZ = [-99999, -99999, -99999];
 
-      // al reset: traffico fermo, idle
       game.started = false;
       game.paused = false;
       setStop(true);
-      updateStartButtonLabel();
+      updateMainButton();
     }
 
     function startGame(){
-      if(game.over){
-        resetRun();
-      }
       game.started = true;
       game.paused = false;
-      setStop(false);       // GO
+      setStop(false);
       playRun();
-      updateStartButtonLabel();
       btnPause.textContent = '⏸️';
+      updateMainButton();
     }
 
     function togglePause(){
@@ -1227,7 +1158,6 @@
       btnPause.textContent = game.paused ? '▶️' : '⏸️';
 
       if(game.paused){
-        // pausa = idle random
         startIdleRandom();
       }else{
         if(game.started && !game.stopped) playRun();
@@ -1235,26 +1165,34 @@
       }
     }
 
-    btnStartMain.addEventListener('click', ()=>{
+    // ✅ PULSANTE PRINCIPALE (Start / Stop / Restart)
+    btnMain.addEventListener('click', ()=>{
       initAudio();
-      startGame();
-    });
 
-    btnStopMain.addEventListener('click', ()=>{
-      initAudio();
-      if(game.over) return;
-      if(!game.started) return; // stop ha senso dopo start
+      // Restart quando morto
+      if(game.over){
+        resetRun();
+        startGame();           // riparte subito
+        return;
+      }
+
+      // Avvio prima volta
+      if(!game.started){
+        startGame();
+        return;
+      }
+
+      // Toggle STOP mentre corre
       if(game.paused) return;
       setStop(!game.stopped);
     });
 
+    // ✅ Dance sotto (se stai correndo: si ferma e poi balla)
     btnDance.addEventListener('click', ()=>{
       initAudio();
       if(game.over) return;
-      // Dance funziona quando sei fermo/idle (o anche prima dello start)
+      if(game.started && !game.paused && !game.stopped) setStop(true);
       playDance();
-      // se stavi in run, ferma il traffico (così coerente)
-      if(game.started && !game.stopped) setStop(true);
     });
 
     btnPause.addEventListener('click', ()=>{ initAudio(); togglePause(); });
@@ -1275,12 +1213,8 @@
         game.paused=false;
         setStop(true);
 
-        // ✅ anim morte
-        playDie();
-
-        // ✅ Start diventa Restart (solo quello)
-        btnStartMain.textContent = '🔁 Restart';
-        stopLbl.textContent = 'STOP';
+        playDie();             // ✅ anim morte
+        updateMainButton();    // ✅ diventa RESTART
       }
     }
 
@@ -1289,13 +1223,11 @@
     let tPrev=performance.now();
 
     function update(dt, tNow){
-      // ✅ animazioni SEMPRE (anche prima dello start, anche in stop)
+      // ✅ animazioni SEMPRE
       if(runnerMixer){
-        // timeScale: se morto = 1 (per far finire l’anim), altrimenti normale
         runnerMixer.timeScale = 1.0;
         runnerMixer.update(dt);
 
-        // blocca drift
         if(mixamoHips){
           mixamoHips.position.x = hipsBaseX;
           mixamoHips.position.z = hipsBaseZ;
@@ -1306,34 +1238,24 @@
         }
       }
 
-      // gameplay fermo se non started o paused o over
       const gameplayOn = game.started && !game.paused && !game.over;
 
-      // blend stop
       const stopTarget = game.stopped ? 1.0 : 0.0;
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
-      // se non gameplay: niente fisica/scroll/spawn
       if(!gameplayOn){
-        // idle breathing leggero
         const breathe = Math.sin(tNow*0.0022) * 0.015;
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
         return;
       }
 
-      // reset pose idle offsets
       runnerCenter.position.y = 0.95;
       runnerCenter.rotation.z = 0;
 
       const trafficMul = (1.0 - game.stopBlend);
+      if(game.stopped) return;
 
-      // se STOP attivo: fermo traffico ma non "pausa" totale (anim idle già gestita da setStop)
-      if(game.stopped){
-        return;
-      }
-
-      // ===== velocità (rimane come nel tuo: food più basso, mega più basso) =====
       const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -1342,27 +1264,22 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
 
-      // gravity
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timer
       if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
 
-      // runner position
       runnerPivot.position.x = lanesX[game.lane<=2 ? game.lane : 2];
       runnerPivot.position.y = (-game.y);
 
-      // contact shadow
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runnerPivot.position.x;
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // road scroll
       const scroll = speed*dt;
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
@@ -1373,20 +1290,17 @@
       }
       loopJungle(scroll);
 
-      // spawn
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
         game.spawnT = rnd(0.40, 0.75);
       }
 
-      // move entities
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
       }
 
-      // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
         if(e.z > 6.0){
@@ -1395,7 +1309,6 @@
         }
       }
 
-      // collisions + special animations
       const px = runnerPivot.position.x;
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -1412,14 +1325,12 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto “anelli” → FLIP (invece di verticale)
       if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
           if(Math.abs(e.z - 0.25) < 2.55){
-            // usa flip e “consuma” i ring quando li tocchi (come prima logic)
-            playOneShot(actions.flip, {fade:0.05, lock:'oneShot'});
+            playOneShot(actions.flip, 0.05);
             game.sliding = true;
             game.slideT  = 0.48;
             game.autoSlideCooldown = 0.24;
@@ -1435,8 +1346,6 @@
         if(e.type==='ring'){
           if(!collide(e)) continue;
           if(!game.sliding) continue;
-
-          // raccogli ring
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
@@ -1445,12 +1354,8 @@
 
         if(e.type==='turtle'){
           if(!collideTurtle(e)) continue;
-
-          // ✅ calcio tartaruga
-          playOneShot(actions.kick, {fade:0.05, lock:'oneShot'});
+          playOneShot(actions.kick, 0.05);
           sfx.boost();
-
-          // rimuovi tartaruga (semplice, stabile)
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
@@ -1463,7 +1368,6 @@
         }
       }
 
-      // score tick (se ti serve ancora)
       game.score += (18 * speedMul) * dt;
     }
 
@@ -1473,7 +1377,6 @@
 
       update(dt,tNow);
 
-      // camera (sempre)
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
@@ -1528,12 +1431,11 @@
       syncCamUI();
       await loadRunnerModel();
 
-      // ✅ avvio: strada + player idle, nessun overlay, STOP attivo
       game.started = false;
       game.over = false;
       game.paused = false;
       setStop(true);
-      updateStartButtonLabel();
+      updateMainButton();
 
       requestAnimationFrame(animate);
     })();
