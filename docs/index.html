@@ -631,6 +631,8 @@
     let hipsBaseX=0, hipsBaseZ=0;
     let rootBaseX=0, rootBaseZ=0;
 
+    let rmClampTargets = []; // nodi con position track da bloccare (X/Z)
+
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
@@ -763,6 +765,24 @@
             if(!clips.length){ resolve(); return; }
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
+            
+            // ✅ trova tutti i nodi che hanno una track ".position" nella clip
+rmClampTargets = [];
+const seen = new Set();
+
+for(const t of runClip.tracks){
+  if(!t.name || !t.name.endsWith('.position')) continue;
+
+  // nome nodo = tutto prima di ".position"
+  const nodeName = t.name.slice(0, -('.position'.length));
+  if(seen.has(nodeName)) continue;
+  seen.add(nodeName);
+
+  const obj = model.getObjectByName(nodeName);
+  if(!obj) continue;
+
+  rmClampTargets.push({ obj, x: obj.position.x, z: obj.position.z });
+}
 
             const fixed = stripRootMotion(runClip);
 
@@ -1170,6 +1190,11 @@
           mixamoRootNode.position.x = rootBaseX;
           mixamoRootNode.position.z = rootBaseZ;
         }
+        // ✅ blocco definitivo anti root-motion: inchioda X/Z di tutti i nodi con position track
+for(const it of rmClampTargets){
+  it.obj.position.x = it.x;
+  it.obj.position.z = it.z;
+}
       }
       runnerModel.position.x = 0;
       runnerModel.position.z = 0;
