@@ -772,15 +772,8 @@
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
 
-            // ✅ auto-fix direzione (se la clip "avanza" verso camera, ruotiamo 180°)
-            const forwardSign = computeClipForwardSign(runClip);
-            // In questo gioco la camera è dietro il personaggio: se il movimento clip va verso +Z,
-            // spesso significa "va verso la camera" -> ruota.
-            if(forwardSign > 0){
-              model.rotation.y = Math.PI;
-            }else{
-              model.rotation.y = 0;
-            }
+            // ✅ forza orientamento: deve guardare nella direzione della strada (lontano dalla camera)
+             model.rotation.y = Math.PI;
 
             const fixed = stripRootMotion(runClip);
 
