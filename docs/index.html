@@ -636,46 +636,49 @@
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
       });
     }
-
-     function stripRootMotion(clip){
+    
+    function stripRootMotion(clip, hipsName, rootNodeName){
+  // ✅ versione robusta + non rompe il gioco se trova track strane
   const c = clip.clone();
+  const TH = 0.02; // 2cm: soglia sicura per “root motion” Mixamo/Blender
 
-  // quanto movimento X/Z consideriamo "root motion"
-  const TH = 0.02; // 2cm (valore sicuro per Mixamo)
+  try{
+    for(const t of c.tracks){
+      const name = (t.name || '').toLowerCase();
+      if(!name.endsWith('.position')) continue;
 
-  for(const t of c.tracks){
-    const name = (t.name || '').toLowerCase();
-    if(!name.endsWith('.position')) continue;
+      const v = t.values;
+      if(!v || v.length < 6) continue;
 
-    const v = t.values;
-    if(!v || v.length < 6) continue;
-
-    // calcola quanto varia X e Z lungo la clip
-    let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
-    for(let i=0;i<v.length;i+=3){
-      const x=v[i], z=v[i+2];
-      if(x<minX) minX=x; if(x>maxX) maxX=x;
-      if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
-    }
-    const rangeX = maxX-minX;
-    const rangeZ = maxZ-minZ;
-
-    // se la traccia muove X o Z "troppo", la inchiodiamo (blocca avanti/indietro)
-    if(rangeX > TH || rangeZ > TH){
-      const baseX = v[0];
-      const baseZ = v[2];
+      // range X/Z
+      let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
       for(let i=0;i<v.length;i+=3){
-        v[i]   = baseX;
-        v[i+2] = baseZ;
+        const x=v[i], z=v[i+2];
+        if(x<minX) minX=x; if(x>maxX) maxX=x;
+        if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
+      }
+
+      const rangeX = maxX-minX;
+      const rangeZ = maxZ-minZ;
+
+      // ✅ se una track muove X/Z “troppo”, la inchiodiamo: elimina avanti/indietro
+      if(rangeX > TH || rangeZ > TH){
+        const baseX = v[0];
+        const baseZ = v[2];
+        for(let i=0;i<v.length;i+=3){
+          v[i]   = baseX;
+          v[i+2] = baseZ;
+        }
       }
     }
+  }catch(err){
+    // Se succede qualcosa, non blocchiamo il gioco: ritorniamo clip “clone” e basta
+    console.warn('stripRootMotion fallback:', err);
   }
 
   return c;
 }
-      }
-      return c;
-    }
+     
 
     function removeBigNonSkinnedPlanes(model){
       model.traverse(o=>{
