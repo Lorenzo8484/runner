@@ -570,7 +570,7 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // fallback dummy
+    // fallback dummy (sempre presente se GLB fallisce)
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
@@ -597,7 +597,7 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // MINI runners
+    // MINI runners (kids)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
@@ -622,16 +622,51 @@
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
 
-    // MIXAMO GLB (IN PLACE)
+    // MIXAMO GLB
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
     let runnerMixer=null, runnerAction=null;
+    let mixamoHips=null, mixamoRootNode=null;
+    let hipsBaseX=0, hipsBaseZ=0;
+    let rootBaseX=0, rootBaseZ=0;
 
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
       });
+    }
+
+    // (robusto) elimina root motion su qualunque track .position che muove X/Z troppo
+    function stripRootMotion(clip){
+      const c = clip.clone();
+      const TH = 0.02; // 2cm
+      try{
+        for(const t of c.tracks){
+          const name = (t.name || '').toLowerCase();
+          if(!name.endsWith('.position')) continue;
+          const v = t.values;
+          if(!v || v.length < 6) continue;
+
+          let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
+          for(let i=0;i<v.length;i+=3){
+            const x=v[i], z=v[i+2];
+            if(x<minX) minX=x; if(x>maxX) maxX=x;
+            if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
+          }
+          const rangeX=maxX-minX, rangeZ=maxZ-minZ;
+          if(rangeX>TH || rangeZ>TH){
+            const baseX=v[0], baseZ=v[2];
+            for(let i=0;i<v.length;i+=3){
+              v[i]=baseX;
+              v[i+2]=baseZ;
+            }
+          }
+        }
+      }catch(err){
+        console.warn('stripRootMotion fallback:', err);
+      }
+      return c;
     }
 
     function removeBigNonSkinnedPlanes(model){
@@ -662,10 +697,12 @@
           (gltf)=>{
             const model = gltf.scene;
 
+            model.position.set(0,0,0);
             model.scale.setScalar(0.95);
+
             setShadows(model);
 
-            // sicurezza: DoubleSide
+            // sicurezza: DoubleSide (evita “pezzi invisibili”)
             model.traverse(o=>{
               if(o.isMesh && o.material){
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -673,7 +710,6 @@
               }
             });
 
-            // elimina eventuali "pavimenti/quadrati" non skinned
             removeBigNonSkinnedPlanes(model);
 
             // piedi a terra
@@ -686,28 +722,43 @@
             // orientamento: lontano dalla camera
             model.rotation.y = Math.PI;
 
-            // ✅ ATTACCO UNICO E PULITO (NO SOSIE)
-            runnerMixer = null; runnerAction = null;
+            // trova hips/root (opzionale)
+            mixamoHips = null;
+            mixamoRootNode = null;
+            model.traverse(o=>{
+              const n = (o.name||'').toLowerCase();
+              if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
+              if(o.isBone){
+                if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+              }
+            });
+            if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
+            if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
 
-            // ripulisci runnerModel e rimetti fallback, poi aggiungi model
-            while (runnerModel.children.length > 0) runnerModel.remove(runnerModel.children[0]);
-            runnerModel.add(fallbackRunner);
-            fallbackRunner.visible = false;
-
-            // aggiungi SOLO qui
+            // --- IMPORTANTISSIMO: pulisci runnerModel e aggiungi UNA SOLA VOLTA
+            while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
             runnerModel.add(model);
 
-            // IMPORTANTISSIMO: non bloccare mai X/Z ogni frame, ma qui li mettiamo a 0 una volta
-            model.position.x = 0;
-            model.position.z = 0;
+            // fallback off solo se il model è OK
+            fallbackRunner.visible = false;
 
+            // animazioni
             const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
-            if(!clips.length){ resolve(); return; }
+            if(!clips.length){
+              console.warn('Nessuna animazione nel GLB: uso fallback');
+              // ripristina fallback
+              while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
+              runnerModel.add(fallbackRunner);
+              fallbackRunner.visible = true;
+              resolve();
+              return;
+            }
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
+            const fixed = stripRootMotion(runClip);
 
             runnerMixer = new THREE.AnimationMixer(model);
-            runnerAction = runnerMixer.clipAction(runClip);
+            runnerAction = runnerMixer.clipAction(fixed);
 
             runnerAction.reset();
             runnerAction.enabled = true;
@@ -720,7 +771,11 @@
             resolve();
           },
           undefined,
-          ()=>{ resolve(); }
+          (err)=>{
+            console.warn('GLB load error:', err);
+            // fallback già presente: non fare nulla
+            resolve();
+          }
         );
       });
     }
@@ -1099,9 +1154,17 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // ✅ SOLO animazione (il GLB è IN PLACE → niente clamp)
+      // anima Mixamo + clamp leggero su hips/root (se trovati)
       if(runnerMixer){
         runnerMixer.update(dt);
+        if(mixamoHips){
+          mixamoHips.position.x = hipsBaseX;
+          mixamoHips.position.z = hipsBaseZ;
+        }
+        if(mixamoRootNode){
+          mixamoRootNode.position.x = rootBaseX;
+          mixamoRootNode.position.z = rootBaseZ;
+        }
       }
 
       const inAir = (game.y < -0.01) || game.jumping;
@@ -1159,7 +1222,7 @@
       if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
       if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
 
-      // runner positions (CORSIE)
+      // runner positions (questa è la corsia vera)
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
@@ -1254,14 +1317,18 @@
         const dy = Math.abs(ey - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
+      function collideTurtle(ex, e){
+        const dz = Math.abs(e.z - 0.35);
+        const dx = Math.abs(e.obj.position.x - ex);
+        return (dz < 1.05 && dx < 0.72);
+      }
 
       // auto-slide rings
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
-          const dz = Math.abs(e.z - 0.25);
-          if(dz < 2.55){
+          if(Math.abs(e.z - 0.25) < 2.55){
             game.sliding = true;
             game.slideT  = 0.48;
             game.autoSlideCooldown = 0.24;
@@ -1290,6 +1357,21 @@
         }
       }
 
+      // turtle projectile demolition
+      for(const e of game.entities){
+        if(e.type==='turtle' && e.state==='projectile'){
+          for(let j=game.entities.length-1;j>=0;j--){
+            const o = game.entities[j];
+            if(o.type!=='obst') continue;
+            if(o.lane!==e.lane) continue;
+            if(Math.abs(o.z - e.z) < 1.35){
+              scene.remove(o.obj);
+              game.entities.splice(j,1);
+            }
+          }
+        }
+      }
+
       // pickups / hits
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
@@ -1308,7 +1390,7 @@
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // ✅ 50 anelli -> trio + ring boost + reset
+          // 50 anelli -> trio + ring boost + reset
           if(game.ringCount >= 50){
             game.trioT = 10.0;
             game.ringBoostT = 10.0;
@@ -1317,6 +1399,17 @@
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
             game.ringCount = 0;
+            sfx.boost();
+          }
+          continue;
+        }
+
+        if(e.type==='turtle' && e.state==='idle'){
+          let hitT=false;
+          for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
+          if(hitT){
+            e.state='projectile';
+            e.projT = 2.8;
             sfx.boost();
           }
           continue;
