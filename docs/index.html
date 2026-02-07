@@ -630,6 +630,14 @@
     let mixamoHips=null, mixamoRootNode=null;
     let hipsBaseX=0, hipsBaseZ=0;
     let rootBaseX=0, rootBaseZ=0;
+    
+    // === FIX DEFINITIVO anti root-motion ===
+let runnerGltfModel = null;
+let runnerAnchorWorld = new THREE.Vector3();
+let tmpWorldA = new THREE.Vector3();
+let tmpWorldB = new THREE.Vector3();
+let tmpLocalA = new THREE.Vector3();
+let tmpLocalB = new THREE.Vector3();
 
     let rmClampTargets = []; // nodi con position track da bloccare (X/Z)
 
@@ -760,6 +768,11 @@
 
             fallbackRunner.visible = false;
             runnerModel.add(model);
+            
+            runnerGltfModel = model;
+
+// ancora: punto “di riferimento” nel mondo (prima che l’animazione faccia root motion)
+runnerGltfModel.getWorldPosition(runnerAnchorWorld);
 
             const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
             if(!clips.length){ resolve(); return; }
@@ -1182,6 +1195,25 @@ for(const t of runClip.tracks){
       // ✅ animazione + blocco drift root (extra sicurezza)
       if(runnerMixer){
         runnerMixer.update(dt);
+        
+        // ✅ FIX DEFINITIVO: annulla qualunque root-motion nascosto (X/Z) riportando il modello sull’ancora
+if(runnerGltfModel && runnerGltfModel.parent){
+  // posizione corrente del modello nel mondo
+  runnerGltfModel.getWorldPosition(tmpWorldA);
+
+  // converti ancora e corrente nello spazio locale del parent del modello
+  const parent = runnerGltfModel.parent;
+  tmpLocalA.copy(tmpWorldA); parent.worldToLocal(tmpLocalA);      // current local
+  tmpLocalB.copy(runnerAnchorWorld); parent.worldToLocal(tmpLocalB); // anchor local
+
+  // delta local
+  const dx = tmpLocalA.x - tmpLocalB.x;
+  const dz = tmpLocalA.z - tmpLocalB.z;
+
+  // correggi SOLO X/Z (non Y)
+  runnerGltfModel.position.x -= dx;
+  runnerGltfModel.position.z -= dz;
+}
         if(mixamoHips){
           mixamoHips.position.x = hipsBaseX;
           mixamoHips.position.z = hipsBaseZ;
