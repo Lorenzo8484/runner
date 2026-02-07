@@ -513,32 +513,35 @@
       g.fillStyle = 'rgba(255,255,255,0.03)';
       g.fillRect(px(shoulderStartX), 0, px(leftEdge+totalRoadWidth) - px(shoulderStartX), size);
 
-      // PARAMETRI LINEE (ispirati alla foto)
-      const solidW = Math.max(4, Math.round(size * 0.006));   // bordo pieno
-      const dashW  = Math.max(3, Math.round(size * 0.0045));  // tratteggio un filo più spesso
-      const dashLen = Math.round(size * 0.060);               // dash più lungo
-      const dashGap = Math.round(size * 0.055);               // gap simile alla foto
+     const solidW = Math.max(6, Math.round(size * 0.008));     // linea piena più “autostrada”
+const dashW  = Math.max(5, Math.round(size * 0.0065));    // tratteggio più spesso
+const dashLen = Math.round(size * 0.080);                 // DASH LUNGO
+const dashGap = Math.round(size * 0.160);                 // GAP PIÙ LUNGO               // gap simile alla foto
 
       g.fillStyle = '#f4f6f8';
 
       // bordi esterni pieni (sinistra/destra)
       const xOuterL = px(leftEdge + 0.03);
       const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
-      g.fillRect(xOuterL - solidW/2, 0, solidW, size);
-      g.fillRect(xOuterR - solidW/2, 0, solidW, size);
+      const xOuterLi = Math.round(xOuterL - solidW/2);
+const xOuterRi = Math.round(xOuterR - solidW/2);
+g.fillRect(xOuterLi, 0, solidW, size);
+g.fillRect(xOuterRi, 0, solidW, size);
 
-      // linea piena tra corsia 3 e emergenza (continua)
-      const xShoulderSep = px(shoulderStartX);
-      g.fillRect(xShoulderSep - solidW/2, 0, solidW, size);
+const xShoulderSep = px(shoulderStartX);
+const xShoulderSepI = Math.round(xShoulderSep - solidW/2);
+g.fillRect(xShoulderSepI, 0, solidW, size);
 
-      // SOLO 2 linee tratteggiate tra le 3 corsie
-      const xDash1 = px(leftEdge + laneW*1);
-      const xDash2 = px(leftEdge + laneW*2);
+const xDash1 = px(leftEdge + laneW*1);
+const xDash2 = px(leftEdge + laneW*2);
+const xDash1I = Math.round(xDash1 - dashW/2);
+const xDash2I = Math.round(xDash2 - dashW/2);
 
-      for(let y=0; y<size; y += (dashLen + dashGap)){
-        g.fillRect(xDash1 - dashW/2, y, dashW, dashLen);
-        g.fillRect(xDash2 - dashW/2, y, dashW, dashLen);
-      }
+for(let y=0; y<size; y += (dashLen + dashGap)){
+  const yi = Math.round(y);
+  g.fillRect(xDash1I, yi, dashW, dashLen);
+  g.fillRect(xDash2I, yi, dashW, dashLen);
+}
 
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
@@ -598,6 +601,16 @@
     }
 
     const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+
+    // ✅ LINEE “CRISP” (niente blur / niente sfumature)
+highwayTex.generateMipmaps = false;
+highwayTex.minFilter = THREE.NearestFilter;
+highwayTex.magFilter = THREE.NearestFilter;
+highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+highwayTex.needsUpdate = true;
+
+// ✅ dashes più “lunghi” nel mondo (riduce l’effetto “scala”)
+highwayTex.repeat.set(1.0, 4.0);
 
     // poche varianti patch (riuso = performance)
     const patchTexPool = [
