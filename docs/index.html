@@ -570,7 +570,7 @@
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // fallback dummy (se GLB fallisce)
+    // fallback dummy
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
@@ -637,42 +637,44 @@
       });
     }
 
-    function isRootTrack(trackName){
-      const n = (trackName||'').toLowerCase();
-      if(!n.endsWith('.position')) return false;
-      // SOLO root/hips/armature
-      return (
-        n.includes('hips') ||
-        n.includes('mixamorig:hips') ||
-        n.includes('armature') ||
-        n.endsWith('root.position') ||
-        n.includes('root.position')
-      );
-    }
-
-    // ✅ blocca X/Z al primo frame (NO avanti/indietro)
-    function stripRootMotion(clip){
+    // ✅ root-motion remover robusto (hips/root + fallback by name)
+    function stripRootMotion(clip, hipsName, rootNodeName){
       const c = clip.clone();
+      const hipsKey = hipsName ? hipsName.toLowerCase() : '';
+      const rootKey = rootNodeName ? rootNodeName.toLowerCase() : '';
+
       for(const t of c.tracks){
-        if(!isRootTrack(t.name)) continue;
-        const v=t.values;
-        const baseX=v[0];
-        const baseZ=v[2];
+        const name = (t.name || '').toLowerCase();
+        if(!name.endsWith('.position')) continue;
+
+        const isHips = hipsKey && name.includes(hipsKey + '.position');
+        const isRoot = rootKey && name.includes(rootKey + '.position');
+
+        const looksLikeRootAnyway =
+          (name.includes('mixamorig') && name.includes('hips.position')) ||
+          name.includes('hips.position') ||
+          name.includes('armature.position') ||
+          name.includes('root.position');
+
+        if(!(isHips || isRoot || looksLikeRootAnyway)) continue;
+
+        const v = t.values;
+        const baseX = v[0];
+        const baseZ = v[2];
         for(let i=0;i<v.length;i+=3){
-          v[i]=baseX;
-          v[i+2]=baseZ;
+          v[i]   = baseX; // X costante
+          v[i+2] = baseZ; // Z costante
         }
       }
       return c;
     }
 
     function removeBigNonSkinnedPlanes(model){
-      // ✅ elimina "scene leftovers" di Blender: plane/cube grandi NON skinnati
       model.traverse(o=>{
         if(!o.isMesh) return;
 
         const isSkinned = (o.isSkinnedMesh === true) || (o.skeleton != null);
-        if(isSkinned) return; // i mesh del personaggio li teniamo
+        if(isSkinned) return;
 
         const box = new THREE.Box3().setFromObject(o);
         const s = new THREE.Vector3(); box.getSize(s);
@@ -689,30 +691,6 @@
       });
     }
 
-    function computeClipForwardSign(clip){
-      // Prova a capire se la corsa "avanza" verso +Z o -Z guardando i track di Hips/Root
-      // Se avanza verso la camera (di solito +Z qui), giriamo il modello.
-      try{
-        let best=null;
-        for(const t of clip.tracks){
-          const n=(t.name||'').toLowerCase();
-          if(!n.endsWith('.position')) continue;
-          if(n.includes('hips') || n.includes('mixamorig:hips') || n.includes('root') || n.includes('armature')){
-            best=t; break;
-          }
-        }
-        if(!best) return 0;
-        const v=best.values;
-        if(v.length < 6) return 0;
-        // prendo delta Z tra primo e ultimo key
-        const z0=v[2];
-        const z1=v[v.length-1];
-        const dz=z1-z0;
-        if(Math.abs(dz) < 1e-4) return 0;
-        return Math.sign(dz); // +1 o -1
-      }catch{ return 0; }
-    }
-
     async function loadMixamoRunner(){
       return new Promise((resolve)=>{
         gltfLoader.load(
@@ -725,7 +703,7 @@
 
             setShadows(model);
 
-            // sicurezza: DoubleSide (a volte Blender esporta culling)
+            // sicurezza: DoubleSide
             model.traverse(o=>{
               if(o.isMesh && o.material){
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -733,10 +711,10 @@
               }
             });
 
-            // ✅ rimuove plane/cube di scena
+            // elimina scene leftovers
             removeBigNonSkinnedPlanes(model);
 
-            // piedi a terra (bbox)
+            // piedi a terra
             {
               const box = new THREE.Box3().setFromObject(model);
               const lift = -box.min.y;
@@ -764,6 +742,9 @@
               rootBaseZ = mixamoRootNode.position.z;
             }
 
+            // ✅ forza orientamento: lontano dalla camera (niente auto)
+            model.rotation.y = Math.PI;
+
             fallbackRunner.visible = false;
             runnerModel.add(model);
 
@@ -772,10 +753,8 @@
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
 
-            // ✅ forza orientamento: deve guardare nella direzione della strada (lontano dalla camera)
-             model.rotation.y = Math.PI;
-
-            const fixed = stripRootMotion(runClip);
+            // ✅ root-motion killer robusto
+            const fixed = stripRootMotion(runClip, mixamoHips?.name, mixamoRootNode?.name);
 
             runnerMixer = new THREE.AnimationMixer(model);
             runnerAction = runnerMixer.clipAction(fixed);
@@ -962,7 +941,6 @@
       const blocked=new Set();
       const mult = obstacleMultiplier();
 
-      // più score -> più probabilità e 2 ostacoli più spesso
       const p0 = clamp(0.22 / mult, 0.04, 0.22);
       let oCount = 0;
       if(Math.random() >= p0){
