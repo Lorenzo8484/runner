@@ -1261,11 +1261,22 @@
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
       if(!gameplayOn){
-        const breathe = Math.sin(tNow*0.0022) * 0.015;
-        runnerCenter.position.y = 0.95 + breathe;
-        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-        return;
-      }
+  // ✅ tieni SEMPRE il player centrato nella corsia centrale quando non si gioca
+  runnerPivot.position.x = lanesX[1];   // corsia centrale
+  runnerPivot.position.y = 0;
+
+  // ✅ anche l'ombra segue
+  contact.position.x = runnerPivot.position.x;
+  contact.scale.set(1.10, 1.10, 1);
+  contact.material.opacity = 0.55;
+
+  // idle breathing leggero
+  const breathe = Math.sin(tNow*0.0022) * 0.015;
+  runnerCenter.position.y = 0.95 + breathe;
+  runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+
+  return;
+}
 
       runnerCenter.position.y = 0.95;
       runnerCenter.rotation.z = 0;
