@@ -622,78 +622,21 @@
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
 
-    // MIXAMO GLB
+    // MIXAMO GLB (IN PLACE)
     const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
     let runnerMixer=null, runnerAction=null;
-    let mixamoHips=null, mixamoRootNode=null;
-    let hipsBaseX=0, hipsBaseZ=0;
-    let rootBaseX=0, rootBaseZ=0;
-    
-    // === FIX DEFINITIVO anti root-motion ===
-let runnerGltfModel = null;
-let runnerAnchorWorld = new THREE.Vector3();
-let tmpWorldA = new THREE.Vector3();
-let tmpWorldB = new THREE.Vector3();
-let tmpLocalA = new THREE.Vector3();
-let tmpLocalB = new THREE.Vector3();
-
-    let rmClampTargets = []; // nodi con position track da bloccare (X/Z)
 
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
       });
     }
-    
-    function stripRootMotion(clip, hipsName, rootNodeName){
-  // ✅ versione robusta + non rompe il gioco se trova track strane
-  const c = clip.clone();
-  const TH = 0.02; // 2cm: soglia sicura per “root motion” Mixamo/Blender
-
-  try{
-    for(const t of c.tracks){
-      const name = (t.name || '').toLowerCase();
-      if(!name.endsWith('.position')) continue;
-
-      const v = t.values;
-      if(!v || v.length < 6) continue;
-
-      // range X/Z
-      let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
-      for(let i=0;i<v.length;i+=3){
-        const x=v[i], z=v[i+2];
-        if(x<minX) minX=x; if(x>maxX) maxX=x;
-        if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
-      }
-
-      const rangeX = maxX-minX;
-      const rangeZ = maxZ-minZ;
-
-      // ✅ se una track muove X/Z “troppo”, la inchiodiamo: elimina avanti/indietro
-      if(rangeX > TH || rangeZ > TH){
-        const baseX = v[0];
-        const baseZ = v[2];
-        for(let i=0;i<v.length;i+=3){
-          v[i]   = baseX;
-          v[i+2] = baseZ;
-        }
-      }
-    }
-  }catch(err){
-    // Se succede qualcosa, non blocchiamo il gioco: ritorniamo clip “clone” e basta
-    console.warn('stripRootMotion fallback:', err);
-  }
-
-  return c;
-}
-     
 
     function removeBigNonSkinnedPlanes(model){
       model.traverse(o=>{
         if(!o.isMesh) return;
-
         const isSkinned = (o.isSkinnedMesh === true) || (o.skeleton != null);
         if(isSkinned) return;
 
@@ -713,47 +656,24 @@ let tmpLocalB = new THREE.Vector3();
     }
 
     async function loadMixamoRunner(){
-  return new Promise((resolve)=>{
-    gltfLoader.load(
-      RUNNER_GLB_URL,
-      (gltf)=>{
-        const model = gltf.scene;
+      return new Promise((resolve)=>{
+        gltfLoader.load(
+          RUNNER_GLB_URL,
+          (gltf)=>{
+            const model = gltf.scene;
 
-        model.position.set(0,0,0);
-        model.scale.setScalar(0.95);
+            model.scale.setScalar(0.95);
+            setShadows(model);
 
-        setShadows(model);
+            // sicurezza: DoubleSide
+            model.traverse(o=>{
+              if(o.isMesh && o.material){
+                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+              }
+            });
 
-        // sicurezza: DoubleSide
-        model.traverse(o=>{
-          if(o.isMesh && o.material){
-            const mats = Array.isArray(o.material) ? o.material : [o.material];
-            for(const m of mats){
-              if(m) m.side = THREE.DoubleSide;
-            }
-          }
-        }); // 👈 QUI finisce traverse
-
-        // ===============================
-        // 🔥 FIX COPIE / FANTASMI CORSIA
-        // ===============================
-
-        // rimuovi eventuali modelli precedenti dal runner
-        while (runnerModel.children.length > 0) {
-          runnerModel.remove(runnerModel.children[0]);
-        }
-
-        // aggiungi il modello Mixamo SOLO qui
-        runnerModel.add(model);
-
-        // IMPORTANTISSIMO: il modello NON va mai spostato in X/Z
-        model.position.x = 0;
-        model.position.z = 0;
-
-        // ↓↓↓ qui sotto continua il resto della funzione
-        // mixer, animazioni, resolve(), ecc.
-
-            // elimina scene leftovers
+            // elimina eventuali "pavimenti/quadrati" non skinned
             removeBigNonSkinnedPlanes(model);
 
             // piedi a terra
@@ -763,65 +683,31 @@ let tmpLocalB = new THREE.Vector3();
               model.position.y += lift + 0.01;
             }
 
-            // trova hips/root
-            mixamoHips = null;
-            mixamoRootNode = null;
-
-            model.traverse(o=>{
-              const n = (o.name||'').toLowerCase();
-              if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
-              if(o.isBone){
-                if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
-              }
-            });
-
-            if(mixamoHips){
-              hipsBaseX = mixamoHips.position.x;
-              hipsBaseZ = mixamoHips.position.z;
-            }
-            if(mixamoRootNode){
-              rootBaseX = mixamoRootNode.position.x;
-              rootBaseZ = mixamoRootNode.position.z;
-            }
-
-            // ✅ forza orientamento: lontano dalla camera (niente auto)
+            // orientamento: lontano dalla camera
             model.rotation.y = Math.PI;
 
-            fallbackRunner.visible = false;
-            runnerModel.add(model);
-            
-            runnerGltfModel = model;
+            // ✅ ATTACCO UNICO E PULITO (NO SOSIE)
+            runnerMixer = null; runnerAction = null;
 
-// ancora: punto “di riferimento” nel mondo (prima che l’animazione faccia root motion)
-runnerGltfModel.getWorldPosition(runnerAnchorWorld);
+            // ripulisci runnerModel e rimetti fallback, poi aggiungi model
+            while (runnerModel.children.length > 0) runnerModel.remove(runnerModel.children[0]);
+            runnerModel.add(fallbackRunner);
+            fallbackRunner.visible = false;
+
+            // aggiungi SOLO qui
+            runnerModel.add(model);
+
+            // IMPORTANTISSIMO: non bloccare mai X/Z ogni frame, ma qui li mettiamo a 0 una volta
+            model.position.x = 0;
+            model.position.z = 0;
 
             const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
             if(!clips.length){ resolve(); return; }
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
-            
-            // ✅ trova tutti i nodi che hanno una track ".position" nella clip
-rmClampTargets = [];
-const seen = new Set();
-
-for(const t of runClip.tracks){
-  if(!t.name || !t.name.endsWith('.position')) continue;
-
-  // nome nodo = tutto prima di ".position"
-  const nodeName = t.name.slice(0, -('.position'.length));
-  if(seen.has(nodeName)) continue;
-  seen.add(nodeName);
-
-  const obj = model.getObjectByName(nodeName);
-  if(!obj) continue;
-
-  rmClampTargets.push({ obj, x: obj.position.x, z: obj.position.z });
-}
-
-            const fixed = stripRootMotion(runClip);
 
             runnerMixer = new THREE.AnimationMixer(model);
-            runnerAction = runnerMixer.clipAction(fixed);
+            runnerAction = runnerMixer.clipAction(runClip);
 
             runnerAction.reset();
             runnerAction.enabled = true;
@@ -1213,44 +1099,10 @@ for(const t of runClip.tracks){
     function update(dt, tNow){
       if(game.paused) return;
 
-      // ✅ animazione + blocco drift root (extra sicurezza)
+      // ✅ SOLO animazione (il GLB è IN PLACE → niente clamp)
       if(runnerMixer){
         runnerMixer.update(dt);
-        
-        // ✅ FIX DEFINITIVO: annulla qualunque root-motion nascosto (X/Z) riportando il modello sull’ancora
-if(runnerGltfModel && runnerGltfModel.parent){
-  // posizione corrente del modello nel mondo
-  runnerGltfModel.getWorldPosition(tmpWorldA);
-
-  // converti ancora e corrente nello spazio locale del parent del modello
-  const parent = runnerGltfModel.parent;
-  tmpLocalA.copy(tmpWorldA); parent.worldToLocal(tmpLocalA);      // current local
-  tmpLocalB.copy(runnerAnchorWorld); parent.worldToLocal(tmpLocalB); // anchor local
-
-  // delta local
-  const dx = tmpLocalA.x - tmpLocalB.x;
-  const dz = tmpLocalA.z - tmpLocalB.z;
-
-  // correggi SOLO X/Z (non Y)
-  runnerGltfModel.position.x -= dx;
-  runnerGltfModel.position.z -= dz;
-}
-        if(mixamoHips){
-          mixamoHips.position.x = hipsBaseX;
-          mixamoHips.position.z = hipsBaseZ;
-        }
-        if(mixamoRootNode){
-          mixamoRootNode.position.x = rootBaseX;
-          mixamoRootNode.position.z = rootBaseZ;
-        }
-        // ✅ blocco definitivo anti root-motion: inchioda X/Z di tutti i nodi con position track
-for(const it of rmClampTargets){
-  it.obj.position.x = it.x;
-  it.obj.position.z = it.z;
-}
       }
-      runnerModel.position.x = 0;
-      runnerModel.position.z = 0;
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
@@ -1307,7 +1159,7 @@ for(const it of rmClampTargets){
       if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
       if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
 
-      // runner positions
+      // runner positions (CORSIE)
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
@@ -1402,11 +1254,6 @@ for(const it of rmClampTargets){
         const dy = Math.abs(ey - py);
         return (dz < 0.75 && dx < 0.60 && dy < 1.05);
       }
-      function collideTurtle(ex, e){
-        const dz = Math.abs(e.z - 0.35);
-        const dx = Math.abs(e.obj.position.x - ex);
-        return (dz < 1.05 && dx < 0.72);
-      }
 
       // auto-slide rings
       if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0){
@@ -1443,21 +1290,6 @@ for(const it of rmClampTargets){
         }
       }
 
-      // turtle projectile demolition
-      for(const e of game.entities){
-        if(e.type==='turtle' && e.state==='projectile'){
-          for(let j=game.entities.length-1;j>=0;j--){
-            const o = game.entities[j];
-            if(o.type!=='obst') continue;
-            if(o.lane!==e.lane) continue;
-            if(Math.abs(o.z - e.z) < 1.35){
-              scene.remove(o.obj);
-              game.entities.splice(j,1);
-            }
-          }
-        }
-      }
-
       // pickups / hits
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
@@ -1485,17 +1317,6 @@ for(const it of rmClampTargets){
             miniL.bubble.visible=true;
             miniR.bubble.visible=true;
             game.ringCount = 0;
-            sfx.boost();
-          }
-          continue;
-        }
-
-        if(e.type==='turtle' && e.state==='idle'){
-          let hitT=false;
-          for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
-          if(hitT){
-            e.state='projectile';
-            e.projT = 2.8;
             sfx.boost();
           }
           continue;
