@@ -1560,17 +1560,20 @@ runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Re
 
     // ===== Boot =====
     (async ()=>{
-      syncCamUI();
-      await loadRunnerModel();
+  syncCamUI();
 
-      game.started = false;
-      game.over = false;
-      game.paused = false;
-      setStop(true);
-      updateMainButton();
+  // ✅ avvia subito il render (così non hai mai schermo nero)
+  requestAnimationFrame(animate);
 
-      requestAnimationFrame(animate);
-    })();
+  // carica runner in background
+  await loadRunnerModel();
+
+  game.started = false;
+  game.over = false;
+  game.paused = false;
+  setStop(true);
+  updateMainButton();
+})();
   </script>
 </body>
 </html>
