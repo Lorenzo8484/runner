@@ -738,16 +738,18 @@
       return c;
     }
 
-    let runnerMixer=null;
-    let actions = {
-      run:null,
-      idles:[],
-      jump:null,
-      flip:null,
-      kick:null,
-      die:null,
-      dance:null
-    };
+    let runnerModelLoaded = null; // ✅ riferimento al modello per resettare la posa
+
+let runnerMixer=null;
+let actions = {
+  run:null,
+  idles:[],
+  jump:null,
+  flip:null,
+  kick:null,
+  die:null,
+  dance:null
+};
 
     let mixamoHips=null, mixamoRootNode=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
@@ -755,6 +757,59 @@
     const animState = {
       mode:'idle'
     };
+    
+    function stopAllActions(){
+  const all = [];
+  if(actions.run) all.push(actions.run);
+  if(actions.jump) all.push(actions.jump);
+  if(actions.flip) all.push(actions.flip);
+  if(actions.kick) all.push(actions.kick);
+  if(actions.die)  all.push(actions.die);
+  if(actions.dance)all.push(actions.dance);
+  for(const a of actions.idles) all.push(a);
+  for(const a of all){
+    try{ a.stop(); }catch{}
+  }
+}
+
+// ✅ RESET COMPLETO POSA (fix “corre sdraiato” dopo restart)
+function resetRunnerPose(){
+  if(!runnerMixer || !runnerModelLoaded) return;
+
+  // ferma tutto
+  stopAllActions();
+
+  // reset mixer
+  runnerMixer.stopAllAction();
+  runnerMixer.time = 0;
+
+  // reset trasformazioni del modello
+  runnerModelLoaded.position.set(0, runnerModelLoaded.position.y, 0);
+  runnerModelLoaded.rotation.set(0, Math.PI, 0);
+  runnerModelLoaded.scale.setScalar(0.95);
+
+  // reset bones (importantissimo)
+  runnerModelLoaded.traverse(o=>{
+    if(o.isBone){
+      o.position.set(0,0,0);
+      o.quaternion.identity();
+      o.scale.set(1,1,1);
+    }
+  });
+
+  // riallinea hips/root (anti root-motion)
+  if(mixamoHips){
+    mixamoHips.position.x = hipsBaseX;
+    mixamoHips.position.z = hipsBaseZ;
+  }
+  if(mixamoRootNode){
+    mixamoRootNode.position.x = rootBaseX;
+    mixamoRootNode.position.z = rootBaseZ;
+  }
+
+  // ✅ forziamo un update “a secco” per applicare subito la posa
+  runnerMixer.update(0);
+}
 
     function fadeTo(next, fade=0.18){
       if(!next) return;
@@ -894,6 +949,8 @@
 
           while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
           runnerModel.add(model);
+
+          runnerModelLoaded = model; // ✅ salva riferimento
 
           runnerMixer = new THREE.AnimationMixer(model);
 
@@ -1130,8 +1187,10 @@
     }
 
     function resetRun(){
-      game.lane=1;
-      game.y=0; game.vy=0; game.jumping=false;
+    resetRunnerPose(); // ✅ IMPORTANTISSIMO: rimette in piedi il player dopo la morte
+
+    game.lane=1;
+    game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
       game.autoSlideCooldown=0;
 
