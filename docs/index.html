@@ -738,7 +738,35 @@
       return c;
     }
 
-    let runnerModelLoaded = null; // ✅ riferimento al modello per resettare la posa
+    // ✅ snapshot posa iniziale (serve per Restart senza “testa sola”)
+let runnerBindPose = null;
+
+function captureRunnerBindPose(root){
+  const bones = [];
+  root.traverse(o=>{ if(o.isBone) bones.push(o); });
+
+  const boneMap = new Map();
+  for(const b of bones){
+    boneMap.set(b.uuid, {
+      p: b.position.clone(),
+      q: b.quaternion.clone(),
+      s: b.scale.clone()
+    });
+  }
+
+  const meshVis = new Map();
+  root.traverse(o=>{
+    if(o.isMesh) meshVis.set(o.uuid, o.visible);
+  });
+
+  return {
+    rootP: root.position.clone(),
+    rootQ: root.quaternion.clone(),
+    rootS: root.scale.clone(),
+    bones: boneMap,
+    meshVis
+  };
+}
 
 let runnerMixer=null;
 let actions = {
@@ -772,28 +800,44 @@ let actions = {
   }
 }
 
-// ✅ RESET COMPLETO POSA (fix “corre sdraiato” dopo restart)
+// ✅ RESET COMPLETO POSA (fix “testa sola / corre sdraiato” dopo restart)
 function resetRunnerPose(){
-  if(!runnerMixer || !runnerModelLoaded) return;
+  if(!runnerMixer || !runnerModelLoaded || !runnerBindPose) return;
 
   // ferma tutto
   stopAllActions();
-
-  // reset mixer
   runnerMixer.stopAllAction();
   runnerMixer.time = 0;
 
-  // reset trasformazioni del modello
-  runnerModelLoaded.position.set(0, runnerModelLoaded.position.y, 0);
-  runnerModelLoaded.rotation.set(0, Math.PI, 0);
-  runnerModelLoaded.scale.setScalar(0.95);
+  // ripristina trasformazioni root del modello
+  runnerModelLoaded.position.copy(runnerBindPose.rootP);
+  runnerModelLoaded.quaternion.copy(runnerBindPose.rootQ);
+  runnerModelLoaded.scale.copy(runnerBindPose.rootS);
 
-  // reset bones (importantissimo)
+  // ripristina visibilità mesh (nel caso death abbia cambiato qualcosa)
+  runnerModelLoaded.traverse(o=>{
+    if(o.isMesh){
+      const v = runnerBindPose.meshVis.get(o.uuid);
+      if(v !== undefined) o.visible = v;
+    }
+  });
+
+  // reset scheletro alla bind pose (molto importante)
+  runnerModelLoaded.traverse(o=>{
+    if(o.isSkinnedMesh && o.skeleton){
+      o.skeleton.pose();
+    }
+  });
+
+  // ripristina bones EXACT come all’inizio
   runnerModelLoaded.traverse(o=>{
     if(o.isBone){
-      o.position.set(0,0,0);
-      o.quaternion.identity();
-      o.scale.set(1,1,1);
+      const st = runnerBindPose.bones.get(o.uuid);
+      if(st){
+        o.position.copy(st.p);
+        o.quaternion.copy(st.q);
+        o.scale.copy(st.s);
+      }
     }
   });
 
@@ -807,8 +851,7 @@ function resetRunnerPose(){
     mixamoRootNode.position.z = rootBaseZ;
   }
 
-  // ✅ forziamo un update “a secco” per applicare subito la posa
-  runnerMixer.update(0);
+  runnerMixer.update(0); // applica subito
 }
 
     function fadeTo(next, fade=0.18){
@@ -951,6 +994,8 @@ function resetRunnerPose(){
           runnerModel.add(model);
 
           runnerModelLoaded = model; // ✅ salva riferimento
+runnerMixer = new THREE.AnimationMixer(model);
+runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Restart
 
           runnerMixer = new THREE.AnimationMixer(model);
 
