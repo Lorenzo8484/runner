@@ -466,16 +466,19 @@
     scene.add(contact);
 
     // =========================================================
-    // ✅ AUTOSTRADA: 3 corsie uguali + corsia emergenza a destra
+    // ✅ AUTOSTRADA REALISTICA (come foto): linee crisp + patch
+    // - 3 corsie uguali + emergenza a destra
+    // - 2 linee tratteggiate “tipo A14”
+    // - linea emergenza continua
+    // - variazione asfalto ogni 2–3 segmenti (colore + overlay)
     // =========================================================
     const segLen = 9.0, segCount = 10;
 
-    const laneW = 1.35;                 // larghezza corsia (uguale per le 3)
-    const mainRoadWidth = laneW * 3;    // 3 corsie di gioco
-    const shoulderWidth = 1.40;         // corsia emergenza
+    const laneW = 1.35;
+    const mainRoadWidth = laneW * 3;
+    const shoulderWidth = 1.40;
     const totalRoadWidth = mainRoadWidth + shoulderWidth;
 
-    // Centri corsie: [0,1,2] + emergenza [3]
     const leftEdge = -totalRoadWidth/2;
     const lanesX = [
       leftEdge + laneW*0.5,
@@ -484,59 +487,51 @@
       leftEdge + mainRoadWidth + shoulderWidth*0.5
     ];
 
-    // Texture autostrada “crisp”: nessuna sfumatura sulle linee
+    // ✅ Texture linee “crisp” (senza sfumature) + tratteggi come foto
     function makeHighwayTexture(size=1024){
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
 
-      // asfalto base
-      g.fillStyle = '#2a2e33';
+      // asfalto base (neutro)
+      g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
 
-      // patch / rumore
-      for(let i=0;i<24000;i++){
+      // micro-grana (leggera)
+      for(let i=0;i<20000;i++){
         const x = Math.random()*size, y = Math.random()*size;
-        const v = Math.floor(75 + Math.random()*70);
+        const v = Math.floor(70 + Math.random()*70);
         g.fillStyle = `rgba(${v},${v},${v},${Math.random()*0.10})`;
         g.fillRect(x,y,1,1);
       }
-      // “patch” scuri
-      for(let i=0;i<120;i++){
-        const x = Math.random()*size;
-        const y = Math.random()*size;
-        const w = 40 + Math.random()*120;
-        const h = 12 + Math.random()*28;
-        g.fillStyle = `rgba(0,0,0,${0.05+Math.random()*0.10})`;
-        g.fillRect(x,y,w,h);
-      }
 
-      // emergenza leggermente diversa
+      // helper px
       const px = (worldX)=> Math.round(((worldX - leftEdge) / totalRoadWidth) * size);
 
+      // emergenza un filo diversa (tinta leggerissima)
       const shoulderStartX = leftEdge + mainRoadWidth;
       g.fillStyle = 'rgba(255,255,255,0.03)';
       g.fillRect(px(shoulderStartX), 0, px(leftEdge+totalRoadWidth) - px(shoulderStartX), size);
 
-      // linee: parametri
-      const solidW = Math.max(4, Math.round(size * 0.006));  // spessore linea piena
-      const dashW  = Math.max(3, Math.round(size * 0.004));  // spessore tratteggio
-      const dashLen = Math.round(size * 0.050);
-      const dashGap = Math.round(size * 0.040);
+      // PARAMETRI LINEE (ispirati alla foto)
+      const solidW = Math.max(4, Math.round(size * 0.006));   // bordo pieno
+      const dashW  = Math.max(3, Math.round(size * 0.0045));  // tratteggio un filo più spesso
+      const dashLen = Math.round(size * 0.060);               // dash più lungo
+      const dashGap = Math.round(size * 0.055);               // gap simile alla foto
 
-      g.fillStyle = '#f2f4f7';
+      g.fillStyle = '#f4f6f8';
 
-      // bordi esterni (pieni): sinistra e destra
+      // bordi esterni pieni (sinistra/destra)
       const xOuterL = px(leftEdge + 0.03);
       const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
       g.fillRect(xOuterL - solidW/2, 0, solidW, size);
       g.fillRect(xOuterR - solidW/2, 0, solidW, size);
 
-      // linea piena tra corsia 3 e emergenza
+      // linea piena tra corsia 3 e emergenza (continua)
       const xShoulderSep = px(shoulderStartX);
       g.fillRect(xShoulderSep - solidW/2, 0, solidW, size);
 
-      // ✅ SOLO 2 linee tratteggiate tra le 3 corsie
+      // SOLO 2 linee tratteggiate tra le 3 corsie
       const xDash1 = px(leftEdge + laneW*1);
       const xDash2 = px(leftEdge + laneW*2);
 
@@ -552,7 +547,64 @@
       return t;
     }
 
+    // ✅ Overlay patch trasparente (longitudinali) – “realismo” senza shader
+    function makePatchTexture(size=512){
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      g.clearRect(0,0,size,size);
+
+      // micro rumore (trasparente)
+      for(let i=0;i<9000;i++){
+        const x=Math.random()*size, y=Math.random()*size;
+        const a = 0.02 + Math.random()*0.05;
+        g.fillStyle = `rgba(0,0,0,${a})`;
+        g.fillRect(x,y,1,1);
+      }
+
+      // patch longitudinali: strisce lunghe (nel senso della strada)
+      const stripCount = 7 + Math.floor(Math.random()*7);
+      for(let i=0;i<stripCount;i++){
+        const x = Math.random()*size;
+        const w = 18 + Math.random()*54;
+        const a = 0.05 + Math.random()*0.12;
+
+        const grad = g.createLinearGradient(x,0,x+w,0);
+        grad.addColorStop(0, `rgba(0,0,0,0)`);
+        grad.addColorStop(0.5, `rgba(0,0,0,${a})`);
+        grad.addColorStop(1, `rgba(0,0,0,0)`);
+
+        g.fillStyle = grad;
+        g.fillRect(x, 0, w, size);
+      }
+
+      // riparazioni/chiazze sottili
+      const patchCount = 6 + Math.floor(Math.random()*10);
+      for(let i=0;i<patchCount;i++){
+        const x = Math.random()*size;
+        const y = Math.random()*size;
+        const w = 70 + Math.random()*220;
+        const h = 10 + Math.random()*26;
+        const a = 0.05 + Math.random()*0.12;
+        g.fillStyle = `rgba(0,0,0,${a})`;
+        g.fillRect(x,y,w,h);
+      }
+
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(1.0, 10.0); // uguale a highwayTex
+      return t;
+    }
+
     const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+
+    // poche varianti patch (riuso = performance)
+    const patchTexPool = [
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+    ];
 
     const roadMat = new THREE.MeshStandardMaterial({
       map: highwayTex,
@@ -562,12 +614,58 @@
     });
 
     const segments=[];
+
+    // ✅ blocchi 2–3 segmenti: stessa tinta + stesso overlay
+    let groupLeft = rndi(2,3);
+    let groupShade = 0.94 + Math.random()*0.08;
+    let groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
+    let groupPatchOpacity = 0.16 + Math.random()*0.10;
+
     for(let i=0;i<segCount;i++){
       const geo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
       geo.rotateX(-Math.PI/2);
+
       const mesh = new THREE.Mesh(geo, roadMat);
+
+      groupLeft--;
+      if(groupLeft <= 0){
+        groupLeft = rndi(2,3);
+        groupShade = 0.94 + Math.random()*0.08;
+        groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
+        groupPatchOpacity = 0.16 + Math.random()*0.10;
+      }
+
+      // variazione tinta asfalto (minima)
+      if(Math.abs(groupShade - 1.0) > 0.0001){
+        const m = roadMat.clone();
+        m.color = roadMat.color.clone().multiplyScalar(groupShade);
+        mesh.material = m;
+      }
+
+      // overlay patch (figlio del segmento)
+      const patchGeo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
+      patchGeo.rotateX(-Math.PI/2);
+
+      const patchMat = new THREE.MeshStandardMaterial({
+        map: groupPatch,
+        transparent: true,
+        opacity: groupPatchOpacity,
+        roughness: 1.0,
+        metalness: 0.0,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+
+      const patch = new THREE.Mesh(patchGeo, patchMat);
+      patch.position.y = 0.003;
+      patch.receiveShadow = false;
+      mesh.add(patch);
+
       mesh.position.set(0, 0, -i*segLen);
       mesh.receiveShadow=true;
+
       scene.add(mesh);
       segments.push(mesh);
     }
@@ -859,14 +957,12 @@
             if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
             if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
 
-            // pulisci runnerModel e aggiungi UNA SOLA VOLTA
             while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
             runnerModel.add(model);
             fallbackRunner.visible = false;
 
             runnerModelLoaded = model;
 
-            // animazioni
             const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
             if(!clips.length){
               console.warn('Nessuna animazione nel GLB: uso fallback');
@@ -914,7 +1010,7 @@
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     const game = {
-      lane:1,             // ✅ 0..3 (3 = emergenza)
+      lane:1,
       y:0, vy:0, jumping:false,
 
       sliding:false, slideT:0,
@@ -942,8 +1038,8 @@
       paused:true,
       over:false,
 
-      stopped:false,       // ✅ STOP traffico
-      stopBlend:0.0        // 0..1 per transizione “idle”
+      stopped:false,
+      stopBlend:0.0
     };
 
     bestEl.textContent = String(game.best);
@@ -1034,7 +1130,6 @@
 
       game.lives=3;
 
-      // STOP reset
       game.stopped = false;
       game.stopBlend = 0.0;
       stopBtn.classList.remove('on');
@@ -1065,13 +1160,12 @@
       sfx.boost();
     }
 
-    // +10% ostacoli ogni 15000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 15000);
       return 1 + 0.10 * steps;
     }
 
-    // Spawns (✅ SOLO corsie 0..2, emergenza vuota)
+    // Spawns (solo corsie 0..2)
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
@@ -1084,11 +1178,11 @@
         const p2 = clamp(0.38 * mult, 0.18, 0.90);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
-      while(blocked.size<oCount) blocked.add(rndi(0,2)); // ✅ 0..2
+      while(blocked.size<oCount) blocked.add(rndi(0,2));
 
       const coinLanes=new Set();
       const cCount = rndi(1,2);
-      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2)); // ✅ 0..2
+      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
@@ -1171,14 +1265,13 @@
     function moveLane(dir){
       if(game.over||game.paused) return;
       if(game.trioT>0) return;
-
-      game.lane = clamp(game.lane+dir, 0, 3); // ✅ 4 corsie (3 = emergenza)
+      game.lane = clamp(game.lane+dir, 0, 3);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
     }
     function jump(){
       if(game.over||game.paused) return;
-      if(game.stopped) return; // quando STOP, niente salto
+      if(game.stopped) return;
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
@@ -1187,7 +1280,7 @@
     }
     function slide(){
       if(game.over||game.paused) return;
-      if(game.stopped) return; // quando STOP, niente slide
+      if(game.stopped) return;
       game.sliding=true;
       game.slideT=0.55;
       sfx.slide();
@@ -1260,17 +1353,16 @@
       openMenu();
     });
 
-    // ✅ STOP button: ferma traffico + passa in “idle”
+    // STOP button
     function setStop(on){
       game.stopped = !!on;
       stopBtn.classList.toggle('on', game.stopped);
       stopLbl.textContent = game.stopped ? 'GO' : 'STOP';
 
-      // posa più “umana”: porta l’animazione a un frame non-Tpose e poi “ferma”
       if(runnerAction){
         if(game.stopped){
           runnerAction.paused = false;
-          runnerAction.time = Math.min(runClipDuration*0.35, 0.35); // frame “ok”
+          runnerAction.time = Math.min(runClipDuration*0.35, 0.35);
         }else{
           runnerAction.paused = false;
         }
@@ -1289,7 +1381,6 @@
     let camX = 0;
 
     function activeRunnerXs(){
-      // trio solo sulle 3 corsie principali
       if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
     }
@@ -1313,19 +1404,15 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // STOP blend (0..1)
       const stopTarget = game.stopped ? 1.0 : 0.0;
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
-      // animazione Mixamo
       if(runnerMixer && runnerAction){
-        // timeScale scende gradualmente a 0 quando STOP
         const ts = lerp(1.0, 0.0, game.stopBlend);
         runnerMixer.timeScale = ts;
 
         runnerMixer.update(dt);
 
-        // quando quasi fermo → metti in pausa per bloccare frame (ma con micro-animazione “respira” sotto)
         if(game.stopped && ts < 0.05){
           runnerAction.paused = true;
         }else{
@@ -1342,7 +1429,6 @@
         }
       }
 
-      // quando STOP: niente fisica, niente spawn, niente scroll (ma manteniamo UI + camera + “respiro”)
       const trafficMul = (1.0 - game.stopBlend);
 
       const inAir = (game.y < -0.01) || game.jumping;
@@ -1389,7 +1475,7 @@
         if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
       }
 
-      // gravity (solo se non STOP)
+      // gravity
       if(!game.stopped){
         const g=22.0;
         game.vy += g*dt;
@@ -1397,25 +1483,21 @@
         if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
       }
 
-      // slide timers (solo se non STOP)
+      // slide timers
       if(!game.stopped){
         if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
         if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
         if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
       }
 
-      // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      // quando STOP, il personaggio si raddrizza lentamente
       const pitchRun = game.sliding ? -1.20 : 0.0;
-      const pitchIdle = 0.0;
-      const mainPitchTarget = lerp(pitchRun, pitchIdle, game.stopBlend);
+      const mainPitchTarget = lerp(pitchRun, 0.0, game.stopBlend);
       runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
 
-      // micro “respiro” quando STOP (non freeze)
       if(game.stopped){
         const breathe = Math.sin(tNow*0.0022) * 0.015;
         runnerCenter.position.y = 0.95 + breathe;
@@ -1425,16 +1507,13 @@
         runnerCenter.rotation.z = 0;
       }
 
-      // contact shadow
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
       contact.position.x = runnerPivot.position.x;
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis (solo in corsie principali)
       if(game.trioT>0){
-        // se eri in emergenza e parte il trio: rientra in centro
         if(game.lane===3) game.lane = 1;
 
         miniL.pivot.visible=true; miniR.pivot.visible=true;
@@ -1451,13 +1530,15 @@
       const scroll = speed*dt;
 
       highwayTex.offset.y -= scroll*0.085;
+      for(const t of patchTexPool) t.offset.y -= scroll*0.085;
+
       for(const mesh of segments){
         mesh.position.z += scroll;
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
       }
       loopJungle(scroll);
 
-      // spawn (solo se non STOP)
+      // spawn
       if(!game.stopped){
         game.spawnT -= dt;
         if(game.spawnT<=0){
@@ -1507,7 +1588,7 @@
         }
       }
 
-      // collisions (solo se non STOP)
+      // collisions
       if(!game.stopped){
         const xs = activeRunnerXs();
         const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
@@ -1721,12 +1802,20 @@
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      // ✅ camera segue leggermente il player, così in emergenza si vede sempre
+      // ✅ camera segue leggermente il player
       const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
       camX = damp(camX, targetCamX, 6, dt);
 
+      // ✅ camera shake leggerissimo quando boost attivo (come richiesto)
+      let shakeX = 0, shakeY = 0;
+      if(anyBoost){
+        const intensity = bothBoost ? 0.020 : 0.012; // super leggero
+        shakeX = Math.sin(tNow*0.020) * intensity;
+        shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
+      }
+
       const bob = Math.sin(tNow*0.0020) * 0.005;
-      camera.position.set(camX, camY + bob, camZ);
+      camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
       camera.rotation.z = camRoll;
 
       camera.lookAt(camX*0.35, lookAtY, lookAtZ);
