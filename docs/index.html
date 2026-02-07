@@ -9,38 +9,23 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    .hud{
-      position:fixed;top:8px;left:8px;right:8px;
-      display:flex;justify-content:space-between;gap:8px;
-      pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;
+    /* ✅ NASCONDI TUTTO QUELLO CERCHIATO */
+    .hud, .rightCol, .help, #menu { display:none !important; }
+
+    /* --- Bottoni icona in alto a sinistra (solo Home/Settings/Pausa) --- */
+    .topLeftBtns{
+      position:fixed; top:8px; left:8px;
+      display:flex; flex-direction:row; gap:8px;
+      z-index:25; pointer-events:none;
     }
-    .card{
-      pointer-events:none;background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;padding:8px 10px;color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      min-width:180px; max-width:62vw;
-    }
-    .row{display:flex;justify-content:space-between;gap:8px;align-items:center;}
-    .small{font-size:11px;opacity:.86;line-height:1.2}
     .btn{
       pointer-events:auto;background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.16);
       color:#eaf1ff;padding:9px 11px;border-radius:12px;
       font-weight:800;cursor:pointer;user-select:none;
+      backdrop-filter:blur(10px);
     }
     .btn:active{transform:scale(.98);}
-    .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
-
-    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;}
-    .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
-    .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
-
-    .floatBtns{
-      position:fixed; top:8px; right:8px;
-      display:flex; flex-direction:row; gap:8px;
-      z-index:25; pointer-events:none;
-    }
     .iconBtn{
       pointer-events:auto;
       width:40px;height:40px;
@@ -48,105 +33,89 @@
       border-radius:12px;
       display:flex;align-items:center;justify-content:center;
       font-size:17px;
-      backdrop-filter:blur(10px);
       line-height:1;
     }
 
-    .rightCol{
-      position:fixed; top:62px; right:4px; width:56px;
-      display:flex; flex-direction:column; align-items:center; gap:6px;
-      pointer-events:none; z-index:10;
-    }
-    .foodStack{
-      width:50px; max-height:210px; overflow:hidden;
-      display:flex; flex-direction:column; align-items:center; gap:6px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:7px 6px;
-      backdrop-filter:blur(10px);
-    }
-    .foodItem{
-      width:36px;height:36px;border-radius:11px;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      font-size:19px;
-    }
-    .foodCount{
-      margin-top:6px;
-      width:50px;
-      text-align:center;
-      font-weight:900;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:999px;
-      padding:6px 0;
-      font-size:12px;
-    }
-
-    /* ✅ STOP button */
-    .stopBtnWrap{
+    /* --- Barra comandi in basso: Start/Stop + Dance (piccoli) --- */
+    .bottomBar{
       position:fixed;
-      right:14px;
-      bottom:110px;
+      left:10px; right:10px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
       z-index:30;
       pointer-events:none;
+      display:flex;
+      justify-content:center;
     }
-    .stopBtn{
+    .bottomCard{
       pointer-events:auto;
-      width:86px;
-      height:56px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
       border-radius:16px;
-      border:1px solid rgba(255,255,255,.16);
-      background:rgba(255, 80, 80, .12);
-      backdrop-filter: blur(10px);
-      color:#fff;
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      backdrop-filter:blur(10px);
+      max-width:680px;
+      width:min(680px,100%);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
+    }
+    .miniBtn{
+      flex:1;
+      height:46px;
+      border-radius:14px;
+      font-weight:950;
       display:flex;
       align-items:center;
       justify-content:center;
       gap:10px;
-      font-weight:950;
-      cursor:pointer;
-      user-select:none;
     }
-    .stopDot{
-      width:18px;height:18px;border-radius:6px;
-      background:#ff3b30;
+    .miniBtn.secondary{
+      background:rgba(255,255,255,.06);
+    }
+    .dot{
+      width:14px;height:14px;border-radius:5px;
+      background:#34c759;
       box-shadow:0 0 0 2px rgba(255,255,255,.12) inset;
     }
-    .stopBtn.on{ background:rgba(140,255,190,.12); }
-    .stopBtn.on .stopDot{ background:#34c759; }
-    .stopLbl{ font-size:12px; opacity:.95; letter-spacing:.3px; }
+    .dot.red{ background:#ff3b30; }
 
-    .help{position:fixed;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;pointer-events:none;z-index:10;}
-    .help .card{max-width:980px;text-align:center;}
-
-    /* START/DANCE overlay (leggero, senza bloccare scena) */
-    .startOverlay{
+    /* --- Pannello impostazioni (solo quando apri ⚙️) --- */
+    .settingsOverlay{
       position:fixed; inset:0;
-      display:flex; align-items:flex-end; justify-content:center;
-      padding:18px 14px 26px;
-      pointer-events:none;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:14px;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.65));
+      backdrop-filter:blur(10px);
       z-index:40;
     }
-    .startPanel{
-      pointer-events:auto;
-      width:min(420px, 92vw);
-      background:rgba(10,14,22,.55);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:18px;
-      padding:12px;
-      backdrop-filter:blur(10px);
-      box-shadow:0 18px 60px rgba(0,0,0,.45);
+    .panel{
+      width:min(680px,100%);
+      border-radius:18px;border:1px solid rgba(255,255,255,.16);
+      background:rgba(10,14,22,.86);
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      padding:14px;color:#eaf1ff;
     }
-    .startTitle{font-weight:950;font-size:16px;margin:0 0 6px;color:#eaf1ff;}
-    .startSub{font-size:12px;opacity:.82;margin:0 0 10px;color:#eaf1ff;line-height:1.3}
-    .startBtns{display:flex;gap:10px;flex-wrap:wrap}
-    .btnWide{flex:1 1 150px; text-align:center;}
+    .title{font-size:16px;font-weight:950;margin:4px 0 10px;}
+    .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;margin-top:10px;}
+    .settingsRow small{opacity:.8}
+    .settingsVal{font-weight:950}
+    input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
 
-    /* Nascondo elementi finché non serve */
-    .hidden{ display:none !important; }
+    .toggle{
+      display:flex;align-items:center;justify-content:space-between;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);
+      cursor:pointer;user-select:none;margin-top:10px;
+    }
+    .toggle label{font-weight:900;}
+    .toggle span{opacity:.85;font-size:12px;}
+    .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
+    .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
+    .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
+    .switch.on i{transform:translateX(18px);}
   </style>
 
   <script type="importmap">
@@ -160,74 +129,61 @@
 </head>
 <body>
 
-  <div class="hud">
-    <div class="card">
-      <div class="row">
-        <div><strong>Score</strong>: <span id="score">0</span></div>
-        <div class="small">Record: <span id="best">0</span></div>
-      </div>
-      <div class="row">
-        <div><strong>Emoji</strong>: <span id="coins">0</span></div>
-        <div class="small"><span id="ringIcon">⭕️</span> <span id="rings">0</span></div>
-      </div>
-
-      <div class="row small" style="margin-top:6px;">
-        <div><strong>Vita</strong>: <span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
-        <div><span id="magTxt">🧲 0</span></div>
-      </div>
-
-      <div class="pill" id="pillBoost" style="display:none;">
-        <span id="boostIcon">⚡️</span><strong id="boostName">BOOST</strong>
-        <div class="bar"><i id="boostBar"></i></div>
-      </div>
-    </div>
-
-    <!-- vecchio "Pausa" lo lasciamo ma lo nascondiamo finché non parte -->
-    <div class="controls">
-      <button class="btn hidden" id="pause">Pausa</button>
-    </div>
-  </div>
-
-  <!-- vecchi bottoni “avia” (settings/pause/home): nascosti finché non parte -->
-  <div class="floatBtns hidden" id="floatBtns">
+  <!-- ✅ SOLO 3 BOTTONI IN ALTO A SINISTRA -->
+  <div class="topLeftBtns">
+    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
-    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
-  <div class="rightCol">
-    <div class="foodStack" id="foodStack"></div>
-    <div class="foodCount"><span id="foodCount">0</span>/10</div>
-  </div>
-
-  <!-- ✅ STOP -->
-  <div class="stopBtnWrap hidden" id="stopWrap">
-    <button class="stopBtn" id="stopBtn" aria-label="Stop traffico">
-      <span class="stopDot"></span>
-      <span class="stopLbl" id="stopLbl">STOP</span>
-    </button>
-  </div>
-
-  <div class="help">
-    <div class="card small" id="helpCard">
-      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ (non usato), P pausa.
-      Mobile: swipe sx/dx, swipe su (salto).
-      <span style="opacity:.75">Anelli: auto-flip quando arrivano in corsia.</span>
-      <span style="opacity:.75">STOP: ferma il traffico + idle random.</span>
+  <!-- ✅ START/STOP + DANCE SEMPRE VISIBILI -->
+  <div class="bottomBar">
+    <div class="bottomCard">
+      <button class="btn miniBtn" id="btnStartMain">▶️ Start</button>
+      <button class="btn miniBtn secondary" id="btnStopMain" title="Ferma traffico (idle random)">
+        <span class="dot red" id="stopDot"></span>
+        <span id="stopLbl">STOP</span>
+      </button>
+      <button class="btn miniBtn secondary" id="btnDance">🕺 Dance</button>
     </div>
   </div>
 
-  <!-- Start / Dance overlay -->
-  <div class="startOverlay" id="startOverlay">
-    <div class="startPanel">
-      <div class="startTitle" id="startTitle">Jungle Emoji Runner</div>
-      <p class="startSub" id="startSub">
-        Premi <b>Start</b> per iniziare. <b>Stop</b> ferma il traffico (idle random).<br/>
-        <span style="opacity:.85">Dance = HipHopDance.</span>
-      </p>
-      <div class="startBtns">
-        <button class="btn btnWide" id="startBtn">▶️ Start</button>
-        <button class="btn btnWide" id="danceBtn">🕺 Dance</button>
+  <!-- ✅ SETTINGS -->
+  <div class="settingsOverlay" id="settingsOverlay">
+    <div class="panel">
+      <div class="title">Impostazioni</div>
+
+      <div class="settingsRow">
+        <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
+        <div class="settingsVal" id="fovVal">60</div>
+      </div>
+      <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
+
+      <div class="settingsRow">
+        <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
+        <div class="settingsVal" id="camVal">5.0</div>
+      </div>
+      <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
+
+      <div class="settingsRow">
+        <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
+        <div class="settingsVal" id="frameVal">0.06</div>
+      </div>
+      <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+
+      <div class="toggle" id="audioToggle">
+        <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
+        <div class="switch on" id="audioSwitch"><i></i></div>
+      </div>
+
+      <div class="toggle" id="shakeToggle">
+        <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
+        <div class="switch on" id="shakeSwitch"><i></i></div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn" id="resetCam">Reset camera</button>
+        <button class="btn" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
@@ -238,38 +194,33 @@
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // UI
-    const scoreEl = document.getElementById('score');
-    const coinsEl = document.getElementById('coins');
-    const bestEl  = document.getElementById('best');
-    const ringsEl = document.getElementById('rings');
-    const hpTxt   = document.getElementById('hpTxt');
-    const magTxt  = document.getElementById('magTxt');
-
-    const pillBoost = document.getElementById('pillBoost');
-    const boostIcon = document.getElementById('boostIcon');
-    const boostName = document.getElementById('boostName');
-    const boostBar  = document.getElementById('boostBar');
-
-    const foodStack = document.getElementById('foodStack');
-    const foodCountEl = document.getElementById('foodCount');
-
-    const pauseBtn   = document.getElementById('pause');
-
-    const floatBtns  = document.getElementById('floatBtns');
-    const btnSettings = document.getElementById('btnSettings');
+    // ===== UI =====
     const btnHome = document.getElementById('btnHome');
+    const btnSettings = document.getElementById('btnSettings');
     const btnPause = document.getElementById('btnPause');
 
-    const stopWrap = document.getElementById('stopWrap');
-    const stopBtn = document.getElementById('stopBtn');
-    const stopLbl = document.getElementById('stopLbl');
+    const btnStartMain = document.getElementById('btnStartMain');
+    const btnStopMain  = document.getElementById('btnStopMain');
+    const btnDance     = document.getElementById('btnDance');
 
-    const startOverlay = document.getElementById('startOverlay');
-    const startBtn = document.getElementById('startBtn');
-    const danceBtn = document.getElementById('danceBtn');
-    const startTitle = document.getElementById('startTitle');
-    const startSub = document.getElementById('startSub');
+    const stopLbl = document.getElementById('stopLbl');
+    const stopDot = document.getElementById('stopDot');
+
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const closeSettingsBtn = document.getElementById('closeSettings');
+    const resetCamBtn = document.getElementById('resetCam');
+
+    const audioToggle= document.getElementById('audioToggle');
+    const audioSwitch= document.getElementById('audioSwitch');
+    const shakeToggle = document.getElementById('shakeToggle');
+    const shakeSwitch = document.getElementById('shakeSwitch');
+
+    const fovSlider = document.getElementById('fovSlider');
+    const camSlider = document.getElementById('camSlider');
+    const frameSlider = document.getElementById('frameSlider');
+    const fovVal = document.getElementById('fovVal');
+    const camVal = document.getElementById('camVal');
+    const frameVal = document.getElementById('frameVal');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
@@ -277,7 +228,49 @@
     const lerp=(a,b,t)=>a+(b-a)*t;
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
-    // Audio minimal (come tuo)
+    // ===== SETTINGS =====
+    const CAM_KEY = 'jr_cam_settings_v7';
+    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06, shake: true };
+    const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
+
+    let baseFov  = clamp(Number(saved.baseFov ?? DEFAULTS.baseFov), 30, 110);
+    let baseCamZ = clamp(Number(saved.baseCamZ ?? DEFAULTS.baseCamZ), 2, 15);
+    let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
+    let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
+
+    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing, shake: !!shakeEnabled })); }
+    function syncCamUI(){
+      fovSlider.value = String(Math.round(baseFov));
+      fovVal.textContent = String(Math.round(baseFov));
+      camSlider.value = String(baseCamZ.toFixed(1));
+      camVal.textContent = baseCamZ.toFixed(1);
+      frameSlider.value = String(framing.toFixed(2));
+      frameVal.textContent = framing.toFixed(2);
+      shakeSwitch.classList.toggle('on', !!shakeEnabled);
+      audioSwitch.classList.toggle('on', !!audioEnabled);
+    }
+    fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
+    camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
+
+    function openSettings(){ settingsOverlay.style.display='flex'; syncCamUI(); }
+    function closeSettings(){ settingsOverlay.style.display='none'; }
+
+    btnSettings.addEventListener('click', ()=>{ initAudio(); openSettings(); });
+    closeSettingsBtn.addEventListener('click', closeSettings);
+
+    shakeToggle.addEventListener('click', ()=>{
+      shakeEnabled = !shakeEnabled;
+      shakeSwitch.classList.toggle('on', !!shakeEnabled);
+      saveCam();
+    });
+
+    resetCamBtn.addEventListener('click', ()=>{
+      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing; shakeEnabled = DEFAULTS.shake;
+      saveCam(); syncCamUI();
+    });
+
+    // ===== Audio minimal =====
     let audioEnabled=true, audioReady=false, actx=null, master=null;
     function initAudio(){
       if(audioReady) return;
@@ -286,6 +279,7 @@
         master = actx.createGain(); master.gain.value=0.55; master.connect(actx.destination);
         audioReady=true;
       }catch(e){ audioEnabled=false; }
+      audioSwitch.classList.toggle('on',!!audioEnabled);
     }
     function beep(type,freq,dur=0.06,g=0.10){
       if(!audioEnabled) return;
@@ -311,8 +305,9 @@
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
     };
+    audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
-    // Renderer / Scene
+    // ===== Renderer / Scene =====
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -325,10 +320,6 @@
     scene.background = new THREE.Color(0x08120b);
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
-    // Camera
-    const baseFov = 60;
-    const baseCamZ = 5.0;
-    const framing = 0.06;
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
 
     // lights
@@ -371,16 +362,12 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // =========================================================
-    // STRADA (come tua) - versione compatta (uguale come resa)
-    // =========================================================
+    // ===== STRADA (come nel tuo codice) =====
     const segLen = 9.0, segCount = 10;
-
     const laneW = 1.35;
     const mainRoadWidth = laneW * 3;
     const shoulderWidth = 1.40;
     const totalRoadWidth = mainRoadWidth + shoulderWidth;
-
     const leftEdge = -totalRoadWidth/2;
     const lanesX = [
       leftEdge + laneW*0.5,
@@ -393,14 +380,17 @@
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
+
       g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
+
       for(let i=0;i<20000;i++){
         const x = Math.random()*size, y = Math.random()*size;
         const v = Math.floor(70 + Math.random()*70);
         g.fillStyle = `rgba(${v},${v},${v},${Math.random()*0.10})`;
         g.fillRect(x,y,1,1);
       }
+
       const px = (worldX)=> Math.round(((worldX - leftEdge) / totalRoadWidth) * size);
 
       const shoulderStartX = leftEdge + mainRoadWidth;
@@ -416,11 +406,14 @@
 
       const xOuterL = px(leftEdge + 0.03);
       const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
-      g.fillRect(Math.round(xOuterL - solidW/2), 0, solidW, size);
-      g.fillRect(Math.round(xOuterR - solidW/2), 0, solidW, size);
+      const xOuterLi = Math.round(xOuterL - solidW/2);
+      const xOuterRi = Math.round(xOuterR - solidW/2);
+      g.fillRect(xOuterLi, 0, solidW, size);
+      g.fillRect(xOuterRi, 0, solidW, size);
 
       const xShoulderSep = px(shoulderStartX);
-      g.fillRect(Math.round(xShoulderSep - solidW/2), 0, solidW, size);
+      const xShoulderSepI = Math.round(xShoulderSep - solidW/2);
+      g.fillRect(xShoulderSepI, 0, solidW, size);
 
       const xDash1 = px(leftEdge + laneW*1);
       const xDash2 = px(leftEdge + laneW*2);
@@ -436,16 +429,77 @@
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(1.0, 4.0);
-      t.generateMipmaps = false;
-      t.minFilter = THREE.NearestFilter;
-      t.magFilter = THREE.NearestFilter;
-      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      t.needsUpdate = true;
+      t.repeat.set(1.0, 10.0);
+      return t;
+    }
+
+    function makePatchTexture(size=512){
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      g.clearRect(0,0,size,size);
+
+      const px = (worldX)=> ((worldX - leftEdge) / totalRoadWidth) * size;
+
+      const centerLaneX = lanesX[1];
+      const bandHalfW = laneW * 0.36;
+      const xMin = Math.max(0, Math.floor(px(centerLaneX - bandHalfW)));
+      const xMax = Math.min(size-1, Math.ceil(px(centerLaneX + bandHalfW)));
+
+      for(let i=0;i<7000;i++){
+        const x = xMin + Math.random()*(xMax-xMin);
+        const y = Math.random()*size;
+        const a = 0.02 + Math.random()*0.05;
+        g.fillStyle = `rgba(0,0,0,${a})`;
+        g.fillRect(x,y,1,1);
+      }
+
+      const stripCount = 8 + Math.floor(Math.random()*7);
+      for(let i=0;i<stripCount;i++){
+        const x = xMin + Math.random()*(xMax-xMin);
+        const w = 14 + Math.random()*36;
+        const a = 0.05 + Math.random()*0.12;
+
+        const grad = g.createLinearGradient(x,0,x+w,0);
+        grad.addColorStop(0, `rgba(0,0,0,0)`);
+        grad.addColorStop(0.5, `rgba(0,0,0,${a})`);
+        grad.addColorStop(1, `rgba(0,0,0,0)`);
+
+        g.fillStyle = grad;
+        g.fillRect(x, 0, w, size);
+      }
+
+      const patchCount = 6 + Math.floor(Math.random()*9);
+      for(let i=0;i<patchCount;i++){
+        const x = xMin + Math.random()*(xMax-xMin);
+        const y = Math.random()*size;
+        const w = 60 + Math.random()*170;
+        const h = 8 + Math.random()*22;
+        const a = 0.05 + Math.random()*0.12;
+        g.fillStyle = `rgba(0,0,0,${a})`;
+        g.fillRect(x,y,w,h);
+      }
+
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(1.0, 10.0);
       return t;
     }
 
     const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+    highwayTex.generateMipmaps = false;
+    highwayTex.minFilter = THREE.NearestFilter;
+    highwayTex.magFilter = THREE.NearestFilter;
+    highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    highwayTex.needsUpdate = true;
+    highwayTex.repeat.set(1.0, 4.0);
+
+    const patchTexPool = [
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+    ];
 
     const roadMat = new THREE.MeshStandardMaterial({
       map: highwayTex,
@@ -455,12 +509,50 @@
     });
 
     const segments=[];
+    let groupLeft = rndi(2,3);
+    let groupShade = 0.94 + Math.random()*0.08;
+    let groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
+    let groupPatchOpacity = 0.16 + Math.random()*0.10;
+
     for(let i=0;i<segCount;i++){
       const geo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
       geo.rotateX(-Math.PI/2);
       const mesh = new THREE.Mesh(geo, roadMat);
+
+      groupLeft--;
+      if(groupLeft <= 0){
+        groupLeft = rndi(2,3);
+        groupShade = 0.94 + Math.random()*0.08;
+        groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
+        groupPatchOpacity = 0.16 + Math.random()*0.10;
+      }
+
+      if(Math.abs(groupShade - 1.0) > 0.0001){
+        const m = roadMat.clone();
+        m.color = roadMat.color.clone().multiplyScalar(groupShade);
+        mesh.material = m;
+      }
+
+      const patchGeo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
+      patchGeo.rotateX(-Math.PI/2);
+      const patchMat = new THREE.MeshStandardMaterial({
+        map: groupPatch,
+        transparent: true,
+        opacity: groupPatchOpacity,
+        roughness: 1.0,
+        metalness: 0.0,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+      const patch = new THREE.Mesh(patchGeo, patchMat);
+      patch.position.y = 0.003;
+      mesh.add(patch);
+
       mesh.position.set(0, 0, -i*segLen);
       mesh.receiveShadow=true;
+
       scene.add(mesh);
       segments.push(mesh);
     }
@@ -474,7 +566,7 @@
     side.receiveShadow = true;
     scene.add(side);
 
-    // alberi (come tuo, semplificato)
+    // alberi
     const jungle = new THREE.Group(); scene.add(jungle);
     function makeTree(){
       const g = new THREE.Group();
@@ -519,25 +611,7 @@
       }
     }
 
-    // --- Sprites / Objs
-    function makeEmojiSprite(emoji, size=256){
-      const c=document.createElement('canvas'); c.width=c.height=size;
-      const g=c.getContext('2d');
-      g.clearRect(0,0,size,size);
-      g.globalAlpha=0.18;
-      g.fillStyle='#cfefff';
-      g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
-      g.globalAlpha=1;
-      g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-      g.textAlign='center'; g.textBaseline='middle';
-      g.fillText(emoji, size/2, size/2+8);
-      const tex=new THREE.CanvasTexture(c);
-      tex.colorSpace=THREE.SRGBColorSpace;
-      const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
-      const spr=new THREE.Sprite(mat);
-      spr.scale.set(0.78,0.78,1);
-      return spr;
-    }
+    // ===== Entities visuals =====
     function spawnObstacleVisual(){
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
@@ -580,12 +654,12 @@
       return ring;
     }
 
-    // Runner groups
+    // ===== Runner =====
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // Bubble (rimane)
+    // Bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -598,26 +672,45 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // GLTF
+    // ===== GLB loader + Animations =====
     const gltfLoader = new GLTFLoader();
 
-    // ==== ANIM URLs ====
+    // Base model (skeleton) + animations
     const RUNNER_GLB_URL = './running.glb';
-    const IDLE_URLS = [
-      './DwarfIdle.glb',
-      './WarriorIdle.glb',
-      './HappyIdle.glb'
-    ];
-    const JUMP_URL  = './JumpOver.glb';
-    const FLIP_URL  = './RunningForwardFlip.glb';
-    const KICK_URL  = './SoccerKick.glb';
-    const DANCE_URL = './HipHopDance.glb';
-    const DIE_URL   = './SideHitDie.glb';
 
-    // ==== Anim util ====
+    // Extra animation files (come hai chiesto)
+    const ANIM_FILES = {
+      idle: ['./DwarfIdle.glb', './WarriorIdle.glb', './HappyIdle.glb'],
+      jump: './JumpOver.glb',
+      flip: './RunningForwardFlip.glb',
+      kick: './SoccerKick.glb',
+      die:  './SideHitDie.glb',
+      dance:'./HipHopDance.glb'
+    };
+
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
+      });
+    }
+    function removeBigNonSkinnedPlanes(model){
+      model.traverse(o=>{
+        if(!o.isMesh) return;
+        const isSkinned = (o.isSkinnedMesh === true) || (o.skeleton != null);
+        if(isSkinned) return;
+
+        const box = new THREE.Box3().setFromObject(o);
+        const s = new THREE.Vector3(); box.getSize(s);
+
+        const huge = (s.x > 2.4 || s.y > 2.4 || s.z > 2.4);
+        const flat = (Math.min(s.x,s.y,s.z) < 0.03 && Math.max(s.x,s.y,s.z) > 1.6);
+
+        const name = (o.name||'').toLowerCase();
+        const suspicious = name.includes('plane') || name.includes('cube') || name.includes('quad') || name.includes('ground') || name.includes('floor');
+
+        if(huge || flat || suspicious){
+          o.visible = false;
+        }
       });
     }
     function stripRootMotion(clip){
@@ -629,6 +722,7 @@
           if(!name.endsWith('.position')) continue;
           const v = t.values;
           if(!v || v.length < 6) continue;
+
           let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
           for(let i=0;i<v.length;i+=3){
             const x=v[i], z=v[i+2];
@@ -644,199 +738,275 @@
             }
           }
         }
-      }catch(err){}
+      }catch(err){ console.warn('stripRootMotion fallback:', err); }
       return c;
     }
 
-    async function loadGLB(url){
-      return new Promise((resolve,reject)=>{
-        gltfLoader.load(url, resolve, undefined, reject);
+    // Mixer + actions
+    let runnerMixer=null;
+    let actions = {
+      run:null,
+      idles:[],
+      jump:null,
+      flip:null,
+      kick:null,
+      die:null,
+      dance:null
+    };
+
+    let runnerModelLoaded=null;
+    let runClipDuration=1.0;
+
+    // Root-motion guards (come prima)
+    let mixamoHips=null, mixamoRootNode=null;
+    let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
+
+    // --- Playback state ---
+    const animState = {
+      mode:'idle',              // 'idle' | 'run' | 'oneShot' | 'dead' | 'dance'
+      currentIdle:null,
+      oneShot:null,
+      idlePendingPick:false
+    };
+
+    function stopAllActions(){
+      const all = [];
+      if(actions.run) all.push(actions.run);
+      if(actions.jump) all.push(actions.jump);
+      if(actions.flip) all.push(actions.flip);
+      if(actions.kick) all.push(actions.kick);
+      if(actions.die) all.push(actions.die);
+      if(actions.dance) all.push(actions.dance);
+      for(const a of actions.idles) all.push(a);
+      for(const a of all){
+        try{ a.stop(); }catch{}
+      }
+    }
+
+    function fadeTo(next, fade=0.18){
+      if(!next) return;
+      // fade out everything else
+      const all = [];
+      if(actions.run) all.push(actions.run);
+      if(actions.jump) all.push(actions.jump);
+      if(actions.flip) all.push(actions.flip);
+      if(actions.kick) all.push(actions.kick);
+      if(actions.die) all.push(actions.die);
+      if(actions.dance) all.push(actions.dance);
+      for(const a of actions.idles) all.push(a);
+
+      for(const a of all){
+        if(a !== next){
+          try{ a.fadeOut(fade); }catch{}
+        }
+      }
+      try{
+        next.reset();
+        next.enabled = true;
+        next.setEffectiveWeight(1.0);
+        next.fadeIn(fade);
+        next.play();
+      }catch{}
+    }
+
+    function playRun(){
+      if(!actions.run || animState.mode==='dead') return;
+      animState.mode='run';
+      animState.oneShot=null;
+      fadeTo(actions.run, 0.12);
+      actions.run.setLoop(THREE.LoopRepeat, Infinity);
+      actions.run.clampWhenFinished = false;
+    }
+
+    function pickRandomIdle(){
+      if(!actions.idles.length || animState.mode==='dead') return;
+      const a = actions.idles[rndi(0, actions.idles.length-1)];
+      animState.currentIdle = a;
+
+      a.setLoop(THREE.LoopOnce, 1);
+      a.clampWhenFinished = true;
+      a.time = 0;
+      fadeTo(a, 0.20);
+    }
+
+    function startIdleRandom(){
+      if(animState.mode==='dead') return;
+      animState.mode='idle';
+      animState.oneShot=null;
+      pickRandomIdle();
+    }
+
+    function playOneShot(action, {fade=0.08, lock='oneShot'} = {}){
+      if(!action || animState.mode==='dead') return;
+      animState.mode = lock;
+      animState.oneShot = action;
+
+      action.reset();
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.enabled = true;
+      action.setEffectiveWeight(1.0);
+
+      // crossfade from current
+      fadeTo(action, fade);
+    }
+
+    function playDance(){
+      if(!actions.dance || animState.mode==='dead') return;
+      animState.mode='dance';
+      animState.oneShot = null;
+      actions.dance.setLoop(THREE.LoopRepeat, Infinity);
+      actions.dance.clampWhenFinished = false;
+      fadeTo(actions.dance, 0.18);
+    }
+
+    function playDie(){
+      if(!actions.die) return;
+      animState.mode='dead';
+      animState.oneShot = actions.die;
+      actions.die.reset();
+      actions.die.setLoop(THREE.LoopOnce, 1);
+      actions.die.clampWhenFinished = true;
+      fadeTo(actions.die, 0.08);
+    }
+
+    async function loadAnimClip(url){
+      return new Promise((resolve)=>{
+        gltfLoader.load(url, (gltf)=>{
+          const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
+          resolve(clips[0] || null);
+        }, undefined, ()=>{
+          console.warn('Anim load error:', url);
+          resolve(null);
+        });
       });
     }
 
-    // ==== Animation Controller ====
-    const anim = {
-      mixer: null,
-      actions: new Map(),
-      current: null,
-      mode: 'idle', // idle | run | dance | dead | oneShot
-      idleNames: [],
-      lastIdle: null,
-      busyOneShot: false,
-      queuedMode: null
-    };
-
-    function action(name){ return anim.actions.get(name) || null; }
-
-    function fadeTo(name, {fade=0.18, loop=THREE.LoopRepeat, clamp=false, timeScale=1.0, reset=true} = {}){
-      const a = action(name);
-      if(!a) return null;
-
-      a.enabled = true;
-      a.setEffectiveTimeScale(timeScale);
-      a.setEffectiveWeight(1.0);
-      a.setLoop(loop, Infinity);
-      a.clampWhenFinished = clamp;
-
-      if(reset) a.reset();
-
-      if(anim.current && anim.current !== a){
-        anim.current.fadeOut(fade);
+    async function loadAllAnimations(){
+      // idle clips
+      for(const u of ANIM_FILES.idle){
+        const c = await loadAnimClip(u);
+        if(c) actions.idles.push(c);
       }
-      a.fadeIn(fade);
-      a.play();
-      anim.current = a;
-      return a;
+      // oneshots / specials
+      actions.jump = await loadAnimClip(ANIM_FILES.jump);
+      actions.flip = await loadAnimClip(ANIM_FILES.flip);
+      actions.kick = await loadAnimClip(ANIM_FILES.kick);
+      actions.die  = await loadAnimClip(ANIM_FILES.die);
+      actions.dance= await loadAnimClip(ANIM_FILES.dance);
     }
 
-    function playOneShot(name, {fade=0.12, timeScale=1.0} = {}){
-      const a = action(name);
-      if(!a) return false;
-      anim.busyOneShot = true;
+    async function loadRunnerModel(){
+      return new Promise((resolve)=>{
+        gltfLoader.load(RUNNER_GLB_URL, async (gltf)=>{
+          const model = gltf.scene;
+          model.position.set(0,0,0);
+          model.scale.setScalar(0.95);
+          setShadows(model);
 
-      // loop once
-      a.enabled = true;
-      a.setEffectiveTimeScale(timeScale);
-      a.setEffectiveWeight(1.0);
-      a.setLoop(THREE.LoopOnce, 1);
-      a.clampWhenFinished = true;
-      a.reset();
+          model.traverse(o=>{
+            if(o.isMesh && o.material){
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+            }
+          });
 
-      if(anim.current && anim.current !== a) anim.current.fadeOut(fade);
-      a.fadeIn(fade);
-      a.play();
-      anim.current = a;
+          removeBigNonSkinnedPlanes(model);
 
-      return true;
+          // piedi a terra
+          {
+            const box = new THREE.Box3().setFromObject(model);
+            const lift = -box.min.y;
+            model.position.y += lift + 0.01;
+          }
+
+          model.rotation.y = Math.PI;
+
+          // hips/root
+          mixamoHips = null; mixamoRootNode = null;
+          model.traverse(o=>{
+            const n = (o.name||'').toLowerCase();
+            if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
+            if(o.isBone){
+              if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+            }
+          });
+          if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
+          if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
+
+          while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
+          runnerModel.add(model);
+          runnerModelLoaded = model;
+
+          // Mixer on base model
+          runnerMixer = new THREE.AnimationMixer(model);
+
+          // Load extra clips first
+          await loadAllAnimations();
+
+          // base run clip from running.glb
+          const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
+          const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
+          const fixedRun = runClip ? stripRootMotion(runClip) : null;
+          if(fixedRun){
+            runClipDuration = Math.max(0.2, fixedRun.duration || 1.0);
+            actions.run = runnerMixer.clipAction(fixedRun);
+            actions.run.enabled = true;
+            actions.run.setEffectiveWeight(1.0);
+            actions.run.setEffectiveTimeScale(1.0);
+          }
+
+          // build clipActions for extras
+          // (qui assumiamo che siano compatibili con lo stesso rig)
+          const idleActions = [];
+          for(const clip of actions.idles){
+            idleActions.push(runnerMixer.clipAction(clip));
+          }
+          actions.idles = idleActions;
+
+          if(actions.jump) actions.jump = runnerMixer.clipAction(actions.jump);
+          if(actions.flip) actions.flip = runnerMixer.clipAction(actions.flip);
+          if(actions.kick) actions.kick = runnerMixer.clipAction(actions.kick);
+          if(actions.die)  actions.die  = runnerMixer.clipAction(actions.die);
+          if(actions.dance)actions.dance= runnerMixer.clipAction(actions.dance);
+
+          // finished event: se era idle/oneshot torna a idle random o run
+          runnerMixer.addEventListener('finished', (ev)=>{
+            const a = ev.action;
+            if(animState.mode==='dead') return;
+
+            if(animState.mode==='oneShot'){
+              // dopo flip/jump/kick torna a run o idle (dipende)
+              if(game.started && !game.stopped && !game.paused) playRun();
+              else startIdleRandom();
+              return;
+            }
+            if(animState.mode==='idle'){
+              // idle random chain
+              pickRandomIdle();
+              return;
+            }
+          });
+
+          // ✅ all'avvio: idle random fluido
+          startIdleRandom();
+          resolve();
+        }, undefined, (err)=>{
+          console.warn('GLB load error:', err);
+          resolve();
+        });
+      });
     }
 
-    function pickIdle(){
-      if(!anim.idleNames.length) return null;
-      let tries=0;
-      let name = anim.idleNames[rndi(0, anim.idleNames.length-1)];
-      while(name === anim.lastIdle && tries++ < 5){
-        name = anim.idleNames[rndi(0, anim.idleNames.length-1)];
-      }
-      anim.lastIdle = name;
-      return name;
-    }
-
-    function setMode(mode){
-      anim.queuedMode = null;
-      anim.mode = mode;
-
-      if(mode === 'idle'){
-        const n = pickIdle();
-        if(n) fadeTo(n, {fade:0.22, loop:THREE.LoopRepeat, clamp:false, timeScale:1.0});
-      }else if(mode === 'run'){
-        fadeTo('run', {fade:0.14, loop:THREE.LoopRepeat, clamp:false, timeScale:1.0});
-      }else if(mode === 'dance'){
-        fadeTo('dance', {fade:0.22, loop:THREE.LoopRepeat, clamp:false, timeScale:1.0});
-      }else if(mode === 'dead'){
-        // lo gestiamo con oneShot die
-      }
-    }
-
-    function queueModeAfterOneShot(mode){
-      anim.queuedMode = mode;
-    }
-
-    function onAnimFinished(){
-      anim.busyOneShot = false;
-      if(anim.queuedMode){
-        const m = anim.queuedMode;
-        anim.queuedMode = null;
-        setMode(m);
-      }else{
-        // se siamo in idle e finisce qualcosa, torna idle random
-        if(anim.mode === 'idle') setMode('idle');
-        if(anim.mode === 'run') setMode('run');
-        if(anim.mode === 'dance') setMode('dance');
-      }
-    }
-
-    // ==== Load character + animations ====
-    async function loadCharacterAndAnims(){
-      // base model + run
-      const base = await loadGLB(RUNNER_GLB_URL);
-      const model = base.scene;
-      model.position.set(0,0,0);
-      model.scale.setScalar(0.95);
-      model.rotation.y = Math.PI;
-      setShadows(model);
-
-      // piedi a terra
-      {
-        const box = new THREE.Box3().setFromObject(model);
-        const lift = -box.min.y;
-        model.position.y += lift + 0.01;
-      }
-
-      while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
-      runnerModel.add(model);
-
-      // mixer sul model
-      anim.mixer = new THREE.AnimationMixer(model);
-      anim.mixer.addEventListener('finished', onAnimFinished);
-
-      // run clip
-      const runClip = (base.animations||[])[0];
-      if(runClip){
-        const fixed = stripRootMotion(runClip);
-        const a = anim.mixer.clipAction(fixed);
-        anim.actions.set('run', a);
-      }
-
-      // helper loader per un clip
-      async function loadClip(url, key){
-        try{
-          const g = await loadGLB(url);
-          const clip = (g.animations||[])[0];
-          if(!clip) return;
-          const fixed = stripRootMotion(clip);
-          const a = anim.mixer.clipAction(fixed);
-          anim.actions.set(key, a);
-          return true;
-        }catch(e){
-          console.warn('Anim load fail', url, e);
-          return false;
-        }
-      }
-
-      // idles
-      for(let i=0;i<IDLE_URLS.length;i++){
-        const key = `idle_${i}`;
-        const ok = await loadClip(IDLE_URLS[i], key);
-        if(ok) anim.idleNames.push(key);
-      }
-
-      await loadClip(JUMP_URL,  'jump');
-      await loadClip(FLIP_URL,  'flip');
-      await loadClip(KICK_URL,  'kick');
-      await loadClip(DANCE_URL, 'dance');
-      await loadClip(DIE_URL,   'die');
-
-      // start in idle
-      setMode('idle');
-    }
-
-    // Game data (come tuo)
-    const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
-    const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
-    const HEART  = "❤️";
-    const MAGNET = "🧲";
-
-    const BEST_KEY='jungle_runner_best_v3';
-    const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
-    const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
-
+    // ===== Game data =====
     const game = {
-      state: 'title', // title | running | stopped | dead
       lane:1,
       y:0, vy:0, jumping:false,
+      sliding:false, slideT:0,
+      autoSlideCooldown:0,
 
       baseSpeed: 12.9,
-      score:0, coins:0, best: loadBest(),
+      score:0, coins:0,
 
       maxLives:5,
       lives:3,
@@ -849,179 +1019,52 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
+      trioT:0,
 
       entities:[],
       spawnT:0.30,
 
-      stopped:false,
-      stopBlend:0.0,
+      paused:false,    // pausa "UI"
+      started:false,   // ✅ parte SOLO quando premi Start
+      over:false,
 
-      // ring action window
-      flipping:false,
-      flipT:0
+      stopped:true,    // ✅ all'avvio traffico fermo
+      stopBlend:1.0,
+
+      lastTurtleZ: [-99999, -99999, -99999],
     };
 
-    bestEl.textContent = String(game.best);
-
-    function hpString(){
-      let s="";
-      for(let i=0;i<game.maxLives;i++) s += (i<game.lives) ? "❤️" : "🖤";
-      return s;
-    }
-    function refreshFoodUI(){
-      foodStack.innerHTML = "";
-      const show = game.foodHistory.slice(-6).reverse();
-      for(const emo of show){
-        const d=document.createElement('div');
-        d.className='foodItem';
-        d.textContent=emo;
-        foodStack.appendChild(d);
-      }
-      foodCountEl.textContent = String(game.foodCount);
+    function updateStartButtonLabel(){
+      btnStartMain.textContent = game.over ? '🔁 Restart' : (game.started ? '▶️ Start' : '▶️ Start');
     }
 
-    function setBoostUI(){
-      const t = Math.max(game.foodBoostT, game.ringBoostT);
-      if(t <= 0){
-        pillBoost.style.display='none';
-        boostBar.style.width='0%';
-        return;
-      }
-      pillBoost.style.display='inline-flex';
-      const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
-      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
-      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
-      const dur = 10.0;
-      const pct = clamp((t/dur)*100,0,100);
-      boostBar.style.width = pct.toFixed(1)+'%';
+    // ✅ +5% ostacoli ogni 5000 punti (come avevi)
+    function obstacleMultiplier(){
+      const steps = Math.floor(game.score / 5000);
+      return 1 + 0.05 * steps;
     }
 
-    function clearEntities(){
-      for(const e of game.entities) scene.remove(e.obj);
-      game.entities.length=0;
+    // ===== Spawn (come tuo, già “pulito”) =====
+    const TURTLE_VIS_Z = 70;
+    const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
+
+    function canSpawnTurtle(lane, z){
+      return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
     }
 
-    function resetRun(){
-      game.lane=1;
-      game.y=0; game.vy=0; game.jumping=false;
-
-      game.score=0; game.coins=0;
-      game.ringCount=0;
-      game.foodCount=0; game.foodHistory=[];
-      refreshFoodUI();
-
-      game.invincibleT=0;
-      game.foodBoostT=0;
-      game.ringBoostT=0;
-      game.magnetT=0;
-
-      game.spawnT=0.30;
-      clearEntities();
-
-      game.lives=3;
-
-      game.stopped = false;
-      game.stopBlend = 0.0;
-      stopBtn.classList.remove('on');
-      stopLbl.textContent = 'STOP';
-
-      game.flipping=false; game.flipT=0;
-    }
-
-    function enterTitleUI(){
-      game.state = 'title';
-      startOverlay.classList.remove('hidden');
-      startTitle.textContent = 'Jungle Emoji Runner';
-      startSub.innerHTML = `Premi <b>Start</b> per iniziare. <b>Stop</b> ferma il traffico (idle random).<br/><span style="opacity:.85">Dance = HipHopDance.</span>`;
-      startBtn.textContent = '▶️ Start';
-      danceBtn.classList.remove('hidden');
-
-      // nascondo bottoni gameplay
-      floatBtns.classList.add('hidden');
-      stopWrap.classList.add('hidden');
-      pauseBtn.classList.add('hidden');
-
-      // anim idle
-      setMode('idle');
-    }
-
-    function enterRunningUI(){
-      game.state = 'running';
-      startOverlay.classList.add('hidden');
-
-      floatBtns.classList.remove('hidden');
-      stopWrap.classList.remove('hidden');
-      pauseBtn.classList.remove('hidden');
-
-      setMode('run');
-    }
-
-    function enterStoppedUI(){
-      game.state = 'stopped';
-      setMode('idle');
-    }
-
-    function enterDeadUI(){
-      game.state = 'dead';
-      // mostra overlay come “restart”
-      startOverlay.classList.remove('hidden');
-      startTitle.textContent = 'GAME OVER';
-      startSub.innerHTML = `Hai fatto <b>${Math.floor(game.score)}</b> punti • Emoji <b>${game.coins}</b>`;
-      startBtn.textContent = '🔁 Restart';
-      danceBtn.classList.add('hidden');
-
-      // stop diventa restart
-      stopLbl.textContent = 'RESTART';
-
-      // anim die one-shot
-      if(playOneShot('die', {fade:0.10, timeScale:1.0})){
-        anim.mode = 'dead';
-      }
-    }
-
-    function setStop(on){
-      if(game.state !== 'running' && game.state !== 'stopped') return;
-
-      game.stopped = !!on;
-      stopBtn.classList.toggle('on', game.stopped);
-
-      if(game.stopped){
-        stopLbl.textContent = 'GO';
-        enterStoppedUI();
-      }else{
-        stopLbl.textContent = 'STOP';
-        game.state = 'running';
-        setMode('run');
-      }
-    }
-
-    function loseLife(){
-      if(game.invincibleT>0) return;
-      game.lives = Math.max(0, game.lives-1);
-      sfx.hit();
-      if(game.lives<=0){
-        if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
-        enterDeadUI();
-      }
-    }
-
-    // Spawns (solo corsie 0..2) - come tuo, ring da 2 e vicini
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
       const blocked=new Set();
-      const p0 = 0.22;
+      const mult = obstacleMultiplier();
+
+      const p0 = clamp(0.22 / mult, 0.03, 0.22);
       let oCount = 0;
       if(Math.random() >= p0){
-        const p2 = 0.38;
+        const p2 = clamp(0.38 * mult, 0.18, 0.95);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
       while(blocked.size<oCount) blocked.add(rndi(0,2));
-
-      const coinLanes=new Set();
-      const cCount = rndi(1,2);
-      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
@@ -1030,57 +1073,25 @@
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
 
-      coinLanes.forEach(l=>{
-        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
-        spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
-        scene.add(spr);
-        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
-      });
-
-      if(Math.random() < 0.30){
+      // tartaruga controllata (max 1 / row)
+      if(Math.random() < 0.18){
         const lane=rndi(0,2);
-        const emo = FOOD[rndi(0,FOOD.length-1)];
-        const spr = makeEmojiSprite(emo);
-        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
-        spr.scale.set(0.82,0.82,1);
-        scene.add(spr);
-        game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
+        const tz = z0 - rnd(3,11);
+        if(canSpawnTurtle(lane, tz)){
+          const t = makeTurtle();
+          t.position.set(lanesX[lane], 0, tz);
+          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          scene.add(t);
+          game.entities.push({ type:'turtle', lane, z:tz, obj:t, state:'idle', projT:0 });
+          game.lastTurtleZ[lane] = tz;
+        }
       }
 
-      if(Math.random() < 0.10){
-        const lane=rndi(0,2);
-        const spr = makeEmojiSprite(MAGNET);
-        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
-        spr.scale.set(0.90,0.90,1);
-        scene.add(spr);
-        game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
-      }
-
-      // cuori: solo se lives < 5 e più rari
-      if(game.lives < game.maxLives && Math.random() < 0.035){
-        const lane=rndi(0,2);
-        const spr = makeEmojiSprite(HEART);
-        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
-        spr.scale.set(0.92,0.92,1);
-        scene.add(spr);
-        game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
-      }
-
-      // tartarughe: 1 per corsia massimo, distanziate — qui semplice: poche
-      if(Math.random() < 0.16){
-        const lane=rndi(0,2);
-        const t = makeTurtle();
-        t.position.set(lanesX[lane], 0, z0 - rnd(2,10));
-        t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-        scene.add(t);
-        game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
-      }
-
-      // RING: ora 2 e più vicini
+      // anelli: 2 e vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 0.75;
+        const gap = 0.82;
         for(let k=0;k<2;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
@@ -1090,29 +1101,38 @@
       }
     }
 
-    // Controls
+    // ===== Controls =====
+    let tiltTarget=0, camRoll=0;
+
     function moveLane(dir){
-      if(game.state !== 'running') return;
+      if(game.over||game.paused) return;
+      if(!game.started) return;
+      if(game.trioT>0) return;
       game.lane = clamp(game.lane+dir, 0, 3);
+      tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
     }
 
     function jump(){
-      if(game.state !== 'running') return;
+      if(game.over||game.paused) return;
+      if(!game.started) return;
       if(game.stopped) return;
-      if(anim.busyOneShot) return;
-
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
-
-        // anim jump
-        if(playOneShot('jump', {fade:0.08, timeScale:1.05})){
-          queueModeAfterOneShot('run');
-          anim.mode = 'oneShot';
-        }
+        // ✅ anim salto
+        playOneShot(actions.jump, {fade:0.06, lock:'oneShot'});
       }
+    }
+
+    function slide(){
+      if(game.over||game.paused) return;
+      if(!game.started) return;
+      if(game.stopped) return;
+      game.sliding=true;
+      game.slideT=0.55;
+      sfx.slide();
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -1120,11 +1140,8 @@
       if(k==='arrowleft') moveLane(-1);
       if(k==='arrowright') moveLane(1);
       if(k==='arrowup' || k===' ') jump();
-      if(k==='p'){
-        // pausa: la lasciamo semplice (non cambia stato anim)
-        if(game.state === 'running'){ game.state='stopped'; setStop(true); }
-        else if(game.state === 'stopped'){ setStop(false); }
-      }
+      if(k==='arrowdown') slide();
+      if(k==='p') togglePause();
     });
 
     let touchStart=null;
@@ -1141,109 +1158,201 @@
       const min=30;
       if(adx<min && ady<min) return;
       if(adx>ady) moveLane(dx>0?1:-1);
-      else { if(dy<0) jump(); }
+      else { if(dy<0) jump(); else slide(); }
     });
 
-    // Start/Dance buttons
-    startBtn.addEventListener('click', ()=>{
+    // ===== Start/Stop/Pause/Home/Dance =====
+    function setStop(on){
+      game.stopped = !!on;
+      stopLbl.textContent = game.stopped ? 'GO' : 'STOP';
+      stopDot.classList.toggle('red', !game.stopped);
+      stopDot.classList.toggle('green', game.stopped);
+
+      if(game.stopped){
+        // ✅ stop = idle random
+        startIdleRandom();
+      }else{
+        // riprende: run (se started)
+        if(game.started && !game.paused && !game.over) playRun();
+      }
+    }
+
+    function resetRun(){
+      game.lane=1;
+      game.y=0; game.vy=0; game.jumping=false;
+      game.sliding=false; game.slideT=0;
+      game.autoSlideCooldown=0;
+
+      game.score=0; game.coins=0;
+      game.ringCount=0;
+      game.foodCount=0; game.foodHistory=[];
+
+      game.invincibleT=0;
+      game.foodBoostT=0;
+      game.ringBoostT=0;
+      game.magnetT=0;
+      game.trioT=0;
+
+      for(const e of game.entities) scene.remove(e.obj);
+      game.entities.length=0;
+
+      game.spawnT = 0.30;
+      game.over=false;
+      game.lives=3;
+
+      game.lastTurtleZ = [-99999, -99999, -99999];
+
+      // al reset: traffico fermo, idle
+      game.started = false;
+      game.paused = false;
+      setStop(true);
+      updateStartButtonLabel();
+    }
+
+    function startGame(){
+      if(game.over){
+        resetRun();
+      }
+      game.started = true;
+      game.paused = false;
+      setStop(false);       // GO
+      playRun();
+      updateStartButtonLabel();
+      btnPause.textContent = '⏸️';
+    }
+
+    function togglePause(){
+      if(game.over) return;
+      game.paused = !game.paused;
+      btnPause.textContent = game.paused ? '▶️' : '⏸️';
+
+      if(game.paused){
+        // pausa = idle random
+        startIdleRandom();
+      }else{
+        if(game.started && !game.stopped) playRun();
+        else startIdleRandom();
+      }
+    }
+
+    btnStartMain.addEventListener('click', ()=>{
       initAudio();
-      if(game.state === 'dead'){
-        // restart
-        resetRun();
-        stopLbl.textContent = 'STOP';
-        enterRunningUI();
-        return;
-      }
-      if(game.state === 'title'){
-        resetRun();
-        enterRunningUI();
-        return;
-      }
-      // se sei in stopped -> torna running
-      if(game.state === 'stopped'){
-        setStop(false);
-      }
+      startGame();
     });
 
-    danceBtn.addEventListener('click', ()=>{
+    btnStopMain.addEventListener('click', ()=>{
       initAudio();
-      if(game.state === 'title'){
-        setMode('dance');
-        game.state = 'title'; // resta title ma in dance
-      }
-    });
-
-    // STOP button
-    stopBtn.addEventListener('click', ()=>{
-      initAudio();
-      if(game.state === 'dead'){
-        // restart anche da qui
-        resetRun();
-        enterRunningUI();
-        return;
-      }
-      if(game.state !== 'running' && game.state !== 'stopped') return;
+      if(game.over) return;
+      if(!game.started) return; // stop ha senso dopo start
+      if(game.paused) return;
       setStop(!game.stopped);
     });
 
-    // Nascondo vecchi bottoni settings/pause/home (li lasciamo, ma non li usiamo qui)
-    btnSettings?.addEventListener('click', ()=>{ initAudio(); });
-    btnPause?.addEventListener('click', ()=>{ initAudio(); });
-    btnHome?.addEventListener('click', ()=>{ initAudio(); });
+    btnDance.addEventListener('click', ()=>{
+      initAudio();
+      if(game.over) return;
+      // Dance funziona quando sei fermo/idle (o anche prima dello start)
+      playDance();
+      // se stavi in run, ferma il traffico (così coerente)
+      if(game.started && !game.stopped) setStop(true);
+    });
 
-    // Camera state
-    let camZ = baseCamZ;
-    let camY = 4.6;
-    let camFov = baseFov;
-    let camX = 0;
-    let camRoll = 0;
+    btnPause.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-    // Update loop
+    btnHome.addEventListener('click', ()=>{
+      initAudio();
+      resetRun();
+    });
+
+    // ===== Collisions / Life =====
+    function loseLife(){
+      if(game.invincibleT>0) return;
+      game.lives = Math.max(0, game.lives-1);
+      sfx.hit();
+      if(game.lives<=0){
+        game.over=true;
+        game.started=false;
+        game.paused=false;
+        setStop(true);
+
+        // ✅ anim morte
+        playDie();
+
+        // ✅ Start diventa Restart (solo quello)
+        btnStartMain.textContent = '🔁 Restart';
+        stopLbl.textContent = 'STOP';
+      }
+    }
+
+    // ===== Update loop =====
+    let camZ = baseCamZ, camY = 4.6, camFov = baseFov, camX = 0;
     let tPrev=performance.now();
 
     function update(dt, tNow){
-      // Mixer SEMPRE aggiornato (idle anche quando non corre)
-      if(anim.mixer){
-        anim.mixer.update(dt);
-      }
+      // ✅ animazioni SEMPRE (anche prima dello start, anche in stop)
+      if(runnerMixer){
+        // timeScale: se morto = 1 (per far finire l’anim), altrimenti normale
+        runnerMixer.timeScale = 1.0;
+        runnerMixer.update(dt);
 
-      // gestione flip window
-      if(game.flipping){
-        game.flipT -= dt;
-        if(game.flipT <= 0){
-          game.flipping = false;
+        // blocca drift
+        if(mixamoHips){
+          mixamoHips.position.x = hipsBaseX;
+          mixamoHips.position.z = hipsBaseZ;
+        }
+        if(mixamoRootNode){
+          mixamoRootNode.position.x = rootBaseX;
+          mixamoRootNode.position.z = rootBaseZ;
         }
       }
 
-      // se non running, niente gameplay (ma scena/anim sì)
-      if(game.state !== 'running' && game.state !== 'stopped') return;
+      // gameplay fermo se non started o paused o over
+      const gameplayOn = game.started && !game.paused && !game.over;
 
+      // blend stop
       const stopTarget = game.stopped ? 1.0 : 0.0;
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
+
+      // se non gameplay: niente fisica/scroll/spawn
+      if(!gameplayOn){
+        // idle breathing leggero
+        const breathe = Math.sin(tNow*0.0022) * 0.015;
+        runnerCenter.position.y = 0.95 + breathe;
+        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+        return;
+      }
+
+      // reset pose idle offsets
+      runnerCenter.position.y = 0.95;
+      runnerCenter.rotation.z = 0;
+
       const trafficMul = (1.0 - game.stopBlend);
 
-      // timer power
-      if(game.invincibleT>0) game.invincibleT = Math.max(0, game.invincibleT-dt*trafficMul);
-      if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt*trafficMul);
-      if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt*trafficMul);
-      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt*trafficMul);
+      // se STOP attivo: fermo traffico ma non "pausa" totale (anim idle già gestita da setStop)
+      if(game.stopped){
+        return;
+      }
 
-      const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
-      const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
+      // ===== velocità (rimane come nel tuo: food più basso, mega più basso) =====
+      const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
+      const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const speedMul = foodMul * ringMul * (both ? 1.06 : 1.0);
+      const crazyMul = both ? 1.03 : 1.0;
+
+      const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
 
       // gravity
-      if(!game.stopped){
-        const g=22.0;
-        game.vy += g*dt;
-        game.y  += game.vy*dt;
-        if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
-      }
+      const g=22.0;
+      game.vy += g*dt;
+      game.y  += game.vy*dt;
+      if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // player pos
-      runnerPivot.position.x = lanesX[game.lane<=2?game.lane:2];
+      // slide timer
+      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+
+      // runner position
+      runnerPivot.position.x = lanesX[game.lane<=2 ? game.lane : 2];
       runnerPivot.position.y = (-game.y);
 
       // contact shadow
@@ -1256,6 +1365,7 @@
       // road scroll
       const scroll = speed*dt;
       highwayTex.offset.y -= scroll*0.085;
+      for(const t of patchTexPool) t.offset.y -= scroll*0.085;
 
       for(const mesh of segments){
         mesh.position.z += scroll;
@@ -1264,205 +1374,97 @@
       loopJungle(scroll);
 
       // spawn
-      if(!game.stopped){
-        game.spawnT -= dt;
-        if(game.spawnT<=0){
-          spawnRow();
-          game.spawnT = rnd(0.40, 0.75);
-        }
+      game.spawnT -= dt;
+      if(game.spawnT<=0){
+        spawnRow();
+        game.spawnT = rnd(0.40, 0.75);
       }
 
-      // entities move
-      const magnetOn = game.magnetT > 0;
+      // move entities
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
-
-        if(e.type==='turtle' && e.state==='projectile'){
-          e.projT -= dt*trafficMul;
-          e.z -= (speed*3.4)*dt;
-          e.obj.position.z = e.z;
-          if(e.projT <= 0) e.projT = 0;
-        }
-
-        if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
-          const dx = lanesX[game.lane] - e.obj.position.x;
-          const dz = (0 - e.z);
-          const dist = Math.hypot(dx*2.2, dz);
-          if(dist < 12.0){
-            e.obj.position.x += dx * dt * (5.6*(1-dist/12.0));
-            if(e.obj.position.y < 1.1) e.obj.position.y += dt*0.6;
-          }
-        }
       }
 
       // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
-        if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
-          scene.remove(e.obj); game.entities.splice(i,1);
-          continue;
-        }
         if(e.z > 6.0){
           scene.remove(e.obj);
           game.entities.splice(i,1);
         }
-        if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
-          scene.remove(e.obj); game.entities.splice(i,1);
-        }
       }
 
-      // collisions solo se running e non stopped
-      if(!game.stopped){
-        const ex = lanesX[game.lane];
-        const py = runnerPivot.position.y + 0.95;
+      // collisions + special animations
+      const px = runnerPivot.position.x;
+      const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
-        function collideAtX(e){
-          const dz = Math.abs(e.z - 0.25);
-          const dx = Math.abs(e.obj.position.x - ex);
-          const ey = (e.obj.position.y ?? 0);
-          const dy = Math.abs(ey - py);
-          return (dz < 0.75 && dx < 0.60 && dy < 1.05);
-        }
-        function collideTurtle(e){
-          const dz = Math.abs(e.z - 0.35);
-          const dx = Math.abs(e.obj.position.x - ex);
-          return (dz < 1.05 && dx < 0.72);
-        }
+      function collide(e){
+        const dz = Math.abs(e.z - 0.25);
+        const dx = Math.abs(e.obj.position.x - px);
+        const ey = (e.obj.position.y ?? 0);
+        const dy = Math.abs(ey - py);
+        return (dz < 0.75 && dx < 0.60 && dy < 1.05);
+      }
+      function collideTurtle(e){
+        const dz = Math.abs(e.z - 0.35);
+        const dx = Math.abs(e.obj.position.x - px);
+        return (dz < 1.05 && dx < 0.72);
+      }
 
-        // auto-trigger flip sui ring (quando ring arriva)
-        if(!game.flipping && !anim.busyOneShot && game.y===0){
-          for(const e of game.entities){
-            if(e.type!=='ring') continue;
-            if(e.lane !== game.lane) continue;
-            if(Math.abs(e.z - 0.25) < 2.35){
-              // flip!
-              if(playOneShot('flip', {fade:0.06, timeScale:1.08})){
-                queueModeAfterOneShot('run');
-                game.flipping = true;
-                game.flipT = 0.55;
-              }
-              break;
-            }
-          }
-        }
-
-        // turtle projectile demolition
+      // auto “anelli” → FLIP (invece di verticale)
+      if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
         for(const e of game.entities){
-          if(e.type==='turtle' && e.state==='projectile'){
-            for(let j=game.entities.length-1;j>=0;j--){
-              const o = game.entities[j];
-              if(o.type!=='obst') continue;
-              if(o.lane!==e.lane) continue;
-              if(Math.abs(o.z - e.z) < 1.35){
-                scene.remove(o.obj);
-                game.entities.splice(j,1);
-              }
-            }
+          if(e.type!=='ring') continue;
+          if(e.lane !== game.lane) continue;
+          if(Math.abs(e.z - 0.25) < 2.55){
+            // usa flip e “consuma” i ring quando li tocchi (come prima logic)
+            playOneShot(actions.flip, {fade:0.05, lock:'oneShot'});
+            game.sliding = true;
+            game.slideT  = 0.48;
+            game.autoSlideCooldown = 0.24;
+            break;
           }
         }
+      }
+      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
-        for(let i=game.entities.length-1;i>=0;i--){
-          const e=game.entities[i];
+      for(let i=game.entities.length-1;i>=0;i--){
+        const e=game.entities[i];
 
-          if(e.type==='ring'){
-            if(!collideAtX(e)) continue;
+        if(e.type==='ring'){
+          if(!collide(e)) continue;
+          if(!game.sliding) continue;
 
-            // ring prende solo se stai flippando
-            if(!game.flipping) continue;
-
-            game.ringCount += 1;
-            scene.remove(e.obj); game.entities.splice(i,1);
-            sfx.ring();
-            continue;
-          }
-
-          if(e.type==='turtle' && e.state==='idle'){
-            if(collideTurtle(e)){
-              // kick + projectile
-              if(!anim.busyOneShot){
-                if(playOneShot('kick', {fade:0.08, timeScale:1.0})){
-                  queueModeAfterOneShot('run');
-                }
-              }
-              e.state='projectile';
-              e.projT = 2.8;
-              sfx.boost();
-            }
-            continue;
-          }
-
-          if(!collideAtX(e)) continue;
-
-          if(e.type==='coin'){
-            game.coins += 1;
-            game.score += 28;
-            scene.remove(e.obj); game.entities.splice(i,1);
-            sfx.coin();
-            continue;
-          }
-
-          if(e.type==='food'){
-            game.foodCount += 1;
-            game.foodHistory.push(e.emo);
-            refreshFoodUI();
-            scene.remove(e.obj); game.entities.splice(i,1);
-            sfx.food();
-            if(game.foodCount >= 10){
-              game.foodBoostT = 10.0;
-              game.invincibleT = Math.max(game.invincibleT, 10.0);
-              bubble.visible=true;
-              game.foodCount = 0;
-              game.foodHistory = [];
-              refreshFoodUI();
-              sfx.boost();
-            }
-            continue;
-          }
-
-          if(e.type==='heart'){
-            if(game.lives < game.maxLives){
-              game.lives = Math.min(game.maxLives, game.lives+1);
-              sfx.boost();
-            }
-            scene.remove(e.obj); game.entities.splice(i,1);
-            continue;
-          }
-
-          if(e.type==='magnet'){
-            game.magnetT = 8.0;
-            scene.remove(e.obj); game.entities.splice(i,1);
-            sfx.magnet();
-            continue;
-          }
-
-          if(e.type==='obst'){
-            const inv = (game.invincibleT>0);
-            if(inv){
-              scene.remove(e.obj); game.entities.splice(i,1);
-            }else{
-              scene.remove(e.obj); game.entities.splice(i,1);
-              loseLife();
-            }
-            continue;
-          }
+          // raccogli ring
+          game.ringCount += 1;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          sfx.ring();
+          continue;
         }
 
-        // score tick
-        game.score += (18 * speedMul) * dt;
-        if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
+        if(e.type==='turtle'){
+          if(!collideTurtle(e)) continue;
+
+          // ✅ calcio tartaruga
+          playOneShot(actions.kick, {fade:0.05, lock:'oneShot'});
+          sfx.boost();
+
+          // rimuovi tartaruga (semplice, stabile)
+          scene.remove(e.obj); game.entities.splice(i,1);
+          continue;
+        }
+
+        if(e.type==='obst'){
+          if(!collide(e)) continue;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          loseLife();
+          continue;
+        }
       }
 
-      // HUD
-      scoreEl.textContent = String(Math.floor(game.score));
-      coinsEl.textContent = String(game.coins);
-      bestEl.textContent  = String(game.best);
-      ringsEl.textContent = String(game.ringCount);
-      hpTxt.textContent   = hpString();
-      magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
-
-      setBoostUI();
-      if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
+      // score tick (se ti serve ancora)
+      game.score += (18 * speedMul) * dt;
     }
 
     function animate(tNow){
@@ -1471,12 +1473,11 @@
 
       update(dt,tNow);
 
-      // camera base (come tua)
-      const inAir = (game.y < -0.01) || game.jumping;
+      // camera (sempre)
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : (inAir ? -2 : 0));
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
       const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
@@ -1496,13 +1497,15 @@
       const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
       camX = damp(camX, targetCamX, 6, dt);
 
-      // micro shake boost (sempre leggero)
       let shakeX = 0, shakeY = 0;
-      if(anyBoost){
-        const intensity = bothBoost ? 0.020 : 0.012;
+      if(anyBoost && shakeEnabled){
+        const intensity = bothBoost ? 0.018 : 0.011;
         shakeX = Math.sin(tNow*0.020) * intensity;
         shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
+
+      tiltTarget *= 0.92;
+      camRoll = damp(camRoll, tiltTarget, 10, dt);
 
       const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
@@ -1520,16 +1523,17 @@
     }
     window.addEventListener('resize', onResize);
 
-    // start
+    // ===== Boot =====
     (async ()=>{
-      refreshFoodUI();
-      hpTxt.textContent = hpString();
+      syncCamUI();
+      await loadRunnerModel();
 
-      await loadCharacterAndAnims();
-
-      // all'avvio: scena visibile + idle random + overlay start
-      resetRun();
-      enterTitleUI();
+      // ✅ avvio: strada + player idle, nessun overlay, STOP attivo
+      game.started = false;
+      game.over = false;
+      game.paused = false;
+      setStop(true);
+      updateStartButtonLabel();
 
       requestAnimationFrame(animate);
     })();
