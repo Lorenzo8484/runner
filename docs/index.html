@@ -713,24 +713,45 @@ let tmpLocalB = new THREE.Vector3();
     }
 
     async function loadMixamoRunner(){
-      return new Promise((resolve)=>{
-        gltfLoader.load(
-          RUNNER_GLB_URL,
-          (gltf)=>{
-            const model = gltf.scene;
+  return new Promise((resolve)=>{
+    gltfLoader.load(
+      RUNNER_GLB_URL,
+      (gltf)=>{
+        const model = gltf.scene;
 
-            model.position.set(0,0,0);
-            model.scale.setScalar(0.95);
+        model.position.set(0,0,0);
+        model.scale.setScalar(0.95);
 
-            setShadows(model);
+        setShadows(model);
 
-            // sicurezza: DoubleSide
-            model.traverse(o=>{
-              if(o.isMesh && o.material){
-                const mats = Array.isArray(o.material) ? o.material : [o.material];
-                for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
-              }
-            });
+        // sicurezza: DoubleSide
+        model.traverse(o=>{
+          if(o.isMesh && o.material){
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            for(const m of mats){
+              if(m) m.side = THREE.DoubleSide;
+            }
+          }
+        }); // 👈 QUI finisce traverse
+
+        // ===============================
+        // 🔥 FIX COPIE / FANTASMI CORSIA
+        // ===============================
+
+        // rimuovi eventuali modelli precedenti dal runner
+        while (runnerModel.children.length > 0) {
+          runnerModel.remove(runnerModel.children[0]);
+        }
+
+        // aggiungi il modello Mixamo SOLO qui
+        runnerModel.add(model);
+
+        // IMPORTANTISSIMO: il modello NON va mai spostato in X/Z
+        model.position.x = 0;
+        model.position.z = 0;
+
+        // ↓↓↓ qui sotto continua il resto della funzione
+        // mixer, animazioni, resolve(), ecc.
 
             // elimina scene leftovers
             removeBigNonSkinnedPlanes(model);
