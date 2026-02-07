@@ -85,6 +85,48 @@
       font-size:12px;
     }
 
+    /* ✅ STOP button */
+    .stopBtnWrap{
+      position:fixed;
+      right:14px;
+      bottom:110px; /* sopra barra safari */
+      z-index:30;
+      pointer-events:none;
+    }
+    .stopBtn{
+      pointer-events:auto;
+      width:74px;
+      height:56px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255, 80, 80, .12);
+      backdrop-filter: blur(10px);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-weight:950;
+      cursor:pointer;
+      user-select:none;
+    }
+    .stopDot{
+      width:18px;height:18px;border-radius:6px;
+      background:#ff3b30;
+      box-shadow:0 0 0 2px rgba(255,255,255,.12) inset;
+    }
+    .stopBtn.on{
+      background:rgba(140,255,190,.12);
+    }
+    .stopBtn.on .stopDot{
+      background:#34c759;
+    }
+    .stopLbl{
+      font-size:12px;
+      opacity:.95;
+      letter-spacing:.3px;
+    }
+
     .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
       backdrop-filter:blur(10px);z-index:20;}
@@ -120,33 +162,6 @@
     .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;}
     .settingsRow small{opacity:.8}
     .settingsVal{font-weight:950}
-
-    /* ✅ STOP button (in basso a destra) */
-    .stopWrap{
-      position:fixed;
-      right:14px;
-      bottom:92px; /* sopra la barra Safari + help */
-      z-index:30;
-      pointer-events:none;
-    }
-    .stopBtn{
-      pointer-events:auto;
-      width:58px;height:58px;
-      border-radius:16px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:22px;
-      background:rgba(255,80,80,.12);
-      border:1px solid rgba(255,120,120,.28);
-      backdrop-filter:blur(10px);
-      box-shadow:0 10px 28px rgba(0,0,0,.35);
-      cursor:pointer;
-      user-select:none;
-    }
-    .stopBtn:active{transform:scale(.98);}
-    .stopBtn.on{
-      background:rgba(110,255,170,.14);
-      border-color:rgba(110,255,170,.28);
-    }
   </style>
 
   <script type="importmap">
@@ -198,13 +213,16 @@
     <div class="foodCount"><span id="foodCount">0</span>/10</div>
   </div>
 
-  <!-- ✅ STOP button -->
-  <div class="stopWrap">
-    <div class="stopBtn" id="btnStop" title="Stop / Riprendi">🛑</div>
+  <!-- ✅ STOP -->
+  <div class="stopBtnWrap">
+    <button class="stopBtn" id="stopBtn" aria-label="Stop traffico">
+      <span class="stopDot"></span>
+      <span class="stopLbl" id="stopLbl">STOP</span>
+    </button>
   </div>
 
   <div class="help">
-    <div class="card small">
+    <div class="card small" id="helpCard">
       <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
       Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
       <span style="opacity:.75">Anelli: auto-piega quando arrivano in corsia.</span>
@@ -293,7 +311,9 @@
     const btnSettings = document.getElementById('btnSettings');
     const btnHome = document.getElementById('btnHome');
     const btnPause = document.getElementById('btnPause');
-    const btnStop  = document.getElementById('btnStop');
+
+    const stopBtn = document.getElementById('stopBtn');
+    const stopLbl = document.getElementById('stopLbl');
 
     const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
@@ -387,7 +407,6 @@
       jump: ()=>{ beep('square', 420, 0.05, 0.08); },
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
-      stop: ()=>{ beep('sine', 240, 0.06, 0.08); beep('sine', 180, 0.08, 0.06); }
     };
     audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
@@ -446,147 +465,111 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // =====================
-    // ✅ AUTOSTRADA A14: 3 corsie + emergenza a destra
-    // (4 linee totali: bordo sinistro pieno + 2 tratteggiate + linea piena emergenza)
-    // =====================
-    const laneW = 1.15;
-    const lanesX = [-laneW, 0, laneW, (laneW * 2)]; // 0..2 principali, 3 = emergenza (destra)
-    const MAIN_LANES = [0,1,2];
-
+    // =========================================================
+    // ✅ AUTOSTRADA: 3 corsie uguali + corsia emergenza a destra
+    // =========================================================
     const segLen = 9.0, segCount = 10;
-    const mainRoadWidth = laneW * 3;
-    const shoulderWidth = laneW;
-    const shoulderX = (mainRoadWidth * 0.5) + (shoulderWidth * 0.5);
-    const totalVisualWidth = mainRoadWidth + shoulderWidth;
 
-    function makeHighwayTexture(size = 1536){
+    const laneW = 1.35;                 // larghezza corsia (uguale per le 3)
+    const mainRoadWidth = laneW * 3;    // 3 corsie di gioco
+    const shoulderWidth = 1.40;         // corsia emergenza
+    const totalRoadWidth = mainRoadWidth + shoulderWidth;
+
+    // Centri corsie: [0,1,2] + emergenza [3]
+    const leftEdge = -totalRoadWidth/2;
+    const lanesX = [
+      leftEdge + laneW*0.5,
+      leftEdge + laneW*1.5,
+      leftEdge + laneW*2.5,
+      leftEdge + mainRoadWidth + shoulderWidth*0.5
+    ];
+
+    // Texture autostrada “crisp”: nessuna sfumatura sulle linee
+    function makeHighwayTexture(size=1024){
       const c = document.createElement('canvas');
       c.width = c.height = size;
-      const g = c.getContext('2d', { alpha:false });
+      const g = c.getContext('2d');
 
-      // asfalto
-      g.fillStyle = '#2a2e32';
+      // asfalto base
+      g.fillStyle = '#2a2e33';
       g.fillRect(0,0,size,size);
 
-      // grana
-      for(let i=0;i<32000;i++){
-        const x = (Math.random()*size)|0, y = (Math.random()*size)|0;
-        const v = (85 + Math.random()*70)|0;
+      // patch / rumore
+      for(let i=0;i<24000;i++){
+        const x = Math.random()*size, y = Math.random()*size;
+        const v = Math.floor(75 + Math.random()*70);
         g.fillStyle = `rgba(${v},${v},${v},${Math.random()*0.10})`;
         g.fillRect(x,y,1,1);
       }
-
-      // patch
-      for(let i=0;i<70;i++){
-        const w = 40 + Math.random()*140;
-        const h = 18 + Math.random()*70;
-        const x = Math.random()*(size-w);
-        const y = Math.random()*(size-h);
-        const a = 0.10 + Math.random()*0.18;
-        g.fillStyle = `rgba(0,0,0,${a})`;
+      // “patch” scuri
+      for(let i=0;i<120;i++){
+        const x = Math.random()*size;
+        const y = Math.random()*size;
+        const w = 40 + Math.random()*120;
+        const h = 12 + Math.random()*28;
+        g.fillStyle = `rgba(0,0,0,${0.05+Math.random()*0.10})`;
         g.fillRect(x,y,w,h);
       }
 
-      const px = (worldX)=> Math.round((((worldX / mainRoadWidth) * 0.5) + 0.5) * size);
+      // emergenza leggermente diversa
+      const px = (worldX)=> Math.round(((worldX - leftEdge) / totalRoadWidth) * size);
 
-      // ✅ bordo sinistro pieno (solo 1 bordo, così non fa 5 linee)
-      g.fillStyle = '#f6f7fb';
-      const solidW = 14;
-      g.fillRect(px(-mainRoadWidth/2 + 0.03) - solidW/2, 0, solidW, size);
+      const shoulderStartX = leftEdge + mainRoadWidth;
+      g.fillStyle = 'rgba(255,255,255,0.03)';
+      g.fillRect(px(shoulderStartX), 0, px(leftEdge+totalRoadWidth) - px(shoulderStartX), size);
 
-      // ✅ 2 tratteggiate nette
-      const dashW = 12, dashH = 70, gapH = 58;
-      const xSep1 = px(-laneW/2);
-      const xSep2 = px( laneW/2);
+      // linee: parametri
+      const solidW = Math.max(4, Math.round(size * 0.006));  // spessore linea piena
+      const dashW  = Math.max(3, Math.round(size * 0.004));  // spessore tratteggio
+      const dashLen = Math.round(size * 0.050);
+      const dashGap = Math.round(size * 0.040);
 
-      for(let y=0; y<size; y += (dashH+gapH)){
-        g.fillRect(xSep1 - dashW/2, y, dashW, dashH);
-        g.fillRect(xSep2 - dashW/2, y, dashW, dashH);
+      g.fillStyle = '#f2f4f7';
+
+      // bordi esterni (pieni): sinistra e destra
+      const xOuterL = px(leftEdge + 0.03);
+      const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
+      g.fillRect(xOuterL - solidW/2, 0, solidW, size);
+      g.fillRect(xOuterR - solidW/2, 0, solidW, size);
+
+      // linea piena tra corsia 3 e emergenza
+      const xShoulderSep = px(shoulderStartX);
+      g.fillRect(xShoulderSep - solidW/2, 0, solidW, size);
+
+      // ✅ SOLO 2 linee tratteggiate tra le 3 corsie
+      const xDash1 = px(leftEdge + laneW*1);
+      const xDash2 = px(leftEdge + laneW*2);
+
+      for(let y=0; y<size; y += (dashLen + dashGap)){
+        g.fillRect(xDash1 - dashW/2, y, dashW, dashLen);
+        g.fillRect(xDash2 - dashW/2, y, dashW, dashLen);
       }
 
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.repeat.set(1.0, 10.0);
-      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
       return t;
     }
 
-    function makeShoulderTexture(size = 1024){
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const g = c.getContext('2d', { alpha:false });
+    const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
 
-      g.fillStyle='#24282c';
-      g.fillRect(0,0,size,size);
-
-      for(let i=0;i<22000;i++){
-        const x=(Math.random()*size)|0, y=(Math.random()*size)|0;
-        const v=(80+Math.random()*70)|0;
-        g.fillStyle=`rgba(${v},${v},${v},${Math.random()*0.09})`;
-        g.fillRect(x,y,1,1);
-      }
-
-      for(let i=0;i<40;i++){
-        const w = 40 + Math.random()*120;
-        const h = 18 + Math.random()*70;
-        const x = Math.random()*(size-w);
-        const y = Math.random()*(size-h);
-        const a = 0.10 + Math.random()*0.18;
-        g.fillStyle = `rgba(0,0,0,${a})`;
-        g.fillRect(x,y,w,h);
-      }
-
-      // ✅ linea piena interna emergenza (UNA SOLA)
-      g.fillStyle = '#f6f7fb';
-      const lineW = 16;
-      g.fillRect(8, 0, lineW, size);
-
-      const t=new THREE.CanvasTexture(c);
-      t.colorSpace=THREE.SRGBColorSpace;
-      t.wrapS=t.wrapT=THREE.RepeatWrapping;
-      t.repeat.set(1.0, 10.0);
-      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      return t;
-    }
-
-    const highwayTex  = makeHighwayTexture(IS_IOS ? 1200 : 1536);
-    const shoulderTex = makeShoulderTexture(IS_IOS ? 820 : 1024);
-
-    const roadMainMat = new THREE.MeshStandardMaterial({
+    const roadMat = new THREE.MeshStandardMaterial({
       map: highwayTex,
       roughness: 0.96,
       metalness: 0.0,
       color: new THREE.Color(0xffffff)
     });
 
-    const roadShoulderMat = new THREE.MeshStandardMaterial({
-      map: shoulderTex,
-      roughness: 0.98,
-      metalness: 0.0,
-      color: new THREE.Color(0xffffff)
-    });
-
-    const segments = [];
-    const shoulderSegments = [];
-
+    const segments=[];
     for(let i=0;i<segCount;i++){
-      const geoMain = new THREE.PlaneGeometry(mainRoadWidth, segLen);
-      geoMain.rotateX(-Math.PI/2);
-      const meshMain = new THREE.Mesh(geoMain, roadMainMat);
-      meshMain.position.set(0, 0, -i*segLen);
-      meshMain.receiveShadow=true;
-      scene.add(meshMain);
-      segments.push(meshMain);
-
-      const geoSh = new THREE.PlaneGeometry(shoulderWidth, segLen);
-      geoSh.rotateX(-Math.PI/2);
-      const meshSh = new THREE.Mesh(geoSh, roadShoulderMat);
-      meshSh.position.set(shoulderX, 0.001, -i*segLen);
-      meshSh.receiveShadow=true;
-      scene.add(meshSh);
-      shoulderSegments.push(meshSh);
+      const geo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
+      geo.rotateX(-Math.PI/2);
+      const mesh = new THREE.Mesh(geo, roadMat);
+      mesh.position.set(0, 0, -i*segLen);
+      mesh.receiveShadow=true;
+      scene.add(mesh);
+      segments.push(mesh);
     }
 
     // terreno laterale
@@ -598,7 +581,7 @@
     side.receiveShadow = true;
     scene.add(side);
 
-    // Simple jungle trees
+    // alberi più fuori: usa larghezza totale
     const jungle = new THREE.Group(); scene.add(jungle);
     function makeTree(){
       const g = new THREE.Group();
@@ -622,8 +605,7 @@
     const treeProto = makeTree();
     const treePool=[];
     const treeSpacing=2.8;
-    const treeSideX = (totalVisualWidth/2) + 1.7;
-
+    const treeSideX = (totalRoadWidth/2) + 1.9;
     const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
     for(let i=0;i<jungleCount;i++){
       const z = -i*treeSpacing;
@@ -772,6 +754,9 @@
     let hipsBaseX=0, hipsBaseZ=0;
     let rootBaseX=0, rootBaseZ=0;
 
+    let runnerModelLoaded = null;
+    let runClipDuration = 1.0;
+
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
@@ -780,7 +765,7 @@
 
     function stripRootMotion(clip){
       const c = clip.clone();
-      const TH = 0.02; // 2cm
+      const TH = 0.02;
       try{
         for(const t of c.tracks){
           const name = (t.name || '').toLowerCase();
@@ -874,10 +859,14 @@
             if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
             if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
 
+            // pulisci runnerModel e aggiungi UNA SOLA VOLTA
             while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
             runnerModel.add(model);
             fallbackRunner.visible = false;
 
+            runnerModelLoaded = model;
+
+            // animazioni
             const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
             if(!clips.length){
               console.warn('Nessuna animazione nel GLB: uso fallback');
@@ -890,6 +879,7 @@
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
             const fixed = stripRootMotion(runClip);
+            runClipDuration = Math.max(0.2, fixed.duration || 1.0);
 
             runnerMixer = new THREE.AnimationMixer(model);
             runnerAction = runnerMixer.clipAction(fixed);
@@ -924,7 +914,7 @@
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     const game = {
-      lane:1, // ✅ corsia centrale (tra le 3 principali)
+      lane:1,             // ✅ 0..3 (3 = emergenza)
       y:0, vy:0, jumping:false,
 
       sliding:false, slideT:0,
@@ -952,9 +942,8 @@
       paused:true,
       over:false,
 
-      // ✅ STOP mode (no freeze: idle naturale)
-      stopped:false,
-      runScale:1.0
+      stopped:false,       // ✅ STOP traffico
+      stopBlend:0.0        // 0..1 per transizione “idle”
     };
 
     bestEl.textContent = String(game.best);
@@ -1046,10 +1035,10 @@
       game.lives=3;
 
       // STOP reset
-      game.stopped=false;
-      game.runScale=1.0;
-      btnStop.classList.remove('on');
-      btnStop.textContent='🛑';
+      game.stopped = false;
+      game.stopBlend = 0.0;
+      stopBtn.classList.remove('on');
+      stopLbl.textContent = 'STOP';
     }
 
     function togglePause(){
@@ -1057,14 +1046,6 @@
       game.paused=!game.paused;
       pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
       btnPause.textContent = game.paused ? '▶️' : '⏸️';
-    }
-
-    function toggleStop(){
-      if(game.over || game.paused) return;
-      game.stopped = !game.stopped;
-      btnStop.classList.toggle('on', game.stopped);
-      btnStop.textContent = game.stopped ? '▶️' : '🛑';
-      sfx.stop();
     }
 
     function loseLife(){
@@ -1084,13 +1065,13 @@
       sfx.boost();
     }
 
+    // +10% ostacoli ogni 15000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 15000);
       return 1 + 0.10 * steps;
     }
 
-    const randMainLane = ()=> MAIN_LANES[rndi(0, MAIN_LANES.length-1)];
-
+    // Spawns (✅ SOLO corsie 0..2, emergenza vuota)
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
 
@@ -1103,13 +1084,11 @@
         const p2 = clamp(0.38 * mult, 0.18, 0.90);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
-
-      // ✅ spawn SOLO nelle 3 corsie principali (0..2)
-      while(blocked.size<oCount) blocked.add(randMainLane());
+      while(blocked.size<oCount) blocked.add(rndi(0,2)); // ✅ 0..2
 
       const coinLanes=new Set();
       const cCount = rndi(1,2);
-      while(coinLanes.size<cCount) coinLanes.add(randMainLane());
+      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2)); // ✅ 0..2
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
@@ -1126,7 +1105,7 @@
       });
 
       if(Math.random() < 0.30){
-        const lane=randMainLane();
+        const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
         const spr = makeEmojiSprite(emo);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
@@ -1136,7 +1115,7 @@
       }
 
       if(Math.random() < 0.10){
-        const lane=randMainLane();
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
         spr.scale.set(0.90,0.90,1);
@@ -1145,7 +1124,7 @@
       }
 
       if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
-        const lane=randMainLane();
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.95,0.95,1);
@@ -1153,7 +1132,7 @@
         game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
       }
       if(Math.random() < 0.07){
-        const lane=randMainLane();
+        const lane=rndi(0,2);
         const spr = makeEmojiSprite(HEART);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
         spr.scale.set(0.90,0.90,1);
@@ -1164,7 +1143,7 @@
       if(Math.random() < 0.26){
         const count = (Math.random()<0.72) ? 1 : 2;
         for(let n=0;n<count;n++){
-          const lane=randMainLane();
+          const lane=rndi(0,2);
           const t = makeTurtle();
           t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
@@ -1174,7 +1153,7 @@
       }
 
       if(Math.random() < 0.26){
-        const lane = randMainLane();
+        const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
         const gap = 1.15;
         for(let k=0;k<3;k++){
@@ -1192,14 +1171,14 @@
     function moveLane(dir){
       if(game.over||game.paused) return;
       if(game.trioT>0) return;
-      // ✅ 0..3 (3 corsie + emergenza a destra)
-      game.lane = clamp(game.lane+dir,0,3);
+
+      game.lane = clamp(game.lane+dir, 0, 3); // ✅ 4 corsie (3 = emergenza)
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
     }
     function jump(){
       if(game.over||game.paused) return;
-      if(game.stopped) return; // fermo = no salto (più naturale)
+      if(game.stopped) return; // quando STOP, niente salto
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
@@ -1208,7 +1187,7 @@
     }
     function slide(){
       if(game.over||game.paused) return;
-      if(game.stopped) return; // fermo = no scivolata
+      if(game.stopped) return; // quando STOP, niente slide
       game.sliding=true;
       game.slideT=0.55;
       sfx.slide();
@@ -1221,7 +1200,6 @@
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
       if(k==='p') togglePause();
-      if(k==='s') toggleStop();
     });
 
     let touchStart=null;
@@ -1282,18 +1260,36 @@
       openMenu();
     });
 
-    btnStop.addEventListener('click', ()=>{
+    // ✅ STOP button: ferma traffico + passa in “idle”
+    function setStop(on){
+      game.stopped = !!on;
+      stopBtn.classList.toggle('on', game.stopped);
+      stopLbl.textContent = game.stopped ? 'GO' : 'STOP';
+
+      // posa più “umana”: porta l’animazione a un frame non-Tpose e poi “ferma”
+      if(runnerAction){
+        if(game.stopped){
+          runnerAction.paused = false;
+          runnerAction.time = Math.min(runClipDuration*0.35, 0.35); // frame “ok”
+        }else{
+          runnerAction.paused = false;
+        }
+      }
+    }
+    stopBtn.addEventListener('click', ()=>{
       initAudio();
-      toggleStop();
+      if(game.paused || game.over) return;
+      setStop(!game.stopped);
     });
 
     // Camera state
     let camZ = baseCamZ;
     let camY = 4.6;
     let camFov = baseFov;
+    let camX = 0;
 
     function activeRunnerXs(){
-      // trio usa solo le 3 corsie principali
+      // trio solo sulle 3 corsie principali
       if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
       return [lanesX[game.lane]];
     }
@@ -1317,17 +1313,23 @@
     function update(dt, tNow){
       if(game.paused) return;
 
-      // ✅ STOP: transizione morbida corsa -> fermo (no freeze)
-      const targetRun = game.stopped ? 0.0 : 1.0;
-      game.runScale = damp(game.runScale, targetRun, 10, dt);
+      // STOP blend (0..1)
+      const stopTarget = game.stopped ? 1.0 : 0.0;
+      game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
-      // Mixamo update
-      if(runnerMixer){
+      // animazione Mixamo
+      if(runnerMixer && runnerAction){
+        // timeScale scende gradualmente a 0 quando STOP
+        const ts = lerp(1.0, 0.0, game.stopBlend);
+        runnerMixer.timeScale = ts;
+
         runnerMixer.update(dt);
 
-        if(runnerAction){
+        // quando quasi fermo → metti in pausa per bloccare frame (ma con micro-animazione “respira” sotto)
+        if(game.stopped && ts < 0.05){
+          runnerAction.paused = true;
+        }else{
           runnerAction.paused = false;
-          runnerAction.setEffectiveTimeScale(game.runScale);
         }
 
         if(mixamoHips){
@@ -1340,23 +1342,14 @@
         }
       }
 
-      // idle “umano” quando fermo
-      if(game.stopped){
-        const idle1 = Math.sin(tNow*0.0032);
-        const idle2 = Math.sin(tNow*0.0021);
-        runnerCenter.rotation.z = damp(runnerCenter.rotation.z, idle1*0.035, 10, dt);
-        runnerCenter.rotation.x = damp(runnerCenter.rotation.x, -0.03 + idle2*0.02, 10, dt);
-        runnerModel.position.y  = damp(runnerModel.position.y,  Math.sin(tNow*0.004)*0.01, 10, dt);
-      }else{
-        runnerCenter.rotation.z = damp(runnerCenter.rotation.z, 0, 10, dt);
-        runnerModel.position.y  = damp(runnerModel.position.y, 0, 10, dt);
-      }
+      // quando STOP: niente fisica, niente spawn, niente scroll (ma manteniamo UI + camera + “respiro”)
+      const trafficMul = (1.0 - game.stopBlend);
 
       const inAir = (game.y < -0.01) || game.jumping;
       dt *= (inAir ? 0.90 : 1.0);
 
       if(game.invincibleT>0){
-        game.invincibleT -= dt;
+        game.invincibleT -= dt*trafficMul;
         if(game.invincibleT<=0){
           game.invincibleT=0;
           bubble.visible=false;
@@ -1364,12 +1357,12 @@
           miniR.bubble.visible=false;
         }
       }
-      if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt);
-      if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt);
-      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt);
+      if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt*trafficMul);
+      if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt*trafficMul);
+      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt*trafficMul);
 
       if(game.trioT>0){
-        game.trioT = Math.max(0, game.trioT-dt);
+        game.trioT = Math.max(0, game.trioT-dt*trafficMul);
         if(game.trioT===0){
           miniL.pivot.visible=false; miniR.pivot.visible=false;
           miniL.bubble.visible=false; miniR.bubble.visible=false;
@@ -1377,9 +1370,9 @@
         }
       }
 
-      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
-      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt);
-      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt);
+      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt*trafficMul);
+      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt*trafficMul);
+      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt*trafficMul);
 
       const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
@@ -1387,7 +1380,7 @@
       const crazyMul = both ? 1.06 : 1.0;
 
       const speedMul = foodMul * ringMul * crazyMul;
-      const speed = game.baseSpeed * speedMul;
+      const speed = game.baseSpeed * speedMul * trafficMul;
 
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
@@ -1396,28 +1389,41 @@
         if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
       }
 
-      // gravity (se STOP, resta a terra)
+      // gravity (solo se non STOP)
       if(!game.stopped){
         const g=22.0;
         game.vy += g*dt;
         game.y  += game.vy*dt;
         if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
-      }else{
-        game.y = 0; game.vy = 0; game.jumping = false;
       }
 
-      // slide timers
-      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
-      if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
-      if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
+      // slide timers (solo se non STOP)
+      if(!game.stopped){
+        if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+        if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
+        if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
+      }
 
       // runner positions
       const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
       runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
 
-      const mainPitchTarget = game.sliding ? -1.20 : (game.stopped ? -0.04 : 0.0);
+      // quando STOP, il personaggio si raddrizza lentamente
+      const pitchRun = game.sliding ? -1.20 : 0.0;
+      const pitchIdle = 0.0;
+      const mainPitchTarget = lerp(pitchRun, pitchIdle, game.stopBlend);
       runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
+
+      // micro “respiro” quando STOP (non freeze)
+      if(game.stopped){
+        const breathe = Math.sin(tNow*0.0022) * 0.015;
+        runnerCenter.position.y = 0.95 + breathe;
+        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+      }else{
+        runnerCenter.position.y = 0.95;
+        runnerCenter.rotation.z = 0;
+      }
 
       // contact shadow
       const h = runnerPivot.position.y;
@@ -1426,8 +1432,11 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // minis
+      // minis (solo in corsie principali)
       if(game.trioT>0){
+        // se eri in emergenza e parte il trio: rientra in centro
+        if(game.lane===3) game.lane = 1;
+
         miniL.pivot.visible=true; miniR.pivot.visible=true;
         miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
         miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
@@ -1438,23 +1447,17 @@
         miniR.center.rotation.x = damp(miniR.center.rotation.x, rPitchTarget, 18, dt);
       }
 
-      // ✅ scroll: se STOP -> 0 (traffico fermo, ma niente freeze)
-      const scroll = game.stopped ? 0 : (speed*dt);
+      // road scroll
+      const scroll = speed*dt;
 
-      highwayTex.offset.y  -= scroll*0.085;
-      shoulderTex.offset.y -= scroll*0.085;
-
+      highwayTex.offset.y -= scroll*0.085;
       for(const mesh of segments){
-        mesh.position.z += scroll;
-        if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
-      }
-      for(const mesh of shoulderSegments){
         mesh.position.z += scroll;
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
       }
       loopJungle(scroll);
 
-      // spawn solo se non STOP
+      // spawn (solo se non STOP)
       if(!game.stopped){
         game.spawnT -= dt;
         if(game.spawnT<=0){
@@ -1471,13 +1474,13 @@
         e.obj.position.z = e.z;
 
         if(e.type==='turtle' && e.state==='projectile'){
-          e.projT -= dt;
+          e.projT -= dt*trafficMul;
           e.z -= (speed*3.4)*dt;
           e.obj.position.z = e.z;
           if(e.projT <= 0) e.projT = 0;
         }
 
-        if(!game.stopped && magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
+        if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
           const dx = lanesX[(game.trioT>0)?1:game.lane] - e.obj.position.x;
           const dz = (0 - e.z);
           const dist = Math.hypot(dx*2.2, dz);
@@ -1488,21 +1491,19 @@
         }
       }
 
-      // despawn (se STOP non serve)
-      if(!game.stopped){
-        for(let i=game.entities.length-1;i>=0;i--){
-          const e = game.entities[i];
-          if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
-            scene.remove(e.obj); game.entities.splice(i,1);
-            continue;
-          }
-          if(e.z > 6.0){
-            scene.remove(e.obj);
-            game.entities.splice(i,1);
-          }
-          if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
-            scene.remove(e.obj); game.entities.splice(i,1);
-          }
+      // despawn
+      for(let i=game.entities.length-1;i>=0;i--){
+        const e = game.entities[i];
+        if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
+          scene.remove(e.obj); game.entities.splice(i,1);
+          continue;
+        }
+        if(e.z > 6.0){
+          scene.remove(e.obj);
+          game.entities.splice(i,1);
+        }
+        if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
+          scene.remove(e.obj); game.entities.splice(i,1);
         }
       }
 
@@ -1524,7 +1525,7 @@
           return (dz < 1.05 && dx < 0.72);
         }
 
-        // auto-slide rings (solo su corsie principali 0..2)
+        // auto-slide rings (solo corsie 0..2)
         if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0 && game.lane<=2){
           for(const e of game.entities){
             if(e.type!=='ring') continue;
@@ -1600,6 +1601,7 @@
               miniR.bubble.visible=true;
               game.ringCount = 0;
               sfx.boost();
+              if(game.lane===3) game.lane = 1;
             }
             continue;
           }
@@ -1671,10 +1673,8 @@
             continue;
           }
         }
-      }
 
-      // score tick (se STOP: no punti)
-      if(!game.stopped){
+        // score tick
         game.score += (18 * speedMul) * dt;
         if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
       }
@@ -1721,10 +1721,15 @@
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
+      // ✅ camera segue leggermente il player, così in emergenza si vede sempre
+      const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
+      camX = damp(camX, targetCamX, 6, dt);
+
       const bob = Math.sin(tNow*0.0020) * 0.005;
-      camera.position.set(0, camY + bob, camZ);
+      camera.position.set(camX, camY + bob, camZ);
       camera.rotation.z = camRoll;
-      camera.lookAt(0, lookAtY, lookAtZ);
+
+      camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
