@@ -265,6 +265,12 @@
             <div class="switch on" id="audioSwitch"><i></i></div>
           </div>
 
+          <!-- ✅ Camera Shake toggle -->
+          <div class="toggle" id="shakeToggle" style="margin-top:6px;">
+            <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
+            <div class="switch on" id="shakeSwitch"><i></i></div>
+          </div>
+
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;">
             <button class="btn" id="resetCam">Reset camera</button>
             <button class="btn" id="closeSettings">Chiudi</button>
@@ -323,6 +329,9 @@
     const audioToggle= document.getElementById('audioToggle');
     const audioSwitch= document.getElementById('audioSwitch');
 
+    const shakeToggle = document.getElementById('shakeToggle');
+    const shakeSwitch = document.getElementById('shakeSwitch');
+
     const fovSlider = document.getElementById('fovSlider');
     const camSlider = document.getElementById('camSlider');
     const frameSlider = document.getElementById('frameSlider');
@@ -337,19 +346,20 @@
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // === SETTINGS ===
-    const CAM_KEY = 'jr_cam_settings_v5';
-    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06 };
+    const CAM_KEY = 'jr_cam_settings_v6';
+    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06, shake: true };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
     let baseCamZ = Number(saved.baseCamZ ?? DEFAULTS.baseCamZ);
     let framing  = Number(saved.framing ?? DEFAULTS.framing);
+    let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
 
     baseFov  = clamp(baseFov, 30, 110);
     baseCamZ = clamp(baseCamZ, 2, 15);
     framing  = clamp(framing, 0, 1);
 
-    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing })); }
+    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing, shake: !!shakeEnabled })); }
     function syncCamUI(){
       fovSlider.value = String(Math.round(baseFov));
       fovVal.textContent = String(Math.round(baseFov));
@@ -357,6 +367,7 @@
       camVal.textContent = baseCamZ.toFixed(1);
       frameSlider.value = String(framing.toFixed(2));
       frameVal.textContent = framing.toFixed(2);
+      shakeSwitch.classList.toggle('on', !!shakeEnabled);
     }
     syncCamUI();
 
@@ -364,8 +375,14 @@
     camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
     frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
 
+    shakeToggle.addEventListener('click', ()=>{
+      shakeEnabled = !shakeEnabled;
+      shakeSwitch.classList.toggle('on', !!shakeEnabled);
+      saveCam();
+    });
+
     resetCamBtn.addEventListener('click', ()=>{
-      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing;
+      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing; shakeEnabled = DEFAULTS.shake;
       saveCam(); syncCamUI();
     });
 
@@ -467,10 +484,6 @@
 
     // =========================================================
     // ✅ AUTOSTRADA REALISTICA (come foto): linee crisp + patch
-    // - 3 corsie uguali + emergenza a destra
-    // - 2 linee tratteggiate “tipo A14”
-    // - linea emergenza continua
-    // - variazione asfalto ogni 2–3 segmenti (colore + overlay)
     // =========================================================
     const segLen = 9.0, segCount = 10;
 
@@ -487,17 +500,14 @@
       leftEdge + mainRoadWidth + shoulderWidth*0.5
     ];
 
-    // ✅ Texture linee “crisp” (senza sfumature) + tratteggi come foto
     function makeHighwayTexture(size=1024){
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
 
-      // asfalto base (neutro)
       g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
 
-      // micro-grana (leggera)
       for(let i=0;i<20000;i++){
         const x = Math.random()*size, y = Math.random()*size;
         const v = Math.floor(70 + Math.random()*70);
@@ -505,43 +515,40 @@
         g.fillRect(x,y,1,1);
       }
 
-      // helper px
       const px = (worldX)=> Math.round(((worldX - leftEdge) / totalRoadWidth) * size);
 
-      // emergenza un filo diversa (tinta leggerissima)
       const shoulderStartX = leftEdge + mainRoadWidth;
       g.fillStyle = 'rgba(255,255,255,0.03)';
       g.fillRect(px(shoulderStartX), 0, px(leftEdge+totalRoadWidth) - px(shoulderStartX), size);
 
-     const solidW = Math.max(6, Math.round(size * 0.008));     // linea piena più “autostrada”
-const dashW  = Math.max(5, Math.round(size * 0.0065));    // tratteggio più spesso
-const dashLen = Math.round(size * 0.180);                 // DASH LUNGO
-const dashGap = Math.round(size * 0.999);                 // GAP PIÙ LUNGO               // gap simile alla foto
+      const solidW = Math.max(6, Math.round(size * 0.008));
+      const dashW  = Math.max(5, Math.round(size * 0.0065));
+      const dashLen = Math.round(size * 0.180);
+      const dashGap = Math.round(size * 0.999);
 
       g.fillStyle = '#f4f6f8';
 
-      // bordi esterni pieni (sinistra/destra)
       const xOuterL = px(leftEdge + 0.03);
       const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
       const xOuterLi = Math.round(xOuterL - solidW/2);
-const xOuterRi = Math.round(xOuterR - solidW/2);
-g.fillRect(xOuterLi, 0, solidW, size);
-g.fillRect(xOuterRi, 0, solidW, size);
+      const xOuterRi = Math.round(xOuterR - solidW/2);
+      g.fillRect(xOuterLi, 0, solidW, size);
+      g.fillRect(xOuterRi, 0, solidW, size);
 
-const xShoulderSep = px(shoulderStartX);
-const xShoulderSepI = Math.round(xShoulderSep - solidW/2);
-g.fillRect(xShoulderSepI, 0, solidW, size);
+      const xShoulderSep = px(shoulderStartX);
+      const xShoulderSepI = Math.round(xShoulderSep - solidW/2);
+      g.fillRect(xShoulderSepI, 0, solidW, size);
 
-const xDash1 = px(leftEdge + laneW*1);
-const xDash2 = px(leftEdge + laneW*2);
-const xDash1I = Math.round(xDash1 - dashW/2);
-const xDash2I = Math.round(xDash2 - dashW/2);
+      const xDash1 = px(leftEdge + laneW*1);
+      const xDash2 = px(leftEdge + laneW*2);
+      const xDash1I = Math.round(xDash1 - dashW/2);
+      const xDash2I = Math.round(xDash2 - dashW/2);
 
-for(let y=0; y<size; y += (dashLen + dashGap)){
-  const yi = Math.round(y);
-  g.fillRect(xDash1I, yi, dashW, dashLen);
-  g.fillRect(xDash2I, yi, dashW, dashLen);
-}
+      for(let y=0; y<size; y += (dashLen + dashGap)){
+        const yi = Math.round(y);
+        g.fillRect(xDash1I, yi, dashW, dashLen);
+        g.fillRect(xDash2I, yi, dashW, dashLen);
+      }
 
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
@@ -550,26 +557,36 @@ for(let y=0; y<size; y += (dashLen + dashGap)){
       return t;
     }
 
-    // ✅ Overlay patch trasparente (longitudinali) – “realismo” senza shader
+    // ✅ PATCH longitudinali SOLO centro corsia (corsia centrale)
     function makePatchTexture(size=512){
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
       g.clearRect(0,0,size,size);
 
-      // micro rumore (trasparente)
-      for(let i=0;i<9000;i++){
-        const x=Math.random()*size, y=Math.random()*size;
+      // helper px in texture space (stesso mapping della strada)
+      const px = (worldX)=> ((worldX - leftEdge) / totalRoadWidth) * size;
+
+      // banda centro corsia (lane 1)
+      const centerLaneX = lanesX[1];
+      const bandHalfW = laneW * 0.36; // più stretto: solo centro corsia
+      const xMin = Math.max(0, Math.floor(px(centerLaneX - bandHalfW)));
+      const xMax = Math.min(size-1, Math.ceil(px(centerLaneX + bandHalfW)));
+
+      // micro rumore (solo dentro banda)
+      for(let i=0;i<7000;i++){
+        const x = xMin + Math.random()*(xMax-xMin);
+        const y = Math.random()*size;
         const a = 0.02 + Math.random()*0.05;
         g.fillStyle = `rgba(0,0,0,${a})`;
         g.fillRect(x,y,1,1);
       }
 
-      // patch longitudinali: strisce lunghe (nel senso della strada)
-      const stripCount = 7 + Math.floor(Math.random()*7);
+      // strisce longitudinali (solo nella banda)
+      const stripCount = 8 + Math.floor(Math.random()*7);
       for(let i=0;i<stripCount;i++){
-        const x = Math.random()*size;
-        const w = 18 + Math.random()*54;
+        const x = xMin + Math.random()*(xMax-xMin);
+        const w = 14 + Math.random()*36;
         const a = 0.05 + Math.random()*0.12;
 
         const grad = g.createLinearGradient(x,0,x+w,0);
@@ -581,13 +598,13 @@ for(let y=0; y<size; y += (dashLen + dashGap)){
         g.fillRect(x, 0, w, size);
       }
 
-      // riparazioni/chiazze sottili
-      const patchCount = 6 + Math.floor(Math.random()*10);
+      // chiazze sottili (solo nella banda)
+      const patchCount = 6 + Math.floor(Math.random()*9);
       for(let i=0;i<patchCount;i++){
-        const x = Math.random()*size;
+        const x = xMin + Math.random()*(xMax-xMin);
         const y = Math.random()*size;
-        const w = 70 + Math.random()*220;
-        const h = 10 + Math.random()*26;
+        const w = 60 + Math.random()*170;
+        const h = 8 + Math.random()*22;
         const a = 0.05 + Math.random()*0.12;
         g.fillStyle = `rgba(0,0,0,${a})`;
         g.fillRect(x,y,w,h);
@@ -596,23 +613,19 @@ for(let y=0; y<size; y += (dashLen + dashGap)){
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(1.0, 10.0); // uguale a highwayTex
+      t.repeat.set(1.0, 10.0);
       return t;
     }
 
     const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
 
-    // ✅ LINEE “CRISP” (niente blur / niente sfumature)
-highwayTex.generateMipmaps = false;
-highwayTex.minFilter = THREE.NearestFilter;
-highwayTex.magFilter = THREE.NearestFilter;
-highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-highwayTex.needsUpdate = true;
+    highwayTex.generateMipmaps = false;
+    highwayTex.minFilter = THREE.NearestFilter;
+    highwayTex.magFilter = THREE.NearestFilter;
+    highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    highwayTex.needsUpdate = true;
+    highwayTex.repeat.set(1.0, 4.0);
 
-// ✅ dashes più “lunghi” nel mondo (riduce l’effetto “scala”)
-highwayTex.repeat.set(1.0, 4.0);
-
-    // poche varianti patch (riuso = performance)
     const patchTexPool = [
       makePatchTexture(IS_IOS ? 384 : 512),
       makePatchTexture(IS_IOS ? 384 : 512),
@@ -628,7 +641,6 @@ highwayTex.repeat.set(1.0, 4.0);
 
     const segments=[];
 
-    // ✅ blocchi 2–3 segmenti: stessa tinta + stesso overlay
     let groupLeft = rndi(2,3);
     let groupShade = 0.94 + Math.random()*0.08;
     let groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
@@ -648,14 +660,12 @@ highwayTex.repeat.set(1.0, 4.0);
         groupPatchOpacity = 0.16 + Math.random()*0.10;
       }
 
-      // variazione tinta asfalto (minima)
       if(Math.abs(groupShade - 1.0) > 0.0001){
         const m = roadMat.clone();
         m.color = roadMat.color.clone().multiplyScalar(groupShade);
         mesh.material = m;
       }
 
-      // overlay patch (figlio del segmento)
       const patchGeo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
       patchGeo.rotateX(-Math.PI/2);
 
@@ -692,7 +702,7 @@ highwayTex.repeat.set(1.0, 4.0);
     side.receiveShadow = true;
     scene.add(side);
 
-    // alberi più fuori: usa larghezza totale
+    // alberi
     const jungle = new THREE.Group(); scene.add(jungle);
     function makeTree(){
       const g = new THREE.Group();
@@ -831,12 +841,13 @@ highwayTex.repeat.set(1.0, 4.0);
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // MINI runners
+    // MINI runners (ora possono diventare copie del player con animazione indipendente)
     function makeMiniRunner(){
       const p = new THREE.Group();
       const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
       const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
 
+      // fallback dummy se GLB non disponibile
       const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
       const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
       m.add(b); m.add(h);
@@ -851,7 +862,14 @@ highwayTex.repeat.set(1.0, 4.0);
       p.add(bb);
 
       p.visible=false;
-      return { pivot:p, center:c, model:m, bubble:bb, sliding:false, slideT:0, autoCooldown:0 };
+
+      return {
+        pivot:p, center:c, model:m, bubble:bb,
+        sliding:false, slideT:0, autoCooldown:0,
+        // anim indipendente (se disponibile)
+        mixer:null, action:null, animMul:1.0,
+        hips:null, root:null, hipsBaseX:0, hipsBaseZ:0, rootBaseX:0, rootBaseZ:0
+      };
     }
     const miniL = makeMiniRunner(); scene.add(miniL.pivot);
     const miniR = makeMiniRunner(); scene.add(miniR.pivot);
@@ -867,6 +885,7 @@ highwayTex.repeat.set(1.0, 4.0);
 
     let runnerModelLoaded = null;
     let runClipDuration = 1.0;
+    let runClipFixed = null;
 
     function setShadows(root){
       root.traverse(o=>{
@@ -924,6 +943,65 @@ highwayTex.repeat.set(1.0, 4.0);
           o.visible = false;
         }
       });
+    }
+
+    function setupMiniAsClone(mini, sourceScene, clip){
+      try{
+        // pulisci eventuale contenuto
+        while(mini.model.children.length) mini.model.remove(mini.model.children[0]);
+
+        const clone = sourceScene.clone(true);
+        clone.position.set(0,0,0);
+        clone.rotation.y = Math.PI; // stesso verso
+        clone.scale.setScalar(0.90); // dentro al mini già scalato
+
+        setShadows(clone);
+
+        clone.traverse(o=>{
+          if(o.isMesh && o.material){
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+          }
+        });
+
+        removeBigNonSkinnedPlanes(clone);
+
+        // piedi a terra
+        {
+          const box = new THREE.Box3().setFromObject(clone);
+          const lift = -box.min.y;
+          clone.position.y += lift + 0.01;
+        }
+
+        // trova hips/root per bloccare drift residuo
+        mini.hips=null; mini.root=null;
+        clone.traverse(o=>{
+          const n = (o.name||'').toLowerCase();
+          if(!mini.root && (n.includes('armature') || n === 'root')) mini.root = o;
+          if(o.isBone){
+            if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mini.hips = o;
+          }
+        });
+        if(mini.hips){ mini.hipsBaseX = mini.hips.position.x; mini.hipsBaseZ = mini.hips.position.z; }
+        if(mini.root){ mini.rootBaseX = mini.root.position.x; mini.rootBaseZ = mini.root.position.z; }
+
+        mini.model.add(clone);
+
+        // mixer indipendente + fase random (NON sincronizzata)
+        mini.mixer = new THREE.AnimationMixer(clone);
+        mini.action = mini.mixer.clipAction(clip);
+        mini.action.reset();
+        mini.action.setLoop(THREE.LoopRepeat, Infinity);
+        mini.action.enabled = true;
+        mini.action.setEffectiveWeight(1.0);
+        mini.action.setEffectiveTimeScale(1.0);
+        mini.action.play();
+
+        mini.animMul = rnd(0.90, 1.12);        // velocità corsa diversa
+        mini.action.time = rnd(0, clip.duration || 1.0); // fase diversa
+      }catch(err){
+        console.warn('setupMiniAsClone error:', err);
+      }
     }
 
     async function loadMixamoRunner(){
@@ -987,11 +1065,11 @@ highwayTex.repeat.set(1.0, 4.0);
             }
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
-            const fixed = stripRootMotion(runClip);
-            runClipDuration = Math.max(0.2, fixed.duration || 1.0);
+            runClipFixed = stripRootMotion(runClip);
+            runClipDuration = Math.max(0.2, runClipFixed.duration || 1.0);
 
             runnerMixer = new THREE.AnimationMixer(model);
-            runnerAction = runnerMixer.clipAction(fixed);
+            runnerAction = runnerMixer.clipAction(runClipFixed);
 
             runnerAction.reset();
             runnerAction.enabled = true;
@@ -1000,6 +1078,11 @@ highwayTex.repeat.set(1.0, 4.0);
             runnerAction.setLoop(THREE.LoopRepeat, Infinity);
             runnerAction.clampWhenFinished = false;
             runnerAction.play();
+
+            // ✅ miniL/miniR diventano copie del player (più piccole, indipendenti)
+            // (non rompe nulla: se fallisce, restano i dummy)
+            setupMiniAsClone(miniL, model, runClipFixed);
+            setupMiniAsClone(miniR, model, runClipFixed);
 
             resolve();
           },
@@ -1021,6 +1104,10 @@ highwayTex.repeat.set(1.0, 4.0);
     const BEST_KEY='jungle_runner_best_v3';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
+
+    // distanza minima tartarughe: 3x “visibilità” (stimata)
+    const TURTLE_VIS_Z = 70;
+    const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
 
     const game = {
       lane:1,
@@ -1052,7 +1139,10 @@ highwayTex.repeat.set(1.0, 4.0);
       over:false,
 
       stopped:false,
-      stopBlend:0.0
+      stopBlend:0.0,
+
+      // tracking tartarughe per corsia (0..2)
+      lastTurtleZ: [-99999, -99999, -99999],
     };
 
     bestEl.textContent = String(game.best);
@@ -1147,6 +1237,12 @@ highwayTex.repeat.set(1.0, 4.0);
       game.stopBlend = 0.0;
       stopBtn.classList.remove('on');
       stopLbl.textContent = 'STOP';
+
+      game.lastTurtleZ = [-99999, -99999, -99999];
+
+      // se i mini sono animati, randomizza di nuovo la fase ad ogni run (anti-sync)
+      if(miniL.action && runClipFixed){ miniL.action.time = rnd(0, runClipFixed.duration||1); miniL.animMul = rnd(0.90, 1.12); }
+      if(miniR.action && runClipFixed){ miniR.action.time = rnd(0, runClipFixed.duration||1); miniR.animMul = rnd(0.90, 1.12); }
     }
 
     function togglePause(){
@@ -1173,9 +1269,15 @@ highwayTex.repeat.set(1.0, 4.0);
       sfx.boost();
     }
 
+    // ✅ +5% ostacoli ogni 5000 punti
     function obstacleMultiplier(){
-      const steps = Math.floor(game.score / 15000);
-      return 1 + 0.10 * steps;
+      const steps = Math.floor(game.score / 5000);
+      return 1 + 0.05 * steps;
+    }
+
+    function canSpawnTurtle(lane, z){
+      // al massimo 1 per corsia "in zona": distanza minima tra tartarughe per lane
+      return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
     }
 
     // Spawns (solo corsie 0..2)
@@ -1185,10 +1287,10 @@ highwayTex.repeat.set(1.0, 4.0);
       const blocked=new Set();
       const mult = obstacleMultiplier();
 
-      const p0 = clamp(0.22 / mult, 0.04, 0.22);
+      const p0 = clamp(0.22 / mult, 0.03, 0.22);
       let oCount = 0;
       if(Math.random() >= p0){
-        const p2 = clamp(0.38 * mult, 0.18, 0.90);
+        const p2 = clamp(0.38 * mult, 0.18, 0.95);
         oCount = (Math.random() < p2) ? 2 : 1;
       }
       while(blocked.size<oCount) blocked.add(rndi(0,2));
@@ -1230,40 +1332,48 @@ highwayTex.repeat.set(1.0, 4.0);
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      if(game.coins>0 && game.coins % 25 === 0 && Math.random() < 0.7){
-        const lane=rndi(0,2);
-        const spr = makeEmojiSprite(HEART);
-        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
-        spr.scale.set(0.95,0.95,1);
-        scene.add(spr);
-        game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
-      }
-      if(Math.random() < 0.07){
-        const lane=rndi(0,2);
-        const spr = makeEmojiSprite(HEART);
-        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
-        spr.scale.set(0.90,0.90,1);
-        scene.add(spr);
-        game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
-      }
+      // ✅ cuori meno + NON spawn se hai già 5 vite
+      if(game.lives < game.maxLives){
+        let spawnHeart = false;
 
-      if(Math.random() < 0.26){
-        const count = (Math.random()<0.72) ? 1 : 2;
-        for(let n=0;n<count;n++){
+        // evento “premio” più raro
+        if(game.coins>0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
+
+        // random raro
+        if(!spawnHeart && Math.random() < 0.03) spawnHeart = true;
+
+        if(spawnHeart){
           const lane=rndi(0,2);
-          const t = makeTurtle();
-          t.position.set(lanesX[lane], 0, z0 - rnd(2,10) - n*1.2);
-          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-          scene.add(t);
-          game.entities.push({ type:'turtle', lane, z:t.position.z, obj:t, state:'idle', projT:0 });
+          const spr = makeEmojiSprite(HEART);
+          spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+          spr.scale.set(0.92,0.92,1);
+          scene.add(spr);
+          game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
         }
       }
 
+      // ✅ tartarughe: massimo 1 per corsia, distanti almeno 3x visibilità
+      // (spawn molto più controllato)
+      if(Math.random() < 0.18){
+        // prova una corsia random, una sola tartaruga totale per row
+        const lane=rndi(0,2);
+        const tz = z0 - rnd(3,11);
+        if(canSpawnTurtle(lane, tz)){
+          const t = makeTurtle();
+          t.position.set(lanesX[lane], 0, tz);
+          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+          scene.add(t);
+          game.entities.push({ type:'turtle', lane, z:tz, obj:t, state:'idle', projT:0 });
+          game.lastTurtleZ[lane] = tz;
+        }
+      }
+
+      // ✅ anelli: invece di 3, solo 2 e più vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
-        const gap = 1.15;
-        for(let k=0;k<3;k++){
+        const gap = 0.82;
+        for(let k=0;k<2;k++){
           const ring = makeVerticalRing();
           ring.position.set(lanesX[lane], 0.55, baseZ - k*gap);
           scene.add(ring);
@@ -1316,7 +1426,7 @@ highwayTex.repeat.set(1.0, 4.0);
     });
     renderer.domElement.addEventListener('pointerup',(e)=>{
       if(!touchStart) return;
-      const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+      const dx=e.clientX-touchStart.x, dy=e.clientX-touchStart.x ? (e.clientY-touchStart.y) : (e.clientY-touchStart.y);
       const adx=Math.abs(dx), ady=Math.abs(dy);
       touchStart=null;
       const min=30;
@@ -1420,6 +1530,7 @@ highwayTex.repeat.set(1.0, 4.0);
       const stopTarget = game.stopped ? 1.0 : 0.0;
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
+      // main runner mixer
       if(runnerMixer && runnerAction){
         const ts = lerp(1.0, 0.0, game.stopBlend);
         runnerMixer.timeScale = ts;
@@ -1439,6 +1550,23 @@ highwayTex.repeat.set(1.0, 4.0);
         if(mixamoRootNode){
           mixamoRootNode.position.x = rootBaseX;
           mixamoRootNode.position.z = rootBaseZ;
+        }
+      }
+
+      // ✅ mini runner anim indipendenti (solo quando trio attivo)
+      if(game.trioT>0){
+        const tsMini = lerp(1.0, 0.0, game.stopBlend);
+        if(miniL.mixer && miniL.action){
+          miniL.mixer.timeScale = tsMini * (miniL.animMul || 1.0);
+          miniL.mixer.update(dt);
+          if(miniL.hips){ miniL.hips.position.x = miniL.hipsBaseX; miniL.hips.position.z = miniL.hipsBaseZ; }
+          if(miniL.root){ miniL.root.position.x = miniL.rootBaseX; miniL.root.position.z = miniL.rootBaseZ; }
+        }
+        if(miniR.mixer && miniR.action){
+          miniR.mixer.timeScale = tsMini * (miniR.animMul || 1.0);
+          miniR.mixer.update(dt);
+          if(miniR.hips){ miniR.hips.position.x = miniR.hipsBaseX; miniR.hips.position.z = miniR.hipsBaseZ; }
+          if(miniR.root){ miniR.root.position.x = miniR.rootBaseX; miniR.root.position.z = miniR.rootBaseZ; }
         }
       }
 
@@ -1473,10 +1601,11 @@ highwayTex.repeat.set(1.0, 4.0);
       miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt*trafficMul);
       miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt*trafficMul);
 
-      const foodMul = (game.foodBoostT>0) ? 3.0 : 1.0;
-      const ringMul = (game.ringBoostT>0) ? 3.0 : 1.0;
+      // ✅ boost velocità: FOOD più basso, MEGA più basso
+      const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0; // ↓ era 3.0
+      const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.06 : 1.0;
+      const crazyMul = both ? 1.03 : 1.0;              // ↓ era 1.06 (mega più contenuto)
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
@@ -1696,6 +1825,10 @@ highwayTex.repeat.set(1.0, 4.0);
               game.ringCount = 0;
               sfx.boost();
               if(game.lane===3) game.lane = 1;
+
+              // ✅ anti-sync: nuova fase random al momento del trio boost
+              if(miniL.action && runClipFixed){ miniL.action.time = rnd(0, runClipFixed.duration||1); miniL.animMul = rnd(0.90, 1.12); }
+              if(miniR.action && runClipFixed){ miniR.action.time = rnd(0, runClipFixed.duration||1); miniR.animMul = rnd(0.90, 1.12); }
             }
             continue;
           }
@@ -1815,14 +1948,13 @@ highwayTex.repeat.set(1.0, 4.0);
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      // ✅ camera segue leggermente il player
       const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
       camX = damp(camX, targetCamX, 6, dt);
 
-      // ✅ camera shake leggerissimo quando boost attivo (come richiesto)
+      // ✅ micro camera shake in boost + switch nelle impostazioni
       let shakeX = 0, shakeY = 0;
-      if(anyBoost){
-        const intensity = bothBoost ? 0.020 : 0.012; // super leggero
+      if(anyBoost && shakeEnabled){
+        const intensity = bothBoost ? 0.018 : 0.011; // micro
         shakeX = Math.sin(tNow*0.020) * intensity;
         shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
