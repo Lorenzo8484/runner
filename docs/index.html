@@ -761,8 +761,7 @@
 
             const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
 
-            // ✅ root-motion killer robusto
-            const fixed = stripRootMotion(runClip, mixamoHips?.name, mixamoRootNode?.name);
+            const fixed = stripRootMotion(runClip);
 
             runnerMixer = new THREE.AnimationMixer(model);
             runnerAction = runnerMixer.clipAction(fixed);
