@@ -411,97 +411,182 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // World layout
-    const lanesX = [-1.15, 0, 1.15];
-    const segLen = 9.0, segCount = 10, roadWidth = 4.2;
+  // World layout
+const lanesX = [-1.15, 0, 1.15];
+const segLen = 9.0, segCount = 10;
 
-    function makeDirtTexture(size=512){
-      const c=document.createElement('canvas'); c.width=c.height=size;
-      const g=c.getContext('2d');
-      g.fillStyle='#3b3a28'; g.fillRect(0,0,size,size);
-      for(let i=0;i<12000;i++){
-        const x=Math.random()*size, y=Math.random()*size;
-        const v=rndi(50,120);
-        g.fillStyle=`rgba(${v+35},${v+20},${v},${rnd(0.05,0.18)})`;
-        g.fillRect(x,y,1,1);
-      }
-      const t=new THREE.CanvasTexture(c);
-      t.colorSpace=THREE.SRGBColorSpace;
-      t.wrapS=t.wrapT=THREE.RepeatWrapping;
-      t.repeat.set(2.0, 12.0);
-      return t;
-    }
-    const dirtTex = makeDirtTexture(1024);
+// ✅ 3 corsie (asfalto principale) + banchina a destra (corsia emergenza, vuota)
+const mainRoadWidth = 4.2;     // larghezza area corsie di gioco
+const shoulderWidth = 1.15;    // banchina (emergenza)
+const shoulderX = (mainRoadWidth * 0.5) + (shoulderWidth * 0.5);
+const totalVisualWidth = mainRoadWidth + shoulderWidth;
 
-    const roadMat = new THREE.MeshStandardMaterial({
-      map: dirtTex,
-      roughness: 0.95,
-      metalness: 0.0,
-      color: new THREE.Color(0x7f8a62)
-    });
+// --- Texture autostrada con strisce (corsie) ---
+function makeHighwayTexture(size = 1024){
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
 
-    const segments=[];
-    for(let i=0;i<segCount;i++){
-      const geo = new THREE.PlaneGeometry(roadWidth, segLen);
-      geo.rotateX(-Math.PI/2);
-      const mesh = new THREE.Mesh(geo, roadMat);
-      mesh.position.set(0, 0, -i*segLen);
-      mesh.receiveShadow=true;
-      scene.add(mesh);
-      segments.push(mesh);
-    }
-    const sideGeo = new THREE.PlaneGeometry(44, segLen*segCount);
-    sideGeo.rotateX(-Math.PI/2);
-    const sideMat = new THREE.MeshStandardMaterial({ color:0x0d2416, roughness:1, metalness:0 });
-    const side = new THREE.Mesh(sideGeo, sideMat);
-    side.position.set(0, -0.02, -segLen*segCount/2 + segLen/2);
-    side.receiveShadow = true;
-    scene.add(side);
+  // asfalto
+  g.fillStyle = '#2b2f33';
+  g.fillRect(0,0,size,size);
 
-    // Simple jungle trees
-    const jungle = new THREE.Group(); scene.add(jungle);
-    function makeTree(){
-      const g = new THREE.Group();
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.16, 1.6, 10),
-        new THREE.MeshStandardMaterial({ color:0x4a3523, roughness:1, metalness:0 })
-      );
-      trunk.position.y=0.8; trunk.castShadow=true; trunk.receiveShadow=true; g.add(trunk);
-      const crown = new THREE.Mesh(
-        new THREE.ConeGeometry(0.75, 1.6, 12),
-        new THREE.MeshStandardMaterial({ color:0x1c6b33, roughness:1, metalness:0 })
-      );
-      crown.position.y=1.9; crown.castShadow=true; crown.receiveShadow=true; g.add(crown);
-      const crown2 = new THREE.Mesh(
-        new THREE.ConeGeometry(0.6, 1.3, 12),
-        new THREE.MeshStandardMaterial({ color:0x135226, roughness:1, metalness:0 })
-      );
-      crown2.position.y=2.3; crown2.castShadow=true; crown2.receiveShadow=true; g.add(crown2);
-      return g;
-    }
-    const treeProto = makeTree();
-    const treePool=[];
-    const treeSpacing=2.8;
-    const treeSideX = roadWidth/2 + 1.7;
-    const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
-    for(let i=0;i<jungleCount;i++){
-      const z = -i*treeSpacing;
-      for(const sideSign of [-1,1]){
-        const t = treeProto.clone(true);
-        t.position.set(sideSign*(treeSideX + rnd(0,1.8)), 0, z);
-        t.scale.setScalar(rnd(0.8,1.2));
-        t.rotation.y = rnd(0,Math.PI*2);
-        t.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-        jungle.add(t); treePool.push(t);
-      }
-    }
-    function loopJungle(scroll){
-      const wrapZ = segLen*segCount;
-      for(const obj of treePool){
-        obj.position.z += scroll;
-        if(obj.position.z > 10) obj.position.z -= wrapZ;
-      }
-    }
+  // rumore
+  for(let i=0;i<22000;i++){
+    const x = Math.random()*size, y = Math.random()*size;
+    const v = Math.floor(90 + Math.random()*50);
+    g.fillStyle = `rgba(${v},${v},${v},${Math.random()*0.12})`;
+    g.fillRect(x,y,1,1);
+  }
+
+  const px = (worldX)=> Math.round((((worldX / mainRoadWidth) * 0.5) + 0.5) * size);
+
+  // bordi pieni
+  g.globalAlpha = 0.95;
+  g.fillStyle = '#e9eef2';
+  g.fillRect(px(-mainRoadWidth/2 + 0.06) - 5, 0, 10, size);
+  g.fillRect(px( mainRoadWidth/2 - 0.06) - 5, 0, 10, size);
+
+  // tratteggio tra corsie
+  const dashW = 8;
+  const x1 = px(-0.575);
+  const x2 = px( 0.575);
+  for(let y=0; y<size; y += 90){
+    g.fillRect(x1 - dashW/2, y, dashW, 48);
+    g.fillRect(x2 - dashW/2, y, dashW, 48);
+  }
+  g.globalAlpha = 1;
+
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(1.0, 10.0);
+  return t;
+}
+
+// --- Texture banchina ---
+function makeShoulderTexture(size=512){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const g=c.getContext('2d');
+
+  g.fillStyle='#24282c';
+  g.fillRect(0,0,size,size);
+
+  for(let i=0;i<14000;i++){
+    const x=Math.random()*size, y=Math.random()*size;
+    const v=Math.floor(80+Math.random()*55);
+    g.fillStyle=`rgba(${v},${v},${v},${Math.random()*0.10})`;
+    g.fillRect(x,y,1,1);
+  }
+
+  // linea “rumble” vicino al bordo interno banchina
+  g.globalAlpha=0.85;
+  g.fillStyle='#f2e7c9';
+  g.fillRect(18,0,8,size);
+  g.globalAlpha=1;
+
+  const t=new THREE.CanvasTexture(c);
+  t.colorSpace=THREE.SRGBColorSpace;
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.repeat.set(1.0, 10.0);
+  return t;
+}
+
+const highwayTex  = makeHighwayTexture(IS_IOS ? 768 : 1024);
+const shoulderTex = makeShoulderTexture(IS_IOS ? 384 : 512);
+
+const roadMainMat = new THREE.MeshStandardMaterial({
+  map: highwayTex,
+  roughness: 0.96,
+  metalness: 0.0,
+  color: new THREE.Color(0xffffff)
+});
+
+const roadShoulderMat = new THREE.MeshStandardMaterial({
+  map: shoulderTex,
+  roughness: 0.98,
+  metalness: 0.0,
+  color: new THREE.Color(0xffffff)
+});
+
+// ✅ segments: corsie + banchina
+const segments = [];
+const shoulderSegments = [];
+
+for(let i=0;i<segCount;i++){
+  const geoMain = new THREE.PlaneGeometry(mainRoadWidth, segLen);
+  geoMain.rotateX(-Math.PI/2);
+  const meshMain = new THREE.Mesh(geoMain, roadMainMat);
+  meshMain.position.set(0, 0, -i*segLen);
+  meshMain.receiveShadow=true;
+  scene.add(meshMain);
+  segments.push(meshMain);
+
+  const geoSh = new THREE.PlaneGeometry(shoulderWidth, segLen);
+  geoSh.rotateX(-Math.PI/2);
+  const meshSh = new THREE.Mesh(geoSh, roadShoulderMat);
+  meshSh.position.set(shoulderX, 0.001, -i*segLen);
+  meshSh.receiveShadow=true;
+  scene.add(meshSh);
+  shoulderSegments.push(meshSh);
+}
+
+// terreno laterale
+const sideGeo = new THREE.PlaneGeometry(44, segLen*segCount);
+sideGeo.rotateX(-Math.PI/2);
+const sideMat = new THREE.MeshStandardMaterial({ color:0x0d2416, roughness:1, metalness:0 });
+const side = new THREE.Mesh(sideGeo, sideMat);
+side.position.set(0, -0.02, -segLen*segCount/2 + segLen/2);
+side.receiveShadow = true;
+scene.add(side);
+
+// Simple jungle trees
+const jungle = new THREE.Group(); scene.add(jungle);
+function makeTree(){
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.16, 1.6, 10),
+    new THREE.MeshStandardMaterial({ color:0x4a3523, roughness:1, metalness:0 })
+  );
+  trunk.position.y=0.8; trunk.castShadow=true; trunk.receiveShadow=true; g.add(trunk);
+  const crown = new THREE.Mesh(
+    new THREE.ConeGeometry(0.75, 1.6, 12),
+    new THREE.MeshStandardMaterial({ color:0x1c6b33, roughness:1, metalness:0 })
+  );
+  crown.position.y=1.9; crown.castShadow=true; crown.receiveShadow=true; g.add(crown);
+  const crown2 = new THREE.Mesh(
+    new THREE.ConeGeometry(0.6, 1.3, 12),
+    new THREE.MeshStandardMaterial({ color:0x135226, roughness:1, metalness:0 })
+  );
+  crown2.position.y=2.3; crown2.castShadow=true; crown2.receiveShadow=true; g.add(crown2);
+  return g;
+}
+const treeProto = makeTree();
+const treePool=[];
+const treeSpacing=2.8;
+
+// ✅ alberi più fuori: usa larghezza VISIVA totale (corsie + banchina)
+const treeSideX = (totalVisualWidth/2) + 1.7;
+
+const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
+for(let i=0;i<jungleCount;i++){
+  const z = -i*treeSpacing;
+  for(const sideSign of [-1,1]){
+    const t = treeProto.clone(true);
+    t.position.set(sideSign*(treeSideX + rnd(0,1.8)), 0, z);
+    t.scale.setScalar(rnd(0.8,1.2));
+    t.rotation.y = rnd(0,Math.PI*2);
+    t.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    jungle.add(t); treePool.push(t);
+  }
+}
+function loopJungle(scroll){
+  const wrapZ = segLen*segCount;
+  for(const obj of treePool){
+    obj.position.z += scroll;
+    if(obj.position.z > 10) obj.position.z -= wrapZ;
+  }
+}
 
     // --- Sprites
     function makeEmojiSprite(emoji, size=256){
@@ -1250,13 +1335,21 @@
       }
 
       // road scroll
-      const scroll = speed*dt;
-      dirtTex.offset.y -= scroll*0.085;
-      for(const mesh of segments){
-        mesh.position.z += scroll;
-        if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
-      }
-      loopJungle(scroll);
+const scroll = speed*dt;
+
+highwayTex.offset.y  -= scroll*0.085;
+shoulderTex.offset.y -= scroll*0.085;
+
+for(const mesh of segments){
+  mesh.position.z += scroll;
+  if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
+}
+for(const mesh of shoulderSegments){
+  mesh.position.z += scroll;
+  if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
+}
+
+loopJungle(scroll);
 
       // spawn
       game.spawnT -= dt;
