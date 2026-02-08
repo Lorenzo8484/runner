@@ -314,15 +314,7 @@
       text-align:center;
     }
 
-    /* dot e icona a sinistra, testo centrato reale */
-    .bigBtn .leftIcon{
-      position:absolute;
-      left:calc(8px * var(--menuScale));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      line-height:1;
-    }
+    /* testo centrato reale */
     .bigBtn .centerLbl{
       width:100%;
       display:flex;
@@ -330,18 +322,6 @@
       justify-content:center;
       line-height:1;
       text-transform:uppercase;
-    }
-
-    .pillDot{
-      width:calc(6px * var(--menuScale) * 1.50);
-      height:calc(6px * var(--menuScale) * 1.50);
-      border-radius:50%;
-      background:#ff3b30;
-      box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
-    }
-    .pillDot.green{
-      background:#34c759;
-      box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(52,199,89,.90);
     }
 
     /* =========================================================
@@ -604,15 +584,13 @@
     </div>
   </div>
 
-  <!-- Start / Dance (testo centrato + DANCE maiuscolo) -->
+  <!-- Start / Dance (✅ icone rimosse) -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
-      <span class="leftIcon"><span class="pillDot" id="mainDot"></span></span>
       <span class="centerLbl" id="mainLbl">AVVIA</span>
     </button>
 
     <button class="bigBtn pillFx" id="btnDance">
-      <span class="leftIcon" aria-hidden="true">🕺</span>
       <span class="centerLbl">DANCE</span>
     </button>
   </div>
@@ -713,7 +691,7 @@
 
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
-    const mainDot = $('mainDot');
+    const mainDot = $('mainDot'); // (non esiste più, resta null)
     const btnDance = $('btnDance');
 
     // ===== Settings overlay =====
@@ -1359,6 +1337,24 @@
       fadeTo(actions.die, 0.08);
     }
 
+    /* ✅ FIX RESTART: reset totale delle animazioni (esce da "dead") */
+    function resetAnimationsToIdle(){
+      animState.mode = 'idle';
+      const all = collectAllActions();
+      for(const a of all){
+        if(!a) continue;
+        try{
+          a.stop();
+          a.reset();
+          a.enabled = true;
+          a.setEffectiveWeight(0);
+          a.clampWhenFinished = false;
+        }catch{}
+      }
+      // torna subito a un idle (poi quando parte il game, va in run)
+      startIdleRandom();
+    }
+
     async function loadAnimClip(url){
       return new Promise((resolve)=>{
         gltfLoader.load(url, (gltf)=>{
@@ -1559,25 +1555,21 @@
     }
 
     function updateMainButton(){
-      if(!mainLbl || !mainDot) return;
+      if(!mainLbl) return;
 
       if(game.over){
         mainLbl.textContent = 'RESTART';
-        mainDot.classList.remove('green');
         return;
       }
       if(!game.started){
         mainLbl.textContent = 'AVVIA';
-        mainDot.classList.remove('green');
         return;
       }
       if(game.stopped){
         mainLbl.textContent = 'AVVIA';
-        mainDot.classList.add('green');
         return;
       }
       mainLbl.textContent = 'STOP';
-      mainDot.classList.remove('green');
     }
 
     function obstacleMultiplier(){
@@ -1705,7 +1697,8 @@
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
-        playOneShot(actions.jump, 0.06);
+        /* ✅ rimossa animazione salto ostacoli */
+        // playOneShot(actions.jump, 0.06);
       }
     }
 
@@ -1786,6 +1779,9 @@
       game.started = false;
       game.paused = false;
       setStop(true);
+
+      /* ✅ FIX: se eri morto, ripristina scheletro/azioni */
+      resetAnimationsToIdle();
 
       if(scoreEl) scoreEl.textContent = '0';
       if(coinsEl) coinsEl.textContent = '0';
@@ -2007,7 +2003,8 @@
           if(e.type!=='ring') continue;
           if(e.lane !== game.lane) continue;
           if(Math.abs(e.z - 0.25) < 2.55){
-            playOneShot(actions.flip, 0.05);
+            /* ✅ rimossa animazione salto negli anelli */
+            // playOneShot(actions.flip, 0.05);
             game.sliding = true;
             game.slideT  = 0.48;
             game.autoSlideCooldown = 0.24;
@@ -2039,7 +2036,8 @@
 
         if(e.type==='turtle'){
           if(!collideTurtle(e)) continue;
-          playOneShot(actions.kick, 0.05);
+          /* ✅ rimossa animazione colpo tartaruga */
+          // playOneShot(actions.kick, 0.05);
           sfx.boost();
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
