@@ -9,7 +9,7 @@
       color-scheme: dark;
 
       /* ===== SCALE richieste ===== */
-      --menuScale: 1.50; /* Home, Impostazioni, Pausa, Avvia, Dance, foodCount, foodItem (+50%) */
+      --menuScale: 1.50; /* Home, Impostazioni, Avvia, Dance, foodCount, foodItem (+50%) */
       --hudScale:  1.40; /* Score, Emoji, Anelli, Vita, Magnete, Boost, Cibo Boost (+40%) */
       --hudW:      0.70; /* -30% larghezza (0.70) */
 
@@ -85,10 +85,14 @@
 
     /* =========================================================
        HUD (sinistra): +40% e -30% larghezza
+       - spostato in alto alla stessa altezza della pillola menu
        ========================================================= */
     .hudWrap{
       position:fixed;
-      top:calc(55px * var(--hudScale));
+
+      /* ✅ stessa altezza delle pillole Home/Impostazioni */
+      top:calc(5px * var(--menuScale));
+
       left:calc(8px * var(--hudScale));
       z-index:28;
       pointer-events:none;
@@ -121,7 +125,6 @@
       min-width:0;
       line-height:1;
 
-      /* evita testo che “scappa” in pillole strette */
       overflow:hidden;
     }
     .hudHalf{ grid-column: span 1; }
@@ -164,6 +167,10 @@
       height:calc(11px * var(--hudScale));
     }
 
+    /* ✅ Vita: solo cuori centrati */
+    .lifePill{ justify-content:center; }
+    .lifePill .hudV{ width:100%; justify-content:center; }
+
     /* =========================================================
        BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
        ========================================================= */
@@ -204,7 +211,7 @@
     }
 
     /* =========================================================
-       TOP BUTTONS: Home/Settings/Pausa +50%
+       TOP BUTTONS: pillola unica con Home+Impostazioni (+50%)
        ========================================================= */
     .topLeftBtns{
       position:fixed;
@@ -217,6 +224,7 @@
       pointer-events:none;
       transform:none;
     }
+
     .btn{
       pointer-events:auto;
       cursor:pointer;
@@ -234,28 +242,44 @@
       justify-content:center;
       line-height:1;
     }
-    .iconBtn{
-      width:calc(28px * var(--menuScale));
+
+    /* ✅ pillola unica con 2 icone dentro */
+    .btnGroup{
+      pointer-events:auto;
+      display:flex;
+      align-items:center;
+      gap:calc(8px * var(--menuScale));
+
       height:calc(16px * var(--menuScale));
-      padding:0;
+      padding:0 calc(10px * var(--menuScale)); /* più larga per farle stare visibili */
       border-radius:999px;
+      border:none;
+      background:transparent;
+    }
+    .btnSub{
+      pointer-events:auto;
+      cursor:pointer;
+      user-select:none;
+      border:none;
+      background:transparent;
+      padding:0;
+      margin:0;
+
+      width:calc(30px * var(--menuScale));
+      height:calc(16px * var(--menuScale));
       display:flex;
       align-items:center;
       justify-content:center;
-      line-height:1;
+      border-radius:999px;
     }
-    .iconBtn .ico{
+    .btnSub .ico{
       width:calc(10px * var(--menuScale));
       height:calc(10px * var(--menuScale));
     }
-    .pauseTxt{
-      font-size:calc(8px * var(--menuScale));
-      line-height:1;
-      transform: translateY(-0.5px);
-    }
 
     /* =========================================================
-       Start/Dance +50%
+       Start/Dance:
+       +50% ULTERIORE (oltre al menuScale) e -25% larghezza
        ========================================================= */
     .rightStack{
       position:fixed;
@@ -268,19 +292,22 @@
       pointer-events:auto;
       align-items:flex-end;
     }
+
     .bigBtn{
       pointer-events:auto;
-      width:calc(70px * var(--menuScale));
-      height:calc(20px * var(--menuScale));
+
+      width:calc(70px * var(--menuScale) * 0.75);   /* -25% */
+      height:calc(20px * var(--menuScale) * 1.50);  /* +50% ulteriore */
+
       border-radius:999px;
       font-weight:950;
-      font-size:calc(7px * var(--menuScale));
+      font-size:calc(7px * var(--menuScale) * 1.50);
       letter-spacing:.2px;
 
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:calc(5px * var(--menuScale));
+      gap:calc(5px * var(--menuScale) * 1.50);
 
       color:#eaf1ff;
       background:transparent;
@@ -290,8 +317,8 @@
     .bigBtn span, .bigBtn *{ line-height:1; }
 
     .pillDot{
-      width:calc(6px * var(--menuScale));
-      height:calc(6px * var(--menuScale));
+      width:calc(6px * var(--menuScale) * 1.50);
+      height:calc(6px * var(--menuScale) * 1.50);
       border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
@@ -463,22 +490,8 @@
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- Vita -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <radialGradient id="gHeart" cx="35%" cy="25%" r="80%">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".35" stop-color="#ffc6d2" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#ff2d55" stop-opacity=".95"/>
-                </radialGradient>
-              </defs>
-              <path fill="url(#gHeart)" d="M12 21s-7-4.6-9.4-9C.6 8.3 2.7 5.5 6 5.2c1.8-.2 3.2.7 4 1.7.8-1 2.2-1.9 4-1.7 3.3.3 5.4 3.1 3.4 6.8C19 16.4 12 21 12 21z"/>
-              <path fill="rgba(255,255,255,.25)" d="M6.4 7.5c1.2-1 2.7-1 3.6-.3"/>
-            </svg>
-            <div class="hudT">Vita</div>
-          </div>
+        <!-- ✅ Vita (solo cuori centrati) -->
+        <div class="hudP pillFx hudHalf lifePill">
           <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
         </div>
 
@@ -544,38 +557,35 @@
     </div>
   </div>
 
-  <!-- BOTTONI IN ALTO (Home + Impostazioni + Pausa) -->
+  <!-- ✅ BOTTONI IN ALTO (Home + Impostazioni in UNA pillola) -->
   <div class="topLeftBtns">
-    <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-            <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
-            <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gHome)" d="M12 3.2 3 10.7v1.6h2v8.5h5.6v-5.7h2.8v5.7H19v-8.5h2v-1.6L12 3.2z"/>
-      </svg>
-    </button>
+    <div class="btnGroup pillFx" aria-label="Menu">
+      <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+              <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
+              <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#gHome)" d="M12 3.2 3 10.7v1.6h2v8.5h5.6v-5.7h2.8v5.7H19v-8.5h2v-1.6L12 3.2z"/>
+        </svg>
+      </button>
 
-    <button class="btn pillFx iconBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
-            <stop offset=".45" stop-color="#d8eeff" stop-opacity=".96"/>
-            <stop offset="1" stop-color="#8ac0ff" stop-opacity=".92"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
-      </svg>
-    </button>
-
-    <!-- ✅ Pausa (aggiunto per evitare null e schermo nero) -->
-    <button class="btn pillFx" id="btnPause" aria-label="Pausa" title="Pausa">
-      <span class="pauseTxt" id="pauseIcon">⏸️</span>
-    </button>
+      <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
+              <stop offset=".45" stop-color="#d8eeff" stop-opacity=".96"/>
+              <stop offset="1" stop-color="#8ac0ff" stop-opacity=".92"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Start / Dance -->
@@ -651,15 +661,11 @@
 
     /* =========================================================
        ✅ MINI FIX “SAFE” (anti-schermo-nero)
-       - evita crash se un elemento UI manca
-       - impedisce overlay pausa che copre tutto per errore
        ========================================================= */
     const $ = (id)=>document.getElementById(id);
     function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
 
-    // se per qualche motivo esistesse un overlay pausa esterno, non deve mai coprire tutto
     window.addEventListener('error', (e)=>{
-      // evita che un errore UI blocchi tutto (best effort)
       console.warn('JS error caught:', e?.message || e);
     });
 
@@ -684,8 +690,6 @@
     // ===== UI: Buttons =====
     const btnHome = $('btnHome');
     const btnSettings = $('btnSettings');
-    const btnPause = $('btnPause');
-    const pauseIcon = $('pauseIcon');
 
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
@@ -1700,7 +1704,7 @@
       if(k==='arrowright') moveLane(1);
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
-      if(k==='p') togglePause();
+      if(k==='p') togglePause(); // pausa solo da tastiera
     });
 
     let touchStart=null;
@@ -1772,8 +1776,6 @@
 
       updateMainButton();
       startIdleRandom();
-
-      if(pauseIcon) pauseIcon.textContent = '⏸️';
     }
 
     function startGame(){
@@ -1781,7 +1783,6 @@
       game.paused = false;
       setStop(false);
       playRun();
-      if(pauseIcon) pauseIcon.textContent = '⏸️';
       updateMainButton();
     }
 
@@ -1790,7 +1791,6 @@
       if(!game.started) return;
 
       game.paused = !game.paused;
-      if(pauseIcon) pauseIcon.textContent = game.paused ? '▶️' : '⏸️';
 
       if(game.paused){
         startIdleRandom();
@@ -1822,8 +1822,6 @@
       if(game.started && !game.paused && !game.stopped) setStop(true);
       playDance();
     });
-
-    safeOn(btnPause,'click', ()=>{ initAudio(); togglePause(); });
 
     safeOn(btnHome,'click', ()=>{
       initAudio();
