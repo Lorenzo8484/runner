@@ -10,7 +10,7 @@
     canvas{display:block;touch-action:none;}
 
     /* =========================================================
-       ✅ PILL EXACT (come foto) + versione COMPACT
+       ✅ PILL EXACT (come foto) + versione HALF (50%)
        ========================================================= */
     .pillFx{
       position:relative;
@@ -18,12 +18,12 @@
       color:#eaf1ff;
       background: linear-gradient(180deg, rgba(60,90,140,.28), rgba(12,16,26,.64));
       border:1px solid rgba(170,210,255,.22);
-      backdrop-filter: blur(12px) saturate(1.2);
-      -webkit-backdrop-filter: blur(12px) saturate(1.2);
+      backdrop-filter: blur(6px) saturate(1.2);          /* 12 -> 6 */
+      -webkit-backdrop-filter: blur(6px) saturate(1.2);  /* 12 -> 6 */
       box-shadow:
-        0 14px 44px rgba(0,0,0,.50),
+        0 7px 22px rgba(0,0,0,.50),                     /* 14 -> 7 */
         0 0 0 1px rgba(95,160,255,.10),
-        0 0 18px rgba(110,175,255,.18),
+        0 0 9px rgba(110,175,255,.18),                  /* 18 -> 9 */
         inset 0 1px 0 rgba(255,255,255,.13),
         inset 0 -1px 0 rgba(0,0,0,.28);
       -webkit-tap-highlight-color: transparent;
@@ -31,7 +31,7 @@
     .pillFx::after{
       content:"";
       position:absolute;
-      inset:-2px;
+      inset:-1px;                                       /* -2 -> -1 */
       border-radius:999px;
       pointer-events:none;
       background: radial-gradient(120% 140% at 20% 10%,
@@ -39,7 +39,7 @@
         rgba(90,150,255,.10) 38%,
         rgba(0,0,0,0) 72%
       );
-      filter: blur(1.1px);
+      filter: blur(.55px);                               /* 1.1 -> .55 */
       opacity:.85;
       mix-blend-mode: screen;
     }
@@ -56,122 +56,102 @@
     .pillFx, .pillFx * { transform: translateZ(0); }
 
     /* =========================================================
-       ✅ ICON STYLE (SVG “lucido”)
+       ✅ ICON STYLE (SVG “lucido”) — HALF
        ========================================================= */
     .ico{
-      width:26px;height:26px;
+      width:11px;height:11px;                            /* 22 -> 11 */
       display:inline-block;
       flex:0 0 auto;
-      filter: drop-shadow(0 10px 16px rgba(0,0,0,.55));
+      filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));     /* 10/16 -> 5/8 */
     }
+    .icoSm{ width:9px;height:9px; }                      /* 18 -> 9 */
 
     /* =========================================================
-       ✅ HUD LAYOUT ESATTO come foto (2 colonne + 2 barre)
+       ✅ HUD LEFT (2 colonne + 3 barre) — HALF
        ========================================================= */
     .hudWrap{
       position:fixed;
-      top:108px;                 /* come foto: sotto la barra top */
-      left:50%;
-      transform:translateX(-50%);
+      top:55px;                                          /* 110 -> 55 */
+      left:8px;                                          /* 16 -> 8 */
       z-index:28;
       pointer-events:none;
-      width:min(560px, calc(100vw - 32px));
+      width:min(230px, calc(100vw - 16px));              /* 460 -> 230 */
     }
     .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
     .hudGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:14px 14px;             /* spaziatura come screenshot */
+      gap:6px;                                           /* 12 -> 6 */
       align-items:start;
     }
 
     .hudP{
       pointer-events:none;
-      padding:14px 18px;
+      padding:4px 6px;                                   /* 8/12 -> 4/6 */
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
+      gap:5px;                                           /* 10 -> 5 */
       min-width:0;
     }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
-    .hudL{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .hudT{ font-weight:950; font-size:20px; letter-spacing:.2px; white-space:nowrap; }
-    .hudV{ font-weight:950; font-size:22px; letter-spacing:.2px; white-space:nowrap; }
+    .hudL{ display:flex; align-items:center; gap:5px; min-width:0; }
+    .hudT{ font-weight:950; font-size:7px; white-space:nowrap; }     /* 14 -> 7 */
+    .hudV{ font-weight:950; font-size:8px; white-space:nowrap; }     /* 16 -> 8 */
 
-    /* Vita “emoji hearts” più pulita */
-    #hpTxt{
-      font-size:18px;
-      letter-spacing:2px;
-      filter: drop-shadow(0 10px 16px rgba(0,0,0,.45));
-    }
-
-    /* Riga con barra (Magnete / Boost) */
+    /* pill “barra” (Magnete / Boost / Boost Cibo) — HALF */
     .hudBarRow{
       display:grid;
       grid-template-columns: auto 1fr auto;
       align-items:center;
-      gap:14px;
-      width:100%;
+      gap:5px;                                           /* 10 -> 5 */
       min-width:0;
+      width:100%;
     }
     .hudBar{
-      height:8px;
+      height:3px;                                        /* 6 -> 3 */
       width:100%;
       border-radius:999px;
-      background:rgba(255,255,255,.14);
+      background:rgba(255,255,255,.12);
       overflow:hidden;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.08),
-        inset 0 -1px 0 rgba(0,0,0,.25);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
     .hudBar>i{
-      display:block;
-      height:100%;
-      width:0%;
-      border-radius:999px;
-      background: linear-gradient(90deg, rgba(160,190,255,.15), rgba(210,215,255,.95), rgba(170,120,255,.85));
-      box-shadow: 0 0 16px rgba(160,210,255,.30);
+      display:block;height:100%;width:0%;
+      background:rgba(200,210,255,.88);
+      box-shadow: 0 0 7px rgba(140,200,255,.22);          /* 14 -> 7 */
     }
 
-    /* testo secondario (secondi a destra) */
-    .hudS{
-      font-weight:950;
-      font-size:20px;
-      opacity:.95;
-      white-space:nowrap;
-    }
-
-    /* ===== (NON TOCCO) Bottoni / altri elementi come nel tuo file ===== */
+    /* ===== Bottoni in alto — HALF (li lasciamo come sono, ma dimezzati) ===== */
     .topLeftBtns{
       position:fixed;
-      top:10px;
-      left:10px;
+      top:5px;                                           /* 10 -> 5 */
+      left:5px;                                          /* 10 -> 5 */
       display:flex;
-      gap:10px;
+      gap:5px;                                           /* 10 -> 5 */
       z-index:30;
       pointer-events:none;
-      transform: translateX(250px);
+      transform: translateX(125px);                       /* 250 -> 125 */
     }
     .btn{
       pointer-events:auto;
       cursor:pointer;
       user-select:none;
       font-weight:950;
-      height:32px;
-      padding:0 12px;
+      height:16px;                                       /* 32 -> 16 */
+      padding:0 6px;                                     /* 12 -> 6 */
       border-radius:999px;
       color:#eaf1ff;
       background: transparent;
       border:none;
     }
     .iconBtn{
-      width:56px;
-      height:32px;
+      width:28px;                                        /* 56 -> 28 */
+      height:16px;                                       /* 32 -> 16 */
       padding:0;
       border-radius:999px;
       display:flex;
@@ -179,75 +159,78 @@
       justify-content:center;
       line-height:1;
     }
-    .iconBtn .ico{ width:20px;height:20px; }
+    .iconBtn .ico{ width:10px;height:10px; }             /* 20 -> 10 */
 
+    /* ===== Start / Dance a destra — HALF ===== */
     .rightStack{
       position:fixed;
-      right:12px;
-      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      right:6px;                                         /* 12 -> 6 */
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px));/* 16 -> 8 */
       z-index:30;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:5px;                                           /* 10 -> 5 */
       pointer-events:auto;
       align-items:flex-end;
     }
     .bigBtn{
       pointer-events:auto;
-      width:140px;
-      height:40px;
+      width:70px;                                        /* 140 -> 70 */
+      height:20px;                                       /* 40 -> 20 */
       border-radius:999px;
       font-weight:950;
-      font-size:14px;
+      font-size:7px;                                     /* 14 -> 7 */
       letter-spacing:.2px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:10px;
+      gap:5px;                                           /* 10 -> 5 */
       color:#eaf1ff;
       background:transparent;
       border:none;
     }
 
     .pillDot{
-      width:11px;height:11px;border-radius:50%;
+      width:6px;height:6px;border-radius:50%;            /* 11 -> ~6 */
       background:#ff3b30;flex:0 0 auto;
-      box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px rgba(255,59,48,.90);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
     }
     .pillDot.green{
       background:#34c759;
-      box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 0 12px rgba(52,199,89,.90);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(52,199,89,.90);
     }
 
+    /* ===== Colonna cibo — HALF ===== */
     .rightCol{
-      position:fixed; top:56px; right:10px; width:64px;
-      display:flex; flex-direction:column; align-items:center; gap:10px;
+      position:fixed; top:28px; right:5px; width:32px;   /* 56/64/10 -> half */
+      display:flex; flex-direction:column; align-items:center; gap:5px;
       pointer-events:none; z-index:20;
     }
     .foodStack{
-      width:64px; max-height:200px; overflow:hidden;
-      display:flex; flex-direction:column; align-items:center; gap:10px;
+      width:32px; max-height:100px; overflow:hidden;     /* 64/200 -> half */
+      display:flex; flex-direction:column; align-items:center; gap:5px;
       background:transparent; border:none; padding:0;
     }
     .foodItem{
-      width:54px;height:30px;
+      width:27px;height:15px;                            /* 54/30 -> half */
       border-radius:999px;
       display:flex;align-items:center;justify-content:center;
-      font-size:16px;
+      font-size:8px;                                     /* 16 -> 8 */
     }
     .foodCount{
-      width:120px;
+      width:60px;                                        /* 120 -> 60 */
       text-align:center;
       font-weight:950;
-      font-size:14px;
-      padding:8px 0;
+      font-size:7px;                                     /* 14 -> 7 */
+      padding:4px 0;                                     /* 8 -> 4 */
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
+      gap:4px;                                           /* 8 -> 4 */
     }
 
+    /* ===== Settings overlay (uguale) ===== */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -296,7 +279,7 @@
 </head>
 <body>
 
-  <!-- ✅ HUD ESATTAMENTE come foto -->
+  <!-- ✅ HUD SINISTRA -->
   <div class="hudWrap">
     <div class="hudCard">
       <div class="hudGrid">
@@ -306,13 +289,13 @@
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
               <defs>
-                <linearGradient id="gFlagA" x1="0" y1="0" x2="1" y2="1">
+                <linearGradient id="gFlag" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
                   <stop offset=".45" stop-color="#b7d9ff" stop-opacity=".9"/>
                   <stop offset="1" stop-color="#7fb4ff" stop-opacity=".85"/>
                 </linearGradient>
               </defs>
-              <path fill="url(#gFlagA)" d="M6 3c.6 0 1 .4 1 1v1h9.4c.4 0 .7.1 1 .3l2.1 1.4c.6.4.6 1.2 0 1.6L18.4 11c-.3.2-.6.3-1 .3H7v9a1 1 0 0 1-2 0V4c0-.6.4-1 1-1Zm1 4v2h2V7H7Zm4 0v2h2V7h-2Zm4 0v2h2V7h-2ZM7 11h2V9H7v2Zm4 0h2V9h-2v2Zm4 0h2V9h-2v2Z"/>
+              <path fill="url(#gFlag)" d="M6 3c.6 0 1 .4 1 1v1h9.4c.4 0 .7.1 1 .3l2.1 1.4c.6.4.6 1.2 0 1.6L18.4 11c-.3.2-.6.3-1 .3H7v9a1 1 0 0 1-2 0V4c0-.6.4-1 1-1Z"/>
               <path fill="rgba(255,255,255,.25)" d="M7 6h10.8l1.1.7-1.1.7H7z"/>
             </svg>
             <div class="hudT">Score</div>
@@ -325,17 +308,16 @@
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
               <defs>
-                <radialGradient id="gSmileA" cx="30%" cy="25%" r="80%">
+                <radialGradient id="gSmile" cx="30%" cy="25%" r="80%">
                   <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
                   <stop offset=".35" stop-color="#ffe8a8" stop-opacity=".95"/>
                   <stop offset="1" stop-color="#ffb84d" stop-opacity=".95"/>
                 </radialGradient>
               </defs>
-              <circle cx="12" cy="12" r="9" fill="url(#gSmileA)"/>
+              <circle cx="12" cy="12" r="9" fill="url(#gSmile)"/>
               <circle cx="9" cy="10" r="1.1" fill="rgba(0,0,0,.65)"/>
               <circle cx="15" cy="10" r="1.1" fill="rgba(0,0,0,.65)"/>
               <path d="M8.3 13.3c.9 2.5 6.5 2.5 7.4 0" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="1.6" stroke-linecap="round"/>
-              <path d="M6.2 8.2c1.8-2 4-3 5.8-3 2 0 4 1 5.9 3" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
             <div class="hudT">Emoji</div>
           </div>
@@ -347,88 +329,135 @@
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
               <defs>
-                <radialGradient id="gRingA" cx="35%" cy="30%" r="80%">
+                <radialGradient id="gRing" cx="35%" cy="30%" r="80%">
                   <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
                   <stop offset=".35" stop-color="#ffb0a8" stop-opacity=".95"/>
                   <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
                 </radialGradient>
               </defs>
-              <circle cx="12" cy="12" r="7.8" fill="url(#gRingA)"/>
+              <circle cx="12" cy="12" r="7.8" fill="url(#gRing)"/>
               <circle cx="12" cy="12" r="4.6" fill="#0b0f18"/>
-              <path d="M7.2 8.2c1.2-1.8 3-3 4.8-3.2" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.4" stroke-linecap="round"/>
             </svg>
             <div class="hudT">Rings</div>
           </div>
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- Vita (dx) -->
+        <!-- Vita (dx) — ✅ ICONA RIMOSSA -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <radialGradient id="gHeartA" cx="35%" cy="25%" r="80%">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".35" stop-color="#ffc6d2" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#ff2d55" stop-opacity=".95"/>
-                </radialGradient>
-              </defs>
-              <path fill="url(#gHeartA)" d="M12 21s-7-4.6-9.4-9C.6 8.3 2.7 5.5 6 5.2c1.8-.2 3.2.7 4 1.7.8-1 2.2-1.9 4-1.7 3.3.3 5.4 3.1 3.4 6.8C19 16.4 12 21 12 21z"/>
-              <path fill="rgba(255,255,255,.25)" d="M6.4 7.5c1.2-1 2.7-1 3.6-.3"/>
-            </svg>
             <div class="hudT">Vita</div>
           </div>
           <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
         </div>
 
-        <!-- Magnete (full width, barra + secondi) -->
+        <!-- Magnete (full width, barra) -->
         <div class="hudP pillFx hudFull">
           <div class="hudBarRow">
             <div class="hudL">
               <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
                 <defs>
-                  <linearGradient id="gMagA" x1="0" y1="0" x2="1" y2="1">
+                  <linearGradient id="gMag" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
                     <stop offset=".35" stop-color="#ffd1d1" stop-opacity=".95"/>
                     <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
                   </linearGradient>
                 </defs>
-                <path fill="url(#gMagA)" d="M7 3h4v9a1 1 0 0 0 2 0V3h4v9c0 3.9-3.1 7-7 7s-7-3.1-7-7V3Zm2 2v7c0 2.8 2.2 5 5 5s5-2.2 5-5V5h-2v7a3 3 0 0 1-6 0V5H9z"/>
+                <path fill="url(#gMag)" d="M7 3h4v9a1 1 0 0 0 2 0V3h4v9c0 3.9-3.1 7-7 7s-7-3.1-7-7V3Z"/>
                 <path fill="rgba(0,0,0,.25)" d="M7 3h4v2H7V3zm10 0h-4v2h4V3z"/>
               </svg>
               <div class="hudT">Magnete</div>
             </div>
             <div class="hudBar"><i id="magBar"></i></div>
-            <div class="hudS"><span id="magTxt">0s</span></div>
+            <div class="hudV"><span id="magTxt">🧲 0</span></div>
           </div>
         </div>
 
-        <!-- Boost (full width, barra + secondi) -->
+        <!-- Boost (full width, usa i tuoi id) -->
         <div class="hudP pillFx hudFull" id="pillBoost" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
-              <span id="boostIcon" style="font-size:22px;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));">⚡️</span>
-              <div class="hudT" id="boostName">BOOST</div>
+              <span id="boostIcon">⚡️</span>
+              <div class="hudT"><strong id="boostName">BOOST</strong></div>
             </div>
             <div class="hudBar"><i id="boostBar"></i></div>
-            <div class="hudS"><span id="boostTime">0.0s</span></div>
+            <div class="hudV"><span id="boostTime">0.0s</span></div>
+          </div>
+        </div>
+
+        <!-- ✅ NUOVA PILL: BOOST CIBO (come magnete) -->
+        <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
+          <div class="hudBarRow">
+            <div class="hudL">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <defs>
+                  <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                    <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+                    <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+                  </linearGradient>
+                </defs>
+                <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
+                <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
+              </svg>
+              <div class="hudT">Cibo</div>
+            </div>
+            <div class="hudBar"><i id="foodBoostBar"></i></div>
+            <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
           </div>
         </div>
 
       </div>
+
+      <!-- ✅ #best resta per il JS, ma invisibile (perché hai chiesto di togliere la pill record) -->
+      <span id="best" style="display:none;">0</span>
+
     </div>
   </div>
 
-  <!-- (tutto il resto del tuo HTML resta uguale, non l’ho toccato) -->
-
-  <!-- BOTTONI IN ALTO -->
+  <!-- BOTTONI IN ALTO (lasciati come nel tuo codice, ma dimezzati via CSS) -->
   <div class="topLeftBtns">
-    <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">Home</button>
-    <button class="btn pillFx iconBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">Set</button>
-    <button class="btn pillFx iconBtn" id="btnPause" aria-label="Pausa" title="Pausa">||</button>
+    <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+            <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#gHome)" d="M12 3.2 3 10.7v1.6h2v8.5h5.6v-5.7h2.8v5.7H19v-8.5h2v-1.6L12 3.2z"/>
+      </svg>
+    </button>
+
+    <button class="btn pillFx iconBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
+            <stop offset=".45" stop-color="#d8eeff" stop-opacity=".96"/>
+            <stop offset="1" stop-color="#8ac0ff" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
+      </svg>
+    </button>
+
+    <button class="btn pillFx iconBtn" id="btnPause" aria-label="Pausa" title="Pausa">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gPause" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+            <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#gPause)" d="M7 5h4v14H7V5zm6 0h4v14h-4V5z"/>
+      </svg>
+    </button>
   </div>
 
-  <!-- Start / Dance -->
+  <!-- Start / Dance (dimezzati via CSS) -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
@@ -437,45 +466,65 @@
     <button class="bigBtn pillFx" id="btnDance">🕺 <span>Dance</span></button>
   </div>
 
-  <!-- Colonna cibo -->
+  <!-- Colonna cibo (dimezzata via CSS) -->
   <div class="rightCol">
     <div class="foodStack" id="foodStack"></div>
-    <div class="foodCount pillFx"><span><span id="foodCount">0</span>/10</span></div>
+    <div class="foodCount pillFx">
+      <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gBag" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+            <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#gBag)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7z"/>
+      </svg>
+      <span><span id="foodCount">0</span>/10</span>
+    </div>
   </div>
 
   <!-- SETTINGS -->
   <div class="settingsOverlay" id="settingsOverlay">
     <div class="panel">
       <div class="title">Impostazioni</div>
+
       <div class="settingsRow">
         <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
         <div class="settingsVal" id="fovVal">60</div>
       </div>
       <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
+
       <div class="settingsRow">
         <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
         <div class="settingsVal" id="camVal">5.0</div>
       </div>
       <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
+
       <div class="settingsRow">
         <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
         <div class="settingsVal" id="frameVal">0.06</div>
       </div>
       <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+
       <div class="toggle" id="audioToggle">
         <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
         <div class="switch on" id="audioSwitch"><i></i></div>
       </div>
+
       <div class="toggle" id="shakeToggle">
         <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
         <div class="switch on" id="shakeSwitch"><i></i></div>
       </div>
+
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
         <button class="btn pillFx" id="resetCam">Reset camera</button>
         <button class="btn pillFx" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
+
+
 
 
   <script type="module">
