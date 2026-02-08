@@ -168,8 +168,13 @@
     }
 
     /* ✅ Vita: solo cuori centrati */
-    .lifePill{ justify-content:center; }
-    .lifePill .hudV{ width:100%; justify-content:center; }
+    .lifePill{
+      justify-content:center;
+    }
+    .lifePill .hudV{
+      width:100%;
+      justify-content:center;
+    }
 
     /* =========================================================
        BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
@@ -212,6 +217,8 @@
 
     /* =========================================================
        TOP BUTTONS: pillola unica con Home+Impostazioni (+50%)
+       - pillola -40% larghezza
+       - icone +25%
        ========================================================= */
     .topLeftBtns{
       position:fixed;
@@ -225,33 +232,18 @@
       transform:none;
     }
 
-    .btn{
-      pointer-events:auto;
-      cursor:pointer;
-      user-select:none;
-      font-weight:950;
-      height:calc(16px * var(--menuScale));
-      padding:0 calc(6px * var(--menuScale));
-      border-radius:999px;
-      color:#eaf1ff;
-      background: transparent;
-      border:none;
-
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      line-height:1;
-    }
-
     /* ✅ pillola unica con 2 icone dentro */
     .btnGroup{
       pointer-events:auto;
       display:flex;
       align-items:center;
-      gap:calc(8px * var(--menuScale));
+      gap:calc(6px * var(--menuScale));
 
       height:calc(16px * var(--menuScale));
-      padding:0 calc(10px * var(--menuScale)); /* più larga per farle stare visibili */
+
+      /* ⬇️ -40% circa (riducendo padding) */
+      padding:0 calc(6px * var(--menuScale));
+
       border-radius:999px;
       border:none;
       background:transparent;
@@ -272,14 +264,16 @@
       justify-content:center;
       border-radius:999px;
     }
+    /* ✅ icone +25% */
     .btnSub .ico{
-      width:calc(10px * var(--menuScale));
-      height:calc(10px * var(--menuScale));
+      width:calc(10px * var(--menuScale) * 1.25);
+      height:calc(10px * var(--menuScale) * 1.25);
     }
 
     /* =========================================================
        Start/Dance:
        +50% ULTERIORE (oltre al menuScale) e -25% larghezza
+       Testi -25% e centrati perfetti
        ========================================================= */
     .rightStack{
       position:fixed;
@@ -295,32 +289,54 @@
 
     .bigBtn{
       pointer-events:auto;
+      position:relative;
 
       width:calc(70px * var(--menuScale) * 0.75);   /* -25% */
       height:calc(20px * var(--menuScale) * 1.50);  /* +50% ulteriore */
 
       border-radius:999px;
       font-weight:950;
-      font-size:calc(7px * var(--menuScale) * 1.50);
-      letter-spacing:.2px;
+
+      /* ⬇️ font -25% rispetto al “grande” */
+      font-size:calc(7px * var(--menuScale) * 1.125);
+
+      letter-spacing:.25px;
 
       display:flex;
       align-items:center;
-      justify-content:center;
-      gap:calc(5px * var(--menuScale) * 1.50);
+      justify-content:center; /* ✅ testo centrato */
+      gap:0;
 
       color:#eaf1ff;
       background:transparent;
       border:none;
       line-height:1;
+      text-align:center;
     }
-    .bigBtn span, .bigBtn *{ line-height:1; }
+
+    /* dot e icona a sinistra, testo centrato reale */
+    .bigBtn .leftIcon{
+      position:absolute;
+      left:calc(8px * var(--menuScale));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+    }
+    .bigBtn .centerLbl{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+      text-transform:uppercase;
+    }
 
     .pillDot{
       width:calc(6px * var(--menuScale) * 1.50);
       height:calc(6px * var(--menuScale) * 1.50);
       border-radius:50%;
-      background:#ff3b30;flex:0 0 auto;
+      background:#ff3b30;
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
     }
     .pillDot.green{
@@ -490,7 +506,7 @@
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- ✅ Vita (solo cuori centrati) -->
+        <!-- ✅ Vita (senza icona e senza scritta, solo cuori centrati) -->
         <div class="hudP pillFx hudHalf lifePill">
           <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
         </div>
@@ -557,7 +573,7 @@
     </div>
   </div>
 
-  <!-- ✅ BOTTONI IN ALTO (Home + Impostazioni in UNA pillola) -->
+  <!-- ✅ BOTTONI IN ALTO: pillola unica Home + Impostazioni (pausa rimossa) -->
   <div class="topLeftBtns">
     <div class="btnGroup pillFx" aria-label="Menu">
       <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
@@ -588,13 +604,17 @@
     </div>
   </div>
 
-  <!-- Start / Dance -->
+  <!-- Start / Dance (testo centrato + DANCE maiuscolo) -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
-      <span class="pillDot" id="mainDot"></span>
-      <span id="mainLbl">AVVIA</span>
+      <span class="leftIcon"><span class="pillDot" id="mainDot"></span></span>
+      <span class="centerLbl" id="mainLbl">AVVIA</span>
     </button>
-    <button class="bigBtn pillFx" id="btnDance">🕺 <span>Dance</span></button>
+
+    <button class="bigBtn pillFx" id="btnDance">
+      <span class="leftIcon" aria-hidden="true">🕺</span>
+      <span class="centerLbl">DANCE</span>
+    </button>
   </div>
 
   <!-- Colonna cibo -->
@@ -649,8 +669,8 @@
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="btn pillFx" id="resetCam">Reset camera</button>
-        <button class="btn pillFx" id="closeSettings">Chiudi</button>
+        <button class="btnGroup pillFx" style="height:auto;padding:10px 12px;" id="resetCam">Reset camera</button>
+        <button class="btnGroup pillFx" style="height:auto;padding:10px 12px;" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
@@ -1704,7 +1724,7 @@
       if(k==='arrowright') moveLane(1);
       if(k==='arrowup' || k===' ') jump();
       if(k==='arrowdown') slide();
-      if(k==='p') togglePause(); // pausa solo da tastiera
+      if(k==='p') togglePause(); /* pausa solo da tastiera */
     });
 
     let touchStart=null;
