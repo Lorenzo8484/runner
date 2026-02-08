@@ -9,286 +9,271 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    /* =========================
-       NEW HUD — sleek glass pills (top-left)
-       - più piccolo
-       - doppia colonna
-       - niente "Record" visibile (best resta hidden per non rompere JS)
-       ========================= */
+    /* =========================================================
+       ✅ PILL EXACT (come foto: vetro scuro + bordo blu + glow)
+       ========================================================= */
+    .pillFx{
+      position:relative;
+      border-radius:999px;
+      color:#eaf1ff;
+      background: linear-gradient(180deg, rgba(60,90,140,.28), rgba(12,16,26,.64));
+      border:1px solid rgba(170,210,255,.22);
+      backdrop-filter: blur(14px) saturate(1.25);
+      -webkit-backdrop-filter: blur(14px) saturate(1.25);
+      box-shadow:
+        0 16px 52px rgba(0,0,0,.52),
+        0 0 0 1px rgba(95,160,255,.10),
+        0 0 22px rgba(110,175,255,.20),
+        inset 0 1px 0 rgba(255,255,255,.13),
+        inset 0 -1px 0 rgba(0,0,0,.28);
+    }
+
+    /* “anello” di luce attorno (come foto) */
+    .pillFx::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:999px;
+      pointer-events:none;
+      background: radial-gradient(120% 140% at 20% 10%,
+        rgba(145,205,255,.35),
+        rgba(90,150,255,.10) 35%,
+        rgba(0,0,0,0) 70%
+      );
+      filter: blur(1.2px);
+      opacity:.85;
+      mix-blend-mode: screen;
+    }
+
+    /* riflesso interno alto */
+    .pillFx::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      pointer-events:none;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0) 55%);
+      opacity:.75;
+    }
+
+    .pillFx:active{ transform:scale(.985); }
+
+    /* ===== HUD (in alto a sinistra) ===== */
     .hudWrap{
       position:fixed;
-      top: calc(10px + env(safe-area-inset-top, 0px));
+      top:12px;
       left:12px;
       z-index:28;
       pointer-events:none;
-      max-width:min(320px, 70vw);
-      filter: drop-shadow(0 18px 45px rgba(0,0,0,.35));
+      max-width:70vw;
     }
 
-    .hudGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:8px 10px;
-      align-items:center;
+    .hudCard{
+      pointer-events:none;
+      background:transparent;
+      border:none;
+      padding:0;
+      margin:0;
     }
 
-    .hudPillLite{
+    .hudRow{
       pointer-events:none;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      height:38px;
-      padding:0 12px;
-      border-radius:999px;
-      color:#eaf1ff;
+      gap:14px;
 
-      background:
-        radial-gradient(120% 160% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      padding:10px 14px;
+      margin-bottom:10px;
+
+      min-width:250px;
+      max-width:340px;
+
+      letter-spacing:.15px;
     }
 
-    .hudLeft{
-      display:inline-flex;
+    /* layout “icona + label” a sinistra, valore a destra (come foto) */
+    .hudL{
+      display:flex;
       align-items:center;
-      gap:9px;
+      gap:12px;
       min-width:0;
     }
-
-    .hudIconDot{
-      width:22px;height:22px;border-radius:999px;
+    .hudI{
+      width:28px;height:28px;
       display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
-      font-size:13px;
+      font-size:18px;
+      filter: drop-shadow(0 10px 16px rgba(0,0,0,.50));
       flex:0 0 auto;
     }
-
-    .hudLabel{
-      font-weight:800;
-      font-size:13px;
-      letter-spacing:.1px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      opacity:.96;
-    }
-
-    .hudValue{
+    .hudT{
       font-weight:950;
-      font-size:13px;
-      letter-spacing:.2px;
-      opacity:.98;
-      flex:0 0 auto;
+      font-size:16px;
+      white-space:nowrap;
     }
-
-    /* Vita: cuori più compatti */
-    .hudHearts{
-      font-size:13px;
-      letter-spacing:-1px;
-      transform: translateY(0.5px);
-      opacity:.95;
+    .hudV{
+      font-weight:950;
+      font-size:18px;
       white-space:nowrap;
     }
 
-    /* Pill lunga (Magnete / Boost) */
-    .hudWide{
-      grid-column: 1 / -1;
-      height:40px;
-      padding:0 12px;
-    }
+    /* vecchi “small” restano (best / ring icon ecc.) */
+    .hudSmall{ font-size:12px; opacity:.88; font-weight:850; }
 
-    .hudWideRight{
+    .hudPill{
+      pointer-events:none;
       display:inline-flex;
       align-items:center;
       gap:10px;
-      flex:0 0 auto;
+      padding:10px 14px;
+      font-size:12px;
+      white-space:nowrap;
+      border-radius:999px;
+      margin-top:2px;
     }
 
     .hudBar{
-      height:7px;
-      width: min(180px, 40vw);
+      height:6px;
+      width:110px;
       border-radius:999px;
-      background:rgba(255,255,255,.10);
+      background:rgba(255,255,255,.12);
       overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
-    .hudBar > i{
-      display:block;
-      height:100%;
-      width:0%;
-      background: linear-gradient(90deg, rgba(170,210,255,.92), rgba(210,170,255,.92));
-      box-shadow: 0 0 16px rgba(180,190,255,.35);
+    .hudBar>i{
+      display:block;height:100%;width:0%;
+      background:rgba(255,255,255,.82);
+      box-shadow: 0 0 14px rgba(140,200,255,.22);
     }
 
-    /* =========================
-       TOP RIGHT MENU — glass pills
-       ========================= */
-    .topRightBtns{
+    /* ===== Bottoni in alto (Home/Settings/Pausa) -> pill piccoli ===== */
+    .topLeftBtns{
       position:fixed;
-      top: calc(10px + env(safe-area-inset-top, 0px));
-      right:12px;
-      z-index:30;
+      top:12px;
+      left:12px;
       display:flex;
-      gap:8px;
+      gap:12px;
+      z-index:30;
       pointer-events:none;
-      filter: drop-shadow(0 18px 45px rgba(0,0,0,.28));
+
+      /* li porto a destra del blocco HUD (come screenshot) */
+      transform: translateX(300px);
     }
 
-    .pillBtn{
+    .btn{
       pointer-events:auto;
-      height:38px;
-      min-width:38px;
-      padding:0 12px;
+      cursor:pointer;
+      user-select:none;
+      font-weight:950;
+      letter-spacing:.1px;
+
+      height:36px;
+      padding:0 14px;
+      border-radius:999px;
+
+      color:#eaf1ff;
+      background: transparent;
+      border:none;
+    }
+
+    .btn.pillFx{ } /* prende tutto da pillFx */
+    .btn:active{ transform:scale(.985); }
+
+    .iconBtn{
+      width:72px;             /* più “capsula” come foto */
+      height:36px;
+      padding:0;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.18);
-      color:#eaf1ff;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      font-weight:900;
-      cursor:pointer;
-      user-select:none;
-    }
-    .pillBtn:active{ transform: scale(.985); }
-
-    .pillIcon{
-      width:22px;height:22px;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.14);
-      font-size:14px;
+      font-size:20px;
       line-height:1;
     }
 
-    /* =========================
-       RIGHT STACK — Start & Dance (keep position, make more "pills")
-       ========================= */
+    /* ===== Start / Dance a destra -> pill identiche ===== */
     .rightStack{
       position:fixed;
-      right:12px;
+      right:14px;
       bottom: calc(18px + env(safe-area-inset-bottom, 0px));
       z-index:30;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
       pointer-events:auto;
     }
 
     .bigBtn{
-      width:96px;
-      height:42px;
+      pointer-events:auto;
+      width:160px;            /* come foto (più lunga) */
+      height:44px;
       border-radius:999px;
       font-weight:950;
-      font-size:13px;
-      letter-spacing:.1px;
+      font-size:16px;
+      letter-spacing:.25px;
+
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
+      gap:10px;
 
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
       color:#eaf1ff;
-      backdrop-filter:blur(12px);
-      -webkit-backdrop-filter:blur(12px);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      background:transparent;
+      border:none;
     }
+    .bigBtn.pillFx{ }
+    .bigBtn:active{ transform:scale(.985); }
 
     .pillDot{
       width:12px;height:12px;border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
-      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(255,59,48,.9);
+      box-shadow:
+        0 0 0 2px rgba(0,0,0,.55),
+        0 0 12px rgba(255,59,48,.90);
     }
     .pillDot.green{
       background:#34c759;
-      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(52,199,89,.9);
+      box-shadow:
+        0 0 0 2px rgba(0,0,0,.55),
+        0 0 12px rgba(52,199,89,.90);
     }
 
-    /* =========================
-       FOOD — pills (right side)
-       ========================= */
+    /* ===== Colonna cibo ===== */
     .rightCol{
-      position:fixed;
-      right:12px;
-      top: calc(58px + env(safe-area-inset-top, 0px));
-      z-index:20;
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap:8px;
-      pointer-events:none;
+      position:fixed; top:62px; right:10px; width:74px;
+      display:flex; flex-direction:column; align-items:center; gap:10px;
+      pointer-events:none; z-index:20;
     }
 
     .foodStack{
-      display:flex;
-      flex-direction:column;
-      gap:7px;
-      align-items:flex-end;
-      max-height:210px;
-      overflow:hidden;
-      padding:0;
-      background:transparent;
-      border:none;
-      border-radius:0;
-      backdrop-filter:none;
+      width:74px; max-height:220px; overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:10px;
+      background:transparent; border:none; padding:0;
     }
 
     .foodItem{
-      pointer-events:none;
-      height:34px;
-      min-width:54px;
-      padding:0 10px;
+      width:60px;height:34px;
       border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow:0 14px 40px rgba(0,0,0,.22);
+      display:flex;align-items:center;justify-content:center;
       font-size:18px;
     }
+    .foodItem.pillFx{ }
 
     .foodCount{
-      pointer-events:none;
-      height:34px;
-      min-width:74px;
-      padding:0 12px;
+      width:160px;
+      text-align:center;
+      font-weight:950;
+      font-size:16px;
+      padding:10px 0;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow:0 14px 40px rgba(0,0,0,.22);
-      color:#eaf1ff;
-      font-weight:950;
-      font-size:12px;
-      letter-spacing:.2px;
+      gap:10px;
     }
+    .foodCount.pillFx{ }
 
-    /* =========================
-       SETTINGS overlay (unchanged)
-       ========================= */
+    /* ===== Settings overlay (uguale) ===== */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -337,101 +322,70 @@
 </head>
 <body>
 
-  <!-- HUD (top-left, small, doppia colonna, glass pills) -->
+  <!-- HUD conteggi (ESATTAMENTE a pills come foto) -->
   <div class="hudWrap">
-    <div class="hudGrid">
-      <!-- Score -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">🏁</span>
-          <span class="hudLabel">Score</span>
+    <div class="hudCard">
+      <div class="hudRow pillFx">
+        <div class="hudL">
+          <div class="hudI">⚙️</div>
+          <div class="hudT">Score</div>
         </div>
-        <span class="hudValue" id="score">0</span>
+        <div class="hudV"><span id="score">0</span></div>
       </div>
 
-      <!-- Emoji -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">🙂</span>
-          <span class="hudLabel">Emoji</span>
+      <div class="hudRow pillFx">
+        <div class="hudL">
+          <div class="hudI">🙂</div>
+          <div class="hudT">Emoji</div>
         </div>
-        <span class="hudValue" id="coins">0</span>
+        <div class="hudV"><span id="coins">0</span></div>
       </div>
 
-      <!-- Rings -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">⭕️</span>
-          <span class="hudLabel">Rings</span>
+      <div class="hudRow pillFx" style="margin-bottom:12px;">
+        <div class="hudL">
+          <div class="hudI">⭕️</div>
+          <div class="hudT">Rings</div>
         </div>
-        <span class="hudValue" id="rings">0</span>
+        <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">❤️</span>
-          <span class="hudLabel">Vita</span>
-        </div>
-        <span class="hudHearts" id="hpTxt">❤️❤️❤️🖤🖤</span>
+      <!-- pill boost (resta uguale come funzione, solo stile pill) -->
+      <div class="hudPill pillFx" id="pillBoost" style="display:none;">
+        <span id="boostIcon">⚡️</span><strong id="boostName">BOOST</strong>
+        <div class="hudBar"><i id="boostBar"></i></div>
       </div>
 
-      <!-- Magnete (wide) -->
-      <div class="hudPillLite hudWide">
-        <div class="hudLeft">
-          <span class="hudIconDot">🧲</span>
-          <span class="hudLabel">Magnete</span>
-        </div>
-        <div class="hudWideRight">
-          <span class="hudValue" id="magTxt">🧲 0</span>
-        </div>
+      <!-- vita + record + magnete (non tolgo nulla, restano visibili) -->
+      <div class="hudRow pillFx" style="padding:10px 14px;margin-bottom:0;">
+        <div class="hudSmall">Record: <span id="best">0</span> · <strong>Vita</strong>: <span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
+        <div class="hudSmall"><span id="magTxt">🧲 0</span></div>
       </div>
-
-      <!-- Boost (wide) -->
-      <div class="hudPillLite hudWide" id="pillBoost" style="display:none;">
-        <div class="hudLeft">
-          <span class="hudIconDot" id="boostIcon">⚡️</span>
-          <span class="hudLabel" id="boostName">BOOST</span>
-        </div>
-        <div class="hudWideRight">
-          <div class="hudBar"><i id="boostBar"></i></div>
-        </div>
-      </div>
-
-      <!-- best nascosto (serve al JS, ma non si vede) -->
-      <span id="best" style="display:none;">0</span>
     </div>
   </div>
 
-  <!-- MENU TOP RIGHT (Home / Impostazioni / Pausa) — pills -->
-  <div class="topRightBtns">
-    <button class="pillBtn" id="btnHome" aria-label="Home" title="Home">
-      <span class="pillIcon">🏠</span>
-    </button>
-    <button class="pillBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
-      <span class="pillIcon">⚙️</span>
-    </button>
-    <button class="pillBtn" id="btnPause" aria-label="Pausa" title="Pausa">
-      <span class="pillIcon" id="pauseIcon">⏸️</span>
-    </button>
+  <!-- SOLO 3 BOTTONI IN ALTO (icone come foto) -->
+  <div class="topLeftBtns">
+    <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home">🏠</button>
+    <button class="btn pillFx iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
+    <button class="btn pillFx iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
   </div>
 
-  <!-- PULSANTI (destra, come prima) -->
+  <!-- Start / Dance (identici alle pills in foto) -->
   <div class="rightStack">
-    <button class="bigBtn" id="btnMain">
+    <button class="bigBtn pillFx" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
       <span id="mainLbl">AVVIA</span>
     </button>
-    <button class="bigBtn" id="btnDance">🕺 Dance</button>
+    <button class="bigBtn pillFx" id="btnDance">🕺 <span>Dance</span></button>
   </div>
 
-  <!-- Cibo raccolto — pills -->
+  <!-- Colonna cibo (stack + pill count come foto) -->
   <div class="rightCol">
     <div class="foodStack" id="foodStack"></div>
-    <div class="foodCount"><span id="foodCount">0</span>/10</div>
+    <div class="foodCount pillFx"><span style="font-size:18px;">🎒</span> <span><span id="foodCount">0</span>/10</span></div>
   </div>
 
-  <!-- SETTINGS -->
+  <!-- SETTINGS (uguale) -->
   <div class="settingsOverlay" id="settingsOverlay">
     <div class="panel">
       <div class="title">Impostazioni</div>
@@ -465,11 +419,12 @@
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="pillBtn" id="resetCam">Reset camera</button>
-        <button class="pillBtn" id="closeSettings">Chiudi</button>
+        <button class="btn pillFx" id="resetCam">Reset camera</button>
+        <button class="btn pillFx" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
+
 
   <script type="module">
     import * as THREE from 'three';
