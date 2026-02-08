@@ -37,57 +37,40 @@
     }
 
     /* ✅ PULSANTI COME NEL CERCHIO: in basso a destra, verticali */
-.rightStack{
-  position:fixed;
-  right:12px;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  z-index:30;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  pointer-events:auto;
-}
+    .rightStack{
+      position:fixed;
+      right:12px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      z-index:30;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:auto;
+    }
+    .bigBtn{
+      width:140px;
+      height:56px;
+      border-radius:14px;
+      font-weight:950;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
+    }
+    .pillDot{
+      width:12px;height:12px;border-radius:4px;
+      background:#ff3b30;
+      box-shadow:0 0 0 2px rgba(255,255,255,.10) inset;
+      flex:0 0 auto;
+    }
+    .pillDot.green{ background:#34c759; }
 
-.bigBtn{
-  width:80px;
-  height:40px;
-  border-radius:12px;
-  font-weight:900;
-  font-size:13px;
-  letter-spacing:.1px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-
-  /* 🔥 QUESTE ERANO FUORI POSTO */
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);
-  color:#eaf1ff;
-  backdrop-filter:blur(10px);
-  box-shadow:0 18px 60px rgba(0,0,0,.35);
-}
-
-/* 🔴 DOT STOP */
-.pillDot{
-  width:12px;                 /* leggermente più grande = sempre visibile */
-  height:12px;
-  border-radius:50%;
-  background:#ff3b30;
-  flex:0 0 auto;
-
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,.55), /* contorno scuro (stacca dal blur) */
-    0 0 8px rgba(255,59,48,.9);
-}
-
-/* 🟢 DOT GO */
-.pillDot.green{
-  background:#34c759;
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,.55),
-    0 0 8px rgba(52,199,89,.9);
-}
     /* --- Pannello impostazioni --- */
     .settingsOverlay{
       position:fixed; inset:0;
@@ -738,46 +721,16 @@
       return c;
     }
 
-    // ✅ snapshot posa iniziale (serve per Restart senza “testa sola”)
-let runnerBindPose = null;
-
-function captureRunnerBindPose(root){
-  const bones = [];
-  root.traverse(o=>{ if(o.isBone) bones.push(o); });
-
-  const boneMap = new Map();
-  for(const b of bones){
-    boneMap.set(b.uuid, {
-      p: b.position.clone(),
-      q: b.quaternion.clone(),
-      s: b.scale.clone()
-    });
-  }
-
-  const meshVis = new Map();
-  root.traverse(o=>{
-    if(o.isMesh) meshVis.set(o.uuid, o.visible);
-  });
-
-  return {
-    rootP: root.position.clone(),
-    rootQ: root.quaternion.clone(),
-    rootS: root.scale.clone(),
-    bones: boneMap,
-    meshVis
-  };
-}
-
-let runnerMixer=null;
-let actions = {
-  run:null,
-  idles:[],
-  jump:null,
-  flip:null,
-  kick:null,
-  die:null,
-  dance:null
-};
+    let runnerMixer=null;
+    let actions = {
+      run:null,
+      idles:[],
+      jump:null,
+      flip:null,
+      kick:null,
+      die:null,
+      dance:null
+    };
 
     let mixamoHips=null, mixamoRootNode=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
@@ -785,74 +738,6 @@ let actions = {
     const animState = {
       mode:'idle'
     };
-    
-    function stopAllActions(){
-  const all = [];
-  if(actions.run) all.push(actions.run);
-  if(actions.jump) all.push(actions.jump);
-  if(actions.flip) all.push(actions.flip);
-  if(actions.kick) all.push(actions.kick);
-  if(actions.die)  all.push(actions.die);
-  if(actions.dance)all.push(actions.dance);
-  for(const a of actions.idles) all.push(a);
-  for(const a of all){
-    try{ a.stop(); }catch{}
-  }
-}
-
-// ✅ RESET COMPLETO POSA (fix “testa sola / corre sdraiato” dopo restart)
-function resetRunnerPose(){
-  if(!runnerMixer || !runnerModelLoaded || !runnerBindPose) return;
-
-  // ferma tutto
-  stopAllActions();
-  runnerMixer.stopAllAction();
-  runnerMixer.time = 0;
-
-  // ripristina trasformazioni root del modello
-  runnerModelLoaded.position.copy(runnerBindPose.rootP);
-  runnerModelLoaded.quaternion.copy(runnerBindPose.rootQ);
-  runnerModelLoaded.scale.copy(runnerBindPose.rootS);
-
-  // ripristina visibilità mesh (nel caso death abbia cambiato qualcosa)
-  runnerModelLoaded.traverse(o=>{
-    if(o.isMesh){
-      const v = runnerBindPose.meshVis.get(o.uuid);
-      if(v !== undefined) o.visible = v;
-    }
-  });
-
-  // reset scheletro alla bind pose (molto importante)
-  runnerModelLoaded.traverse(o=>{
-    if(o.isSkinnedMesh && o.skeleton){
-      o.skeleton.pose();
-    }
-  });
-
-  // ripristina bones EXACT come all’inizio
-  runnerModelLoaded.traverse(o=>{
-    if(o.isBone){
-      const st = runnerBindPose.bones.get(o.uuid);
-      if(st){
-        o.position.copy(st.p);
-        o.quaternion.copy(st.q);
-        o.scale.copy(st.s);
-      }
-    }
-  });
-
-  // riallinea hips/root (anti root-motion)
-  if(mixamoHips){
-    mixamoHips.position.x = hipsBaseX;
-    mixamoHips.position.z = hipsBaseZ;
-  }
-  if(mixamoRootNode){
-    mixamoRootNode.position.x = rootBaseX;
-    mixamoRootNode.position.z = rootBaseZ;
-  }
-
-  runnerMixer.update(0); // applica subito
-}
 
     function fadeTo(next, fade=0.18){
       if(!next) return;
@@ -992,10 +877,6 @@ function resetRunnerPose(){
 
           while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
           runnerModel.add(model);
-
-          runnerModelLoaded = model; // ✅ salva riferimento
-runnerMixer = new THREE.AnimationMixer(model);
-runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Restart
 
           runnerMixer = new THREE.AnimationMixer(model);
 
@@ -1232,10 +1113,8 @@ runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Re
     }
 
     function resetRun(){
-    resetRunnerPose(); // ✅ IMPORTANTISSIMO: rimette in piedi il player dopo la morte
-
-    game.lane=1;
-    game.y=0; game.vy=0; game.jumping=false;
+      game.lane=1;
+      game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0;
       game.autoSlideCooldown=0;
 
@@ -1365,22 +1244,11 @@ runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Re
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
       if(!gameplayOn){
-  // ✅ tieni SEMPRE il player centrato nella corsia centrale quando non si gioca
-  runnerPivot.position.x = lanesX[1];   // corsia centrale
-  runnerPivot.position.y = 0;
-
-  // ✅ anche l'ombra segue
-  contact.position.x = runnerPivot.position.x;
-  contact.scale.set(1.10, 1.10, 1);
-  contact.material.opacity = 0.55;
-
-  // idle breathing leggero
-  const breathe = Math.sin(tNow*0.0022) * 0.015;
-  runnerCenter.position.y = 0.95 + breathe;
-  runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-
-  return;
-}
+        const breathe = Math.sin(tNow*0.0022) * 0.015;
+        runnerCenter.position.y = 0.95 + breathe;
+        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+        return;
+      }
 
       runnerCenter.position.y = 0.95;
       runnerCenter.rotation.z = 0;
@@ -1560,20 +1428,17 @@ runnerBindPose = captureRunnerBindPose(model); // ✅ salva posa iniziale per Re
 
     // ===== Boot =====
     (async ()=>{
-  syncCamUI();
+      syncCamUI();
+      await loadRunnerModel();
 
-  // ✅ avvia subito il render (così non hai mai schermo nero)
-  requestAnimationFrame(animate);
+      game.started = false;
+      game.over = false;
+      game.paused = false;
+      setStop(true);
+      updateMainButton();
 
-  // carica runner in background
-  await loadRunnerModel();
-
-  game.started = false;
-  game.over = false;
-  game.paused = false;
-  setStop(true);
-  updateMainButton();
-})();
+      requestAnimationFrame(animate);
+    })();
   </script>
 </body>
 </html>
