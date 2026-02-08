@@ -14,8 +14,25 @@
       /* ✅ barra con larghezza fissa (base) */
       --hud-bar-w: 60px;
     }
-    html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
-    canvas{display:block;touch-action:none;}
+
+    html,body{
+      height:100%;
+      margin:0;
+      background:#040805;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      overflow:hidden;
+    }
+
+    /* ✅ assicura canvas sempre visibile */
+    canvas{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      touch-action:none;
+      z-index:0;
+    }
 
     /* =========================================================
        ✅ PILL EXACT + scaled
@@ -142,7 +159,6 @@
       box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
 
-    /* evita che le emoji spingano l’altezza */
     #pillBoost .hudL,
     #foodBoostPill .hudL{
       min-height:0;
@@ -150,17 +166,17 @@
     }
     #pillBoost #boostIcon{ font-size:calc(9px * var(--uiScale)); line-height:1; }
 
-    /* ===== Bottoni top: spostati a destra + RIMOSSO PAUSA ===== */
+    /* ===== Bottoni top: a destra ===== */
     .topLeftBtns{
       position:fixed;
       top:calc(5px * var(--uiScale));
-      right:calc(5px * var(--uiScale));   /* ✅ a destra */
+      right:calc(5px * var(--uiScale));
       left:auto;
       display:flex;
       gap:calc(5px * var(--uiScale));
       z-index:30;
       pointer-events:none;
-      transform:none;                      /* ✅ niente translateX */
+      transform:none;
     }
     .btn{
       pointer-events:auto;
@@ -189,11 +205,23 @@
       height:calc(10px * var(--uiScale));
     }
 
-    /* ===== Start / Dance: un po’ più in alto ===== */
+    /* ✅ btnPause resta per JS, ma invisibile */
+    .ghostBtn{
+      width:0 !important;
+      height:0 !important;
+      padding:0 !important;
+      margin:0 !important;
+      border:0 !important;
+      opacity:0 !important;
+      pointer-events:none !important;
+      overflow:hidden !important;
+    }
+
+    /* ===== Start / Dance: più in alto ===== */
     .rightStack{
       position:fixed;
       right:calc(6px * var(--uiScale));
-      bottom: calc(calc(8px * var(--uiScale)) + env(safe-area-inset-bottom, 0px) + calc(22px * var(--uiScale))); /* ✅ più su */
+      bottom: calc(calc(8px * var(--uiScale)) + env(safe-area-inset-bottom, 0px) + calc(22px * var(--uiScale)));
       z-index:30;
       display:flex;
       flex-direction:column;
@@ -320,7 +348,6 @@
     <div class="hudCard">
       <div class="hudGrid">
 
-        <!-- Score (sx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -339,7 +366,6 @@
           <div class="hudV"><span id="score">0</span></div>
         </div>
 
-        <!-- Emoji (dx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -360,7 +386,6 @@
           <div class="hudV"><span id="coins">0</span></div>
         </div>
 
-        <!-- Rings (sx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -379,7 +404,6 @@
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- Vita (dx) — ✅ ICONA RIPRISTINATA -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -398,7 +422,6 @@
           <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
         </div>
 
-        <!-- Magnete -->
         <div class="hudP pillFx hudFull">
           <div class="hudBarRow">
             <div class="hudL">
@@ -420,7 +443,6 @@
           </div>
         </div>
 
-        <!-- Boost -->
         <div class="hudP pillFx hudFull" id="pillBoost" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
@@ -432,7 +454,6 @@
           </div>
         </div>
 
-        <!-- Food Boost -->
         <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
@@ -460,7 +481,7 @@
     </div>
   </div>
 
-  <!-- BOTTONI IN ALTO (✅ solo Home + Impostazioni, a destra) -->
+  <!-- ✅ TOP RIGHT: Home + Settings + (Pause nascosto per JS) -->
   <div class="topLeftBtns">
     <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -487,9 +508,12 @@
         <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
       </svg>
     </button>
+
+    <!-- ✅ NON visibile, ma evita crash JS -->
+    <button class="btn pillFx iconBtn ghostBtn" id="btnPause" aria-label="Pausa" title="Pausa"></button>
   </div>
 
-  <!-- Start / Dance (✅ più in alto via CSS) -->
+  <!-- Start / Dance -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
@@ -555,6 +579,8 @@
       </div>
     </div>
   </div>
+
+
 
 
 
