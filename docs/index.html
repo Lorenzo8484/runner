@@ -36,59 +36,55 @@
       line-height:1;
     }
 
-    /* ✅ PULSANTI COME NEL CERCHIO: in basso a destra, verticali */
-.rightStack{
-  position:fixed;
-  right:12px;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  z-index:30;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  pointer-events:auto;
-}
+    /* ✅ PULSANTI: in basso a destra, verticali */
+    .rightStack{
+      position:fixed;
+      right:12px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      z-index:30;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:auto;
+    }
 
-.bigBtn{
-  width:80px;
-  height:40px;
-  border-radius:12px;
-  font-weight:900;
-  font-size:13px;
-  letter-spacing:.1px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
+    .bigBtn{
+      width:80px;
+      height:40px;
+      border-radius:12px;
+      font-weight:900;
+      font-size:13px;
+      letter-spacing:.1px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
+    }
 
-  /* 🔥 QUESTE ERANO FUORI POSTO */
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.14);
-  color:#eaf1ff;
-  backdrop-filter:blur(10px);
-  box-shadow:0 18px 60px rgba(0,0,0,.35);
-}
+    /* 🔴 DOT STOP */
+    .pillDot{
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      background:#ff3b30;
+      flex:0 0 auto;
+      box-shadow:
+        0 0 0 2px rgba(0,0,0,.55),
+        0 0 8px rgba(255,59,48,.9);
+    }
 
-/* 🔴 DOT STOP */
-.pillDot{
-  width:12px;                 /* leggermente più grande = sempre visibile */
-  height:12px;
-  border-radius:50%;
-  background:#ff3b30;
-  flex:0 0 auto;
-
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,.55), /* contorno scuro (stacca dal blur) */
-    0 0 8px rgba(255,59,48,.9);
-}
-
-/* 🟢 DOT GO */
-.pillDot.green{
-  background:#34c759;
-  box-shadow:
-    0 0 0 2px rgba(0,0,0,.55),
-    0 0 8px rgba(52,199,89,.9);
-}
-    
+    /* 🟢 DOT GO */
+    .pillDot.green{
+      background:#34c759;
+      box-shadow:
+        0 0 0 2px rgba(0,0,0,.55),
+        0 0 8px rgba(52,199,89,.9);
+    }
 
     /* --- Pannello impostazioni --- */
     .settingsOverlay{
@@ -306,6 +302,11 @@
       jump: ()=>{ beep('square', 420, 0.05, 0.08); },
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
+
+      // ✅ extra (compatibile: non rompe nulla)
+      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
+      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
+      heart: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
     };
     audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
@@ -653,6 +654,57 @@
       );
       ring.castShadow=true; ring.receiveShadow=true;
       return ring;
+    }
+
+    // ===== ✅ EMOJI / MAGNET / HEART (base stabile) =====
+    function makeEmojiSprite(emoji, size=256){
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+
+      g.clearRect(0,0,size,size);
+
+      // glow leggero
+      const grd = g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
+      grd.addColorStop(0,'rgba(255,255,255,0.18)');
+      grd.addColorStop(0.55,'rgba(255,255,255,0.07)');
+      grd.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle = grd;
+      g.fillRect(0,0,size,size);
+
+      // emoji
+      g.font = `${Math.floor(size*0.72)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(emoji, size/2, size/2 + 4);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent:true });
+      const spr = new THREE.Sprite(mat);
+      spr.scale.set(0.75, 0.75, 1);
+      spr.renderOrder = 10;
+      return spr;
+    }
+
+    function makeFoodEmoji(){
+      const foods = ['🍌','🍉','🍓','🍍','🍇','🍒','🍋'];
+      const e = foods[rndi(0, foods.length-1)];
+      const spr = makeEmojiSprite(e);
+      spr.scale.set(0.78, 0.78, 1);
+      return spr;
+    }
+    function makeMagnet(){
+      const spr = makeEmojiSprite('🧲');
+      spr.scale.set(0.82, 0.82, 1);
+      return spr;
+    }
+    function makeHeart(){
+      const spr = makeEmojiSprite('❤️');
+      spr.scale.set(0.76, 0.76, 1);
+      return spr;
     }
 
     // ===== Runner =====
@@ -1058,6 +1110,36 @@
           game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
         }
       }
+
+      // ✅ FOOD emoji (boost)
+      if(Math.random() < 0.22){
+        const lane = rndi(0,2);
+        const ez = z0 - rnd(2,10);
+        const food = makeFoodEmoji();
+        food.position.set(lanesX[lane], 1.15, ez);
+        scene.add(food);
+        game.entities.push({ type:'food', lane, z:ez, obj:food });
+      }
+
+      // ✅ MAGNET (raro)
+      if(Math.random() < 0.07){
+        const lane = rndi(0,2);
+        const mz = z0 - rnd(5,14);
+        const mag = makeMagnet();
+        mag.position.set(lanesX[lane], 1.10, mz);
+        scene.add(mag);
+        game.entities.push({ type:'magnet', lane, z:mz, obj:mag });
+      }
+
+      // ✅ HEART (molto raro)
+      if(Math.random() < 0.04){
+        const lane = rndi(0,2);
+        const hz = z0 - rnd(7,16);
+        const heart = makeHeart();
+        heart.position.set(lanesX[lane], 1.05, hz);
+        scene.add(heart);
+        game.entities.push({ type:'heart', lane, z:hz, obj:heart });
+      }
     }
 
     // ===== Controls =====
@@ -1259,26 +1341,33 @@
 
       const gameplayOn = game.started && !game.paused && !game.over;
 
+      // ✅ timers (emoji/magnet/boost) sempre scalati, anche se poi ritorni presto
+      game.invincibleT = Math.max(0, game.invincibleT - dt);
+      game.foodBoostT  = Math.max(0, game.foodBoostT  - dt);
+      game.ringBoostT  = Math.max(0, game.ringBoostT  - dt);
+      game.magnetT     = Math.max(0, game.magnetT     - dt);
+      game.trioT       = Math.max(0, game.trioT       - dt);
+
       const stopTarget = game.stopped ? 1.0 : 0.0;
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
       if(!gameplayOn){
-  // ✅ tieni SEMPRE il player centrato nella corsia centrale quando non si gioca
-  runnerPivot.position.x = lanesX[1];   // corsia centrale
-  runnerPivot.position.y = 0;
+        // ✅ tieni SEMPRE il player centrato nella corsia centrale quando non si gioca
+        runnerPivot.position.x = lanesX[1];   // corsia centrale
+        runnerPivot.position.y = 0;
 
-  // ✅ anche l'ombra segue
-  contact.position.x = runnerPivot.position.x;
-  contact.scale.set(1.10, 1.10, 1);
-  contact.material.opacity = 0.55;
+        // ✅ anche l'ombra segue
+        contact.position.x = runnerPivot.position.x;
+        contact.scale.set(1.10, 1.10, 1);
+        contact.material.opacity = 0.55;
 
-  // idle breathing leggero
-  const breathe = Math.sin(tNow*0.0022) * 0.015;
-  runnerCenter.position.y = 0.95 + breathe;
-  runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+        // idle breathing leggero
+        const breathe = Math.sin(tNow*0.0022) * 0.015;
+        runnerCenter.position.y = 0.95 + breathe;
+        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
 
-  return;
-}
+        return;
+      }
 
       runnerCenter.position.y = 0.95;
       runnerCenter.rotation.z = 0;
@@ -1326,9 +1415,20 @@
         game.spawnT = rnd(0.40, 0.75);
       }
 
+      // ===== move entities + magnet pull =====
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
+
+        // magnete: attira gli anelli verso il player
+        if(game.magnetT > 0 && e.type === 'ring'){
+          const dz = Math.abs(e.z - 0.25);
+          if(dz < 10.0){
+            const targetX = runnerPivot.position.x;
+            e.obj.position.x = damp(e.obj.position.x, targetX, 12, dt);
+            e.obj.position.y = 0.55 + Math.sin(tNow*0.02 + e.z)*0.06;
+          }
+        }
       }
 
       for(let i=game.entities.length-1;i>=0;i--){
@@ -1373,10 +1473,42 @@
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
+        // ✅ FOOD
+        if(e.type==='food'){
+          if(!collide(e)) continue;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          game.foodCount += 1;
+          game.foodBoostT = 6.0;
+          sfx.food();
+          continue;
+        }
+
+        // ✅ MAGNET
+        if(e.type==='magnet'){
+          if(!collide(e)) continue;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          game.magnetT = 8.0;
+          sfx.magnet();
+          continue;
+        }
+
+        // ✅ HEART
+        if(e.type==='heart'){
+          if(!collide(e)) continue;
+          scene.remove(e.obj); game.entities.splice(i,1);
+          game.lives = Math.min(game.maxLives, game.lives + 1);
+          sfx.heart();
+          continue;
+        }
+
+        // ✅ RING (prima solo in slide; ora anche con magnete attivo)
         if(e.type==='ring'){
           if(!collide(e)) continue;
-          if(!game.sliding) continue;
+
+          if(!game.sliding && game.magnetT <= 0) continue;
+
           game.ringCount += 1;
+          game.ringBoostT = 3.5; // boost anelli
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
           continue;
