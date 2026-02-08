@@ -5,174 +5,133 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
   <style>
-    :root { color-scheme: dark; }
+    :root{ color-scheme: dark; }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    /* =========================
-       NEW HUD — sleek glass pills (top-left)
-       - più piccolo
-       - doppia colonna
-       - niente "Record" visibile (best resta hidden per non rompere JS)
-       ========================= */
+    /* ========= GLASS TOKENS (base) ========= */
+    .glass{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(12px) saturate(1.2);
+      -webkit-backdrop-filter: blur(12px) saturate(1.2);
+      box-shadow:
+        0 14px 48px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.10);
+      color:#eaf1ff;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .pill .l{
+      display:inline-flex;align-items:center;gap:8px;
+      font-weight:900;
+      letter-spacing:.1px;
+      font-size:12px;
+      opacity:.98;
+    }
+    .pill .r{
+      font-weight:950;
+      font-size:12px;
+      opacity:.98;
+      min-width:16px;
+      text-align:right;
+    }
+    .pill.small{ padding:7px 10px; }
+    .pill.icon{
+      width:auto;
+      padding:8px 10px;
+      gap:8px;
+      font-weight:950;
+    }
+    .pill.icon .ico{font-size:15px; line-height:1;}
+    .pill.icon .txt{font-size:12px; letter-spacing:.1px;}
+    .pill:active{ transform:scale(.99); }
+
+    /* ========= HUD (sinistra in alto, più piccolo, non al centro) ========= */
     .hudWrap{
       position:fixed;
-      top: calc(10px + env(safe-area-inset-top, 0px));
-      left:12px;
+      top:10px;
+      left:10px;
       z-index:28;
       pointer-events:none;
-      max-width:min(320px, 70vw);
-      filter: drop-shadow(0 18px 45px rgba(0,0,0,.35));
+      max-width: min(360px, 62vw);
     }
 
+    /* griglia 2 colonne come la foto */
     .hudGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:8px 10px;
-      align-items:center;
+      gap:8px;
+      align-items:start;
     }
 
-    .hudPillLite{
-      pointer-events:none;
+    /* righe lunghe (magnete / boost) */
+    .hudWide{
+      grid-column: 1 / -1;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:2px;
+    }
+
+    .hudBar{
+      height:6px;
+      width:86px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .hudBar>i{
+      display:block;height:100%;width:0%;
+      background:rgba(255,255,255,.85);
+    }
+
+    /* pill special: magnet / boost con barra */
+    .pillBar{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      height:38px;
-      padding:0 12px;
-      border-radius:999px;
-      color:#eaf1ff;
-
-      background:
-        radial-gradient(120% 160% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
     }
-
-    .hudLeft{
-      display:inline-flex;
-      align-items:center;
-      gap:9px;
-      min-width:0;
+    .pillBar .left{
+      display:inline-flex;align-items:center;gap:8px;
+      font-weight:950;font-size:12px;
     }
-
-    .hudIconDot{
-      width:22px;height:22px;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
-      font-size:13px;
-      flex:0 0 auto;
+    .pillBar .right{
+      display:inline-flex;align-items:center;gap:10px;
+      font-weight:950;font-size:12px;
     }
+    .muted{ opacity:.78; font-weight:800; }
 
-    .hudLabel{
-      font-weight:800;
-      font-size:13px;
-      letter-spacing:.1px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      opacity:.96;
-    }
+    /* Nascondo il record (non lo tolgo dal DOM così non rompo nulla) */
+    .bestHidden{ display:none !important; }
 
-    .hudValue{
-      font-weight:950;
-      font-size:13px;
-      letter-spacing:.2px;
-      opacity:.98;
-      flex:0 0 auto;
-    }
-
-    /* Vita: cuori più compatti */
-    .hudHearts{
-      font-size:13px;
-      letter-spacing:-1px;
-      transform: translateY(0.5px);
-      opacity:.95;
-      white-space:nowrap;
-    }
-
-    /* Pill lunga (Magnete / Boost) */
-    .hudWide{
-      grid-column: 1 / -1;
-      height:40px;
-      padding:0 12px;
-    }
-
-    .hudWideRight{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      flex:0 0 auto;
-    }
-
-    .hudBar{
-      height:7px;
-      width: min(180px, 40vw);
-      border-radius:999px;
-      background:rgba(255,255,255,.10);
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
-    }
-    .hudBar > i{
-      display:block;
-      height:100%;
-      width:0%;
-      background: linear-gradient(90deg, rgba(170,210,255,.92), rgba(210,170,255,.92));
-      box-shadow: 0 0 16px rgba(180,190,255,.35);
-    }
-
-    /* =========================
-       TOP RIGHT MENU — glass pills
-       ========================= */
+    /* ========= TOP RIGHT: Home / Impostazioni / Pausa (pills) ========= */
     .topRightBtns{
       position:fixed;
-      top: calc(10px + env(safe-area-inset-top, 0px));
-      right:12px;
+      top:10px;
+      right:10px;
       z-index:30;
       display:flex;
+      flex-direction:row;
       gap:8px;
-      pointer-events:none;
-      filter: drop-shadow(0 18px 45px rgba(0,0,0,.28));
-    }
-
-    .pillBtn{
       pointer-events:auto;
-      height:38px;
-      min-width:38px;
-      padding:0 12px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.18);
-      color:#eaf1ff;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      font-weight:900;
+    }
+    .topRightBtns button{
       cursor:pointer;
       user-select:none;
     }
-    .pillBtn:active{ transform: scale(.985); }
 
-    .pillIcon{
-      width:22px;height:22px;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.14);
-      font-size:14px;
-      line-height:1;
-    }
-
-    /* =========================
-       RIGHT STACK — Start & Dance (keep position, make more "pills")
-       ========================= */
+    /* ========= PULSANTI in basso a destra (Start/Stop/Restart + Dance) ========= */
     .rightStack{
       position:fixed;
       right:12px;
@@ -183,11 +142,10 @@
       gap:10px;
       pointer-events:auto;
     }
-
     .bigBtn{
-      width:96px;
+      width:86px;
       height:42px;
-      border-radius:999px;
+      border-radius:999px; /* pills */
       font-weight:950;
       font-size:13px;
       letter-spacing:.1px;
@@ -195,15 +153,14 @@
       align-items:center;
       justify-content:center;
       gap:8px;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
       color:#eaf1ff;
       backdrop-filter:blur(12px);
       -webkit-backdrop-filter:blur(12px);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      box-shadow:0 18px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
     }
+    .bigBtn:active{transform:scale(.985);}
 
     .pillDot{
       width:12px;height:12px;border-radius:50%;
@@ -215,80 +172,70 @@
       box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(52,199,89,.9);
     }
 
-    /* =========================
-       FOOD — pills (right side)
-       ========================= */
+    /* ========= CIBO: pills (a destra) ========= */
     .rightCol{
       position:fixed;
-      right:12px;
-      top: calc(58px + env(safe-area-inset-top, 0px));
+      right:10px;
+      top:62px;
       z-index:20;
+      pointer-events:none;
       display:flex;
       flex-direction:column;
       align-items:flex-end;
       gap:8px;
-      pointer-events:none;
     }
 
-    .foodStack{
+    .foodPills{
       display:flex;
       flex-direction:column;
-      gap:7px;
-      align-items:flex-end;
-      max-height:210px;
-      overflow:hidden;
-      padding:0;
-      background:transparent;
-      border:none;
-      border-radius:0;
-      backdrop-filter:none;
-    }
-
-    .foodItem{
-      pointer-events:none;
-      height:34px;
-      min-width:54px;
-      padding:0 10px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow:0 14px 40px rgba(0,0,0,.22);
-      font-size:18px;
-    }
-
-    .foodCount{
-      pointer-events:none;
-      height:34px;
-      min-width:74px;
-      padding:0 12px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
       gap:8px;
+      align-items:flex-end;
+      max-width: 160px;
+    }
 
-      background:
-        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
-      border:1px solid rgba(255,255,255,.16);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow:0 14px 40px rgba(0,0,0,.22);
-      color:#eaf1ff;
+    .foodRow{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    .foodPill{
+      pointer-events:none;
+      padding:8px 12px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width: 96px;
+      justify-content:space-between;
+    }
+
+    .foodIcons{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .foodIcon{
+      width:22px;height:22px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      font-size:13px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .foodCountPill{
+      pointer-events:none;
+      border-radius:999px;
+      padding:8px 12px;
       font-weight:950;
       font-size:12px;
-      letter-spacing:.2px;
+      min-width:72px;
+      text-align:center;
     }
 
-    /* =========================
-       SETTINGS overlay (unchanged)
-       ========================= */
+    /* ========= Settings overlay ========= */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -297,6 +244,7 @@
       padding:14px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.65));
       backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
       z-index:40;
     }
     .panel{
@@ -324,6 +272,15 @@
     .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
+    .btn{
+      pointer-events:auto;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      color:#eaf1ff;padding:9px 11px;border-radius:12px;
+      font-weight:800;cursor:pointer;user-select:none;
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+    .btn:active{transform:scale(.98);}
   </style>
 
   <script type="importmap">
@@ -337,86 +294,62 @@
 </head>
 <body>
 
-  <!-- HUD (top-left, small, doppia colonna, glass pills) -->
+  <!-- HUD (sinistra, piccolo, 2 colonne + magnet/boost lunghi) -->
   <div class="hudWrap">
     <div class="hudGrid">
-      <!-- Score -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">🏁</span>
-          <span class="hudLabel">Score</span>
-        </div>
-        <span class="hudValue" id="score">0</span>
+      <div class="pill glass small">
+        <span class="l"><span class="ico">🏁</span>Score</span>
+        <span class="r" id="score">0</span>
       </div>
 
-      <!-- Emoji -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">🙂</span>
-          <span class="hudLabel">Emoji</span>
-        </div>
-        <span class="hudValue" id="coins">0</span>
+      <div class="pill glass small">
+        <span class="l"><span class="ico">🙂</span>Emoji</span>
+        <span class="r" id="coins">0</span>
       </div>
 
-      <!-- Rings -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">⭕️</span>
-          <span class="hudLabel">Rings</span>
-        </div>
-        <span class="hudValue" id="rings">0</span>
+      <div class="pill glass small">
+        <span class="l"><span class="ico">⭕️</span>Rings</span>
+        <span class="r" id="rings">0</span>
       </div>
 
-      <!-- Vita -->
-      <div class="hudPillLite">
-        <div class="hudLeft">
-          <span class="hudIconDot">❤️</span>
-          <span class="hudLabel">Vita</span>
-        </div>
-        <span class="hudHearts" id="hpTxt">❤️❤️❤️🖤🖤</span>
+      <div class="pill glass small">
+        <span class="l"><span class="ico">❤️</span>Vita</span>
+        <span class="r" id="hpTxt">❤️❤️❤️🖤🖤</span>
       </div>
 
-      <!-- Magnete (wide) -->
-      <div class="hudPillLite hudWide">
-        <div class="hudLeft">
-          <span class="hudIconDot">🧲</span>
-          <span class="hudLabel">Magnete</span>
+      <div class="hudWide">
+        <div class="pill glass pillBar">
+          <span class="left"><span class="ico">🧲</span><span class="muted">Magnete</span></span>
+          <span class="right"><span id="magTxt">0</span><span class="muted">s</span></span>
         </div>
-        <div class="hudWideRight">
-          <span class="hudValue" id="magTxt">🧲 0</span>
-        </div>
-      </div>
 
-      <!-- Boost (wide) -->
-      <div class="hudPillLite hudWide" id="pillBoost" style="display:none;">
-        <div class="hudLeft">
-          <span class="hudIconDot" id="boostIcon">⚡️</span>
-          <span class="hudLabel" id="boostName">BOOST</span>
+        <div class="pill glass pillBar" id="pillBoost" style="display:none;">
+          <span class="left"><span id="boostIcon">⚡️</span><span id="boostName" class="muted">BOOST</span></span>
+          <span class="right">
+            <div class="hudBar"><i id="boostBar"></i></div>
+          </span>
         </div>
-        <div class="hudWideRight">
-          <div class="hudBar"><i id="boostBar"></i></div>
-        </div>
-      </div>
 
-      <!-- best nascosto (serve al JS, ma non si vede) -->
-      <span id="best" style="display:none;">0</span>
+        <!-- Record tenuto ma non mostrato (non rompe niente) -->
+        <div class="bestHidden">Record: <span id="best">0</span></div>
+      </div>
     </div>
   </div>
 
-  <!-- MENU TOP RIGHT (Home / Impostazioni / Pausa) — pills -->
+  <!-- TOP RIGHT pills: Home / Settings / Pausa -->
   <div class="topRightBtns">
-    <button class="pillBtn" id="btnHome" aria-label="Home" title="Home">
-      <span class="pillIcon">🏠</span>
+    <button class="pill glass icon" id="btnHome" aria-label="Home">
+      <span class="ico">🏠</span><span class="txt">Home</span>
     </button>
-    <button class="pillBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
-      <span class="pillIcon">⚙️</span>
+    <button class="pill glass icon" id="btnSettings" aria-label="Impostazioni">
+      <span class="ico">⚙️</span><span class="txt">Impost.</span>
     </button>
-    <button class="pillBtn" id="btnPause" aria-label="Pausa" title="Pausa">
-      <span class="pillIcon" id="pauseIcon">⏸️</span>
+    <button class="pill glass icon" id="btnPause" aria-label="Pausa">
+      <span class="ico" id="pauseIco">⏸️</span><span class="txt" id="pauseTxt">Pausa</span>
     </button>
   </div>
 
-  <!-- PULSANTI (destra, come prima) -->
+  <!-- PULSANTE PRINCIPALE + Dance (come già ti piace, pills) -->
   <div class="rightStack">
     <button class="bigBtn" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
@@ -425,10 +358,16 @@
     <button class="bigBtn" id="btnDance">🕺 Dance</button>
   </div>
 
-  <!-- Cibo raccolto — pills -->
+  <!-- Cibo raccolto: pills (a destra) -->
   <div class="rightCol">
-    <div class="foodStack" id="foodStack"></div>
-    <div class="foodCount"><span id="foodCount">0</span>/10</div>
+    <div class="foodPills">
+      <!-- ultime 6 icone: 3 righe da 2 (riempite via JS) -->
+      <div class="foodRow" id="foodRow1"></div>
+      <div class="foodRow" id="foodRow2"></div>
+      <div class="foodRow" id="foodRow3"></div>
+
+      <div class="foodCountPill glass"><span id="foodCount">0</span>/10</div>
+    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -465,8 +404,8 @@
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="pillBtn" id="resetCam">Reset camera</button>
-        <button class="pillBtn" id="closeSettings">Chiudi</button>
+        <button class="btn" id="resetCam">Reset camera</button>
+        <button class="btn" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
@@ -480,7 +419,7 @@
     // ===== UI: HUD =====
     const scoreEl = document.getElementById('score');
     const coinsEl = document.getElementById('coins');
-    const bestEl  = document.getElementById('best'); // hidden (non si vede)
+    const bestEl  = document.getElementById('best');
     const ringsEl = document.getElementById('rings');
     const hpTxt   = document.getElementById('hpTxt');
     const magTxt  = document.getElementById('magTxt');
@@ -490,14 +429,17 @@
     const boostName = document.getElementById('boostName');
     const boostBar  = document.getElementById('boostBar');
 
-    const foodStack = document.getElementById('foodStack');
     const foodCountEl = document.getElementById('foodCount');
+    const foodRow1 = document.getElementById('foodRow1');
+    const foodRow2 = document.getElementById('foodRow2');
+    const foodRow3 = document.getElementById('foodRow3');
 
     // ===== UI: Buttons =====
     const btnHome = document.getElementById('btnHome');
     const btnSettings = document.getElementById('btnSettings');
     const btnPause = document.getElementById('btnPause');
-    const pauseIcon = document.getElementById('pauseIcon');
+    const pauseIco = document.getElementById('pauseIco');
+    const pauseTxt = document.getElementById('pauseTxt');
 
     const btnMain = document.getElementById('btnMain');
     const mainLbl = document.getElementById('mainLbl');
@@ -1106,7 +1048,7 @@
     }
     function pickRandomIdle(){
       if(!actions.idles.length || animState.mode==='dead') return;
-      const a = actions.idles[rndi(0, actions.idles.length-1)];
+      const a = actions.idles[Math.floor(Math.random()*actions.idles.length)];
       a.setLoop(THREE.LoopOnce, 1);
       a.clampWhenFinished = true;
       a.time = 0;
@@ -1184,7 +1126,7 @@
 
           removeBigNonSkinnedPlanes(model);
 
-          {
+          { // piedi a terra
             const box = new THREE.Box3().setFromObject(model);
             const lift = -box.min.y;
             model.position.y += lift + 0.01;
@@ -1308,15 +1250,27 @@
       return s;
     }
 
+    // ===== CIBO pills UI =====
+    function makeFoodPill(emoji){
+      const pill = document.createElement('div');
+      pill.className = 'foodIcon';
+      pill.textContent = emoji;
+      return pill;
+    }
     function refreshFoodUI(){
-      foodStack.innerHTML = "";
+      // ultime 6 in ordine dal più recente
       const show = game.foodHistory.slice(-6).reverse();
-      for(const emo of show){
-        const d=document.createElement('div');
-        d.className='foodItem';
-        d.textContent=emo;
-        foodStack.appendChild(d);
+      const rows = [foodRow1, foodRow2, foodRow3];
+      for(const r of rows) r.innerHTML = '';
+
+      // 3 righe x 2
+      for(let i=0;i<6;i++){
+        const emo = show[i];
+        if(!emo) continue;
+        const rowIdx = Math.floor(i/2);
+        rows[rowIdx].appendChild(makeFoodPill(emo));
       }
+
       foodCountEl.textContent = String(game.foodCount);
     }
 
@@ -1339,7 +1293,6 @@
       boostBar.style.width = pct.toFixed(1)+'%';
     }
 
-    // ✅ LABEL + DOT del pulsante principale (Start / Stop / Restart)
     function updateMainButton(){
       if(game.over){
         mainLbl.textContent = 'RESTART';
@@ -1507,7 +1460,7 @@
       if(k==='p') togglePause();
     });
 
-    let touchStart=null;
+    letlet touchStart=null;
     renderer.domElement.addEventListener('pointerdown',(e)=>{
       initAudio();
       renderer.domElement.setPointerCapture(e.pointerId);
@@ -1571,11 +1524,14 @@
       coinsEl.textContent = '0';
       ringsEl.textContent = '0';
       hpTxt.textContent = hpString();
-      magTxt.textContent = '🧲 0';
+      magTxt.textContent = '0';
       setBoostUI();
 
       updateMainButton();
       startIdleRandom();
+
+      pauseIco.textContent = '⏸️';
+      pauseTxt.textContent = 'Pausa';
     }
 
     function startGame(){
@@ -1583,7 +1539,8 @@
       game.paused = false;
       setStop(false);
       playRun();
-      pauseIcon.textContent = '⏸️';
+      pauseIco.textContent = '⏸️';
+      pauseTxt.textContent = 'Pausa';
       updateMainButton();
     }
 
@@ -1591,11 +1548,14 @@
       if(game.over) return;
       if(!game.started) return;
       game.paused = !game.paused;
-      pauseIcon.textContent = game.paused ? '▶️' : '⏸️';
 
       if(game.paused){
+        pauseIco.textContent = '▶️';
+        pauseTxt.textContent = 'Riprendi';
         startIdleRandom();
       }else{
+        pauseIco.textContent = '⏸️';
+        pauseTxt.textContent = 'Pausa';
         if(game.started && !game.stopped) playRun();
         else startIdleRandom();
       }
@@ -1603,7 +1563,6 @@
 
     btnMain.addEventListener('click', ()=>{
       initAudio();
-
       if(game.over){
         resetRun();
         startGame();
@@ -1678,7 +1637,6 @@
         const breathe = Math.sin(tNow*0.0022) * 0.015;
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-
         return;
       }
 
@@ -1690,9 +1648,7 @@
 
       if(game.invincibleT>0){
         game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
-        if(game.invincibleT<=0){
-          bubble.visible=false;
-        }
+        if(game.invincibleT<=0) bubble.visible=false;
       }
       if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT - dt*trafficMul);
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
@@ -1888,10 +1844,10 @@
       // HUD live
       scoreEl.textContent = String(Math.floor(game.score));
       coinsEl.textContent = String(game.coins);
-      bestEl.textContent  = String(game.best); // hidden
+      bestEl.textContent  = String(game.best); // resta aggiornato anche se nascosto
       ringsEl.textContent = String(game.ringCount);
       hpTxt.textContent   = hpString();
-      magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
+      magTxt.textContent  = (game.magnetT>0 ? game.magnetT.toFixed(1) : '0');
       setBoostUI();
 
       if(bubble.visible){
@@ -1967,6 +1923,7 @@
       game.paused = false;
       game.stopped = true;
       game.stopBlend = 1.0;
+
       updateMainButton();
       startIdleRandom();
 
@@ -1974,7 +1931,7 @@
       coinsEl.textContent = '0';
       bestEl.textContent = String(game.best);
       ringsEl.textContent = '0';
-      magTxt.textContent = '🧲 0';
+      magTxt.textContent = '0';
       setBoostUI();
 
       requestAnimationFrame(animate);
