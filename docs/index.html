@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
   <style>
-    :root { color-scheme: dark; }
+    :root {
+      color-scheme: dark;
+      --hud-bar-w: 60px; /* ✅ larghezza UNICA per tutte le barre (HALF) */
+    }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
@@ -18,12 +21,12 @@
       color:#eaf1ff;
       background: linear-gradient(180deg, rgba(60,90,140,.28), rgba(12,16,26,.64));
       border:1px solid rgba(170,210,255,.22);
-      backdrop-filter: blur(6px) saturate(1.2);          /* 12 -> 6 */
-      -webkit-backdrop-filter: blur(6px) saturate(1.2);  /* 12 -> 6 */
+      backdrop-filter: blur(6px) saturate(1.2);
+      -webkit-backdrop-filter: blur(6px) saturate(1.2);
       box-shadow:
-        0 7px 22px rgba(0,0,0,.50),                     /* 14 -> 7 */
+        0 7px 22px rgba(0,0,0,.50),
         0 0 0 1px rgba(95,160,255,.10),
-        0 0 9px rgba(110,175,255,.18),                  /* 18 -> 9 */
+        0 0 9px rgba(110,175,255,.18),
         inset 0 1px 0 rgba(255,255,255,.13),
         inset 0 -1px 0 rgba(0,0,0,.28);
       -webkit-tap-highlight-color: transparent;
@@ -31,7 +34,7 @@
     .pillFx::after{
       content:"";
       position:absolute;
-      inset:-1px;                                       /* -2 -> -1 */
+      inset:-1px;
       border-radius:999px;
       pointer-events:none;
       background: radial-gradient(120% 140% at 20% 10%,
@@ -39,7 +42,7 @@
         rgba(90,150,255,.10) 38%,
         rgba(0,0,0,0) 72%
       );
-      filter: blur(.55px);                               /* 1.1 -> .55 */
+      filter: blur(.55px);
       opacity:.85;
       mix-blend-mode: screen;
     }
@@ -59,62 +62,64 @@
        ✅ ICON STYLE (SVG “lucido”) — HALF
        ========================================================= */
     .ico{
-      width:11px;height:11px;                            /* 22 -> 11 */
+      width:11px;height:11px;
       display:inline-block;
       flex:0 0 auto;
-      filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));     /* 10/16 -> 5/8 */
+      filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));
     }
-    .icoSm{ width:9px;height:9px; }                      /* 18 -> 9 */
+    .icoSm{ width:9px;height:9px; }
 
     /* =========================================================
        ✅ HUD LEFT (2 colonne + 3 barre) — HALF
        ========================================================= */
     .hudWrap{
       position:fixed;
-      top:55px;                                          /* 110 -> 55 */
-      left:8px;                                          /* 16 -> 8 */
+      top:55px;
+      left:8px;
       z-index:28;
       pointer-events:none;
-      width:min(230px, calc(100vw - 16px));              /* 460 -> 230 */
+      width:min(230px, calc(100vw - 16px));
     }
     .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
     .hudGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:6px;                                           /* 12 -> 6 */
+      gap:6px;
       align-items:start;
     }
 
     .hudP{
       pointer-events:none;
-      padding:4px 6px;                                   /* 8/12 -> 4/6 */
+      padding:4px 6px;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:5px;                                           /* 10 -> 5 */
+      gap:5px;
       min-width:0;
     }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
     .hudL{ display:flex; align-items:center; gap:5px; min-width:0; }
-    .hudT{ font-weight:950; font-size:7px; white-space:nowrap; }     /* 14 -> 7 */
-    .hudV{ font-weight:950; font-size:8px; white-space:nowrap; }     /* 16 -> 8 */
+    .hudT{ font-weight:950; font-size:7px; white-space:nowrap; }
+    .hudV{ font-weight:950; font-size:8px; white-space:nowrap; }
 
     /* pill “barra” (Magnete / Boost / Boost Cibo) — HALF */
     .hudBarRow{
       display:grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto var(--hud-bar-w) auto; /* ✅ barra fissata */
       align-items:center;
-      gap:5px;                                           /* 10 -> 5 */
+      gap:5px;
       min-width:0;
       width:100%;
     }
     .hudBar{
-      height:3px;                                        /* 6 -> 3 */
-      width:100%;
+      height:3px;
+      width:var(--hud-bar-w);      /* ✅ larghezza identica */
+      min-width:var(--hud-bar-w);
+      max-width:var(--hud-bar-w);
       border-radius:999px;
       background:rgba(255,255,255,.12);
       overflow:hidden;
@@ -123,35 +128,35 @@
     .hudBar>i{
       display:block;height:100%;width:0%;
       background:rgba(200,210,255,.88);
-      box-shadow: 0 0 7px rgba(140,200,255,.22);          /* 14 -> 7 */
+      box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
 
-    /* ===== Bottoni in alto — HALF (li lasciamo come sono, ma dimezzati) ===== */
+    /* ===== Bottoni in alto — HALF ===== */
     .topLeftBtns{
       position:fixed;
-      top:5px;                                           /* 10 -> 5 */
-      left:5px;                                          /* 10 -> 5 */
+      top:5px;
+      left:5px;
       display:flex;
-      gap:5px;                                           /* 10 -> 5 */
+      gap:5px;
       z-index:30;
       pointer-events:none;
-      transform: translateX(125px);                       /* 250 -> 125 */
+      transform: translateX(125px);
     }
     .btn{
       pointer-events:auto;
       cursor:pointer;
       user-select:none;
       font-weight:950;
-      height:16px;                                       /* 32 -> 16 */
-      padding:0 6px;                                     /* 12 -> 6 */
+      height:16px;
+      padding:0 6px;
       border-radius:999px;
       color:#eaf1ff;
       background: transparent;
       border:none;
     }
     .iconBtn{
-      width:28px;                                        /* 56 -> 28 */
-      height:16px;                                       /* 32 -> 16 */
+      width:28px;
+      height:16px;
       padding:0;
       border-radius:999px;
       display:flex;
@@ -159,39 +164,39 @@
       justify-content:center;
       line-height:1;
     }
-    .iconBtn .ico{ width:10px;height:10px; }             /* 20 -> 10 */
+    .iconBtn .ico{ width:10px;height:10px; }
 
     /* ===== Start / Dance a destra — HALF ===== */
     .rightStack{
       position:fixed;
-      right:6px;                                         /* 12 -> 6 */
-      bottom: calc(8px + env(safe-area-inset-bottom, 0px));/* 16 -> 8 */
+      right:6px;
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
       z-index:30;
       display:flex;
       flex-direction:column;
-      gap:5px;                                           /* 10 -> 5 */
+      gap:5px;
       pointer-events:auto;
       align-items:flex-end;
     }
     .bigBtn{
       pointer-events:auto;
-      width:70px;                                        /* 140 -> 70 */
-      height:20px;                                       /* 40 -> 20 */
+      width:70px;
+      height:20px;
       border-radius:999px;
       font-weight:950;
-      font-size:7px;                                     /* 14 -> 7 */
+      font-size:7px;
       letter-spacing:.2px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:5px;                                           /* 10 -> 5 */
+      gap:5px;
       color:#eaf1ff;
       background:transparent;
       border:none;
     }
 
     .pillDot{
-      width:6px;height:6px;border-radius:50%;            /* 11 -> ~6 */
+      width:6px;height:6px;border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
     }
@@ -202,32 +207,32 @@
 
     /* ===== Colonna cibo — HALF ===== */
     .rightCol{
-      position:fixed; top:28px; right:5px; width:32px;   /* 56/64/10 -> half */
+      position:fixed; top:28px; right:5px; width:32px;
       display:flex; flex-direction:column; align-items:center; gap:5px;
       pointer-events:none; z-index:20;
     }
     .foodStack{
-      width:32px; max-height:100px; overflow:hidden;     /* 64/200 -> half */
+      width:32px; max-height:100px; overflow:hidden;
       display:flex; flex-direction:column; align-items:center; gap:5px;
       background:transparent; border:none; padding:0;
     }
     .foodItem{
-      width:27px;height:15px;                            /* 54/30 -> half */
+      width:27px;height:15px;
       border-radius:999px;
       display:flex;align-items:center;justify-content:center;
-      font-size:8px;                                     /* 16 -> 8 */
+      font-size:8px;
     }
     .foodCount{
-      width:60px;                                        /* 120 -> 60 */
+      width:60px;
       text-align:center;
       font-weight:950;
-      font-size:7px;                                     /* 14 -> 7 */
-      padding:4px 0;                                     /* 8 -> 4 */
+      font-size:7px;
+      padding:4px 0;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:4px;                                           /* 8 -> 4 */
+      gap:4px;
     }
 
     /* ===== Settings overlay (uguale) ===== */
@@ -385,7 +390,7 @@
           </div>
         </div>
 
-        <!-- ✅ NUOVA PILL: BOOST CIBO (come magnete) -->
+        <!-- ✅ NUOVA PILL: BOOST CIBO (come magnete, barra UGUALE) -->
         <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
@@ -409,13 +414,13 @@
 
       </div>
 
-      <!-- ✅ #best resta per il JS, ma invisibile (perché hai chiesto di togliere la pill record) -->
+      <!-- ✅ #best resta per il JS, ma invisibile -->
       <span id="best" style="display:none;">0</span>
 
     </div>
   </div>
 
-  <!-- BOTTONI IN ALTO (lasciati come nel tuo codice, ma dimezzati via CSS) -->
+  <!-- BOTTONI IN ALTO -->
   <div class="topLeftBtns">
     <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -457,7 +462,7 @@
     </button>
   </div>
 
-  <!-- Start / Dance (dimezzati via CSS) -->
+  <!-- Start / Dance -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
@@ -466,7 +471,7 @@
     <button class="bigBtn pillFx" id="btnDance">🕺 <span>Dance</span></button>
   </div>
 
-  <!-- Colonna cibo (dimezzata via CSS) -->
+  <!-- Colonna cibo -->
   <div class="rightCol">
     <div class="foodStack" id="foodStack"></div>
     <div class="foodCount pillFx">
