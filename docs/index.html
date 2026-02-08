@@ -9,62 +9,170 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    /* ===== HUD (come cerchio foto) in alto a sinistra ===== */
+    /* =========================
+       NEW HUD — sleek glass pills (top-left)
+       - più piccolo
+       - doppia colonna
+       - niente "Record" visibile (best resta hidden per non rompere JS)
+       ========================= */
     .hudWrap{
       position:fixed;
-      top:8px;
-      left:8px;
+      top: calc(10px + env(safe-area-inset-top, 0px));
+      left:12px;
       z-index:28;
       pointer-events:none;
+      max-width:min(320px, 70vw);
+      filter: drop-shadow(0 18px 45px rgba(0,0,0,.35));
     }
-    .hudCard{
-      pointer-events:none;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
-      padding:8px 10px;
-      color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      min-width:220px;
-      max-width:62vw;
-    }
-    .hudRow{display:flex;justify-content:space-between;gap:10px;align-items:center;}
-    .hudSmall{font-size:11px;opacity:.86;line-height:1.2}
-    .hudPill{
-      display:inline-flex;align-items:center;gap:8px;margin-top:7px;
-      padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;
-    }
-    .hudBar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
-    .hudBar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
 
-    /* ===== Bottoni icona in alto a sinistra (Home/Settings/Pausa) ===== */
-    .topLeftBtns{
-      position:fixed; top:8px; left:8px;
-      display:flex; flex-direction:row; gap:8px;
-      z-index:30; pointer-events:none;
-      /* sposto a destra per non coprire HUD */
-      transform: translateX(calc(220px + 12px));
+    .hudGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px 10px;
+      align-items:center;
     }
-    .btn{
-      pointer-events:auto;background:rgba(255,255,255,.08);
+
+    .hudPillLite{
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      height:38px;
+      padding:0 12px;
+      border-radius:999px;
+      color:#eaf1ff;
+
+      background:
+        radial-gradient(120% 160% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
       border:1px solid rgba(255,255,255,.16);
-      color:#eaf1ff;padding:9px 11px;border-radius:12px;
-      font-weight:800;cursor:pointer;user-select:none;
-      backdrop-filter:blur(10px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
-    .btn:active{transform:scale(.98);}
-    .iconBtn{
-      pointer-events:auto;
-      width:40px;height:40px;
-      padding:0;
-      border-radius:12px;
+
+    .hudLeft{
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      min-width:0;
+    }
+
+    .hudIconDot{
+      width:22px;height:22px;border-radius:999px;
       display:flex;align-items:center;justify-content:center;
-      font-size:17px;
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+      font-size:13px;
+      flex:0 0 auto;
+    }
+
+    .hudLabel{
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:.1px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      opacity:.96;
+    }
+
+    .hudValue{
+      font-weight:950;
+      font-size:13px;
+      letter-spacing:.2px;
+      opacity:.98;
+      flex:0 0 auto;
+    }
+
+    /* Vita: cuori più compatti */
+    .hudHearts{
+      font-size:13px;
+      letter-spacing:-1px;
+      transform: translateY(0.5px);
+      opacity:.95;
+      white-space:nowrap;
+    }
+
+    /* Pill lunga (Magnete / Boost) */
+    .hudWide{
+      grid-column: 1 / -1;
+      height:40px;
+      padding:0 12px;
+    }
+
+    .hudWideRight{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+    }
+
+    .hudBar{
+      height:7px;
+      width: min(180px, 40vw);
+      border-radius:999px;
+      background:rgba(255,255,255,.10);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .hudBar > i{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(170,210,255,.92), rgba(210,170,255,.92));
+      box-shadow: 0 0 16px rgba(180,190,255,.35);
+    }
+
+    /* =========================
+       TOP RIGHT MENU — glass pills
+       ========================= */
+    .topRightBtns{
+      position:fixed;
+      top: calc(10px + env(safe-area-inset-top, 0px));
+      right:12px;
+      z-index:30;
+      display:flex;
+      gap:8px;
+      pointer-events:none;
+      filter: drop-shadow(0 18px 45px rgba(0,0,0,.28));
+    }
+
+    .pillBtn{
+      pointer-events:auto;
+      height:38px;
+      min-width:38px;
+      padding:0 12px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+
+      background:
+        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
+      border:1px solid rgba(255,255,255,.18);
+      color:#eaf1ff;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pillBtn:active{ transform: scale(.985); }
+
+    .pillIcon{
+      width:22px;height:22px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.14);
+      font-size:14px;
       line-height:1;
     }
 
-    /* ===== PULSANTI in basso a destra (Start/Stop/Restart + Dance) ===== */
+    /* =========================
+       RIGHT STACK — Start & Dance (keep position, make more "pills")
+       ========================= */
     .rightStack{
       position:fixed;
       right:12px;
@@ -75,10 +183,11 @@
       gap:10px;
       pointer-events:auto;
     }
+
     .bigBtn{
-      width:86px;
+      width:96px;
       height:42px;
-      border-radius:12px;
+      border-radius:999px;
       font-weight:950;
       font-size:13px;
       letter-spacing:.1px;
@@ -86,12 +195,16 @@
       align-items:center;
       justify-content:center;
       gap:8px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.14);
+
+      background:
+        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
+      border:1px solid rgba(255,255,255,.16);
       color:#eaf1ff;
-      backdrop-filter:blur(10px);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
       box-shadow:0 18px 60px rgba(0,0,0,.35);
     }
+
     .pillDot{
       width:12px;height:12px;border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
@@ -102,41 +215,80 @@
       box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(52,199,89,.9);
     }
 
-    /* ===== Colonna cibo (come vecchio) a destra sotto le icone ===== */
+    /* =========================
+       FOOD — pills (right side)
+       ========================= */
     .rightCol{
-      position:fixed; top:62px; right:4px; width:56px;
-      display:flex; flex-direction:column; align-items:center; gap:6px;
-      pointer-events:none; z-index:20;
-    }
-    .foodStack{
-      width:50px; max-height:210px; overflow:hidden;
-      display:flex; flex-direction:column; align-items:center; gap:6px;
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
-      padding:7px 6px;
-      backdrop-filter:blur(10px);
-    }
-    .foodItem{
-      width:36px;height:36px;border-radius:11px;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      font-size:19px;
-    }
-    .foodCount{
-      margin-top:6px;
-      width:50px;
-      text-align:center;
-      font-weight:900;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:999px;
-      padding:6px 0;
-      font-size:12px;
+      position:fixed;
+      right:12px;
+      top: calc(58px + env(safe-area-inset-top, 0px));
+      z-index:20;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+      pointer-events:none;
     }
 
-    /* ===== Settings overlay ===== */
+    .foodStack{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+      align-items:flex-end;
+      max-height:210px;
+      overflow:hidden;
+      padding:0;
+      background:transparent;
+      border:none;
+      border-radius:0;
+      backdrop-filter:none;
+    }
+
+    .foodItem{
+      pointer-events:none;
+      height:34px;
+      min-width:54px;
+      padding:0 10px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      background:
+        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
+      border:1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:0 14px 40px rgba(0,0,0,.22);
+      font-size:18px;
+    }
+
+    .foodCount{
+      pointer-events:none;
+      height:34px;
+      min-width:74px;
+      padding:0 12px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+
+      background:
+        radial-gradient(140% 180% at 0% 0%, rgba(255,255,255,.10), rgba(255,255,255,.04) 45%, rgba(255,255,255,.02) 100%);
+      border:1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:0 14px 40px rgba(0,0,0,.22);
+      color:#eaf1ff;
+      font-weight:950;
+      font-size:12px;
+      letter-spacing:.2px;
+    }
+
+    /* =========================
+       SETTINGS overlay (unchanged)
+       ========================= */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -185,37 +337,86 @@
 </head>
 <body>
 
-  <!-- HUD conteggi (come cerchio foto) -->
+  <!-- HUD (top-left, small, doppia colonna, glass pills) -->
   <div class="hudWrap">
-    <div class="hudCard">
-      <div class="hudRow">
-        <div><strong>Score</strong>: <span id="score">0</span></div>
-        <div class="hudSmall">Record: <span id="best">0</span></div>
-      </div>
-      <div class="hudRow">
-        <div><strong>Emoji</strong>: <span id="coins">0</span></div>
-        <div class="hudSmall"><span id="ringIcon">⭕️</span> <span id="rings">0</span></div>
-      </div>
-      <div class="hudRow hudSmall" style="margin-top:6px;">
-        <div><strong>Vita</strong>: <span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
-        <div><span id="magTxt">🧲 0</span></div>
+    <div class="hudGrid">
+      <!-- Score -->
+      <div class="hudPillLite">
+        <div class="hudLeft">
+          <span class="hudIconDot">🏁</span>
+          <span class="hudLabel">Score</span>
+        </div>
+        <span class="hudValue" id="score">0</span>
       </div>
 
-      <div class="hudPill" id="pillBoost" style="display:none;">
-        <span id="boostIcon">⚡️</span><strong id="boostName">BOOST</strong>
-        <div class="hudBar"><i id="boostBar"></i></div>
+      <!-- Emoji -->
+      <div class="hudPillLite">
+        <div class="hudLeft">
+          <span class="hudIconDot">🙂</span>
+          <span class="hudLabel">Emoji</span>
+        </div>
+        <span class="hudValue" id="coins">0</span>
       </div>
+
+      <!-- Rings -->
+      <div class="hudPillLite">
+        <div class="hudLeft">
+          <span class="hudIconDot">⭕️</span>
+          <span class="hudLabel">Rings</span>
+        </div>
+        <span class="hudValue" id="rings">0</span>
+      </div>
+
+      <!-- Vita -->
+      <div class="hudPillLite">
+        <div class="hudLeft">
+          <span class="hudIconDot">❤️</span>
+          <span class="hudLabel">Vita</span>
+        </div>
+        <span class="hudHearts" id="hpTxt">❤️❤️❤️🖤🖤</span>
+      </div>
+
+      <!-- Magnete (wide) -->
+      <div class="hudPillLite hudWide">
+        <div class="hudLeft">
+          <span class="hudIconDot">🧲</span>
+          <span class="hudLabel">Magnete</span>
+        </div>
+        <div class="hudWideRight">
+          <span class="hudValue" id="magTxt">🧲 0</span>
+        </div>
+      </div>
+
+      <!-- Boost (wide) -->
+      <div class="hudPillLite hudWide" id="pillBoost" style="display:none;">
+        <div class="hudLeft">
+          <span class="hudIconDot" id="boostIcon">⚡️</span>
+          <span class="hudLabel" id="boostName">BOOST</span>
+        </div>
+        <div class="hudWideRight">
+          <div class="hudBar"><i id="boostBar"></i></div>
+        </div>
+      </div>
+
+      <!-- best nascosto (serve al JS, ma non si vede) -->
+      <span id="best" style="display:none;">0</span>
     </div>
   </div>
 
-  <!-- SOLO 3 BOTTONI IN ALTO (home/settings/pause) -->
-  <div class="topLeftBtns">
-    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
-    <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
-    <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
+  <!-- MENU TOP RIGHT (Home / Impostazioni / Pausa) — pills -->
+  <div class="topRightBtns">
+    <button class="pillBtn" id="btnHome" aria-label="Home" title="Home">
+      <span class="pillIcon">🏠</span>
+    </button>
+    <button class="pillBtn" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+      <span class="pillIcon">⚙️</span>
+    </button>
+    <button class="pillBtn" id="btnPause" aria-label="Pausa" title="Pausa">
+      <span class="pillIcon" id="pauseIcon">⏸️</span>
+    </button>
   </div>
 
-  <!-- PULSANTE PRINCIPALE + Dance -->
+  <!-- PULSANTI (destra, come prima) -->
   <div class="rightStack">
     <button class="bigBtn" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
@@ -224,7 +425,7 @@
     <button class="bigBtn" id="btnDance">🕺 Dance</button>
   </div>
 
-  <!-- Colonna cibo -->
+  <!-- Cibo raccolto — pills -->
   <div class="rightCol">
     <div class="foodStack" id="foodStack"></div>
     <div class="foodCount"><span id="foodCount">0</span>/10</div>
@@ -264,8 +465,8 @@
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="btn" id="resetCam">Reset camera</button>
-        <button class="btn" id="closeSettings">Chiudi</button>
+        <button class="pillBtn" id="resetCam">Reset camera</button>
+        <button class="pillBtn" id="closeSettings">Chiudi</button>
       </div>
     </div>
   </div>
@@ -279,7 +480,7 @@
     // ===== UI: HUD =====
     const scoreEl = document.getElementById('score');
     const coinsEl = document.getElementById('coins');
-    const bestEl  = document.getElementById('best');
+    const bestEl  = document.getElementById('best'); // hidden (non si vede)
     const ringsEl = document.getElementById('rings');
     const hpTxt   = document.getElementById('hpTxt');
     const magTxt  = document.getElementById('magTxt');
@@ -296,6 +497,7 @@
     const btnHome = document.getElementById('btnHome');
     const btnSettings = document.getElementById('btnSettings');
     const btnPause = document.getElementById('btnPause');
+    const pauseIcon = document.getElementById('pauseIcon');
 
     const btnMain = document.getElementById('btnMain');
     const mainLbl = document.getElementById('mainLbl');
@@ -953,7 +1155,6 @@
       });
     }
     async function loadAllAnimations(){
-      // idles multipli
       for(const u of ANIM_FILES.idle){
         const c = await loadAnimClip(u);
         if(c) actions.idles.push(c);
@@ -983,7 +1184,6 @@
 
           removeBigNonSkinnedPlanes(model);
 
-          // piedi a terra
           {
             const box = new THREE.Box3().setFromObject(model);
             const lift = -box.min.y;
@@ -1008,10 +1208,8 @@
 
           runnerMixer = new THREE.AnimationMixer(model);
 
-          // carica animazioni esterne
           await loadAllAnimations();
 
-          // run base dal glb running.glb
           const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
           const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
           const fixedRun = runClip ? stripRootMotion(runClip) : null;
@@ -1022,7 +1220,6 @@
             actions.run.setEffectiveTimeScale(1.0);
           }
 
-          // trasformo clip in actions
           const idleActions = [];
           for(const clip of actions.idles) idleActions.push(runnerMixer.clipAction(clip));
           actions.idles = idleActions;
@@ -1049,7 +1246,6 @@
           startIdleRandom();
           resolve();
         }, undefined, ()=>{
-          // fallback
           while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
           runnerModel.add(fallbackRunner);
           resolve();
@@ -1057,7 +1253,7 @@
       });
     }
 
-    // ===== Game data (con funzioni vecchie: emoji/cibo/magnete/vita/boost) =====
+    // ===== Game data =====
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
     const HEART  = "❤️";
@@ -1089,7 +1285,7 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
-      trioT:0, // nel nuovo codice non usiamo i mini-runner, ma lasciamo compatibilità
+      trioT:0,
 
       entities:[],
       spawnT:0.30,
@@ -1111,6 +1307,7 @@
       for(let i=0;i<game.maxLives;i++) s += (i<game.lives) ? "❤️" : "🖤";
       return s;
     }
+
     function refreshFoodUI(){
       foodStack.innerHTML = "";
       const show = game.foodHistory.slice(-6).reverse();
@@ -1122,6 +1319,7 @@
       }
       foodCountEl.textContent = String(game.foodCount);
     }
+
     function setBoostUI(){
       const t = Math.max(game.foodBoostT, game.ringBoostT);
       if(t <= 0){
@@ -1129,7 +1327,7 @@
         boostBar.style.width='0%';
         return;
       }
-      pillBoost.style.display='inline-flex';
+      pillBoost.style.display='flex';
 
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
       if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
@@ -1162,7 +1360,6 @@
       mainDot.classList.remove('green');
     }
 
-    // ✅ +5% ostacoli ogni 5000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 5000);
       return 1 + 0.05 * steps;
@@ -1190,7 +1387,6 @@
       }
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
-      // coin lanes
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
@@ -1209,7 +1405,6 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      // food
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -1220,7 +1415,6 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // magnet
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -1230,7 +1424,6 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // heart (solo se non sei già a 5)
       if(game.lives < game.maxLives){
         let spawnHeart = false;
         if(game.coins>0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
@@ -1245,7 +1438,6 @@
         }
       }
 
-      // turtle
       if(Math.random() < 0.18){
         const lane=rndi(0,2);
         const tz = z0 - rnd(3,11);
@@ -1259,7 +1451,6 @@
         }
       }
 
-      // rings: 2 vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
@@ -1337,7 +1528,7 @@
     function setStop(on){
       game.stopped = !!on;
       if(game.stopped){
-        startIdleRandom(); // stop = player fermo + idle random
+        startIdleRandom();
       }else{
         if(game.started && !game.paused && !game.over) playRun();
       }
@@ -1376,7 +1567,6 @@
       game.paused = false;
       setStop(true);
 
-      // HUD refresh
       scoreEl.textContent = '0';
       coinsEl.textContent = '0';
       ringsEl.textContent = '0';
@@ -1393,7 +1583,7 @@
       game.paused = false;
       setStop(false);
       playRun();
-      btnPause.textContent = '⏸️';
+      pauseIcon.textContent = '⏸️';
       updateMainButton();
     }
 
@@ -1401,7 +1591,7 @@
       if(game.over) return;
       if(!game.started) return;
       game.paused = !game.paused;
-      btnPause.textContent = game.paused ? '▶️' : '⏸️';
+      pauseIcon.textContent = game.paused ? '▶️' : '⏸️';
 
       if(game.paused){
         startIdleRandom();
@@ -1411,7 +1601,6 @@
       }
     }
 
-    // pulsante principale (Start/Stop/Restart)
     btnMain.addEventListener('click', ()=>{
       initAudio();
 
@@ -1428,7 +1617,6 @@
       setStop(!game.stopped);
     });
 
-    // dance
     btnDance.addEventListener('click', ()=>{
       initAudio();
       if(game.over) return;
@@ -1467,7 +1655,6 @@
     let tPrev=performance.now();
 
     function update(dt, tNow){
-      // animazioni sempre
       if(runnerMixer){
         runnerMixer.timeScale = 1.0;
         runnerMixer.update(dt);
@@ -1481,7 +1668,6 @@
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
       if(!gameplayOn){
-        // player sempre centro quando non giochi
         runnerPivot.position.x = lanesX[1];
         runnerPivot.position.y = 0;
 
@@ -1493,7 +1679,6 @@
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
 
-        // HUD anche fuori gioco (mostra ultimi valori)
         return;
       }
 
@@ -1503,7 +1688,6 @@
       const trafficMul = (1.0 - game.stopBlend);
       if(game.stopped) return;
 
-      // timers powerup
       if(game.invincibleT>0){
         game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
         if(game.invincibleT<=0){
@@ -1514,14 +1698,12 @@
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
       if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
 
-      // invincibilità visual
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
         bubble.visible=true;
       }
 
-      // boost velocità (come vecchio)
       const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -1530,16 +1712,13 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
 
-      // gravity
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timer
       if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
 
-      // runner transform
       runnerPivot.position.x = lanesX[ clamp(game.lane, 0, 3) ];
       runnerPivot.position.y = (-game.y);
 
@@ -1549,7 +1728,6 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // road scroll
       const scroll = speed*dt;
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
@@ -1560,14 +1738,12 @@
       }
       loopJungle(scroll);
 
-      // spawn
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
         game.spawnT = rnd(0.40, 0.75);
       }
 
-      // magnet effect (attrazione SOLO: coin/food/heart/magnet)
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
@@ -1585,7 +1761,6 @@
         }
       }
 
-      // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
         if(e.z > 6.0){
@@ -1594,7 +1769,6 @@
         }
       }
 
-      // collisions
       const px = runnerPivot.position.x;
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -1611,7 +1785,6 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto-slide rings: quando arriva un ring e sei a terra -> flip + slide (come vecchio concetto)
       if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1627,18 +1800,16 @@
       }
       game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
-      // pickup / hit loop
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
         if(e.type==='ring'){
           if(!collide(e)) continue;
-          if(!game.sliding) continue; // ring solo mentre scivoli
+          if(!game.sliding) continue;
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // 50 rings -> ring boost (come vecchio)
           if(game.ringCount >= 50){
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1653,12 +1824,10 @@
           if(!collideTurtle(e)) continue;
           playOneShot(actions.kick, 0.05);
           sfx.boost();
-          // “tartaruga” come premio: toglie ostacolo? qui la rimuoviamo e basta
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
-        // tutti gli altri richiedono collide()
         if(!collide(e)) continue;
 
         if(e.type==='coin'){
@@ -1704,19 +1873,13 @@
         if(e.type==='obst'){
           const inv = (game.invincibleT>0);
           scene.remove(e.obj); game.entities.splice(i,1);
-          if(inv){
-            // invincible: niente
-          }else{
-            loseLife();
-          }
+          if(!inv) loseLife();
           continue;
         }
       }
 
-      // score tick
       game.score += (18 * speedMul) * dt;
 
-      // best
       if(game.score > game.best){
         game.best = Math.floor(game.score);
         saveBest(game.best);
@@ -1725,7 +1888,7 @@
       // HUD live
       scoreEl.textContent = String(Math.floor(game.score));
       coinsEl.textContent = String(game.coins);
-      bestEl.textContent  = String(game.best);
+      bestEl.textContent  = String(game.best); // hidden
       ringsEl.textContent = String(game.ringCount);
       hpTxt.textContent   = hpString();
       magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
@@ -1735,7 +1898,6 @@
         bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
       }
 
-      // tilt for camera roll
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
@@ -1800,7 +1962,6 @@
 
       await loadRunnerModel();
 
-      // start in STOP + idle
       game.started = false;
       game.over = false;
       game.paused = false;
@@ -1809,7 +1970,6 @@
       updateMainButton();
       startIdleRandom();
 
-      // HUD init
       scoreEl.textContent = '0';
       coinsEl.textContent = '0';
       bestEl.textContent = String(game.best);
