@@ -4,31 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
-
   <style>
     :root{
       color-scheme: dark;
 
-      /* ✅ scale separate */
-      --hudScale: 1.20;    /* Score/Emoji/Rings/Vita/Mag/Boost/FoodBoost +20% */
-      --menuScale: 1.50;   /* Home/Settings/Avvia/Dance/FoodCount +50% */
+      /* ✅ SCALE SEPARATE */
+      --hudScale: 1.20;     /* Score/Emoji/Rings/Vita/Magnete/Boost/FoodBoost +20% */
+      --hudW: 0.50;         /* ✅ HUD 50% meno in larghezza */
+      --menuScale: 1.50;    /* Home/Settings/Avvia/Dance + cibo raccolto + ogni pillola cibo +50% */
 
-      /* ✅ barra fissa: Magnete / Boost / Food Boost IDENTICHE */
+      /* ✅ barra con larghezza fissa (base) */
       --hud-bar-w: 60px;
     }
 
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
-
-    /* ✅ canvas sempre sopra lo sfondo e sotto UI */
-    canvas{
-      position:fixed; inset:0;
-      width:100%; height:100%;
-      display:block; touch-action:none;
-      z-index:0;
-    }
+    canvas{display:block;touch-action:none;}
 
     /* =========================================================
-       ✅ PILL LOOK (uguale)
+       ✅ PILL EXACT (base)
        ========================================================= */
     .pillFx{
       position:relative;
@@ -74,28 +67,32 @@
     .pillFx, .pillFx * { transform: translateZ(0); }
 
     /* =========================================================
-       ✅ HUD (Score/Emoji/Rings/Vita/Mag/Boost/FoodBoost)
-       +20% ma più corte (altezza -50%)
+       ✅ ICON STYLE — base
        ========================================================= */
-
     .ico{
-      width:calc(11px * var(--hudScale));
-      height:calc(11px * var(--hudScale));
+      width:11px;height:11px;
       display:inline-block;
       flex:0 0 auto;
       filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));
     }
-    .icoSm{ width:calc(9px * var(--hudScale)); height:calc(9px * var(--hudScale)); }
+    .icoSm{ width:9px;height:9px; }
 
+    /* =========================================================
+       ✅ HUD LEFT — +20% e 50% meno larghezza
+       ========================================================= */
     .hudWrap{
       position:fixed;
       top:calc(55px * var(--hudScale));
       left:calc(8px * var(--hudScale));
       z-index:28;
       pointer-events:none;
-      width:min(calc(230px * var(--hudScale)), calc(100vw - calc(16px * var(--hudScale))));
+
+      /* ✅ più stretto del 50% */
+      width:min(
+        calc(230px * var(--hudScale) * var(--hudW)),
+        calc(100vw - calc(16px * var(--hudScale)))
+      );
     }
-    .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
     .hudGrid{
       display:grid;
@@ -104,40 +101,53 @@
       align-items:start;
     }
 
-    /* ✅ “più corte di 50%”: dimezzo il padding verticale (4px -> 2px)
-       e tengo quello orizzontale proporzionato */
     .hudP{
       pointer-events:none;
-      padding:calc(2px * var(--hudScale)) calc(6px * var(--hudScale));
+      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:calc(5px * var(--hudScale));
       min-width:0;
-      line-height:1;
     }
+
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
-    .hudL{ display:flex; align-items:center; gap:calc(5px * var(--hudScale)); min-width:0; }
+    .hudL{
+      display:flex;
+      align-items:center;
+      gap:calc(5px * var(--hudScale));
+      min-width:0;
+      line-height:1;
+    }
     .hudT{ font-weight:950; font-size:calc(7px * var(--hudScale)); white-space:nowrap; }
     .hudV{ font-weight:950; font-size:calc(8px * var(--hudScale)); white-space:nowrap; }
 
-    /* ✅ barre tutte identiche */
+    /* ✅ icone HUD scalate con hudScale */
+    .hudWrap .ico{
+      width:calc(11px * var(--hudScale));
+      height:calc(11px * var(--hudScale));
+    }
+
+    /* =========================================================
+       ✅ BAR ROW HUD — più strette del 50%
+       ========================================================= */
     .hudBarRow{
       display:grid;
-      grid-template-columns: auto calc(var(--hud-bar-w) * var(--hudScale)) auto;
+      grid-template-columns: auto calc(var(--hud-bar-w) * var(--hudScale) * var(--hudW)) auto;
       align-items:center;
       gap:calc(5px * var(--hudScale));
       min-width:0;
       width:100%;
+      line-height:1;
     }
     .hudBar{
       height:calc(3px * var(--hudScale));
-      width:calc(var(--hud-bar-w) * var(--hudScale));
-      min-width:calc(var(--hud-bar-w) * var(--hudScale));
-      max-width:calc(var(--hud-bar-w) * var(--hudScale));
+      width:calc(var(--hud-bar-w) * var(--hudScale) * var(--hudW));
+      min-width:calc(var(--hud-bar-w) * var(--hudScale) * var(--hudW));
+      max-width:calc(var(--hud-bar-w) * var(--hudScale) * var(--hudW));
       border-radius:999px;
       background:rgba(255,255,255,.12);
       overflow:hidden;
@@ -149,14 +159,16 @@
       box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
 
-    #pillBoost .hudL,
-    #foodBoostPill .hudL{ line-height:1; }
-    #pillBoost #boostIcon{ font-size:calc(9px * var(--hudScale)); line-height:1; }
+    /* evita che le emoji “alzino” la pillola */
+    #pillBoost #boostIcon{
+      font-size:calc(9px * var(--hudScale));
+      line-height:1;
+      display:inline-block;
+    }
 
     /* =========================================================
-       ✅ MENU (Home/Settings + Avvia/Dance + FoodCount) +50%
+       ✅ TOP BUTTONS (Home/Settings) +50%
        ========================================================= */
-
     .topLeftBtns{
       position:fixed;
       top:calc(5px * var(--menuScale));
@@ -179,7 +191,6 @@
       color:#eaf1ff;
       background: transparent;
       border:none;
-      line-height:1;
     }
     .iconBtn{
       width:calc(28px * var(--menuScale));
@@ -196,7 +207,9 @@
       height:calc(10px * var(--menuScale));
     }
 
-    /* Start / Dance più in alto +50% */
+    /* =========================================================
+       ✅ Start / Dance +50%
+       ========================================================= */
     .rightStack{
       position:fixed;
       right:calc(6px * var(--menuScale));
@@ -223,7 +236,6 @@
       color:#eaf1ff;
       background:transparent;
       border:none;
-      line-height:1;
     }
     .pillDot{
       width:calc(6px * var(--menuScale));
@@ -232,8 +244,14 @@
       background:#ff3b30;flex:0 0 auto;
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
     }
+    .pillDot.green{
+      background:#34c759;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(52,199,89,.90);
+    }
 
-    /* Colonna cibo +50% (solo il contatore/pillola raccolto che ti interessa) */
+    /* =========================================================
+       ✅ COLONNA CIBO +50% (foodCount + foodItem + stack)
+       ========================================================= */
     .rightCol{
       position:fixed;
       top:calc(28px * var(--menuScale));
@@ -268,8 +286,12 @@
       justify-content:center;
       gap:calc(4px * var(--menuScale));
     }
+    .foodCount .icoSm{
+      width:calc(9px * var(--menuScale));
+      height:calc(9px * var(--menuScale));
+    }
 
-    /* ===== Settings overlay (lasciato uguale) ===== */
+    /* ===== Settings overlay (uguale) ===== */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -316,7 +338,6 @@
   }
   </script>
 </head>
-
 <body>
 
   <!-- ✅ HUD SINISTRA -->
@@ -324,7 +345,7 @@
     <div class="hudCard">
       <div class="hudGrid">
 
-        <!-- Score -->
+        <!-- Score (sx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -343,7 +364,7 @@
           <div class="hudV"><span id="score">0</span></div>
         </div>
 
-        <!-- Emoji -->
+        <!-- Emoji (dx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -364,7 +385,7 @@
           <div class="hudV"><span id="coins">0</span></div>
         </div>
 
-        <!-- Rings -->
+        <!-- Rings (sx) -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -383,7 +404,7 @@
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- Vita (✅ con icona) -->
+        <!-- Vita -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -464,7 +485,7 @@
     </div>
   </div>
 
-  <!-- ✅ MENU TOP RIGHT: Home + Settings (niente pausa) -->
+  <!-- TOP BUTTONS (Home + Settings) -->
   <div class="topLeftBtns">
     <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -491,8 +512,6 @@
         <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
       </svg>
     </button>
-
-    <!-- ✅ btnPause NON esiste più: il JS lo gestiamo con la mini-modifica sicura -->
   </div>
 
   <!-- Start / Dance -->
@@ -562,8 +581,7 @@
     </div>
   </div>
 
-
-
+  
 
 
 
