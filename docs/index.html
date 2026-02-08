@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
   <style>
-    :root {
+    :root{
       color-scheme: dark;
-      --hud-bar-w: 60px; /* ✅ larghezza UNICA per tutte le barre (HALF) */
+      /* ✅ barra con larghezza fissa: così Magnete / Boost / Food Boost sono IDENTICHE */
+      --hud-bar-w: 60px;
     }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
@@ -106,10 +107,12 @@
     .hudT{ font-weight:950; font-size:7px; white-space:nowrap; }
     .hudV{ font-weight:950; font-size:8px; white-space:nowrap; }
 
-    /* pill “barra” (Magnete / Boost / Boost Cibo) — HALF */
+    /* =========================================================
+       ✅ BAR PILL ROW — FIX (tutte uguali, evita che FOOD risulti più alta)
+       ========================================================= */
     .hudBarRow{
       display:grid;
-      grid-template-columns: auto var(--hud-bar-w) auto; /* ✅ barra fissata */
+      grid-template-columns: auto var(--hud-bar-w) auto; /* ✅ barra fissa */
       align-items:center;
       gap:5px;
       min-width:0;
@@ -117,7 +120,7 @@
     }
     .hudBar{
       height:3px;
-      width:var(--hud-bar-w);      /* ✅ larghezza identica */
+      width:var(--hud-bar-w);
       min-width:var(--hud-bar-w);
       max-width:var(--hud-bar-w);
       border-radius:999px;
@@ -130,6 +133,15 @@
       background:rgba(200,210,255,.88);
       box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
+
+    /* ✅ assicura che il contenuto dentro le pill-bar non “spinga” in altezza */
+    #pillBoost .hudL,
+    #foodBoostPill .hudL{
+      min-height:0;
+      line-height:1;
+    }
+    /* (opzionale) se il tuo JS mette un’emoji grande nel boostIcon, la rimpiccioliamo */
+    #pillBoost #boostIcon{ font-size:9px; line-height:1; }
 
     /* ===== Bottoni in alto — HALF ===== */
     .topLeftBtns{
@@ -390,7 +402,7 @@
           </div>
         </div>
 
-        <!-- ✅ NUOVA PILL: BOOST CIBO (come magnete, barra UGUALE) -->
+        <!-- ✅ NUOVA PILL: BOOST CIBO (ora uguale al magnete) -->
         <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
