@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
+  
+  
   <style>
     :root { color-scheme: dark; }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
@@ -214,6 +216,15 @@
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
   </div>
+
+   <!-- ✅ HUD pulita (solo testo + emoji) -->
+<div class="hudMini" id="hudMini">
+  <div class="hudLine">🏁 <span class="k">Score</span> <span class="v" id="score">0</span></div>
+  <div class="hudLine">✨ <span class="k">Emoji</span> <span class="v" id="coins">0</span></div>
+  <div class="hudLine">⭕️ <span class="k">Anelli</span> <span class="v" id="rings">0</span></div>
+  <div class="hudLine"><span class="k">Vita</span> <span class="v" id="hpTxt">❤️❤️❤️🖤🖤</span></div>
+  <div class="hudLine"><span class="v" id="magTxt">🧲 0</span></div>
+</div>
 
   <!-- PULSANTE PRINCIPALE + Dance -->
   <div class="rightStack">
