@@ -9,23 +9,40 @@
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    /* ✅ NASCONDI TUTTO QUELLO CERCHIATO */
-    .hud, .rightCol, .help, #menu { display:none !important; }
-
-    /* --- Bottoni icona in alto a sinistra (solo Home/Settings/Pausa) --- */
-    .topLeftBtns{
-      position:fixed; top:8px; left:8px;
-      display:flex; flex-direction:row; gap:8px;
-      z-index:25; pointer-events:none;
+    .hud{
+      position:fixed;
+      top: calc(8px + env(safe-area-inset-top, 0px));
+      left:8px;right:8px;
+      display:flex;justify-content:space-between;gap:8px;
+      pointer-events:none;z-index:10;flex-wrap:wrap;align-items:flex-start;
     }
+    .card{
+      pointer-events:none;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;padding:8px 10px;color:#eaf1ff;
+      backdrop-filter:blur(10px);
+      min-width:180px; max-width:62vw;
+    }
+    .row{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+    .small{font-size:11px;opacity:.86;line-height:1.2}
     .btn{
       pointer-events:auto;background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.16);
       color:#eaf1ff;padding:9px 11px;border-radius:12px;
       font-weight:800;cursor:pointer;user-select:none;
-      backdrop-filter:blur(10px);
     }
     .btn:active{transform:scale(.98);}
+    .controls{pointer-events:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start;}
+
+    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;}
+    .bar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
+    .bar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
+
+    .floatBtns{
+      position:fixed; top: calc(8px + env(safe-area-inset-top, 0px)); right:8px;
+      display:flex; flex-direction:row; gap:8px;
+      z-index:25; pointer-events:none;
+    }
     .iconBtn{
       pointer-events:auto;
       width:40px;height:40px;
@@ -33,95 +50,125 @@
       border-radius:12px;
       display:flex;align-items:center;justify-content:center;
       font-size:17px;
+      backdrop-filter:blur(10px);
       line-height:1;
     }
 
-    /* ✅ PULSANTI: in basso a destra, verticali */
-    .rightStack{
-      position:fixed;
-      right:12px;
-      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-      z-index:30;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      pointer-events:auto;
+    .rightCol{
+      position:fixed; top: calc(62px + env(safe-area-inset-top, 0px)); right:4px; width:56px;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      pointer-events:none; z-index:10;
+    }
+    .foodStack{
+      width:50px; max-height:210px; overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      padding:7px 6px;
+      backdrop-filter:blur(10px);
+    }
+    .foodItem{
+      width:36px;height:36px;border-radius:11px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:19px;
+    }
+    .foodCount{
+      margin-top:6px;
+      width:50px;
+      text-align:center;
+      font-weight:900;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:999px;
+      padding:6px 0;
+      font-size:12px;
     }
 
-    .bigBtn{
-      width:80px;
-      height:40px;
-      border-radius:12px;
-      font-weight:900;
-      font-size:13px;
-      letter-spacing:.1px;
+    /* ✅ STOP button */
+    .stopBtnWrap{
+      position:fixed;
+      right:14px;
+      bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+      z-index:30;
+      pointer-events:none;
+    }
+    .stopBtn{
+      pointer-events:auto;
+      width:74px;
+      height:56px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255, 80, 80, .12);
+      backdrop-filter: blur(10px);
+      color:#fff;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.14);
-      color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      gap:10px;
+      font-weight:950;
+      cursor:pointer;
+      user-select:none;
     }
-
-    /* 🔴 DOT STOP */
-    .pillDot{
-      width:12px;
-      height:12px;
-      border-radius:50%;
+    .stopDot{
+      width:18px;height:18px;border-radius:6px;
       background:#ff3b30;
-      flex:0 0 auto;
-      box-shadow:
-        0 0 0 2px rgba(0,0,0,.55),
-        0 0 8px rgba(255,59,48,.9);
+      box-shadow:0 0 0 2px rgba(255,255,255,.12) inset;
     }
-
-    /* 🟢 DOT GO */
-    .pillDot.green{
+    .stopBtn.on{
+      background:rgba(140,255,190,.12);
+    }
+    .stopBtn.on .stopDot{
       background:#34c759;
-      box-shadow:
-        0 0 0 2px rgba(0,0,0,.55),
-        0 0 8px rgba(52,199,89,.9);
+    }
+    .stopLbl{
+      font-size:12px;
+      opacity:.95;
+      letter-spacing:.3px;
     }
 
-    /* --- Pannello impostazioni --- */
-    .settingsOverlay{
-      position:fixed; inset:0;
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding:14px;
-      background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.65));
-      backdrop-filter:blur(10px);
-      z-index:40;
-    }
-    .panel{
-      width:min(680px,100%);
-      border-radius:18px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(10,14,22,.86);
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
-      padding:14px;color:#eaf1ff;
-    }
-    .title{font-size:16px;font-weight:950;margin:4px 0 10px;}
-    .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;margin-top:10px;}
-    .settingsRow small{opacity:.8}
-    .settingsVal{font-weight:950}
-    input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,.45), rgba(0,0,0,.88));
+      backdrop-filter:blur(10px);z-index:20;}
+    .panel{width:min(680px,100%);border-radius:18px;border:1px solid rgba(255,255,255,.16);
+      background:rgba(10,14,22,.84);box-shadow:0 18px 60px rgba(0,0,0,.55);padding:14px;color:#eaf1ff;}
+    .title{font-size:20px;font-weight:950;margin:4px 0 6px;}
+    .subtitle{opacity:.88;font-size:13px;margin:0 0 10px;line-height:1.35;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .full{grid-column:1/-1;}
 
-    .toggle{
-      display:flex;align-items:center;justify-content:space-between;
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);
-      cursor:pointer;user-select:none;margin-top:10px;
-    }
+    .toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);cursor:pointer;user-select:none;}
     .toggle label{font-weight:900;}
     .toggle span{opacity:.85;font-size:12px;}
+
     .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
     .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
     .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
     .switch.on i{transform:translateX(18px);}
+
+    .help{
+      position:fixed;
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      left:8px;right:8px;
+      display:flex;justify-content:center;pointer-events:none;z-index:10;
+    }
+    .help .card{max-width:980px;text-align:center;}
+
+    input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
+    .settingsBox{
+      display:none;
+      flex-direction:column;
+      gap:10px;
+      align-items:stretch;
+      padding:10px 12px;
+      cursor:default; user-select:auto;
+    }
+    .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;}
+    .settingsRow small{opacity:.8}
+    .settingsVal{font-weight:950}
   </style>
 
   <script type="importmap">
@@ -135,58 +182,112 @@
 </head>
 <body>
 
-  <!-- ✅ SOLO 3 BOTTONI IN ALTO A SINISTRA -->
-  <div class="topLeftBtns">
-    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
+  <!-- ✅ HUD ripristinato (come nella tua foto) -->
+  <div class="hud">
+    <div class="card">
+      <div class="row">
+        <div><strong>Score</strong>: <span id="score">0</span></div>
+        <div class="small">Record: <span id="best">0</span></div>
+      </div>
+      <div class="row">
+        <div><strong>Emoji</strong>: <span id="coins">0</span></div>
+        <div class="small"><span id="ringIcon">⭕️</span> <span id="rings">0</span></div>
+      </div>
+
+      <div class="row small" style="margin-top:6px;">
+        <div><strong>Vita</strong>: <span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
+        <div><span id="magTxt">🧲 0</span></div>
+      </div>
+
+      <div class="pill" id="pillBoost" style="display:none;">
+        <span id="boostIcon">⚡️</span><strong id="boostName">BOOST</strong>
+        <div class="bar"><i id="boostBar"></i></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="pause">Pausa</button>
+    </div>
+  </div>
+
+  <div class="floatBtns">
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
     <button class="btn iconBtn" id="btnPause" aria-label="Pausa">⏸️</button>
+    <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
   </div>
 
-  <!-- ✅ PULSANTE PRINCIPALE (Start/Stop/Restart) + Dance sotto -->
-  <div class="rightStack">
-    <button class="bigBtn" id="btnMain">
-      <span class="pillDot" id="mainDot"></span>
-      <span id="mainLbl">AVVIA</span>
+  <div class="rightCol">
+    <div class="foodStack" id="foodStack"></div>
+    <div class="foodCount"><span id="foodCount">0</span>/10</div>
+  </div>
+
+  <!-- ✅ STOP -->
+  <div class="stopBtnWrap">
+    <button class="stopBtn" id="stopBtn" aria-label="Stop traffico">
+      <span class="stopDot"></span>
+      <span class="stopLbl" id="stopLbl">STOP</span>
     </button>
-    <button class="bigBtn" id="btnDance">🕺 Dance</button>
   </div>
 
-  <!-- ✅ SETTINGS -->
-  <div class="settingsOverlay" id="settingsOverlay">
+  <div class="help">
+    <div class="card small" id="helpCard">
+      <strong>Comandi</strong> — Desktop: ← → corsia, ↑ salto, ↓ scivolata, P pausa.
+      Mobile: swipe sx/dx, swipe su (salto), swipe giù (scivolata).
+      <span style="opacity:.75">Anelli: auto-piega quando arrivano in corsia.</span>
+      <span style="opacity:.75">STOP: ferma il traffico, il personaggio resta “idle”.</span>
+    </div>
+  </div>
+
+  <div class="overlay" id="menu">
     <div class="panel">
-      <div class="title">Impostazioni</div>
-
-      <div class="settingsRow">
-        <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
-        <div class="settingsVal" id="fovVal">60</div>
-      </div>
-      <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
-
-      <div class="settingsRow">
-        <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
-        <div class="settingsVal" id="camVal">5.0</div>
-      </div>
-      <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
-
-      <div class="settingsRow">
-        <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
-        <div class="settingsVal" id="frameVal">0.06</div>
-      </div>
-      <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
-
-      <div class="toggle" id="audioToggle">
-        <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
-        <div class="switch on" id="audioSwitch"><i></i></div>
+      <div class="title">Jungle Emoji Runner</div>
+      <div class="subtitle small">
+        Magnete solo quando prendi 🧲 • Anelli NON attratti dal magnete • <strong>50 anelli → trio + boost</strong>
       </div>
 
-      <div class="toggle" id="shakeToggle">
-        <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
-        <div class="switch on" id="shakeSwitch"><i></i></div>
-      </div>
+      <div class="grid">
+        <button class="btn full" id="startBtn">▶️ Inizia</button>
+        <button class="btn full" id="openSettings">⚙️ Impostazioni</button>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="btn" id="resetCam">Reset camera</button>
-        <button class="btn" id="closeSettings">Chiudi</button>
+        <div class="toggle full settingsBox" id="settingsPanel">
+          <div class="settingsRow">
+            <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
+            <div class="settingsVal" id="fovVal">60</div>
+          </div>
+          <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
+
+          <div class="settingsRow" style="margin-top:4px;">
+            <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
+            <div class="settingsVal" id="camVal">5.0</div>
+          </div>
+          <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
+
+          <div class="settingsRow" style="margin-top:4px;">
+            <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
+            <div class="settingsVal" id="frameVal">0.06</div>
+          </div>
+          <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+
+          <div class="toggle" id="audioToggle" style="margin-top:6px;">
+            <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
+            <div class="switch on" id="audioSwitch"><i></i></div>
+          </div>
+
+          <div class="toggle" id="shakeToggle" style="margin-top:6px;">
+            <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
+            <div class="switch on" id="shakeSwitch"><i></i></div>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;">
+            <button class="btn" id="resetCam">Reset camera</button>
+            <button class="btn" id="closeSettings">Chiudi</button>
+          </div>
+        </div>
+
+        <div class="toggle full">
+          <div><label>Game Over</label><br/><span id="overStats">—</span></div>
+          <div style="font-weight:950;font-size:18px;" id="overBig"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -197,22 +298,44 @@
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // ===== UI =====
-    const btnHome = document.getElementById('btnHome');
+    // UI
+    const scoreEl = document.getElementById('score');
+    const coinsEl = document.getElementById('coins');
+    const bestEl  = document.getElementById('best');
+    const ringsEl = document.getElementById('rings');
+    const hpTxt   = document.getElementById('hpTxt');
+    const magTxt  = document.getElementById('magTxt');
+
+    const pillBoost = document.getElementById('pillBoost');
+    const boostIcon = document.getElementById('boostIcon');
+    const boostName = document.getElementById('boostName');
+    const boostBar  = document.getElementById('boostBar');
+
+    const foodStack = document.getElementById('foodStack');
+    const foodCountEl = document.getElementById('foodCount');
+
+    const menu = document.getElementById('menu');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn   = document.getElementById('pause');
+
+    const overStats  = document.getElementById('overStats');
+    const overBig    = document.getElementById('overBig');
+
     const btnSettings = document.getElementById('btnSettings');
+    const btnHome = document.getElementById('btnHome');
     const btnPause = document.getElementById('btnPause');
 
-    const btnMain = document.getElementById('btnMain');
-    const mainLbl = document.getElementById('mainLbl');
-    const mainDot = document.getElementById('mainDot');
-    const btnDance = document.getElementById('btnDance');
+    const stopBtn = document.getElementById('stopBtn');
+    const stopLbl = document.getElementById('stopLbl');
 
-    const settingsOverlay = document.getElementById('settingsOverlay');
+    const openSettingsBtn = document.getElementById('openSettings');
     const closeSettingsBtn = document.getElementById('closeSettings');
     const resetCamBtn = document.getElementById('resetCam');
+    const settingsPanel = document.getElementById('settingsPanel');
 
     const audioToggle= document.getElementById('audioToggle');
     const audioSwitch= document.getElementById('audioSwitch');
+
     const shakeToggle = document.getElementById('shakeToggle');
     const shakeSwitch = document.getElementById('shakeSwitch');
 
@@ -229,15 +352,19 @@
     const lerp=(a,b,t)=>a+(b-a)*t;
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
-    // ===== SETTINGS =====
-    const CAM_KEY = 'jr_cam_settings_v7';
+    // === SETTINGS ===
+    const CAM_KEY = 'jr_cam_settings_v6';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06, shake: true };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
-    let baseFov  = clamp(Number(saved.baseFov ?? DEFAULTS.baseFov), 30, 110);
-    let baseCamZ = clamp(Number(saved.baseCamZ ?? DEFAULTS.baseCamZ), 2, 15);
-    let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
+    let baseFov  = Number(saved.baseFov ?? DEFAULTS.baseFov);
+    let baseCamZ = Number(saved.baseCamZ ?? DEFAULTS.baseCamZ);
+    let framing  = Number(saved.framing ?? DEFAULTS.framing);
     let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
+
+    baseFov  = clamp(baseFov, 30, 110);
+    baseCamZ = clamp(baseCamZ, 2, 15);
+    framing  = clamp(framing, 0, 1);
 
     function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing, shake: !!shakeEnabled })); }
     function syncCamUI(){
@@ -248,17 +375,12 @@
       frameSlider.value = String(framing.toFixed(2));
       frameVal.textContent = framing.toFixed(2);
       shakeSwitch.classList.toggle('on', !!shakeEnabled);
-      audioSwitch.classList.toggle('on', !!audioEnabled);
     }
+    syncCamUI();
+
     fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
     camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
     frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
-
-    function openSettings(){ settingsOverlay.style.display='flex'; syncCamUI(); }
-    function closeSettings(){ settingsOverlay.style.display='none'; }
-
-    btnSettings.addEventListener('click', ()=>{ initAudio(); openSettings(); });
-    closeSettingsBtn.addEventListener('click', closeSettings);
 
     shakeToggle.addEventListener('click', ()=>{
       shakeEnabled = !shakeEnabled;
@@ -271,7 +393,11 @@
       saveCam(); syncCamUI();
     });
 
-    // ===== Audio minimal =====
+    function toggleSettings(open){ settingsPanel.style.display = open ? 'flex' : 'none'; }
+    openSettingsBtn.addEventListener('click', ()=>{ toggleSettings(settingsPanel.style.display === 'none' || settingsPanel.style.display === ''); syncCamUI(); });
+    closeSettingsBtn.addEventListener('click', ()=> toggleSettings(false));
+
+    // Audio minimal
     let audioEnabled=true, audioReady=false, actx=null, master=null;
     function initAudio(){
       if(audioReady) return;
@@ -296,21 +422,19 @@
       o.start(t0); o.stop(t0+dur+0.02);
     }
     const sfx = {
+      coin: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
+      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
       ring: ()=>{ beep('triangle', 700, 0.06, 0.10); },
+      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
       hit:  ()=>{ beep('square', 120, 0.12, 0.11); },
       lane: ()=>{ beep('sine', 160, 0.05, 0.05); },
       jump: ()=>{ beep('square', 420, 0.05, 0.08); },
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
-
-      // ✅ extra (compatibile: non rompe nulla)
-      food: ()=>{ beep('sine', 520, 0.06, 0.09); },
-      magnet: ()=>{ beep('sawtooth', 420, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
-      heart: ()=>{ beep('triangle', 900, 0.06, 0.10); beep('sine', 1350, 0.07, 0.07); },
     };
     audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
 
-    // ===== Renderer / Scene =====
+    // Renderer / Scene
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -365,12 +489,16 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // ===== STRADA =====
+    // =========================================================
+    // AUTOSTRADA
+    // =========================================================
     const segLen = 9.0, segCount = 10;
+
     const laneW = 1.35;
     const mainRoadWidth = laneW * 3;
     const shoulderWidth = 1.40;
     const totalRoadWidth = mainRoadWidth + shoulderWidth;
+
     const leftEdge = -totalRoadWidth/2;
     const lanesX = [
       leftEdge + laneW*0.5,
@@ -383,6 +511,7 @@
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
+
       g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
 
@@ -490,6 +619,7 @@
     }
 
     const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+
     highwayTex.generateMipmaps = false;
     highwayTex.minFilter = THREE.NearestFilter;
     highwayTex.magFilter = THREE.NearestFilter;
@@ -511,6 +641,7 @@
     });
 
     const segments=[];
+
     let groupLeft = rndi(2,3);
     let groupShade = 0.94 + Math.random()*0.08;
     let groupPatch = patchTexPool[rndi(0, patchTexPool.length-1)];
@@ -519,6 +650,7 @@
     for(let i=0;i<segCount;i++){
       const geo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
       geo.rotateX(-Math.PI/2);
+
       const mesh = new THREE.Mesh(geo, roadMat);
 
       groupLeft--;
@@ -537,6 +669,7 @@
 
       const patchGeo = new THREE.PlaneGeometry(totalRoadWidth, segLen);
       patchGeo.rotateX(-Math.PI/2);
+
       const patchMat = new THREE.MeshStandardMaterial({
         map: groupPatch,
         transparent: true,
@@ -548,8 +681,10 @@
         polygonOffsetFactor: -1,
         polygonOffsetUnits: -1,
       });
+
       const patch = new THREE.Mesh(patchGeo, patchMat);
       patch.position.y = 0.003;
+      patch.receiveShadow = false;
       mesh.add(patch);
 
       mesh.position.set(0, 0, -i*segLen);
@@ -613,7 +748,26 @@
       }
     }
 
-    // ===== Entities visuals =====
+    // --- Sprites
+    function makeEmojiSprite(emoji, size=256){
+      const c=document.createElement('canvas'); c.width=c.height=size;
+      const g=c.getContext('2d');
+      g.clearRect(0,0,size,size);
+      g.globalAlpha=0.18;
+      g.fillStyle='#cfefff';
+      g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
+      g.globalAlpha=1;
+      g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+      g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(emoji, size/2, size/2+8);
+      const tex=new THREE.CanvasTexture(c);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
+      const spr=new THREE.Sprite(mat);
+      spr.scale.set(0.78,0.78,1);
+      return spr;
+    }
+
     function spawnObstacleVisual(){
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
@@ -656,61 +810,24 @@
       return ring;
     }
 
-    // ===== ✅ EMOJI / MAGNET / HEART (base stabile) =====
-    function makeEmojiSprite(emoji, size=256){
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const g = c.getContext('2d');
-
-      g.clearRect(0,0,size,size);
-
-      // glow leggero
-      const grd = g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
-      grd.addColorStop(0,'rgba(255,255,255,0.18)');
-      grd.addColorStop(0.55,'rgba(255,255,255,0.07)');
-      grd.addColorStop(1,'rgba(255,255,255,0)');
-      g.fillStyle = grd;
-      g.fillRect(0,0,size,size);
-
-      // emoji
-      g.font = `${Math.floor(size*0.72)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(emoji, size/2, size/2 + 4);
-
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.needsUpdate = true;
-
-      const mat = new THREE.SpriteMaterial({ map: tex, transparent:true });
-      const spr = new THREE.Sprite(mat);
-      spr.scale.set(0.75, 0.75, 1);
-      spr.renderOrder = 10;
-      return spr;
-    }
-
-    function makeFoodEmoji(){
-      const foods = ['🍌','🍉','🍓','🍍','🍇','🍒','🍋'];
-      const e = foods[rndi(0, foods.length-1)];
-      const spr = makeEmojiSprite(e);
-      spr.scale.set(0.78, 0.78, 1);
-      return spr;
-    }
-    function makeMagnet(){
-      const spr = makeEmojiSprite('🧲');
-      spr.scale.set(0.82, 0.82, 1);
-      return spr;
-    }
-    function makeHeart(){
-      const spr = makeEmojiSprite('❤️');
-      spr.scale.set(0.76, 0.76, 1);
-      return spr;
-    }
-
-    // ===== Runner =====
+    // Runner groups
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
+
+    // fallback dummy
+    const fallbackRunner = new THREE.Group();
+    const dummyBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
+      new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
+    );
+    dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
+    const dummyHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 18, 14),
+      new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
+    );
+    dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
+    runnerModel.add(fallbackRunner);
 
     // Bubble
     const bubble = new THREE.Mesh(
@@ -725,44 +842,55 @@
     bubble.visible=false;
     runnerPivot.add(bubble);
 
-    // ===== GLB loader + Animations =====
+    // MINI runners
+    function makeMiniRunner(){
+      const p = new THREE.Group();
+      const c = new THREE.Group(); c.position.set(0,0.95,0); p.add(c);
+      const m = new THREE.Group(); m.position.set(0,-0.95,0); c.add(m);
+
+      const b = dummyBody.clone(); b.material = dummyBody.material.clone(); b.material.color.setHex(0x88aee0);
+      const h = dummyHead.clone(); h.material = dummyHead.material.clone(); h.material.color.setHex(0xa9c6ee);
+      m.add(b); m.add(h);
+
+      p.scale.setScalar(0.72);
+
+      const bb = bubble.clone();
+      bb.material = bubble.material.clone();
+      bb.material.opacity = 0.20;
+      bb.scale.setScalar(0.90);
+      bb.visible=false;
+      p.add(bb);
+
+      p.visible=false;
+
+      return {
+        pivot:p, center:c, model:m, bubble:bb,
+        sliding:false, slideT:0, autoCooldown:0,
+        mixer:null, action:null, animMul:1.0,
+        hips:null, root:null, hipsBaseX:0, hipsBaseZ:0, rootBaseX:0, rootBaseZ:0
+      };
+    }
+    const miniL = makeMiniRunner(); scene.add(miniL.pivot);
+    const miniR = makeMiniRunner(); scene.add(miniR.pivot);
+
+    // MIXAMO GLB
+    const RUNNER_GLB_URL = './running.glb';
     const gltfLoader = new GLTFLoader();
 
-    const RUNNER_GLB_URL = './running.glb';
-    const ANIM_FILES = {
-      idle: ['./DwarfIdle.glb', './WarriorIdle.glb', './HappyIdle.glb'],
-      jump: './JumpOver.glb',
-      flip: './RunningForwardFlip.glb',
-      kick: './SoccerKick.glb',
-      die:  './SideHitDie.glb',
-      dance:'./HipHopDance.glb'
-    };
+    let runnerMixer=null, runnerAction=null;
+    let mixamoHips=null, mixamoRootNode=null;
+    let hipsBaseX=0, hipsBaseZ=0;
+    let rootBaseX=0, rootBaseZ=0;
+
+    let runClipDuration = 1.0;
+    let runClipFixed = null;
 
     function setShadows(root){
       root.traverse(o=>{
         if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }
       });
     }
-    function removeBigNonSkinnedPlanes(model){
-      model.traverse(o=>{
-        if(!o.isMesh) return;
-        const isSkinned = (o.isSkinnedMesh === true) || (o.skeleton != null);
-        if(isSkinned) return;
 
-        const box = new THREE.Box3().setFromObject(o);
-        const s = new THREE.Vector3(); box.getSize(s);
-
-        const huge = (s.x > 2.4 || s.y > 2.4 || s.z > 2.4);
-        const flat = (Math.min(s.x,s.y,s.z) < 0.03 && Math.max(s.x,s.y,s.z) > 1.6);
-
-        const name = (o.name||'').toLowerCase();
-        const suspicious = name.includes('plane') || name.includes('cube') || name.includes('quad') || name.includes('ground') || name.includes('floor');
-
-        if(huge || flat || suspicious){
-          o.visible = false;
-        }
-      });
-    }
     function stripRootMotion(clip){
       const c = clip.clone();
       const TH = 0.02;
@@ -792,217 +920,182 @@
       return c;
     }
 
-    let runnerMixer=null;
-    let actions = {
-      run:null,
-      idles:[],
-      jump:null,
-      flip:null,
-      kick:null,
-      die:null,
-      dance:null
-    };
+    function removeBigNonSkinnedPlanes(model){
+      model.traverse(o=>{
+        if(!o.isMesh) return;
+        const isSkinned = (o.isSkinnedMesh === true) || (o.skeleton != null);
+        if(isSkinned) return;
 
-    let mixamoHips=null, mixamoRootNode=null;
-    let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
+        const box = new THREE.Box3().setFromObject(o);
+        const s = new THREE.Vector3(); box.getSize(s);
 
-    const animState = {
-      mode:'idle'
-    };
+        const huge = (s.x > 2.4 || s.y > 2.4 || s.z > 2.4);
+        const flat = (Math.min(s.x,s.y,s.z) < 0.03 && Math.max(s.x,s.y,s.z) > 1.6);
 
-    function fadeTo(next, fade=0.18){
-      if(!next) return;
-      const all = [];
-      if(actions.run) all.push(actions.run);
-      if(actions.jump) all.push(actions.jump);
-      if(actions.flip) all.push(actions.flip);
-      if(actions.kick) all.push(actions.kick);
-      if(actions.die)  all.push(actions.die);
-      if(actions.dance)all.push(actions.dance);
-      for(const a of actions.idles) all.push(a);
+        const name = (o.name||'').toLowerCase();
+        const suspicious = name.includes('plane') || name.includes('cube') || name.includes('quad') || name.includes('ground') || name.includes('floor');
 
-      for(const a of all){
-        if(a !== next){
-          try{ a.fadeOut(fade); }catch{}
-        }
-      }
+        if(huge || flat || suspicious) o.visible = false;
+      });
+    }
+
+    function setupMiniAsClone(mini, sourceScene, clip){
       try{
-        next.reset();
-        next.enabled = true;
-        next.setEffectiveWeight(1.0);
-        next.fadeIn(fade);
-        next.play();
-      }catch{}
-    }
+        while(mini.model.children.length) mini.model.remove(mini.model.children[0]);
 
-    function playRun(){
-      if(!actions.run || animState.mode==='dead') return;
-      animState.mode='run';
-      fadeTo(actions.run, 0.12);
-      actions.run.setLoop(THREE.LoopRepeat, Infinity);
-      actions.run.clampWhenFinished = false;
-    }
+        const clone = sourceScene.clone(true);
+        clone.position.set(0,0,0);
+        clone.rotation.y = Math.PI;
+        clone.scale.setScalar(0.90);
 
-    function pickRandomIdle(){
-      if(!actions.idles.length || animState.mode==='dead') return;
-      const a = actions.idles[rndi(0, actions.idles.length-1)];
-      a.setLoop(THREE.LoopOnce, 1);
-      a.clampWhenFinished = true;
-      a.time = 0;
-      animState.mode='idle';
-      fadeTo(a, 0.20);
-    }
+        setShadows(clone);
 
-    function startIdleRandom(){
-      if(animState.mode==='dead') return;
-      pickRandomIdle();
-    }
-
-    function playOneShot(action, fade=0.08){
-      if(!action || animState.mode==='dead') return;
-      animState.mode='oneShot';
-      action.reset();
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.enabled = true;
-      action.setEffectiveWeight(1.0);
-      fadeTo(action, fade);
-    }
-
-    function playDance(){
-      if(!actions.dance || animState.mode==='dead') return;
-      animState.mode='dance';
-      actions.dance.setLoop(THREE.LoopRepeat, Infinity);
-      actions.dance.clampWhenFinished = false;
-      fadeTo(actions.dance, 0.18);
-    }
-
-    function playDie(){
-      if(!actions.die) return;
-      animState.mode='dead';
-      actions.die.reset();
-      actions.die.setLoop(THREE.LoopOnce, 1);
-      actions.die.clampWhenFinished = true;
-      fadeTo(actions.die, 0.08);
-    }
-
-    async function loadAnimClip(url){
-      return new Promise((resolve)=>{
-        gltfLoader.load(url, (gltf)=>{
-          const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
-          resolve(clips[0] || null);
-        }, undefined, ()=>{
-          console.warn('Anim load error:', url);
-          resolve(null);
+        clone.traverse(o=>{
+          if(o.isMesh && o.material){
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+          }
         });
-      });
-    }
 
-    async function loadAllAnimations(){
-      for(const u of ANIM_FILES.idle){
-        const c = await loadAnimClip(u);
-        if(c) actions.idles.push(c);
+        removeBigNonSkinnedPlanes(clone);
+
+        {
+          const box = new THREE.Box3().setFromObject(clone);
+          const lift = -box.min.y;
+          clone.position.y += lift + 0.01;
+        }
+
+        mini.hips=null; mini.root=null;
+        clone.traverse(o=>{
+          const n = (o.name||'').toLowerCase();
+          if(!mini.root && (n.includes('armature') || n === 'root')) mini.root = o;
+          if(o.isBone){
+            if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mini.hips = o;
+          }
+        });
+        if(mini.hips){ mini.hipsBaseX = mini.hips.position.x; mini.hipsBaseZ = mini.hips.position.z; }
+        if(mini.root){ mini.rootBaseX = mini.root.position.x; mini.rootBaseZ = mini.root.position.z; }
+
+        mini.model.add(clone);
+
+        mini.mixer = new THREE.AnimationMixer(clone);
+        mini.action = mini.mixer.clipAction(clip);
+        mini.action.reset();
+        mini.action.setLoop(THREE.LoopRepeat, Infinity);
+        mini.action.enabled = true;
+        mini.action.setEffectiveWeight(1.0);
+        mini.action.setEffectiveTimeScale(1.0);
+        mini.action.play();
+
+        mini.animMul = rnd(0.90, 1.12);
+        mini.action.time = rnd(0, clip.duration || 1.0);
+      }catch(err){
+        console.warn('setupMiniAsClone error:', err);
       }
-      actions.jump = await loadAnimClip(ANIM_FILES.jump);
-      actions.flip = await loadAnimClip(ANIM_FILES.flip);
-      actions.kick = await loadAnimClip(ANIM_FILES.kick);
-      actions.die  = await loadAnimClip(ANIM_FILES.die);
-      actions.dance= await loadAnimClip(ANIM_FILES.dance);
     }
 
-    async function loadRunnerModel(){
+    async function loadMixamoRunner(){
       return new Promise((resolve)=>{
-        gltfLoader.load(RUNNER_GLB_URL, async (gltf)=>{
-          const model = gltf.scene;
-          model.position.set(0,0,0);
-          model.scale.setScalar(0.95);
-          setShadows(model);
+        gltfLoader.load(
+          RUNNER_GLB_URL,
+          (gltf)=>{
+            const model = gltf.scene;
 
-          model.traverse(o=>{
-            if(o.isMesh && o.material){
-              const mats = Array.isArray(o.material) ? o.material : [o.material];
-              for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+            model.position.set(0,0,0);
+            model.scale.setScalar(0.95);
+
+            setShadows(model);
+
+            model.traverse(o=>{
+              if(o.isMesh && o.material){
+                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                for(const m of mats){ if(m) m.side = THREE.DoubleSide; }
+              }
+            });
+
+            removeBigNonSkinnedPlanes(model);
+
+            { const box = new THREE.Box3().setFromObject(model);
+              const lift = -box.min.y;
+              model.position.y += lift + 0.01;
             }
-          });
 
-          removeBigNonSkinnedPlanes(model);
+            model.rotation.y = Math.PI;
 
-          { // piedi a terra
-            const box = new THREE.Box3().setFromObject(model);
-            const lift = -box.min.y;
-            model.position.y += lift + 0.01;
-          }
+            mixamoHips = null;
+            mixamoRootNode = null;
+            model.traverse(o=>{
+              const n = (o.name||'').toLowerCase();
+              if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
+              if(o.isBone){
+                if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
+              }
+            });
+            if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
+            if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
 
-          model.rotation.y = Math.PI;
+            while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
+            runnerModel.add(model);
+            fallbackRunner.visible = false;
 
-          mixamoHips = null; mixamoRootNode = null;
-          model.traverse(o=>{
-            const n = (o.name||'').toLowerCase();
-            if(!mixamoRootNode && (n.includes('armature') || n === 'root')) mixamoRootNode = o;
-            if(o.isBone){
-              if(n==='hips' || (n.includes('mixamorig') && n.includes('hips'))) mixamoHips = o;
-            }
-          });
-          if(mixamoHips){ hipsBaseX = mixamoHips.position.x; hipsBaseZ = mixamoHips.position.z; }
-          if(mixamoRootNode){ rootBaseX = mixamoRootNode.position.x; rootBaseZ = mixamoRootNode.position.z; }
-
-          while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
-          runnerModel.add(model);
-
-          runnerMixer = new THREE.AnimationMixer(model);
-
-          await loadAllAnimations();
-
-          const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
-          const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
-          const fixedRun = runClip ? stripRootMotion(runClip) : null;
-          if(fixedRun){
-            actions.run = runnerMixer.clipAction(fixedRun);
-            actions.run.enabled = true;
-            actions.run.setEffectiveWeight(1.0);
-            actions.run.setEffectiveTimeScale(1.0);
-          }
-
-          const idleActions = [];
-          for(const clip of actions.idles) idleActions.push(runnerMixer.clipAction(clip));
-          actions.idles = idleActions;
-
-          if(actions.jump) actions.jump = runnerMixer.clipAction(actions.jump);
-          if(actions.flip) actions.flip = runnerMixer.clipAction(actions.flip);
-          if(actions.kick) actions.kick = runnerMixer.clipAction(actions.kick);
-          if(actions.die)  actions.die  = runnerMixer.clipAction(actions.die);
-          if(actions.dance)actions.dance= runnerMixer.clipAction(actions.dance);
-
-          runnerMixer.addEventListener('finished', ()=>{
-            if(animState.mode==='dead') return;
-            if(animState.mode==='oneShot'){
-              if(game.started && !game.stopped && !game.paused && !game.over) playRun();
-              else startIdleRandom();
+            const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
+            if(!clips.length){
+              console.warn('Nessuna animazione nel GLB: uso fallback');
+              while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
+              runnerModel.add(fallbackRunner);
+              fallbackRunner.visible = true;
+              resolve();
               return;
             }
-            if(animState.mode==='idle'){
-              pickRandomIdle();
-              return;
-            }
-          });
 
-          startIdleRandom();
-          resolve();
-        }, undefined, ()=>{
-          resolve();
-        });
+            const runClip = clips.find(c => (c.name||'').toLowerCase().includes('run')) || clips[0];
+            runClipFixed = stripRootMotion(runClip);
+            runClipDuration = Math.max(0.2, runClipFixed.duration || 1.0);
+
+            runnerMixer = new THREE.AnimationMixer(model);
+            runnerAction = runnerMixer.clipAction(runClipFixed);
+
+            runnerAction.reset();
+            runnerAction.enabled = true;
+            runnerAction.setEffectiveTimeScale(1.0);
+            runnerAction.setEffectiveWeight(1.0);
+            runnerAction.setLoop(THREE.LoopRepeat, Infinity);
+            runnerAction.clampWhenFinished = false;
+            runnerAction.play();
+
+            setupMiniAsClone(miniL, model, runClipFixed);
+            setupMiniAsClone(miniR, model, runClipFixed);
+
+            resolve();
+          },
+          undefined,
+          (err)=>{ console.warn('GLB load error:', err); resolve(); }
+        );
       });
     }
 
-    // ===== Game data =====
+    // Game data
+    const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
+    const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
+    const HEART  = "❤️";
+    const MAGNET = "🧲";
+
+    const BEST_KEY='jungle_runner_best_v3';
+    const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
+    const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
+
+    const TURTLE_VIS_Z = 70;
+    const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
+
     const game = {
       lane:1,
       y:0, vy:0, jumping:false,
+
       sliding:false, slideT:0,
       autoSlideCooldown:0,
 
       baseSpeed: 12.9,
-      score:0, coins:0,
+      score:0, coins:0, best: loadBest(),
 
       maxLives:5,
       lives:3,
@@ -1015,51 +1108,147 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
+
       trioT:0,
 
       entities:[],
       spawnT:0.30,
-
-      paused:false,
-      started:false,
+      paused:true,
       over:false,
 
-      stopped:true,
-      stopBlend:1.0,
+      stopped:false,
+      stopBlend:0.0,
 
       lastTurtleZ: [-99999, -99999, -99999],
     };
 
-    // ✅ LABEL + DOT del pulsante principale (Start / Stop / Restart)
-    function updateMainButton(){
-      if(game.over){
-        mainLbl.textContent = 'RESTART';
-        mainDot.classList.remove('green');
-        return;
+    bestEl.textContent = String(game.best);
+
+    function hpString(){
+      let s="";
+      for(let i=0;i<game.maxLives;i++) s += (i<game.lives) ? "❤️" : "🖤";
+      return s;
+    }
+    function refreshFoodUI(){
+      foodStack.innerHTML = "";
+      const show = game.foodHistory.slice(-6).reverse();
+      for(const emo of show){
+        const d=document.createElement('div');
+        d.className='foodItem';
+        d.textContent=emo;
+        foodStack.appendChild(d);
       }
-      if(!game.started){
-        mainLbl.textContent = 'AVVIA';
-        mainDot.classList.remove('green');
-        return;
-      }
-      if(game.stopped){
-        mainLbl.textContent = 'AVVIA';
-        mainDot.classList.add('green');
-        return;
-      }
-      mainLbl.textContent = 'STOP';
-      mainDot.classList.remove('green');
+      foodCountEl.textContent = String(game.foodCount);
     }
 
-    // ✅ +5% ostacoli ogni 5000 punti
+    function setBoostUI(){
+      const t = Math.max(game.foodBoostT, game.ringBoostT);
+      if(t <= 0){
+        pillBoost.style.display='none';
+        boostBar.style.width='0%';
+        return;
+      }
+      pillBoost.style.display='inline-flex';
+
+      const both = (game.foodBoostT>0 && game.ringBoostT>0);
+      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
+
+      const dur = 10.0;
+      const pct = clamp((t/dur)*100,0,100);
+      boostBar.style.width = pct.toFixed(1)+'%';
+    }
+
+    function openMenu(){
+      menu.style.display='flex';
+      game.paused=true;
+      toggleSettings(false);
+      const st = `Score ${Math.floor(game.score)} • Emoji ${game.coins} • Anelli ${game.ringCount} • Cibo ${game.foodCount}`;
+      overStats.textContent = game.over ? st : "—";
+      overBig.textContent = game.over ? "GAME OVER" : "";
+    }
+    function closeMenu(){ menu.style.display='none'; }
+
+    function resetRun(){
+      game.lane=1;
+      game.y=0; game.vy=0; game.jumping=false;
+
+      game.sliding=false; game.slideT=0;
+      game.autoSlideCooldown=0;
+
+      miniL.sliding=false; miniL.slideT=0; miniL.autoCooldown=0;
+      miniR.sliding=false; miniR.slideT=0; miniR.autoCooldown=0;
+
+      game.score=0; game.coins=0;
+      game.ringCount=0;
+      game.foodCount=0; game.foodHistory=[];
+      refreshFoodUI();
+
+      game.invincibleT=0;
+      game.foodBoostT=0;
+      game.ringBoostT=0;
+      game.magnetT=0;
+
+      game.trioT=0;
+
+      game.spawnT=0.30;
+      game.over=false;
+
+      for(const e of game.entities) scene.remove(e.obj);
+      game.entities.length=0;
+
+      game.paused=false;
+      pauseBtn.textContent='Pausa';
+      btnPause.textContent='⏸️';
+
+      bubble.visible=false;
+      miniL.pivot.visible=false;
+      miniR.pivot.visible=false;
+      miniL.bubble.visible=false;
+      miniR.bubble.visible=false;
+
+      game.lives=3;
+
+      game.stopped = false;
+      game.stopBlend = 0.0;
+      stopBtn.classList.remove('on');
+      stopLbl.textContent = 'STOP';
+
+      game.lastTurtleZ = [-99999, -99999, -99999];
+
+      if(miniL.action && runClipFixed){ miniL.action.time = rnd(0, runClipFixed.duration||1); miniL.animMul = rnd(0.90, 1.12); }
+      if(miniR.action && runClipFixed){ miniR.action.time = rnd(0, runClipFixed.duration||1); miniR.animMul = rnd(0.90, 1.12); }
+    }
+
+    function togglePause(){
+      if(game.over) return;
+      game.paused=!game.paused;
+      pauseBtn.textContent = game.paused ? 'Riprendi' : 'Pausa';
+      btnPause.textContent = game.paused ? '▶️' : '⏸️';
+    }
+
+    function loseLife(){
+      if(game.invincibleT>0) return;
+      game.lives = Math.max(0, game.lives-1);
+      sfx.hit();
+      if(game.lives<=0){
+        game.over=true;
+        game.paused=true;
+        if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
+        openMenu();
+        startBtn.textContent='🔁 Riprova';
+      }
+    }
+    function addLife(){
+      game.lives = Math.min(game.maxLives, game.lives+1);
+      sfx.boost();
+    }
+
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 5000);
       return 1 + 0.05 * steps;
     }
-
-    // ===== Spawn =====
-    const TURTLE_VIS_Z = 70;
-    const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
 
     function canSpawnTurtle(lane, z){
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
@@ -1079,12 +1268,57 @@
       }
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
+      const coinLanes=new Set();
+      const cCount = rndi(1,2);
+      while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
+
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
         obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
+
+      coinLanes.forEach(l=>{
+        const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
+        spr.position.set(lanesX[l], 1.10, z0 - rnd(0,2.8));
+        scene.add(spr);
+        game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
+      });
+
+      if(Math.random() < 0.30){
+        const lane=rndi(0,2);
+        const emo = FOOD[rndi(0,FOOD.length-1)];
+        const spr = makeEmojiSprite(emo);
+        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+        spr.scale.set(0.82,0.82,1);
+        scene.add(spr);
+        game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
+      }
+
+      if(Math.random() < 0.10){
+        const lane=rndi(0,2);
+        const spr = makeEmojiSprite(MAGNET);
+        spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
+        spr.scale.set(0.90,0.90,1);
+        scene.add(spr);
+        game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
+      }
+
+      if(game.lives < game.maxLives){
+        let spawnHeart = false;
+        if(game.coins>0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
+        if(!spawnHeart && Math.random() < 0.03) spawnHeart = true;
+
+        if(spawnHeart){
+          const lane=rndi(0,2);
+          const spr = makeEmojiSprite(HEART);
+          spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,6));
+          spr.scale.set(0.92,0.92,1);
+          scene.add(spr);
+          game.entities.push({ type:'heart', lane, z:spr.position.z, obj:spr });
+        }
+      }
 
       if(Math.random() < 0.18){
         const lane=rndi(0,2);
@@ -1094,7 +1328,7 @@
           t.position.set(lanesX[lane], 0, tz);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
           scene.add(t);
-          game.entities.push({ type:'turtle', lane, z:tz, obj:t });
+          game.entities.push({ type:'turtle', lane, z:tz, obj:t, state:'idle', projT:0 });
           game.lastTurtleZ[lane] = tz;
         }
       }
@@ -1110,66 +1344,29 @@
           game.entities.push({ type:'ring', lane, z:ring.position.z, obj:ring });
         }
       }
-
-      // ✅ FOOD emoji (boost)
-      if(Math.random() < 0.22){
-        const lane = rndi(0,2);
-        const ez = z0 - rnd(2,10);
-        const food = makeFoodEmoji();
-        food.position.set(lanesX[lane], 1.15, ez);
-        scene.add(food);
-        game.entities.push({ type:'food', lane, z:ez, obj:food });
-      }
-
-      // ✅ MAGNET (raro)
-      if(Math.random() < 0.07){
-        const lane = rndi(0,2);
-        const mz = z0 - rnd(5,14);
-        const mag = makeMagnet();
-        mag.position.set(lanesX[lane], 1.10, mz);
-        scene.add(mag);
-        game.entities.push({ type:'magnet', lane, z:mz, obj:mag });
-      }
-
-      // ✅ HEART (molto raro)
-      if(Math.random() < 0.04){
-        const lane = rndi(0,2);
-        const hz = z0 - rnd(7,16);
-        const heart = makeHeart();
-        heart.position.set(lanesX[lane], 1.05, hz);
-        scene.add(heart);
-        game.entities.push({ type:'heart', lane, z:hz, obj:heart });
-      }
     }
 
-    // ===== Controls =====
+    // Controls
     let tiltTarget=0, camRoll=0;
 
     function moveLane(dir){
       if(game.over||game.paused) return;
-      if(!game.started) return;
-      if(game.stopped) return;
       if(game.trioT>0) return;
       game.lane = clamp(game.lane+dir, 0, 3);
       tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
       sfx.lane();
     }
-
     function jump(){
       if(game.over||game.paused) return;
-      if(!game.started) return;
       if(game.stopped) return;
       if(!game.jumping && game.y>=-0.001){
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
-        playOneShot(actions.jump, 0.06);
       }
     }
-
     function slide(){
       if(game.over||game.paused) return;
-      if(!game.started) return;
       if(game.stopped) return;
       game.sliding=true;
       game.slideT=0.55;
@@ -1185,6 +1382,7 @@
       if(k==='p') togglePause();
     });
 
+    // ✅ FIX swipe mobile (dx/dy corretti)
     let touchStart=null;
     renderer.domElement.addEventListener('pointerdown',(e)=>{
       initAudio();
@@ -1193,7 +1391,8 @@
     });
     renderer.domElement.addEventListener('pointerup',(e)=>{
       if(!touchStart) return;
-      const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+      const dx=e.clientX-touchStart.x;
+      const dy=e.clientY-touchStart.y;
       const adx=Math.abs(dx), ady=Math.abs(dy);
       touchStart=null;
       const min=30;
@@ -1202,132 +1401,112 @@
       else { if(dy<0) jump(); else slide(); }
     });
 
-    // ===== Start/Stop/Pause/Home/Dance =====
-    function setStop(on){
-      game.stopped = !!on;
-      if(game.stopped){
-        startIdleRandom(); // ✅ stop = player fermo + idle random
-      }else{
-        if(game.started && !game.paused && !game.over) playRun();
-      }
-      updateMainButton();
-    }
-
-    function resetRun(){
-      game.lane=1;
-      game.y=0; game.vy=0; game.jumping=false;
-      game.sliding=false; game.slideT=0;
-      game.autoSlideCooldown=0;
-
-      game.score=0; game.coins=0;
-      game.ringCount=0;
-      game.foodCount=0; game.foodHistory=[];
-
-      game.invincibleT=0;
-      game.foodBoostT=0;
-      game.ringBoostT=0;
-      game.magnetT=0;
-      game.trioT=0;
-
-      for(const e of game.entities) scene.remove(e.obj);
-      game.entities.length=0;
-
-      game.spawnT = 0.30;
-      game.over=false;
-      game.lives=3;
-
-      game.lastTurtleZ = [-99999, -99999, -99999];
-
-      game.started = false;
-      game.paused = false;
-      setStop(true);
-      updateMainButton();
-    }
-
-    function startGame(){
-      game.started = true;
-      game.paused = false;
-      setStop(false);
-      playRun();
-      btnPause.textContent = '⏸️';
-      updateMainButton();
-    }
-
-    function togglePause(){
-      if(game.over) return;
-      game.paused = !game.paused;
-      btnPause.textContent = game.paused ? '▶️' : '⏸️';
-
-      if(game.paused){
-        startIdleRandom();
-      }else{
-        if(game.started && !game.stopped) playRun();
-        else startIdleRandom();
-      }
-    }
-
-    // ✅ PULSANTE PRINCIPALE (Start / Stop / Restart)
-    btnMain.addEventListener('click', ()=>{
+    startBtn.addEventListener('click', ()=>{
       initAudio();
+      closeMenu();
+      resetRun();
+      startBtn.textContent='▶️ Inizia';
+    });
+    pauseBtn.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
-      // Restart quando morto
-      if(game.over){
-        resetRun();
-        startGame();           // riparte subito
-        return;
-      }
-
-      // Avvio prima volta
-      if(!game.started){
-        startGame();
-        return;
-      }
-
-      // Toggle STOP mentre corre
-      if(game.paused) return;
-      setStop(!game.stopped);
+    btnSettings.addEventListener('click', ()=>{
+      initAudio();
+      game.paused = true;
+      btnPause.textContent = '▶️';
+      menu.style.display = 'flex';
+      toggleSettings(true);
+      overBig.textContent = '';
+      overStats.textContent = 'Impostazioni';
+      syncCamUI();
     });
 
-    // ✅ Dance sotto (se stai correndo: si ferma e poi balla)
-    btnDance.addEventListener('click', ()=>{
+    btnPause.addEventListener('click', ()=>{
       initAudio();
-      if(game.over) return;
-      if(game.started && !game.paused && !game.stopped) setStop(true);
-      playDance();
+      if(menu.style.display !== 'none'){
+        closeMenu();
+        game.paused = false;
+        btnPause.textContent = '⏸️';
+        pauseBtn.textContent = 'Pausa';
+        return;
+      }
+      togglePause();
     });
-
-    btnPause.addEventListener('click', ()=>{ initAudio(); togglePause(); });
 
     btnHome.addEventListener('click', ()=>{
       initAudio();
       resetRun();
+      game.paused = true;
+      btnPause.textContent = '▶️';
+      game.over = false;
+      startBtn.textContent='▶️ Inizia';
+      openMenu();
     });
 
-    // ===== Collisions / Life =====
-    function loseLife(){
-      if(game.invincibleT>0) return;
-      game.lives = Math.max(0, game.lives-1);
-      sfx.hit();
-      if(game.lives<=0){
-        game.over=true;
-        game.started=false;
-        game.paused=false;
-        setStop(true);
+    // STOP button
+    function setStop(on){
+      game.stopped = !!on;
+      stopBtn.classList.toggle('on', game.stopped);
+      stopLbl.textContent = game.stopped ? 'GO' : 'STOP';
 
-        playDie();             // ✅ anim morte
-        updateMainButton();    // ✅ diventa RESTART
+      if(runnerAction){
+        if(game.stopped){
+          runnerAction.paused = false;
+          runnerAction.time = Math.min(runClipDuration*0.35, 0.35);
+        }else{
+          runnerAction.paused = false;
+        }
       }
     }
+    stopBtn.addEventListener('click', ()=>{
+      initAudio();
+      if(game.paused || game.over) return;
+      setStop(!game.stopped);
+    });
 
-    // ===== Update loop =====
-    let camZ = baseCamZ, camY = 4.6, camFov = baseFov, camX = 0;
+    // Camera state
+    let camZ = baseCamZ;
+    let camY = 4.6;
+    let camFov = baseFov;
+    let camX = 0;
+
+    function activeRunnerXs(){
+      if(game.trioT>0) return [lanesX[0], lanesX[1], lanesX[2]];
+      return [lanesX[game.lane]];
+    }
+    function isLaneSliding(lane){
+      if(game.trioT<=0) return (lane === game.lane) && game.sliding;
+      if(lane===0) return miniL.sliding;
+      if(lane===1) return game.sliding;
+      if(lane===2) return miniR.sliding;
+      return false;
+    }
+    function triggerSlide(obj, duration=0.42, cooldown=0.22){
+      obj.sliding = true;
+      obj.slideT = duration;
+      obj.autoCooldown = cooldown;
+      obj.center.rotation.x = -1.20;
+    }
+
+    // Update loop
     let tPrev=performance.now();
 
     function update(dt, tNow){
-      // ✅ animazioni SEMPRE
-      if(runnerMixer){
-        runnerMixer.timeScale = 1.0;
+      if(game.paused) return;
+
+      const stopTarget = game.stopped ? 1.0 : 0.0;
+      game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
+
+      if(runnerMixer && runnerAction){
+        const ts = lerp(1.0, 0.0, game.stopBlend);
+        runnerMixer.timeScale = ts;
+
         runnerMixer.update(dt);
+
+        if(game.stopped && ts < 0.05){
+          runnerAction.paused = true;
+        }else{
+          runnerAction.paused = false;
+        }
 
         if(mixamoHips){
           mixamoHips.position.x = hipsBaseX;
@@ -1339,41 +1518,52 @@
         }
       }
 
-      const gameplayOn = game.started && !game.paused && !game.over;
-
-      // ✅ timers (emoji/magnet/boost) sempre scalati, anche se poi ritorni presto
-      game.invincibleT = Math.max(0, game.invincibleT - dt);
-      game.foodBoostT  = Math.max(0, game.foodBoostT  - dt);
-      game.ringBoostT  = Math.max(0, game.ringBoostT  - dt);
-      game.magnetT     = Math.max(0, game.magnetT     - dt);
-      game.trioT       = Math.max(0, game.trioT       - dt);
-
-      const stopTarget = game.stopped ? 1.0 : 0.0;
-      game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
-
-      if(!gameplayOn){
-        // ✅ tieni SEMPRE il player centrato nella corsia centrale quando non si gioca
-        runnerPivot.position.x = lanesX[1];   // corsia centrale
-        runnerPivot.position.y = 0;
-
-        // ✅ anche l'ombra segue
-        contact.position.x = runnerPivot.position.x;
-        contact.scale.set(1.10, 1.10, 1);
-        contact.material.opacity = 0.55;
-
-        // idle breathing leggero
-        const breathe = Math.sin(tNow*0.0022) * 0.015;
-        runnerCenter.position.y = 0.95 + breathe;
-        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-
-        return;
+      if(game.trioT>0){
+        const tsMini = lerp(1.0, 0.0, game.stopBlend);
+        if(miniL.mixer && miniL.action){
+          miniL.mixer.timeScale = tsMini * (miniL.animMul || 1.0);
+          miniL.mixer.update(dt);
+          if(miniL.hips){ miniL.hips.position.x = miniL.hipsBaseX; miniL.hips.position.z = miniL.hipsBaseZ; }
+          if(miniL.root){ miniL.root.position.x = miniL.rootBaseX; miniL.root.position.z = miniL.rootBaseZ; }
+        }
+        if(miniR.mixer && miniR.action){
+          miniR.mixer.timeScale = tsMini * (miniR.animMul || 1.0);
+          miniR.mixer.update(dt);
+          if(miniR.hips){ miniR.hips.position.x = miniR.hipsBaseX; miniR.hips.position.z = miniR.hipsBaseZ; }
+          if(miniR.root){ miniR.root.position.x = miniR.rootBaseX; miniR.root.position.z = miniR.rootBaseZ; }
+        }
       }
 
-      runnerCenter.position.y = 0.95;
-      runnerCenter.rotation.z = 0;
-
       const trafficMul = (1.0 - game.stopBlend);
-      if(game.stopped) return;
+
+      const inAir = (game.y < -0.01) || game.jumping;
+      dt *= (inAir ? 0.90 : 1.0);
+
+      if(game.invincibleT>0){
+        game.invincibleT -= dt*trafficMul;
+        if(game.invincibleT<=0){
+          game.invincibleT=0;
+          bubble.visible=false;
+          miniL.bubble.visible=false;
+          miniR.bubble.visible=false;
+        }
+      }
+      if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT-dt*trafficMul);
+      if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT-dt*trafficMul);
+      if(game.magnetT>0)   game.magnetT   = Math.max(0, game.magnetT-dt*trafficMul);
+
+      if(game.trioT>0){
+        game.trioT = Math.max(0, game.trioT-dt*trafficMul);
+        if(game.trioT===0){
+          miniL.pivot.visible=false; miniR.pivot.visible=false;
+          miniL.bubble.visible=false; miniR.bubble.visible=false;
+          miniL.sliding=false; miniR.sliding=false;
+        }
+      }
+
+      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt*trafficMul);
+      miniL.autoCooldown = Math.max(0, miniL.autoCooldown - dt*trafficMul);
+      miniR.autoCooldown = Math.max(0, miniR.autoCooldown - dt*trafficMul);
 
       const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
@@ -1383,15 +1573,42 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
 
-      const g=22.0;
-      game.vy += g*dt;
-      game.y  += game.vy*dt;
-      if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
+      const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+      if(anyBoost && game.invincibleT<0.05){
+        game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
+        bubble.visible=true;
+        if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
+      }
 
-      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+      if(!game.stopped){
+        const g=22.0;
+        game.vy += g*dt;
+        game.y  += game.vy*dt;
+        if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
+      }
 
-      runnerPivot.position.x = lanesX[game.lane<=2 ? game.lane : 2];
+      if(!game.stopped){
+        if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
+        if(miniL.sliding){ miniL.slideT -= dt; if(miniL.slideT<=0) miniL.sliding=false; }
+        if(miniR.sliding){ miniR.slideT -= dt; if(miniR.slideT<=0) miniR.sliding=false; }
+      }
+
+      const mainX = (game.trioT>0) ? lanesX[1] : lanesX[game.lane];
+      runnerPivot.position.x = mainX;
       runnerPivot.position.y = (-game.y);
+
+      const pitchRun = game.sliding ? -1.20 : 0.0;
+      const mainPitchTarget = lerp(pitchRun, 0.0, game.stopBlend);
+      runnerCenter.rotation.x = damp(runnerCenter.rotation.x, mainPitchTarget, 18, dt);
+
+      if(game.stopped){
+        const breathe = Math.sin(tNow*0.0022) * 0.015;
+        runnerCenter.position.y = 0.95 + breathe;
+        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+      }else{
+        runnerCenter.position.y = 0.95;
+        runnerCenter.rotation.z = 0;
+      }
 
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
@@ -1399,7 +1616,21 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
+      if(game.trioT>0){
+        if(game.lane===3) game.lane = 1;
+
+        miniL.pivot.visible=true; miniR.pivot.visible=true;
+        miniL.pivot.position.set(lanesX[0], runnerPivot.position.y, 0);
+        miniR.pivot.position.set(lanesX[2], runnerPivot.position.y, 0);
+
+        const lPitchTarget = miniL.sliding ? -1.20 : 0.0;
+        const rPitchTarget = miniR.sliding ? -1.20 : 0.0;
+        miniL.center.rotation.x = damp(miniL.center.rotation.x, lPitchTarget, 18, dt);
+        miniR.center.rotation.x = damp(miniR.center.rotation.x, rPitchTarget, 18, dt);
+      }
+
       const scroll = speed*dt;
+
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
 
@@ -1409,128 +1640,236 @@
       }
       loopJungle(scroll);
 
-      game.spawnT -= dt;
-      if(game.spawnT<=0){
-        spawnRow();
-        game.spawnT = rnd(0.40, 0.75);
+      if(!game.stopped){
+        game.spawnT -= dt;
+        if(game.spawnT<=0){
+          spawnRow();
+          game.spawnT = rnd(0.40, 0.75);
+        }
       }
 
-      // ===== move entities + magnet pull =====
+      const magnetOn = game.magnetT > 0;
+
       for(const e of game.entities){
         e.z += scroll;
         e.obj.position.z = e.z;
 
-        // magnete: attira gli anelli verso il player
-        if(game.magnetT > 0 && e.type === 'ring'){
-          const dz = Math.abs(e.z - 0.25);
-          if(dz < 10.0){
-            const targetX = runnerPivot.position.x;
-            e.obj.position.x = damp(e.obj.position.x, targetX, 12, dt);
-            e.obj.position.y = 0.55 + Math.sin(tNow*0.02 + e.z)*0.06;
+        if(e.type==='turtle' && e.state==='projectile'){
+          e.projT -= dt*trafficMul;
+          e.z -= (speed*3.4)*dt;
+          e.obj.position.z = e.z;
+          if(e.projT <= 0) e.projT = 0;
+        }
+
+        if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
+          const dx = lanesX[(game.trioT>0)?1:game.lane] - e.obj.position.x;
+          const dz = (0 - e.z);
+          const dist = Math.hypot(dx*2.2, dz);
+          if(dist < 12.0){
+            e.obj.position.x += dx * dt * (5.6*(1-dist/12.0));
+            if(e.obj.position.y < 1.1) e.obj.position.y += dt*0.6;
           }
         }
       }
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
+        if(e.type==='turtle' && e.state==='projectile' && e.projT<=0){
+          scene.remove(e.obj); game.entities.splice(i,1);
+          continue;
+        }
         if(e.z > 6.0){
           scene.remove(e.obj);
           game.entities.splice(i,1);
         }
+        if(e.type==='turtle' && e.state==='projectile' && e.z < -140){
+          scene.remove(e.obj); game.entities.splice(i,1);
+        }
       }
 
-      const px = runnerPivot.position.x;
-      const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
+      if(!game.stopped){
+        const xs = activeRunnerXs();
+        const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
-      function collide(e){
-        const dz = Math.abs(e.z - 0.25);
-        const dx = Math.abs(e.obj.position.x - px);
-        const ey = (e.obj.position.y ?? 0);
-        const dy = Math.abs(ey - py);
-        return (dz < 0.75 && dx < 0.60 && dy < 1.05);
-      }
-      function collideTurtle(e){
-        const dz = Math.abs(e.z - 0.35);
-        const dx = Math.abs(e.obj.position.x - px);
-        return (dz < 1.05 && dx < 0.72);
-      }
+        function collideAtX(ex, e){
+          const dz = Math.abs(e.z - 0.25);
+          const dx = Math.abs(e.obj.position.x - ex);
+          const ey = (e.obj.position.y ?? 0);
+          const dy = Math.abs(ey - py);
+          return (dz < 0.75 && dx < 0.60 && dy < 1.05);
+        }
+        function collideTurtle(ex, e){
+          const dz = Math.abs(e.z - 0.35);
+          const dx = Math.abs(e.obj.position.x - ex);
+          return (dz < 1.05 && dx < 0.72);
+        }
 
-      if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
-        for(const e of game.entities){
-          if(e.type!=='ring') continue;
-          if(e.lane !== game.lane) continue;
-          if(Math.abs(e.z - 0.25) < 2.55){
-            playOneShot(actions.flip, 0.05);
-            game.sliding = true;
-            game.slideT  = 0.48;
-            game.autoSlideCooldown = 0.24;
-            break;
+        if(!game.sliding && game.y===0 && game.trioT<=0 && game.autoSlideCooldown<=0 && game.lane<=2){
+          for(const e of game.entities){
+            if(e.type!=='ring') continue;
+            if(e.lane !== game.lane) continue;
+            if(Math.abs(e.z - 0.25) < 2.55){
+              game.sliding = true;
+              game.slideT  = 0.48;
+              game.autoSlideCooldown = 0.24;
+              runnerCenter.rotation.x = -1.20;
+              break;
+            }
           }
         }
+        if(game.trioT>0 && game.y===0){
+          if(!miniL.sliding && miniL.autoCooldown<=0){
+            for(const e of game.entities){
+              if(e.type==='ring' && e.lane===0 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniL, 0.46, 0.22); break; }
+            }
+          }
+          if(!game.sliding && game.autoSlideCooldown<=0){
+            for(const e of game.entities){
+              if(e.type==='ring' && e.lane===1 && Math.abs(e.z-0.25) < 2.55){
+                game.sliding=true; game.slideT=0.46; game.autoSlideCooldown=0.22; runnerCenter.rotation.x=-1.20; break;
+              }
+            }
+          }
+          if(!miniR.sliding && miniR.autoCooldown<=0){
+            for(const e of game.entities){
+              if(e.type==='ring' && e.lane===2 && Math.abs(e.z-0.25) < 2.55){ triggerSlide(miniR, 0.46, 0.22); break; }
+            }
+          }
+        }
+
+        for(const e of game.entities){
+          if(e.type==='turtle' && e.state==='projectile'){
+            for(let j=game.entities.length-1;j>=0;j--){
+              const o = game.entities[j];
+              if(o.type!=='obst') continue;
+              if(o.lane!==e.lane) continue;
+              if(Math.abs(o.z - e.z) < 1.35){
+                scene.remove(o.obj);
+                game.entities.splice(j,1);
+              }
+            }
+          }
+        }
+
+        for(let i=game.entities.length-1;i>=0;i--){
+          const e=game.entities[i];
+
+          if(e.type==='ring'){
+            const laneX = lanesX[e.lane];
+            if(!collideAtX(laneX, e)) continue;
+
+            if(game.trioT<=0){
+              if(!game.sliding) continue;
+            }else{
+              if(!isLaneSliding(e.lane)) continue;
+            }
+
+            game.ringCount += 1;
+            scene.remove(e.obj); game.entities.splice(i,1);
+            sfx.ring();
+
+            if(game.ringCount >= 50){
+              game.trioT = 10.0;
+              game.ringBoostT = 10.0;
+              game.invincibleT = Math.max(game.invincibleT, 10.0);
+              bubble.visible=true;
+              miniL.bubble.visible=true;
+              miniR.bubble.visible=true;
+              game.ringCount = 0;
+              sfx.boost();
+              if(game.lane===3) game.lane = 1;
+
+              if(miniL.action && runClipFixed){ miniL.action.time = rnd(0, runClipFixed.duration||1); miniL.animMul = rnd(0.90, 1.12); }
+              if(miniR.action && runClipFixed){ miniR.action.time = rnd(0, runClipFixed.duration||1); miniR.animMul = rnd(0.90, 1.12); }
+            }
+            continue;
+          }
+
+          if(e.type==='turtle' && e.state==='idle'){
+            let hitT=false;
+            for(const ex of xs){ if(collideTurtle(ex, e)){ hitT=true; break; } }
+            if(hitT){
+              e.state='projectile';
+              e.projT = 2.8;
+              sfx.boost();
+            }
+            continue;
+          }
+
+          let hit=false;
+          for(const ex of xs){ if(collideAtX(ex,e)){ hit=true; break; } }
+          if(!hit) continue;
+
+          if(e.type==='coin'){
+            game.coins += 1;
+            game.score += 28;
+            scene.remove(e.obj); game.entities.splice(i,1);
+            sfx.coin();
+            continue;
+          }
+
+          if(e.type==='food'){
+            game.foodCount += 1;
+            game.foodHistory.push(e.emo);
+            refreshFoodUI();
+            scene.remove(e.obj); game.entities.splice(i,1);
+            sfx.food();
+
+            if(game.foodCount >= 10){
+              game.foodBoostT = 10.0;
+              game.invincibleT = Math.max(game.invincibleT, 10.0);
+              bubble.visible=true;
+              if(game.trioT>0){ miniL.bubble.visible=true; miniR.bubble.visible=true; }
+              game.foodCount = 0;
+              game.foodHistory = [];
+              refreshFoodUI();
+              sfx.boost();
+            }
+            continue;
+          }
+
+          if(e.type==='heart'){
+            if(game.lives < game.maxLives) addLife();
+            scene.remove(e.obj); game.entities.splice(i,1);
+            continue;
+          }
+
+          if(e.type==='magnet'){
+            game.magnetT = 8.0;
+            scene.remove(e.obj); game.entities.splice(i,1);
+            sfx.magnet();
+            continue;
+          }
+
+          if(e.type==='obst'){
+            const inv = (game.invincibleT>0);
+            if(inv || game.trioT>0){
+              scene.remove(e.obj); game.entities.splice(i,1);
+            }else{
+              scene.remove(e.obj); game.entities.splice(i,1);
+              loseLife();
+            }
+            continue;
+          }
+        }
+
+        game.score += (18 * speedMul) * dt;
+        if(game.score>game.best){ game.best=Math.floor(game.score); saveBest(game.best); }
       }
-      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
-      for(let i=game.entities.length-1;i>=0;i--){
-        const e=game.entities[i];
+      // HUD
+      scoreEl.textContent = String(Math.floor(game.score));
+      coinsEl.textContent = String(game.coins);
+      bestEl.textContent  = String(game.best);
+      ringsEl.textContent = String(game.ringCount);
+      hpTxt.textContent   = hpString();
+      magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
 
-        // ✅ FOOD
-        if(e.type==='food'){
-          if(!collide(e)) continue;
-          scene.remove(e.obj); game.entities.splice(i,1);
-          game.foodCount += 1;
-          game.foodBoostT = 6.0;
-          sfx.food();
-          continue;
-        }
+      setBoostUI();
+      if(bubble.visible){ bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01); }
 
-        // ✅ MAGNET
-        if(e.type==='magnet'){
-          if(!collide(e)) continue;
-          scene.remove(e.obj); game.entities.splice(i,1);
-          game.magnetT = 8.0;
-          sfx.magnet();
-          continue;
-        }
-
-        // ✅ HEART
-        if(e.type==='heart'){
-          if(!collide(e)) continue;
-          scene.remove(e.obj); game.entities.splice(i,1);
-          game.lives = Math.min(game.maxLives, game.lives + 1);
-          sfx.heart();
-          continue;
-        }
-
-        // ✅ RING (prima solo in slide; ora anche con magnete attivo)
-        if(e.type==='ring'){
-          if(!collide(e)) continue;
-
-          if(!game.sliding && game.magnetT <= 0) continue;
-
-          game.ringCount += 1;
-          game.ringBoostT = 3.5; // boost anelli
-          scene.remove(e.obj); game.entities.splice(i,1);
-          sfx.ring();
-          continue;
-        }
-
-        if(e.type==='turtle'){
-          if(!collideTurtle(e)) continue;
-          playOneShot(actions.kick, 0.05);
-          sfx.boost();
-          scene.remove(e.obj); game.entities.splice(i,1);
-          continue;
-        }
-
-        if(e.type==='obst'){
-          if(!collide(e)) continue;
-          scene.remove(e.obj); game.entities.splice(i,1);
-          loseLife();
-          continue;
-        }
-      }
-
-      game.score += (18 * speedMul) * dt;
+      tiltTarget *= 0.92;
+      camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
 
     function animate(tNow){
@@ -1539,10 +1878,11 @@
 
       update(dt,tNow);
 
+      const inAir = (game.y < -0.01) || game.jumping;
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
-      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : (inAir ? -2 : 0));
       const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
@@ -1569,12 +1909,10 @@
         shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
 
-      tiltTarget *= 0.92;
-      camRoll = damp(camRoll, tiltTarget, 10, dt);
-
       const bob = Math.sin(tNow*0.0020) * 0.005;
       camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
       camera.rotation.z = camRoll;
+
       camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 
       renderer.render(scene, camera);
@@ -1588,17 +1926,11 @@
     }
     window.addEventListener('resize', onResize);
 
-    // ===== Boot =====
     (async ()=>{
-      syncCamUI();
-      await loadRunnerModel();
-
-      game.started = false;
-      game.over = false;
-      game.paused = false;
-      setStop(true);
-      updateMainButton();
-
+      refreshFoodUI();
+      hpTxt.textContent = hpString();
+      await loadMixamoRunner();
+      openMenu();
       requestAnimationFrame(animate);
     })();
   </script>
