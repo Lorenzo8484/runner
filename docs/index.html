@@ -7,14 +7,18 @@
   <style>
     :root{
       color-scheme: dark;
-      /* ✅ barra con larghezza fissa: così Magnete / Boost / Food Boost sono IDENTICHE */
+
+      /* ✅ tutto +30% */
+      --uiScale: 1.30;
+
+      /* ✅ barra con larghezza fissa (base) */
       --hud-bar-w: 60px;
     }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
     /* =========================================================
-       ✅ PILL EXACT (come foto) + versione HALF (50%)
+       ✅ PILL EXACT + scaled
        ========================================================= */
     .pillFx{
       position:relative;
@@ -60,69 +64,73 @@
     .pillFx, .pillFx * { transform: translateZ(0); }
 
     /* =========================================================
-       ✅ ICON STYLE (SVG “lucido”) — HALF
+       ✅ ICON STYLE — scaled
        ========================================================= */
     .ico{
-      width:11px;height:11px;
+      width:calc(11px * var(--uiScale));
+      height:calc(11px * var(--uiScale));
       display:inline-block;
       flex:0 0 auto;
       filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));
     }
-    .icoSm{ width:9px;height:9px; }
+    .icoSm{
+      width:calc(9px * var(--uiScale));
+      height:calc(9px * var(--uiScale));
+    }
 
     /* =========================================================
-       ✅ HUD LEFT (2 colonne + 3 barre) — HALF
+       ✅ HUD LEFT — scaled
        ========================================================= */
     .hudWrap{
       position:fixed;
-      top:55px;
-      left:8px;
+      top:calc(55px * var(--uiScale));
+      left:calc(8px * var(--uiScale));
       z-index:28;
       pointer-events:none;
-      width:min(230px, calc(100vw - 16px));
+      width:min(calc(230px * var(--uiScale)), calc(100vw - calc(16px * var(--uiScale))));
     }
     .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
     .hudGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:6px;
+      gap:calc(6px * var(--uiScale));
       align-items:start;
     }
 
     .hudP{
       pointer-events:none;
-      padding:4px 6px;
+      padding:calc(4px * var(--uiScale)) calc(6px * var(--uiScale));
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:5px;
+      gap:calc(5px * var(--uiScale));
       min-width:0;
     }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
-    .hudL{ display:flex; align-items:center; gap:5px; min-width:0; }
-    .hudT{ font-weight:950; font-size:7px; white-space:nowrap; }
-    .hudV{ font-weight:950; font-size:8px; white-space:nowrap; }
+    .hudL{ display:flex; align-items:center; gap:calc(5px * var(--uiScale)); min-width:0; }
+    .hudT{ font-weight:950; font-size:calc(7px * var(--uiScale)); white-space:nowrap; }
+    .hudV{ font-weight:950; font-size:calc(8px * var(--uiScale)); white-space:nowrap; }
 
     /* =========================================================
-       ✅ BAR PILL ROW — FIX (tutte uguali, evita che FOOD risulti più alta)
+       ✅ BAR ROW — scaled (tutte uguali)
        ========================================================= */
     .hudBarRow{
       display:grid;
-      grid-template-columns: auto var(--hud-bar-w) auto; /* ✅ barra fissa */
+      grid-template-columns: auto calc(var(--hud-bar-w) * var(--uiScale)) auto;
       align-items:center;
-      gap:5px;
+      gap:calc(5px * var(--uiScale));
       min-width:0;
       width:100%;
     }
     .hudBar{
-      height:3px;
-      width:var(--hud-bar-w);
-      min-width:var(--hud-bar-w);
-      max-width:var(--hud-bar-w);
+      height:calc(3px * var(--uiScale));
+      width:calc(var(--hud-bar-w) * var(--uiScale));
+      min-width:calc(var(--hud-bar-w) * var(--uiScale));
+      max-width:calc(var(--hud-bar-w) * var(--uiScale));
       border-radius:999px;
       background:rgba(255,255,255,.12);
       overflow:hidden;
@@ -134,41 +142,41 @@
       box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
 
-    /* ✅ assicura che il contenuto dentro le pill-bar non “spinga” in altezza */
+    /* evita che le emoji spingano l’altezza */
     #pillBoost .hudL,
     #foodBoostPill .hudL{
       min-height:0;
       line-height:1;
     }
-    /* (opzionale) se il tuo JS mette un’emoji grande nel boostIcon, la rimpiccioliamo */
-    #pillBoost #boostIcon{ font-size:9px; line-height:1; }
+    #pillBoost #boostIcon{ font-size:calc(9px * var(--uiScale)); line-height:1; }
 
-    /* ===== Bottoni in alto — HALF ===== */
+    /* ===== Bottoni top: spostati a destra + RIMOSSO PAUSA ===== */
     .topLeftBtns{
       position:fixed;
-      top:5px;
-      left:5px;
+      top:calc(5px * var(--uiScale));
+      right:calc(5px * var(--uiScale));   /* ✅ a destra */
+      left:auto;
       display:flex;
-      gap:5px;
+      gap:calc(5px * var(--uiScale));
       z-index:30;
       pointer-events:none;
-      transform: translateX(125px);
+      transform:none;                      /* ✅ niente translateX */
     }
     .btn{
       pointer-events:auto;
       cursor:pointer;
       user-select:none;
       font-weight:950;
-      height:16px;
-      padding:0 6px;
+      height:calc(16px * var(--uiScale));
+      padding:0 calc(6px * var(--uiScale));
       border-radius:999px;
       color:#eaf1ff;
       background: transparent;
       border:none;
     }
     .iconBtn{
-      width:28px;
-      height:16px;
+      width:calc(28px * var(--uiScale));
+      height:calc(16px * var(--uiScale));
       padding:0;
       border-radius:999px;
       display:flex;
@@ -176,39 +184,44 @@
       justify-content:center;
       line-height:1;
     }
-    .iconBtn .ico{ width:10px;height:10px; }
+    .iconBtn .ico{
+      width:calc(10px * var(--uiScale));
+      height:calc(10px * var(--uiScale));
+    }
 
-    /* ===== Start / Dance a destra — HALF ===== */
+    /* ===== Start / Dance: un po’ più in alto ===== */
     .rightStack{
       position:fixed;
-      right:6px;
-      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      right:calc(6px * var(--uiScale));
+      bottom: calc(calc(8px * var(--uiScale)) + env(safe-area-inset-bottom, 0px) + calc(22px * var(--uiScale))); /* ✅ più su */
       z-index:30;
       display:flex;
       flex-direction:column;
-      gap:5px;
+      gap:calc(5px * var(--uiScale));
       pointer-events:auto;
       align-items:flex-end;
     }
     .bigBtn{
       pointer-events:auto;
-      width:70px;
-      height:20px;
+      width:calc(70px * var(--uiScale));
+      height:calc(20px * var(--uiScale));
       border-radius:999px;
       font-weight:950;
-      font-size:7px;
+      font-size:calc(7px * var(--uiScale));
       letter-spacing:.2px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:5px;
+      gap:calc(5px * var(--uiScale));
       color:#eaf1ff;
       background:transparent;
       border:none;
     }
 
     .pillDot{
-      width:6px;height:6px;border-radius:50%;
+      width:calc(6px * var(--uiScale));
+      height:calc(6px * var(--uiScale));
+      border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(255,59,48,.90);
     }
@@ -217,34 +230,40 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 6px rgba(52,199,89,.90);
     }
 
-    /* ===== Colonna cibo — HALF ===== */
+    /* ===== Colonna cibo — scaled ===== */
     .rightCol{
-      position:fixed; top:28px; right:5px; width:32px;
-      display:flex; flex-direction:column; align-items:center; gap:5px;
+      position:fixed;
+      top:calc(28px * var(--uiScale));
+      right:calc(5px * var(--uiScale));
+      width:calc(32px * var(--uiScale));
+      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--uiScale));
       pointer-events:none; z-index:20;
     }
     .foodStack{
-      width:32px; max-height:100px; overflow:hidden;
-      display:flex; flex-direction:column; align-items:center; gap:5px;
+      width:calc(32px * var(--uiScale));
+      max-height:calc(100px * var(--uiScale));
+      overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--uiScale));
       background:transparent; border:none; padding:0;
     }
     .foodItem{
-      width:27px;height:15px;
+      width:calc(27px * var(--uiScale));
+      height:calc(15px * var(--uiScale));
       border-radius:999px;
       display:flex;align-items:center;justify-content:center;
-      font-size:8px;
+      font-size:calc(8px * var(--uiScale));
     }
     .foodCount{
-      width:60px;
+      width:calc(60px * var(--uiScale));
       text-align:center;
       font-weight:950;
-      font-size:7px;
-      padding:4px 0;
+      font-size:calc(7px * var(--uiScale));
+      padding:calc(4px * var(--uiScale)) 0;
       border-radius:999px;
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:4px;
+      gap:calc(4px * var(--uiScale));
     }
 
     /* ===== Settings overlay (uguale) ===== */
@@ -360,15 +379,26 @@
           <div class="hudV"><span id="rings">0</span></div>
         </div>
 
-        <!-- Vita (dx) — ✅ ICONA RIMOSSA -->
+        <!-- Vita (dx) — ✅ ICONA RIPRISTINATA -->
         <div class="hudP pillFx hudHalf">
           <div class="hudL">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <radialGradient id="gHeart" cx="35%" cy="25%" r="80%">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                  <stop offset=".35" stop-color="#ffc6d2" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#ff2d55" stop-opacity=".95"/>
+                </radialGradient>
+              </defs>
+              <path fill="url(#gHeart)" d="M12 21s-7-4.6-9.4-9C.6 8.3 2.7 5.5 6 5.2c1.8-.2 3.2.7 4 1.7.8-1 2.2-1.9 4-1.7 3.3.3 5.4 3.1 3.4 6.8C19 16.4 12 21 12 21z"/>
+              <path fill="rgba(255,255,255,.25)" d="M6.4 7.5c1.2-1 2.7-1 3.6-.3"/>
+            </svg>
             <div class="hudT">Vita</div>
           </div>
           <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
         </div>
 
-        <!-- Magnete (full width, barra) -->
+        <!-- Magnete -->
         <div class="hudP pillFx hudFull">
           <div class="hudBarRow">
             <div class="hudL">
@@ -390,7 +420,7 @@
           </div>
         </div>
 
-        <!-- Boost (full width, usa i tuoi id) -->
+        <!-- Boost -->
         <div class="hudP pillFx hudFull" id="pillBoost" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
@@ -402,7 +432,7 @@
           </div>
         </div>
 
-        <!-- ✅ NUOVA PILL: BOOST CIBO (ora uguale al magnete) -->
+        <!-- Food Boost -->
         <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
           <div class="hudBarRow">
             <div class="hudL">
@@ -426,13 +456,11 @@
 
       </div>
 
-      <!-- ✅ #best resta per il JS, ma invisibile -->
       <span id="best" style="display:none;">0</span>
-
     </div>
   </div>
 
-  <!-- BOTTONI IN ALTO -->
+  <!-- BOTTONI IN ALTO (✅ solo Home + Impostazioni, a destra) -->
   <div class="topLeftBtns">
     <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -459,22 +487,9 @@
         <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
       </svg>
     </button>
-
-    <button class="btn pillFx iconBtn" id="btnPause" aria-label="Pausa" title="Pausa">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gPause" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-            <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
-            <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gPause)" d="M7 5h4v14H7V5zm6 0h4v14h-4V5z"/>
-      </svg>
-    </button>
   </div>
 
-  <!-- Start / Dance -->
+  <!-- Start / Dance (✅ più in alto via CSS) -->
   <div class="rightStack">
     <button class="bigBtn pillFx" id="btnMain">
       <span class="pillDot" id="mainDot"></span>
