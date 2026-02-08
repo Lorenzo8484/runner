@@ -4,63 +4,192 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
+
   <style>
     :root { color-scheme: dark; }
     html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
     canvas{display:block;touch-action:none;}
 
-    /* ===== HUD (come cerchio foto) in alto a sinistra ===== */
+    /* ============================
+       HUD MINIMAL DARK (GLASS)
+       ============================ */
     .hudWrap{
       position:fixed;
-      top:8px;
-      left:8px;
+      top:62px; /* sotto i 3 bottoni in alto */
+      left:12px;
       z-index:28;
       pointer-events:none;
+      user-select:none;
     }
     .hudCard{
       pointer-events:none;
-      background:rgba(255,255,255,.06);
+      width:min(320px, 76vw);
+      padding:12px 12px 10px;
+      border-radius:18px;
+
+      /* glass dark + gradiente “dribbble” */
+      background:
+        radial-gradient(120% 140% at 10% 0%, rgba(168, 110, 255, .18), transparent 55%),
+        radial-gradient(120% 140% at 90% 0%, rgba(80, 165, 255, .14), transparent 55%),
+        rgba(16, 18, 28, .56);
+
       border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
+      box-shadow:
+        0 18px 60px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.10);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .hudTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .hudTitle .brand{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+      letter-spacing:.2px;
+      opacity:.95;
+    }
+    .hudTitle .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.95), rgba(255,255,255,.06));
+      box-shadow: 0 0 10px rgba(160,120,255,.35);
+      opacity:.9;
+    }
+    .hudGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:8px;
+    }
+    .hudRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+
+      padding:10px 12px;
+      border-radius:14px;
+
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    .hudLeft{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .hudIcon{
+      width:30px;height:30px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      font-size:16px;
+      flex:0 0 auto;
+    }
+    .hudKey{
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.2px;
+      opacity:.92;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .hudVal{
+      font-size:14px;
+      font-weight:950;
+      letter-spacing:.3px;
+      opacity:.98;
+      flex:0 0 auto;
+    }
+    #hpTxt{
+      font-weight:900;
+      letter-spacing:.4px;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
+    }
+
+    /* Magnete pill */
+    .miniPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       padding:8px 10px;
-      color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      min-width:220px;
-      max-width:62vw;
+      border-radius:999px;
+      margin-top:10px;
+
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
-    .hudRow{display:flex;justify-content:space-between;gap:10px;align-items:center;}
-    .hudSmall{font-size:11px;opacity:.86;line-height:1.2}
+    .miniPill b{ font-weight:950; }
+
+    /* Boost pill + barra */
     .hudPill{
-      display:inline-flex;align-items:center;gap:8px;margin-top:7px;
-      padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.12);font-size:11px;white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+      padding:9px 10px;
+      border-radius:999px;
+
+      background:
+        radial-gradient(120% 160% at 10% 0%, rgba(168, 110, 255, .18), transparent 55%),
+        rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.09);
+      white-space:nowrap;
     }
-    .hudBar{height:6px;width:110px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;}
-    .hudBar>i{display:block;height:100%;width:0%;background:rgba(255,255,255,.78);}
+    .hudPill strong{ font-weight:950; letter-spacing:.2px; }
+    .hudBar{
+      height:7px;
+      width:120px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      overflow:hidden;
+      border:1px solid rgba(0,0,0,.30);
+    }
+    .hudBar>i{
+      display:block;height:100%;width:0%;
+      background: linear-gradient(90deg, rgba(168,110,255,.90), rgba(80,165,255,.90));
+      box-shadow: 0 0 16px rgba(168,110,255,.35);
+    }
 
     /* ===== Bottoni icona in alto a sinistra (Home/Settings/Pausa) ===== */
     .topLeftBtns{
-      position:fixed; top:8px; left:8px;
+      position:fixed; top:10px; left:12px;
       display:flex; flex-direction:row; gap:8px;
       z-index:30; pointer-events:none;
-      /* sposto a destra per non coprire HUD */
-      transform: translateX(calc(220px + 12px));
     }
     .btn{
-      pointer-events:auto;background:rgba(255,255,255,.08);
+      pointer-events:auto;
+      background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.16);
-      color:#eaf1ff;padding:9px 11px;border-radius:12px;
-      font-weight:800;cursor:pointer;user-select:none;
-      backdrop-filter:blur(10px);
+      color:#eaf1ff;
+      padding:9px 11px;
+      border-radius:14px;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      box-shadow:0 12px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.10);
     }
     .btn:active{transform:scale(.98);}
     .iconBtn{
       pointer-events:auto;
-      width:40px;height:40px;
+      width:44px;height:44px;
       padding:0;
-      border-radius:12px;
+      border-radius:14px;
       display:flex;align-items:center;justify-content:center;
-      font-size:17px;
+      font-size:18px;
       line-height:1;
     }
 
@@ -76,9 +205,9 @@
       pointer-events:auto;
     }
     .bigBtn{
-      width:86px;
-      height:42px;
-      border-radius:12px;
+      width:92px;
+      height:44px;
+      border-radius:14px;
       font-weight:950;
       font-size:13px;
       letter-spacing:.1px;
@@ -86,20 +215,21 @@
       align-items:center;
       justify-content:center;
       gap:8px;
-      background:rgba(255,255,255,.06);
+      background:rgba(255,255,255,.07);
       border:1px solid rgba(255,255,255,.14);
       color:#eaf1ff;
-      backdrop-filter:blur(10px);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      box-shadow:0 18px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
     }
     .pillDot{
       width:12px;height:12px;border-radius:50%;
       background:#ff3b30;flex:0 0 auto;
-      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(255,59,48,.9);
+      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 10px rgba(255,59,48,.75);
     }
     .pillDot.green{
       background:#34c759;
-      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 8px rgba(52,199,89,.9);
+      box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 0 10px rgba(52,199,89,.75);
     }
 
     /* ===== Colonna cibo (come vecchio) a destra sotto le icone ===== */
@@ -113,12 +243,13 @@
       display:flex; flex-direction:column; align-items:center; gap:6px;
       background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;
+      border-radius:14px;
       padding:7px 6px;
       backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
     }
     .foodItem{
-      width:36px;height:36px;border-radius:11px;
+      width:36px;height:36px;border-radius:12px;
       display:flex;align-items:center;justify-content:center;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
@@ -134,6 +265,8 @@
       border-radius:999px;
       padding:6px 0;
       font-size:12px;
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
     }
 
     /* ===== Settings overlay ===== */
@@ -145,6 +278,7 @@
       padding:14px;
       background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.65));
       backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
       z-index:40;
     }
     .panel{
@@ -183,32 +317,66 @@
   }
   </script>
 </head>
+
 <body>
 
-  <!-- HUD conteggi (come cerchio foto) -->
+  <!-- HUD MINIMAL DARK (NO RECORD) -->
   <div class="hudWrap">
     <div class="hudCard">
-      <div class="hudRow">
-        <div><strong>Score</strong>: <span id="score">0</span></div>
-        <div class="hudSmall">Record: <span id="best">0</span></div>
+
+      <div class="hudTitle">
+        <div class="brand"><span class="dot"></span> Jungle Runner</div>
       </div>
-      <div class="hudRow">
-        <div><strong>Emoji</strong>: <span id="coins">0</span></div>
-        <div class="hudSmall"><span id="ringIcon">⭕️</span> <span id="rings">0</span></div>
+
+      <div class="hudGrid">
+        <div class="hudRow">
+          <div class="hudLeft">
+            <div class="hudIcon">🏁</div>
+            <div class="hudKey">Score</div>
+          </div>
+          <div class="hudVal" id="score">0</div>
+        </div>
+
+        <div class="hudRow">
+          <div class="hudLeft">
+            <div class="hudIcon">✨</div>
+            <div class="hudKey">Emoji</div>
+          </div>
+          <div class="hudVal" id="coins">0</div>
+        </div>
+
+        <div class="hudRow">
+          <div class="hudLeft">
+            <div class="hudIcon">⭕️</div>
+            <div class="hudKey">Anelli</div>
+          </div>
+          <div class="hudVal" id="rings">0</div>
+        </div>
+
+        <div class="hudRow">
+          <div class="hudLeft">
+            <div class="hudIcon">❤️</div>
+            <div class="hudKey">Vita</div>
+          </div>
+          <div class="hudVal" id="hpTxt">❤️❤️❤️🖤🖤</div>
+        </div>
       </div>
-      <div class="hudRow hudSmall" style="margin-top:6px;">
-        <div><strong>Vita</strong>: <span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
-        <div><span id="magTxt">🧲 0</span></div>
+
+      <div class="miniPill">
+        <span>🧲</span>
+        <span style="opacity:.85;font-weight:800;">Magnete</span>
+        <b id="magTxt">0</b>
       </div>
 
       <div class="hudPill" id="pillBoost" style="display:none;">
         <span id="boostIcon">⚡️</span><strong id="boostName">BOOST</strong>
         <div class="hudBar"><i id="boostBar"></i></div>
       </div>
+
     </div>
   </div>
 
-  <!-- SOLO 3 BOTTONI IN ALTO (home/settings/pause) -->
+  <!-- SOLO 3 BOTTONI IN ALTO -->
   <div class="topLeftBtns">
     <button class="btn iconBtn" id="btnHome" aria-label="Home">🏠</button>
     <button class="btn iconBtn" id="btnSettings" aria-label="Impostazioni">⚙️</button>
@@ -279,7 +447,6 @@
     // ===== UI: HUD =====
     const scoreEl = document.getElementById('score');
     const coinsEl = document.getElementById('coins');
-    const bestEl  = document.getElementById('best');
     const ringsEl = document.getElementById('rings');
     const hpTxt   = document.getElementById('hpTxt');
     const magTxt  = document.getElementById('magTxt');
@@ -326,7 +493,7 @@
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // ===== SETTINGS =====
-    const CAM_KEY = 'jr_cam_settings_v8';
+    const CAM_KEY = 'jr_cam_settings_v9';
     const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06, shake: true };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
@@ -904,7 +1071,7 @@
     }
     function pickRandomIdle(){
       if(!actions.idles.length || animState.mode==='dead') return;
-      const a = actions.idles[rndi(0, actions.idles.length-1)];
+      const a = actions.idles[Math.floor(Math.random()*actions.idles.length)];
       a.setLoop(THREE.LoopOnce, 1);
       a.clampWhenFinished = true;
       a.time = 0;
@@ -953,7 +1120,6 @@
       });
     }
     async function loadAllAnimations(){
-      // idles multipli
       for(const u of ANIM_FILES.idle){
         const c = await loadAnimClip(u);
         if(c) actions.idles.push(c);
@@ -983,7 +1149,6 @@
 
           removeBigNonSkinnedPlanes(model);
 
-          // piedi a terra
           {
             const box = new THREE.Box3().setFromObject(model);
             const lift = -box.min.y;
@@ -1008,10 +1173,8 @@
 
           runnerMixer = new THREE.AnimationMixer(model);
 
-          // carica animazioni esterne
           await loadAllAnimations();
 
-          // run base dal glb running.glb
           const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
           const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
           const fixedRun = runClip ? stripRootMotion(runClip) : null;
@@ -1022,7 +1185,6 @@
             actions.run.setEffectiveTimeScale(1.0);
           }
 
-          // trasformo clip in actions
           const idleActions = [];
           for(const clip of actions.idles) idleActions.push(runnerMixer.clipAction(clip));
           actions.idles = idleActions;
@@ -1049,7 +1211,6 @@
           startIdleRandom();
           resolve();
         }, undefined, ()=>{
-          // fallback
           while(runnerModel.children.length) runnerModel.remove(runnerModel.children[0]);
           runnerModel.add(fallbackRunner);
           resolve();
@@ -1057,15 +1218,11 @@
       });
     }
 
-    // ===== Game data (con funzioni vecchie: emoji/cibo/magnete/vita/boost) =====
+    // ===== Game data =====
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
     const HEART  = "❤️";
     const MAGNET = "🧲";
-
-    const BEST_KEY='jungle_runner_best_v4';
-    const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
-    const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     const game = {
       lane:1,
@@ -1076,7 +1233,6 @@
       baseSpeed: 12.9,
       score:0,
       coins:0,
-      best: loadBest(),
 
       maxLives:5,
       lives:3,
@@ -1089,7 +1245,7 @@
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
-      trioT:0, // nel nuovo codice non usiamo i mini-runner, ma lasciamo compatibilità
+      trioT:0,
 
       entities:[],
       spawnT:0.30,
@@ -1103,8 +1259,6 @@
 
       lastTurtleZ: [-99999, -99999, -99999],
     };
-
-    bestEl.textContent = String(game.best);
 
     function hpString(){
       let s="";
@@ -1141,7 +1295,6 @@
       boostBar.style.width = pct.toFixed(1)+'%';
     }
 
-    // ✅ LABEL + DOT del pulsante principale (Start / Stop / Restart)
     function updateMainButton(){
       if(game.over){
         mainLbl.textContent = 'RESTART';
@@ -1162,7 +1315,6 @@
       mainDot.classList.remove('green');
     }
 
-    // ✅ +5% ostacoli ogni 5000 punti
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 5000);
       return 1 + 0.05 * steps;
@@ -1190,7 +1342,6 @@
       }
       while(blocked.size<oCount) blocked.add(rndi(0,2));
 
-      // coin lanes
       const coinLanes=new Set();
       const cCount = rndi(1,2);
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
@@ -1209,7 +1360,6 @@
         game.entities.push({ type:'coin', lane:l, z:spr.position.z, obj:spr });
       });
 
-      // food
       if(Math.random() < 0.30){
         const lane=rndi(0,2);
         const emo = FOOD[rndi(0,FOOD.length-1)];
@@ -1220,7 +1370,6 @@
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // magnet
       if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
@@ -1230,7 +1379,6 @@
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // heart (solo se non sei già a 5)
       if(game.lives < game.maxLives){
         let spawnHeart = false;
         if(game.coins>0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
@@ -1245,7 +1393,6 @@
         }
       }
 
-      // turtle
       if(Math.random() < 0.18){
         const lane=rndi(0,2);
         const tz = z0 - rnd(3,11);
@@ -1259,7 +1406,6 @@
         }
       }
 
-      // rings: 2 vicini
       if(Math.random() < 0.26){
         const lane = rndi(0,2);
         const baseZ = z0 - rnd(2,9);
@@ -1337,7 +1483,7 @@
     function setStop(on){
       game.stopped = !!on;
       if(game.stopped){
-        startIdleRandom(); // stop = player fermo + idle random
+        startIdleRandom();
       }else{
         if(game.started && !game.paused && !game.over) playRun();
       }
@@ -1376,12 +1522,11 @@
       game.paused = false;
       setStop(true);
 
-      // HUD refresh
       scoreEl.textContent = '0';
       coinsEl.textContent = '0';
       ringsEl.textContent = '0';
       hpTxt.textContent = hpString();
-      magTxt.textContent = '🧲 0';
+      magTxt.textContent = '0';
       setBoostUI();
 
       updateMainButton();
@@ -1411,7 +1556,6 @@
       }
     }
 
-    // pulsante principale (Start/Stop/Restart)
     btnMain.addEventListener('click', ()=>{
       initAudio();
 
@@ -1428,7 +1572,6 @@
       setStop(!game.stopped);
     });
 
-    // dance
     btnDance.addEventListener('click', ()=>{
       initAudio();
       if(game.over) return;
@@ -1467,7 +1610,6 @@
     let tPrev=performance.now();
 
     function update(dt, tNow){
-      // animazioni sempre
       if(runnerMixer){
         runnerMixer.timeScale = 1.0;
         runnerMixer.update(dt);
@@ -1481,7 +1623,6 @@
       game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
       if(!gameplayOn){
-        // player sempre centro quando non giochi
         runnerPivot.position.x = lanesX[1];
         runnerPivot.position.y = 0;
 
@@ -1492,8 +1633,6 @@
         const breathe = Math.sin(tNow*0.0022) * 0.015;
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-
-        // HUD anche fuori gioco (mostra ultimi valori)
         return;
       }
 
@@ -1503,25 +1642,20 @@
       const trafficMul = (1.0 - game.stopBlend);
       if(game.stopped) return;
 
-      // timers powerup
       if(game.invincibleT>0){
         game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
-        if(game.invincibleT<=0){
-          bubble.visible=false;
-        }
+        if(game.invincibleT<=0) bubble.visible=false;
       }
       if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT - dt*trafficMul);
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
       if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
 
-      // invincibilità visual
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
         bubble.visible=true;
       }
 
-      // boost velocità (come vecchio)
       const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
       const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -1530,16 +1664,13 @@
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
 
-      // gravity
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
       if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
 
-      // slide timer
       if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
 
-      // runner transform
       runnerPivot.position.x = lanesX[ clamp(game.lane, 0, 3) ];
       runnerPivot.position.y = (-game.y);
 
@@ -1549,7 +1680,6 @@
       contact.scale.set(s,s,1);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
-      // road scroll
       const scroll = speed*dt;
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
@@ -1560,14 +1690,12 @@
       }
       loopJungle(scroll);
 
-      // spawn
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
         game.spawnT = rnd(0.40, 0.75);
       }
 
-      // magnet effect (attrazione SOLO: coin/food/heart/magnet)
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
@@ -1585,7 +1713,6 @@
         }
       }
 
-      // despawn
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
         if(e.z > 6.0){
@@ -1594,7 +1721,6 @@
         }
       }
 
-      // collisions
       const px = runnerPivot.position.x;
       const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
 
@@ -1611,7 +1737,6 @@
         return (dz < 1.05 && dx < 0.72);
       }
 
-      // auto-slide rings: quando arriva un ring e sei a terra -> flip + slide (come vecchio concetto)
       if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
         for(const e of game.entities){
           if(e.type!=='ring') continue;
@@ -1627,18 +1752,16 @@
       }
       game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
-      // pickup / hit loop
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
         if(e.type==='ring'){
           if(!collide(e)) continue;
-          if(!game.sliding) continue; // ring solo mentre scivoli
+          if(!game.sliding) continue;
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
-          // 50 rings -> ring boost (come vecchio)
           if(game.ringCount >= 50){
             game.ringBoostT = 10.0;
             game.invincibleT = Math.max(game.invincibleT, 10.0);
@@ -1653,12 +1776,10 @@
           if(!collideTurtle(e)) continue;
           playOneShot(actions.kick, 0.05);
           sfx.boost();
-          // “tartaruga” come premio: toglie ostacolo? qui la rimuoviamo e basta
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
-        // tutti gli altri richiedono collide()
         if(!collide(e)) continue;
 
         if(e.type==='coin'){
@@ -1704,38 +1825,24 @@
         if(e.type==='obst'){
           const inv = (game.invincibleT>0);
           scene.remove(e.obj); game.entities.splice(i,1);
-          if(inv){
-            // invincible: niente
-          }else{
-            loseLife();
-          }
+          if(!inv) loseLife();
           continue;
         }
       }
 
-      // score tick
       game.score += (18 * speedMul) * dt;
 
-      // best
-      if(game.score > game.best){
-        game.best = Math.floor(game.score);
-        saveBest(game.best);
-      }
-
-      // HUD live
       scoreEl.textContent = String(Math.floor(game.score));
       coinsEl.textContent = String(game.coins);
-      bestEl.textContent  = String(game.best);
       ringsEl.textContent = String(game.ringCount);
       hpTxt.textContent   = hpString();
-      magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
+      magTxt.textContent  = (game.magnetT>0 ? game.magnetT.toFixed(1) : '0');
       setBoostUI();
 
       if(bubble.visible){
         bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
       }
 
-      // tilt for camera roll
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
@@ -1800,7 +1907,6 @@
 
       await loadRunnerModel();
 
-      // start in STOP + idle
       game.started = false;
       game.over = false;
       game.paused = false;
@@ -1809,12 +1915,10 @@
       updateMainButton();
       startIdleRandom();
 
-      // HUD init
       scoreEl.textContent = '0';
       coinsEl.textContent = '0';
-      bestEl.textContent = String(game.best);
       ringsEl.textContent = '0';
-      magTxt.textContent = '🧲 0';
+      magTxt.textContent = '0';
       setBoostUI();
 
       requestAnimationFrame(animate);
