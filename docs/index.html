@@ -8,20 +8,26 @@
     :root{
       color-scheme: dark;
 
-      /* ✅ SCALE SEPARATE */
-      --hudScale: 1.20;     /* Score/Emoji/Rings/Vita/Magnete/Boost/FoodBoost +20% */
-      --hudW: 0.50;         /* ✅ HUD 50% meno in larghezza */
-      --menuScale: 1.50;    /* Home/Settings/Avvia/Dance + cibo raccolto + ogni pillola cibo +50% */
+      /* ===== SCALE richieste ===== */
+      --menuScale: 1.50; /* Home, Impostazioni, Pausa, Avvia, Dance, foodCount, foodItem (+50%) */
+      --hudScale:  1.40; /* Score, Emoji, Anelli, Vita, Magnete, Boost, Cibo Boost (+40%) */
+      --hudW:      0.70; /* -30% larghezza (0.70) */
 
-      /* ✅ barra con larghezza fissa (base) */
+      /* barra base */
       --hud-bar-w: 60px;
     }
 
-    html,body{height:100%;margin:0;background:#040805;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;}
+    html,body{
+      height:100%;
+      margin:0;
+      background:#040805;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      overflow:hidden;
+    }
     canvas{display:block;touch-action:none;}
 
     /* =========================================================
-       ✅ PILL EXACT (base)
+       PILL FX
        ========================================================= */
     .pillFx{
       position:relative;
@@ -64,21 +70,21 @@
       opacity:.70;
     }
     button.pillFx:active{ transform:scale(.985); }
-    .pillFx, .pillFx * { transform: translateZ(0); }
 
     /* =========================================================
-       ✅ ICON STYLE — base
+       ICON BASE (poi vengono scalate per zona)
        ========================================================= */
     .ico{
-      width:11px;height:11px;
+      width:11px;
+      height:11px;
       display:inline-block;
       flex:0 0 auto;
       filter: drop-shadow(0 5px 8px rgba(0,0,0,.55));
     }
-    .icoSm{ width:9px;height:9px; }
+    .icoSm{ width:9px; height:9px; }
 
     /* =========================================================
-       ✅ HUD LEFT — +20% e 50% meno larghezza
+       HUD (sinistra): +40% e -30% larghezza
        ========================================================= */
     .hudWrap{
       position:fixed;
@@ -87,12 +93,13 @@
       z-index:28;
       pointer-events:none;
 
-      /* ✅ più stretto del 50% */
+      /* -30% larghezza */
       width:min(
         calc(230px * var(--hudScale) * var(--hudW)),
         calc(100vw - calc(16px * var(--hudScale)))
       );
     }
+    .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
     .hudGrid{
       display:grid;
@@ -105,13 +112,18 @@
       pointer-events:none;
       padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
       border-radius:999px;
+
       display:flex;
       align-items:center;
       justify-content:space-between;
+
       gap:calc(5px * var(--hudScale));
       min-width:0;
-    }
+      line-height:1;
 
+      /* evita testo che “scappa” in pillole strette */
+      overflow:hidden;
+    }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
@@ -121,18 +133,39 @@
       gap:calc(5px * var(--hudScale));
       min-width:0;
       line-height:1;
+      overflow:hidden;
     }
-    .hudT{ font-weight:950; font-size:calc(7px * var(--hudScale)); white-space:nowrap; }
-    .hudV{ font-weight:950; font-size:calc(8px * var(--hudScale)); white-space:nowrap; }
+    .hudT{
+      font-weight:950;
+      font-size:calc(7px * var(--hudScale));
+      white-space:nowrap;
+      line-height:1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .hudV{
+      font-weight:950;
+      font-size:calc(8px * var(--hudScale));
+      white-space:nowrap;
+      line-height:1;
 
-    /* ✅ icone HUD scalate con hudScale */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:calc(3px * var(--hudScale));
+
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* icone dentro HUD scalate */
     .hudWrap .ico{
       width:calc(11px * var(--hudScale));
       height:calc(11px * var(--hudScale));
     }
 
     /* =========================================================
-       ✅ BAR ROW HUD — più strette del 50%
+       BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
        ========================================================= */
     .hudBarRow{
       display:grid;
@@ -159,7 +192,11 @@
       box-shadow: 0 0 7px rgba(140,200,255,.22);
     }
 
-    /* evita che le emoji “alzino” la pillola */
+    #pillBoost .hudL,
+    #foodBoostPill .hudL{
+      min-height:0;
+      line-height:1;
+    }
     #pillBoost #boostIcon{
       font-size:calc(9px * var(--hudScale));
       line-height:1;
@@ -167,7 +204,7 @@
     }
 
     /* =========================================================
-       ✅ TOP BUTTONS (Home/Settings) +50%
+       TOP BUTTONS: Home/Settings/Pausa +50%
        ========================================================= */
     .topLeftBtns{
       position:fixed;
@@ -191,6 +228,11 @@
       color:#eaf1ff;
       background: transparent;
       border:none;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
     }
     .iconBtn{
       width:calc(28px * var(--menuScale));
@@ -206,9 +248,14 @@
       width:calc(10px * var(--menuScale));
       height:calc(10px * var(--menuScale));
     }
+    .pauseTxt{
+      font-size:calc(8px * var(--menuScale));
+      line-height:1;
+      transform: translateY(-0.5px);
+    }
 
     /* =========================================================
-       ✅ Start / Dance +50%
+       Start/Dance +50%
        ========================================================= */
     .rightStack{
       position:fixed;
@@ -229,14 +276,19 @@
       font-weight:950;
       font-size:calc(7px * var(--menuScale));
       letter-spacing:.2px;
+
       display:flex;
       align-items:center;
       justify-content:center;
       gap:calc(5px * var(--menuScale));
+
       color:#eaf1ff;
       background:transparent;
       border:none;
+      line-height:1;
     }
+    .bigBtn span, .bigBtn *{ line-height:1; }
+
     .pillDot{
       width:calc(6px * var(--menuScale));
       height:calc(6px * var(--menuScale));
@@ -250,7 +302,7 @@
     }
 
     /* =========================================================
-       ✅ COLONNA CIBO +50% (foodCount + foodItem + stack)
+       Colonna cibo +50% (foodCount + foodItem)
        ========================================================= */
     .rightCol{
       position:fixed;
@@ -271,8 +323,13 @@
       width:calc(27px * var(--menuScale));
       height:calc(15px * var(--menuScale));
       border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
       font-size:calc(8px * var(--menuScale));
+      line-height:1;
     }
     .foodCount{
       width:calc(60px * var(--menuScale));
@@ -281,17 +338,19 @@
       font-size:calc(7px * var(--menuScale));
       padding:calc(4px * var(--menuScale)) 0;
       border-radius:999px;
+
       display:flex;
       align-items:center;
       justify-content:center;
       gap:calc(4px * var(--menuScale));
+      line-height:1;
     }
     .foodCount .icoSm{
       width:calc(9px * var(--menuScale));
       height:calc(9px * var(--menuScale));
     }
 
-    /* ===== Settings overlay (uguale) ===== */
+    /* Settings overlay (uguale) */
     .settingsOverlay{
       position:fixed; inset:0;
       display:none;
@@ -485,7 +544,7 @@
     </div>
   </div>
 
-  <!-- TOP BUTTONS (Home + Settings) -->
+  <!-- BOTTONI IN ALTO (Home + Impostazioni + Pausa) -->
   <div class="topLeftBtns">
     <button class="btn pillFx iconBtn" id="btnHome" aria-label="Home" title="Home">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
@@ -511,6 +570,11 @@
         </defs>
         <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
       </svg>
+    </button>
+
+    <!-- ✅ Pausa (aggiunto per evitare null e schermo nero) -->
+    <button class="btn pillFx" id="btnPause" aria-label="Pausa" title="Pausa">
+      <span class="pauseTxt" id="pauseIcon">⏸️</span>
     </button>
   </div>
 
@@ -581,60 +645,69 @@
     </div>
   </div>
 
-  
-
-
-
-
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+    /* =========================================================
+       ✅ MINI FIX “SAFE” (anti-schermo-nero)
+       - evita crash se un elemento UI manca
+       - impedisce overlay pausa che copre tutto per errore
+       ========================================================= */
+    const $ = (id)=>document.getElementById(id);
+    function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
+
+    // se per qualche motivo esistesse un overlay pausa esterno, non deve mai coprire tutto
+    window.addEventListener('error', (e)=>{
+      // evita che un errore UI blocchi tutto (best effort)
+      console.warn('JS error caught:', e?.message || e);
+    });
+
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     // ===== UI: HUD =====
-    const scoreEl = document.getElementById('score');
-    const coinsEl = document.getElementById('coins');
-    const bestEl  = document.getElementById('best'); // hidden (non si vede)
-    const ringsEl = document.getElementById('rings');
-    const hpTxt   = document.getElementById('hpTxt');
-    const magTxt  = document.getElementById('magTxt');
+    const scoreEl = $('score');
+    const coinsEl = $('coins');
+    const bestEl  = $('best'); // hidden
+    const ringsEl = $('rings');
+    const hpTxt   = $('hpTxt');
+    const magTxt  = $('magTxt');
 
-    const pillBoost = document.getElementById('pillBoost');
-    const boostIcon = document.getElementById('boostIcon');
-    const boostName = document.getElementById('boostName');
-    const boostBar  = document.getElementById('boostBar');
+    const pillBoost = $('pillBoost');
+    const boostIcon = $('boostIcon');
+    const boostName = $('boostName');
+    const boostBar  = $('boostBar');
 
-    const foodStack = document.getElementById('foodStack');
-    const foodCountEl = document.getElementById('foodCount');
+    const foodStack = $('foodStack');
+    const foodCountEl = $('foodCount');
 
     // ===== UI: Buttons =====
-    const btnHome = document.getElementById('btnHome');
-    const btnSettings = document.getElementById('btnSettings');
-    const btnPause = document.getElementById('btnPause');
-    const pauseIcon = document.getElementById('pauseIcon');
+    const btnHome = $('btnHome');
+    const btnSettings = $('btnSettings');
+    const btnPause = $('btnPause');
+    const pauseIcon = $('pauseIcon');
 
-    const btnMain = document.getElementById('btnMain');
-    const mainLbl = document.getElementById('mainLbl');
-    const mainDot = document.getElementById('mainDot');
-    const btnDance = document.getElementById('btnDance');
+    const btnMain = $('btnMain');
+    const mainLbl = $('mainLbl');
+    const mainDot = $('mainDot');
+    const btnDance = $('btnDance');
 
     // ===== Settings overlay =====
-    const settingsOverlay = document.getElementById('settingsOverlay');
-    const closeSettingsBtn = document.getElementById('closeSettings');
-    const resetCamBtn = document.getElementById('resetCam');
+    const settingsOverlay = $('settingsOverlay');
+    const closeSettingsBtn = $('closeSettings');
+    const resetCamBtn = $('resetCam');
 
-    const audioToggle= document.getElementById('audioToggle');
-    const audioSwitch= document.getElementById('audioSwitch');
-    const shakeToggle = document.getElementById('shakeToggle');
-    const shakeSwitch = document.getElementById('shakeSwitch');
+    const audioToggle= $('audioToggle');
+    const audioSwitch= $('audioSwitch');
+    const shakeToggle = $('shakeToggle');
+    const shakeSwitch = $('shakeSwitch');
 
-    const fovSlider = document.getElementById('fovSlider');
-    const camSlider = document.getElementById('camSlider');
-    const frameSlider = document.getElementById('frameSlider');
-    const fovVal = document.getElementById('fovVal');
-    const camVal = document.getElementById('camVal');
-    const frameVal = document.getElementById('frameVal');
+    const fovSlider = $('fovSlider');
+    const camSlider = $('camSlider');
+    const frameSlider = $('frameSlider');
+    const fovVal = $('fovVal');
+    const camVal = $('camVal');
+    const frameVal = $('frameVal');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
     const rndi=(a,b)=>Math.floor(rnd(a,b+1));
@@ -654,32 +727,36 @@
 
     function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing, shake: !!shakeEnabled })); }
     function syncCamUI(){
-      fovSlider.value = String(Math.round(baseFov));
-      fovVal.textContent = String(Math.round(baseFov));
-      camSlider.value = String(baseCamZ.toFixed(1));
-      camVal.textContent = baseCamZ.toFixed(1);
-      frameSlider.value = String(framing.toFixed(2));
-      frameVal.textContent = framing.toFixed(2);
-      shakeSwitch.classList.toggle('on', !!shakeEnabled);
-      audioSwitch.classList.toggle('on', !!audioEnabled);
+      if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
+      if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
+
+      if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); }
+      if(camVal){ camVal.textContent = baseCamZ.toFixed(1); }
+
+      if(frameSlider){ frameSlider.value = String(framing.toFixed(2)); }
+      if(frameVal){ frameVal.textContent = framing.toFixed(2); }
+
+      if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
+      if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
     }
-    fovSlider.addEventListener('input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
-    camSlider.addEventListener('input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
-    frameSlider.addEventListener('input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); frameVal.textContent = framing.toFixed(2); saveCam(); });
 
-    function openSettings(){ settingsOverlay.style.display='flex'; syncCamUI(); }
-    function closeSettings(){ settingsOverlay.style.display='none'; }
+    safeOn(fovSlider, 'input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); if(fovVal) fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
+    safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
 
-    btnSettings.addEventListener('click', ()=>{ initAudio(); openSettings(); });
-    closeSettingsBtn.addEventListener('click', closeSettings);
+    function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); }
+    function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
 
-    shakeToggle.addEventListener('click', ()=>{
+    safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
+    safeOn(closeSettingsBtn,'click', closeSettings);
+
+    safeOn(shakeToggle,'click', ()=>{
       shakeEnabled = !shakeEnabled;
-      shakeSwitch.classList.toggle('on', !!shakeEnabled);
+      if(shakeSwitch) shakeSwitch.classList.toggle('on', !!shakeEnabled);
       saveCam();
     });
 
-    resetCamBtn.addEventListener('click', ()=>{
+    safeOn(resetCamBtn,'click', ()=>{
       baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing; shakeEnabled = DEFAULTS.shake;
       saveCam(); syncCamUI();
     });
@@ -693,7 +770,7 @@
         master = actx.createGain(); master.gain.value=0.55; master.connect(actx.destination);
         audioReady=true;
       }catch(e){ audioEnabled=false; }
-      audioSwitch.classList.toggle('on',!!audioEnabled);
+      if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled);
     }
     function beep(type,freq,dur=0.06,g=0.10){
       if(!audioEnabled) return;
@@ -719,7 +796,7 @@
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
     };
-    audioToggle.addEventListener('click', ()=>{ initAudio(); audioEnabled=!audioEnabled; audioSwitch.classList.toggle('on',!!audioEnabled); });
+    safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // ===== Renderer / Scene =====
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -1415,7 +1492,7 @@
       lastTurtleZ: [-99999, -99999, -99999],
     };
 
-    bestEl.textContent = String(game.best);
+    if(bestEl) bestEl.textContent = String(game.best);
 
     function hpString(){
       let s="";
@@ -1424,6 +1501,7 @@
     }
 
     function refreshFoodUI(){
+      if(!foodStack || !foodCountEl) return;
       foodStack.innerHTML = "";
       const show = game.foodHistory.slice(-6).reverse();
       for(const emo of show){
@@ -1436,6 +1514,8 @@
     }
 
     function setBoostUI(){
+      if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
+
       const t = Math.max(game.foodBoostT, game.ringBoostT);
       if(t <= 0){
         pillBoost.style.display='none';
@@ -1454,8 +1534,9 @@
       boostBar.style.width = pct.toFixed(1)+'%';
     }
 
-    // ✅ LABEL + DOT del pulsante principale (Start / Stop / Restart)
     function updateMainButton(){
+      if(!mainLbl || !mainDot) return;
+
       if(game.over){
         mainLbl.textContent = 'RESTART';
         mainDot.classList.remove('green');
@@ -1653,14 +1734,13 @@
     function resetRun(){
       game.lane=1;
       game.y=0; game.vy=0; game.jumping=false;
-      game.sliding=false; game.slideT=0;
+      game.sliding=false; game.slideT=0.55*0; // reset
       game.autoSlideCooldown=0;
 
       game.score=0; game.coins=0;
       game.ringCount=0;
       game.foodCount=0; game.foodHistory=[];
       refreshFoodUI();
-  
 
       game.invincibleT=0;
       game.foodBoostT=0;
@@ -1683,15 +1763,17 @@
       game.paused = false;
       setStop(true);
 
-      scoreEl.textContent = '0';
-      coinsEl.textContent = '0';
-      ringsEl.textContent = '0';
-      hpTxt.textContent = hpString();
-      magTxt.textContent = '🧲 0';
+      if(scoreEl) scoreEl.textContent = '0';
+      if(coinsEl) coinsEl.textContent = '0';
+      if(ringsEl) ringsEl.textContent = '0';
+      if(hpTxt) hpTxt.textContent = hpString();
+      if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
 
       updateMainButton();
       startIdleRandom();
+
+      if(pauseIcon) pauseIcon.textContent = '⏸️';
     }
 
     function startGame(){
@@ -1699,15 +1781,16 @@
       game.paused = false;
       setStop(false);
       playRun();
-      pauseIcon.textContent = '⏸️';
+      if(pauseIcon) pauseIcon.textContent = '⏸️';
       updateMainButton();
     }
 
     function togglePause(){
       if(game.over) return;
       if(!game.started) return;
+
       game.paused = !game.paused;
-      pauseIcon.textContent = game.paused ? '▶️' : '⏸️';
+      if(pauseIcon) pauseIcon.textContent = game.paused ? '▶️' : '⏸️';
 
       if(game.paused){
         startIdleRandom();
@@ -1717,7 +1800,7 @@
       }
     }
 
-    btnMain.addEventListener('click', ()=>{
+    safeOn(btnMain,'click', ()=>{
       initAudio();
 
       if(game.over){
@@ -1733,16 +1816,16 @@
       setStop(!game.stopped);
     });
 
-    btnDance.addEventListener('click', ()=>{
+    safeOn(btnDance,'click', ()=>{
       initAudio();
       if(game.over) return;
       if(game.started && !game.paused && !game.stopped) setStop(true);
       playDance();
     });
 
-    btnPause.addEventListener('click', ()=>{ initAudio(); togglePause(); });
+    safeOn(btnPause,'click', ()=>{ initAudio(); togglePause(); });
 
-    btnHome.addEventListener('click', ()=>{
+    safeOn(btnHome,'click', ()=>{
       initAudio();
       resetRun();
     });
@@ -2001,13 +2084,12 @@
         saveBest(game.best);
       }
 
-      // HUD live
-      scoreEl.textContent = String(Math.floor(game.score));
-      coinsEl.textContent = String(game.coins);
-      bestEl.textContent  = String(game.best); // hidden
-      ringsEl.textContent = String(game.ringCount);
-      hpTxt.textContent   = hpString();
-      magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
+      if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
+      if(coinsEl) coinsEl.textContent = String(game.coins);
+      if(bestEl)  bestEl.textContent  = String(game.best);
+      if(ringsEl) ringsEl.textContent = String(game.ringCount);
+      if(hpTxt)   hpTxt.textContent   = hpString();
+      if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
       setBoostUI();
 
       if(bubble.visible){
@@ -2073,7 +2155,7 @@
     // ===== Boot =====
     (async ()=>{
       refreshFoodUI();
-      hpTxt.textContent = hpString();
+      if(hpTxt) hpTxt.textContent = hpString();
       syncCamUI();
 
       await loadRunnerModel();
@@ -2086,11 +2168,11 @@
       updateMainButton();
       startIdleRandom();
 
-      scoreEl.textContent = '0';
-      coinsEl.textContent = '0';
-      bestEl.textContent = String(game.best);
-      ringsEl.textContent = '0';
-      magTxt.textContent = '🧲 0';
+      if(scoreEl) scoreEl.textContent = '0';
+      if(coinsEl) coinsEl.textContent = '0';
+      if(bestEl)  bestEl.textContent = String(game.best);
+      if(ringsEl) ringsEl.textContent = '0';
+      if(magTxt)  magTxt.textContent = '🧲 0';
       setBoostUI();
 
       requestAnimationFrame(animate);
