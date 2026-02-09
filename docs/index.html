@@ -2441,29 +2441,39 @@
 
       update(dt,tNow);
 
-      const gameplayOn = game.started && !game.paused && !game.over;
-      const camDynamic = gameplayOn && !game.stopped; // ✅ quando fermo: camera fissa
+      const gameplayOn  = game.started && !game.paused && !game.over;
+const camDynamic  = gameplayOn && !game.stopped;
 
-      const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
-      const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
+const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
 
-      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
-      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
+const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
-      const targetFov = clamp(baseFov + fovBoost, 30, 110);
-      const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
-      const targetY   = clamp(baseCamY + (bothBoost?0.10:0), 0.0, 12.0);
+const targetFov = clamp(baseFov + fovBoost, 30, 110);
+const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
+const targetY   = clamp(baseCamY + (bothBoost ? 0.10 : 0), 0.0, 12.0);
 
-      camFov = damp(camFov, targetFov, 8, dt);
-      camZ   = damp(camZ,   targetZ,   8, dt);
-      camY   = damp(camY,   targetY,   8, dt);
+if(!camDynamic){
+  camFov  = baseFov;
+  camZ    = baseCamZ;
+  camY    = baseCamY;
+  camX    = 0;
+  camRoll = 0;
+} else {
+  camFov = damp(camFov, targetFov, 8, dt);
+  camZ   = damp(camZ,   targetZ,   8, dt);
+  camY   = damp(camY,   targetY,   8, dt);
 
-      camera.fov = camFov;
-      camera.updateProjectionMatrix();
+  const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
+  camX = damp(camX, targetCamX, 6, dt);
+}
 
-      const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
-      camX = damp(camX, targetCamX, 6, dt);
+camera.fov = camFov;
+camera.updateProjectionMatrix();
+    
 
+      
       let shakeX = 0, shakeY = 0;
       if(camDynamic && anyBoost && shakeEnabled && viewMode!=='fps'){
         const intensity = bothBoost ? 0.018 : 0.011;
@@ -2506,7 +2516,7 @@
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 
         // ✅ roll DOPO lookAt (se lo fai prima, lookAt lo sovrascrive)
-        camera.rotateZ(camDynamic ? camRoll : 0);
+        camera.rotation.z = (camDynamic ? camRoll : 0);
       }
       else {
         // front (davanti al player)
@@ -2516,7 +2526,7 @@
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 
         // ✅ roll DOPO lookAt
-        camera.rotateZ(camDynamic ? camRoll : 0);
+        camera.rotation.z = (camDynamic ? camRoll : 0);
       }
 
       // ===== Debug panel update (non ogni frame, ma a timer) =====
