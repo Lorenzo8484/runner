@@ -1432,13 +1432,80 @@
     let mixamoHips=null, mixamoRootNode=null, headBone=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
 
-    // FPS: nascondi pezzi testa/maschera
-    let fpsHiddenMeshes = [];
-    function setFpsMaskHidden(on){
-      // ripristina
-      for(const it of fpsHiddenMeshes){
-        try{ it.mesh.visible = it.visible; }catch{}
+    // FPS: testa/maschera INVISIBILE ma con OMBRE corrette (shadow-only)
+let fpsHiddenMeshes = [];
+
+function setFpsMaskHidden(on){
+  // ripristina tutto
+  for(const it of fpsHiddenMeshes){
+    const m = it.mesh;
+    try{
+      m.visible = it.visible;
+      m.castShadow = it.castShadow;
+      if(m.material){
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        const saved = it.materialStates || [];
+        for(let i=0;i<mats.length;i++){
+          const mat = mats[i];
+          const st  = saved[i];
+          if(!mat || !st) continue;
+          mat.transparent = st.transparent;
+          mat.opacity     = st.opacity;
+          mat.colorWrite  = st.colorWrite;
+          mat.depthWrite  = st.depthWrite;
+          mat.depthTest   = st.depthTest;
+          mat.needsUpdate = true;
+        }
       }
+    }catch{}
+  }
+  fpsHiddenMeshes = [];
+  if(!on) return;
+
+  // nasconde solo head/face/hair/helmet/mask ecc… ma mantiene le ombre
+  runnerModel.traverse(o=>{
+    if(!o.isMesh) return;
+
+    const n = (o.name||'').toLowerCase();
+    const hit =
+      n.includes('head') || n.includes('face') || n.includes('hair') ||
+      n.includes('helmet') || n.includes('hat') || n.includes('mask') ||
+      n.includes('cap') || n.includes('hood') || n.includes('visor');
+
+    if(!hit) return;
+
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    const materialStates = mats.map(mat => mat ? ({
+      transparent: mat.transparent,
+      opacity: mat.opacity,
+      colorWrite: mat.colorWrite,
+      depthWrite: mat.depthWrite,
+      depthTest: mat.depthTest
+    }) : null);
+
+    fpsHiddenMeshes.push({
+      mesh: o,
+      visible: o.visible,
+      castShadow: o.castShadow,
+      materialStates
+    });
+
+    // ✅ shadow-only: non disegna colore, non scrive depth (non copre la scena),
+    // ma continua a contribuire alla shadow map (castShadow true)
+    o.visible = true;
+    o.castShadow = true;
+
+    for(const mat of mats){
+      if(!mat) continue;
+      mat.transparent = true;
+      mat.opacity = 0.0;
+      mat.colorWrite = false;  // invisibile
+      mat.depthWrite = false;  // non occlude
+      mat.depthTest  = true;
+      mat.needsUpdate = true;
+    }
+  });
+}
       fpsHiddenMeshes = [];
       if(!on) return;
 
@@ -2438,10 +2505,10 @@
   // Se è sottosopra rispetto al mondo, inverti l'up
   if(camera.up.dot(new THREE.Vector3(0,1,0)) < 0) camera.up.multiplyScalar(-1);
 
-  // Posizione FPS: un filo avanti e un filo su (per non clippare dentro la testa)
-  const pos = tmpV3.clone()
-    .add(fwd.clone().multiplyScalar(0.10))
-    .add(new THREE.Vector3(0,1,0).multiplyScalar(0.03));
+  // Posizione FPS: camera "attaccata alla faccia" (più avanti = meno rischio di vedere mesh)
+const pos = tmpV3.clone()
+  .add(fwd.clone().multiplyScalar(0.16)) // <-- era 0.10
+  .add(new THREE.Vector3(0,1,0).multiplyScalar(0.04));
 
   camera.position.copy(pos);
   camera.lookAt(pos.clone().add(fwd.multiplyScalar(10)));
