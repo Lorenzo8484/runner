@@ -730,7 +730,7 @@
       </div>
       <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
 
-      <!-- ✅ NUOVO: Toggle FPS in impostazioni -->
+      <!-- ✅ Toggle FPS in impostazioni -->
       <div class="toggle" id="fpsToggle">
         <div><label>Visuale FPS</label><br/><span>Camera sugli “occhi” (nasconde testa/maschera).</span></div>
         <div class="switch" id="fpsSwitch"><i></i></div>
@@ -846,8 +846,12 @@
       baseCamY: 4.6,
       framing: 0.06,
       shake: true,
-      view: 'front',   // front | back | fps
-      debug: false
+      view: 'front',
+      debug: false,
+
+      // ✅ opzioni FPS (salvate)
+      fpsRealistic: true,   // true = bob + micro movimento, false = stabile
+      fpsDynFov: true       // true = FOV dinamico SOLO in FPS
     };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
@@ -862,12 +866,17 @@
 
     let debugOn = !!(saved.debug ?? DEFAULTS.debug);
 
+    let fpsRealistic = (saved.fpsRealistic ?? DEFAULTS.fpsRealistic) !== false;
+    let fpsDynFov    = (saved.fpsDynFov ?? DEFAULTS.fpsDynFov) !== false;
+
     function saveCam(){
       localStorage.setItem(CAM_KEY, JSON.stringify({
         baseFov, baseCamZ, baseCamY, framing,
         shake: !!shakeEnabled,
         view: viewMode,
-        debug: !!debugOn
+        debug: !!debugOn,
+        fpsRealistic: !!fpsRealistic,
+        fpsDynFov: !!fpsDynFov
       }));
     }
 
@@ -927,6 +936,8 @@
       shakeEnabled = DEFAULTS.shake;
       viewMode = DEFAULTS.view;
       debugOn = DEFAULTS.debug;
+      fpsRealistic = DEFAULTS.fpsRealistic;
+      fpsDynFov = DEFAULTS.fpsDynFov;
       saveCam(); syncCamUI();
       applyViewMode(viewMode);
     });
@@ -982,7 +993,7 @@
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
-    camera.up.set(0,1,0); // ✅ sempre “dritta” (fix strada capovolta)
+    camera.up.set(0,1,0);
 
     // lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
@@ -1576,7 +1587,6 @@
     }
 
     function snapRunnerToGround(){
-      // porta il modello a contatto col terreno (minY = 0 dentro runnerModel)
       try{
         const root = runnerModel.children[0];
         if(!root) return;
@@ -1614,7 +1624,6 @@
         }catch{}
       }
       startIdleRandom();
-      // ripristina eventuale maschera FPS
       setFpsMaskHidden(viewMode==='fps');
     }
 
@@ -1707,7 +1716,6 @@
           if(actions.dance) actions.dance = runnerMixer.clipAction(actions.dance);
 
           runnerMixer.addEventListener('finished', ()=>{
-            // se morte: dopo fine anim, snap a terra
             if(animState.mode==='dead'){
               if(deadSnapPending){
                 deadSnapPending = false;
@@ -2013,7 +2021,6 @@
       saveCam();
       setActiveCamBtns();
 
-      // ✅ reset “up” sempre (fix capovolgimento quando cambi modalità)
       camera.up.set(0,1,0);
 
       // camera near in FPS per evitare clipping
@@ -2172,12 +2179,6 @@
     // ===== Update loop =====
     let camZ = baseCamZ, camY = baseCamY, camFov = baseFov, camX = 0;
     let tPrev=performance.now();
-
-    // FPS smoothing
-    const tmpV3 = new THREE.Vector3();
-    const tmpQ  = new THREE.Quaternion();
-    const tmpF  = new THREE.Vector3();
-    const tmpU  = new THREE.Vector3(0,1,0);
 
     // debug fps
     let fpsAcc=0, fpsN=0, fpsShow=0;
@@ -2442,97 +2443,97 @@
       update(dt,tNow);
 
       const gameplayOn  = game.started && !game.paused && !game.over;
-const camDynamic  = gameplayOn && !game.stopped;
+      const camDynamic  = gameplayOn && !game.stopped;
 
-const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
-const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
+      const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
+      const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
 
-const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
-const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
+      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
-const targetFov = clamp(baseFov + fovBoost, 30, 110);
-const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
-const targetY   = clamp(baseCamY + (bothBoost ? 0.10 : 0), 0.0, 12.0);
+      // ✅ FOV dinamico SOLO in FPS se fpsDynFov=true
+      const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
 
-if(!camDynamic){
-  camFov  = baseFov;
-  camZ    = baseCamZ;
-  camY    = baseCamY;
-  camX    = 0;
-  camRoll = 0;
-} else {
-  camFov = damp(camFov, targetFov, 8, dt);
-  camZ   = damp(camZ,   targetZ,   8, dt);
-  camY   = damp(camY,   targetY,   8, dt);
+      const targetFov = clamp(baseFov + (useFovBoost ? fovBoost : 0), 30, 110);
+      const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
+      const targetY   = clamp(baseCamY + (bothBoost ? 0.10 : 0), 0.0, 12.0);
 
-  const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
-  camX = damp(camX, targetCamX, 6, dt);
-}
+      if(!camDynamic){
+        camFov  = baseFov;
+        camZ    = baseCamZ;
+        camY    = baseCamY;
+        camX    = 0;
+        camRoll = 0;
+      } else {
+        camFov = damp(camFov, targetFov, 8, dt);
+        camZ   = damp(camZ,   targetZ,   8, dt);
+        camY   = damp(camY,   targetY,   8, dt);
 
-camera.fov = camFov;
-camera.updateProjectionMatrix();
-    
+        const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
+        camX = damp(camX, targetCamX, 6, dt);
+      }
 
-      
+      camera.fov = camFov;
+      camera.updateProjectionMatrix();
+
       let shakeX = 0, shakeY = 0;
       if(camDynamic && anyBoost && shakeEnabled && viewMode!=='fps'){
         const intensity = bothBoost ? 0.018 : 0.011;
         shakeX = Math.sin(tNow*0.020) * intensity;
         shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
-      const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0; // ✅ niente “ondeggio” da fermo
 
-      // ✅ up stabile sempre (fix strada capovolta)
+      const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
+
       camera.up.set(0,1,0);
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps'){
-  camera.up.set(0,1,0);
+        camera.up.set(0,1,0);
 
-  const eyeBaseY = 1.55;      // altezza “occhi” sopra al pivot
-  const eyeFwd   = 1.10;      // il tuo valore (ok)
-  const eyeZ     = 0.18;
+        const eyeBaseY = 1.55;
+        const eyeFwd   = 1.10;
+        const eyeZ     = 0.18;
 
-  // ✅ segue il player: salto (runnerPivot.position.y) + crouch quando slide
-  const slideDrop = game.sliding ? 0.55 : 0.0;   // abbassa camera in slide (regola 0.4–0.8)
-  const yFollow   = runnerPivot.position.y + eyeBaseY - slideDrop;
+        const slideDrop = game.sliding ? 0.55 : 0.0;
+        const yFollow   = runnerPivot.position.y + eyeBaseY - slideDrop;
 
-  camera.position.set(
-    runnerPivot.position.x,
-    yFollow,
-    eyeZ - eyeFwd
-  );
+        // ✅ micro-bob/sway solo se "fpsRealistic"
+        const fpsBobAmp = (camDynamic && fpsRealistic) ? 0.010 : 0.0;
+        const fpsSwayAmp = (camDynamic && fpsRealistic) ? 0.006 : 0.0;
+        const fpsBob = Math.sin(tNow*0.013) * fpsBobAmp;
+        const fpsSway = Math.sin(tNow*0.010) * fpsSwayAmp;
 
-  camera.lookAt(
-    runnerPivot.position.x,
-    yFollow,
-    -10
-  );
+        camera.position.set(
+          runnerPivot.position.x + fpsSway,
+          yFollow + fpsBob,
+          eyeZ - eyeFwd
+        );
 
-  camera.rotation.z = 0;
-}
+        camera.lookAt(
+          runnerPivot.position.x + fpsSway,
+          yFollow + fpsBob,
+          -10
+        );
+
+        camera.rotation.z = 0;
+      }
       else if(viewMode === 'back'){
-        // dietro al player (classico)
         const lookAtY = lerp(0.35, 1.45, framing);
-        const lookAtZ = -6.5; // avanti lungo strada (negativo)
+        const lookAtZ = -6.5;
         camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-
-        // ✅ roll DOPO lookAt (se lo fai prima, lookAt lo sovrascrive)
         camera.rotation.z = (camDynamic ? camRoll : 0);
       }
       else {
-        // front (davanti al player)
         const lookAtY = lerp(0.30, 1.55, framing);
         const lookAtZ = 0.10;
         camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-
-        // ✅ roll DOPO lookAt
         camera.rotation.z = (camDynamic ? camRoll : 0);
       }
 
-      // ===== Debug panel update (non ogni frame, ma a timer) =====
+      // ===== Debug panel update (timer) =====
       if(debugOn){
         dbgTimer += dt;
         if(dbgTimer > 0.12){
