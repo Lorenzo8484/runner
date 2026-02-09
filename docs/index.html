@@ -1436,6 +1436,7 @@
 let fpsHiddenMeshes = [];
 
 function setFpsMaskHidden(on){
+  if(viewMode==='fps') bubble.visible = false;
   // ripristina tutto
   for(const it of fpsHiddenMeshes){
     const m = it.mesh;
