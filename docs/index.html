@@ -403,43 +403,175 @@
     }
 
     /* =========================================================
-       SETTINGS
-       ========================================================= */
-    .settingsOverlay{
-      position:fixed; inset:0;
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding:14px;
-      background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.65));
-      backdrop-filter:blur(10px);
-      z-index:40;
-    }
-    .panel{
-      width:min(680px,100%);
-      border-radius:18px;border:1px solid rgba(255,255,255,.16);
-      background:rgba(10,14,22,.86);
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
-      padding:14px;color:#eaf1ff;
-    }
-    .title{font-size:16px;font-weight:950;margin:4px 0 10px;}
-    .settingsRow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;margin-top:10px;}
-    .settingsRow small{opacity:.8}
-    .settingsVal{font-weight:950}
-    input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
+   SETTINGS (SLEEK PILL TABS)
+   ========================================================= */
+.settingsOverlay{
+  position:fixed; inset:0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding:14px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.72));
+  backdrop-filter:blur(10px);
+  z-index:40;
+}
 
-    .toggle{
-      display:flex;align-items:center;justify-content:space-between;
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.06);
-      cursor:pointer;user-select:none;margin-top:10px;
-    }
-    .toggle label{font-weight:900;}
-    .toggle span{opacity:.85;font-size:12px;}
-    .switch{width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;border:1px solid rgba(255,255,255,.16);}
-    .switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.86);transition:transform .18s ease;}
-    .switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.24);}
-    .switch.on i{transform:translateX(18px);}
+.panel{
+  width:min(740px,100%);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(10,14,22,.88);
+  box-shadow:0 18px 60px rgba(0,0,0,.60);
+  padding:14px;
+  color:#eaf1ff;
+}
+
+.settingsTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.title{font-size:16px;font-weight:950;margin:0;}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  padding:6px;
+  border-radius:999px;
+}
+.tabBtn{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:12px;
+  letter-spacing:.2px;
+  opacity:.85;
+}
+.tabBtn.active{
+  opacity:1;
+  box-shadow:
+    0 0 0 1px rgba(145,205,255,.28),
+    0 0 16px rgba(110,175,255,.18);
+}
+
+.settingsBody{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+@media (min-width:720px){
+  .settingsBody{ grid-template-columns: 1fr 1fr; }
+}
+
+.card{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  padding:12px;
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:12px;
+  letter-spacing:.25px;
+  text-transform:uppercase;
+  opacity:.9;
+}
+
+.settingsRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
+  font-size:13px;
+  margin-top:10px;
+}
+.settingsRow small{opacity:.8}
+.settingsVal{font-weight:950}
+
+input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
+
+.toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.04);
+  cursor:pointer;
+  user-select:none;
+  margin-top:10px;
+}
+.toggle label{font-weight:950;}
+.toggle span{opacity:.85;font-size:12px;}
+
+.switch{
+  width:44px;height:26px;
+  border-radius:99px;
+  background:rgba(255,255,255,.14);
+  position:relative;
+  border:1px solid rgba(255,255,255,.14);
+  flex:0 0 auto;
+}
+.switch i{
+  position:absolute;top:3px;left:3px;
+  width:20px;height:20px;
+  border-radius:999px;
+  background:rgba(255,255,255,.86);
+  transition:transform .18s ease;
+}
+.switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.22);}
+.switch.on i{transform:translateX(18px);}
+
+/* Segmented pill (FPS REALISTICO / STABILE) */
+.seg{
+  display:flex;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+}
+.segBtn{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:12px;
+  opacity:.85;
+  white-space:nowrap;
+}
+.segBtn.active{
+  opacity:1;
+  box-shadow:
+    0 0 0 1px rgba(145,205,255,.30),
+    0 0 14px rgba(110,175,255,.18);
+}
+
+.settingsFooter{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.settingsFooter .btnGroup{
+  height:auto;
+  padding:10px 12px;
+}
+
+/* Motion blur fake (solo boost) */
+canvas.blurBoost{
+  filter: blur(0.9px) saturate(1.03);
+}
 
     /* =========================================================
        DEBUG PANEL
@@ -641,6 +773,7 @@
       <button class="camBtn pillFx" id="btnCamBack" title="Visuale dietro">BACK</button>
       <button class="camBtn pillFx" id="btnCamFPS" title="Visuale FPS">FPS</button>
       <button class="camBtn pillFx" id="btnCamFront" title="Visuale davanti">FRONT</button>
+      <button class="camBtn pillFx" id="btnFpsLive" title="FPS realistico/stabile" style="display:none;">FPS: REAL</button>
     </div>
 
     <!-- Debug button -->
@@ -702,56 +835,107 @@
   </div>
 
   <!-- SETTINGS -->
-  <div class="settingsOverlay" id="settingsOverlay">
-    <div class="panel">
+<div class="settingsOverlay" id="settingsOverlay">
+  <div class="panel pillFx">
+
+    <div class="settingsTop">
       <div class="title">Impostazioni</div>
-
-      <div class="settingsRow">
-        <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
-        <div class="settingsVal" id="fovVal">60</div>
-      </div>
-      <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
-
-      <div class="settingsRow">
-        <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
-        <div class="settingsVal" id="camVal">5.0</div>
-      </div>
-      <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
-
-      <div class="settingsRow">
-        <div><label>Altezza camera</label><br><small>0=terra • 8=alto</small></div>
-        <div class="settingsVal" id="camYVal">4.6</div>
-      </div>
-      <input id="camYSlider" type="range" min="0" max="8" step="0.1" value="4.6" />
-
-      <div class="settingsRow">
-        <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
-        <div class="settingsVal" id="frameVal">0.06</div>
-      </div>
-      <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
-
-      <!-- ✅ Toggle FPS in impostazioni -->
-      <div class="toggle" id="fpsToggle">
-        <div><label>Visuale FPS</label><br/><span>Camera sugli “occhi” (nasconde testa/maschera).</span></div>
-        <div class="switch" id="fpsSwitch"><i></i></div>
-      </div>
-
-      <div class="toggle" id="audioToggle">
-        <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
-        <div class="switch on" id="audioSwitch"><i></i></div>
-      </div>
-
-      <div class="toggle" id="shakeToggle">
-        <div><label>Camera shake</label><br/><span>Micro shake durante i boost.</span></div>
-        <div class="switch on" id="shakeSwitch"><i></i></div>
-      </div>
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-        <button class="btnGroup pillFx" style="height:auto;padding:10px 12px;" id="resetCam">Reset camera</button>
-        <button class="btnGroup pillFx" style="height:auto;padding:10px 12px;" id="closeSettings">Chiudi</button>
+      <div class="tabs pillFx" aria-label="Tabs impostazioni">
+        <button class="tabBtn active" id="tabCam">CAMERA</button>
+        <button class="tabBtn" id="tabVisual">VISUAL</button>
+        <button class="tabBtn" id="tabAudio">AUDIO</button>
       </div>
     </div>
+
+    <div class="settingsBody" id="settingsBody">
+
+      <!-- CAMERA TAB -->
+      <div class="card" data-tab="cam">
+        <h3>Camera</h3>
+
+        <div class="settingsRow">
+          <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
+          <div class="settingsVal" id="fovVal">60</div>
+        </div>
+        <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
+
+        <div class="settingsRow">
+          <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
+          <div class="settingsVal" id="camVal">5.0</div>
+        </div>
+        <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
+
+        <div class="settingsRow">
+          <div><label>Altezza camera</label><br><small>0=terra • 8=alto</small></div>
+          <div class="settingsVal" id="camYVal">4.6</div>
+        </div>
+        <input id="camYSlider" type="range" min="0" max="8" step="0.1" value="4.6" />
+
+        <div class="settingsRow">
+          <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
+          <div class="settingsVal" id="frameVal">0.06</div>
+        </div>
+        <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+      </div>
+
+      <!-- VISUAL TAB -->
+      <div class="card" data-tab="visual" style="display:none;">
+        <h3>Visual (FPS)</h3>
+
+        <!-- FPS Realistico / Stabile -->
+        <div class="toggle" id="fpsModeToggle">
+          <div>
+            <label>FPS</label><br/>
+            <span>Realistico: bob + elasticità. Stabile: camera “ferma”.</span>
+          </div>
+          <div class="seg pillFx" id="fpsSeg">
+            <button class="segBtn" id="btnFpsReal">REALISTICO</button>
+            <button class="segBtn" id="btnFpsStable">STABILE</button>
+          </div>
+        </div>
+
+        <!-- Motion blur -->
+        <div class="toggle" id="motionToggle">
+          <div>
+            <label>Motion blur</label><br/>
+            <span>Fake blur solo durante i boost (leggero).</span>
+          </div>
+          <div class="switch" id="motionSwitch"><i></i></div>
+        </div>
+
+        <!-- FOV dinamico solo in FPS -->
+        <div class="toggle" id="dynFovToggle">
+          <div>
+            <label>FOV dinamico (FPS)</label><br/>
+            <span>Aumenta il FOV solo in boost quando sei in FPS.</span>
+          </div>
+          <div class="switch on" id="dynFovSwitch"><i></i></div>
+        </div>
+
+        <div class="toggle" id="shakeToggle">
+          <div><label>Camera shake</label><br/><span>Micro shake durante i boost (non in FPS).</span></div>
+          <div class="switch on" id="shakeSwitch"><i></i></div>
+        </div>
+      </div>
+
+      <!-- AUDIO TAB -->
+      <div class="card" data-tab="audio" style="display:none;">
+        <h3>Audio</h3>
+
+        <div class="toggle" id="audioToggle">
+          <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
+          <div class="switch on" id="audioSwitch"><i></i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="settingsFooter">
+      <button class="btnGroup pillFx" id="resetCam">Reset</button>
+      <button class="btnGroup pillFx" id="closeSettings">Chiudi</button>
+    </div>
   </div>
+</div>
 
   <script type="module">
     import * as THREE from 'three';
@@ -810,17 +994,61 @@
     const dbgBoosts = $('dbgBoosts');
 
     // ===== Settings overlay =====
-    const settingsOverlay = $('settingsOverlay');
-    const closeSettingsBtn = $('closeSettings');
-    const resetCamBtn = $('resetCam');
+const settingsOverlay = $('settingsOverlay');
+const closeSettingsBtn = $('closeSettings');
+const resetCamBtn = $('resetCam');
 
-    const audioToggle= $('audioToggle');
-    const audioSwitch= $('audioSwitch');
-    const shakeToggle = $('shakeToggle');
-    const shakeSwitch = $('shakeSwitch');
+function setSettingsTab(tab){
+  const cards = settingsOverlay?.querySelectorAll('.card') || [];
+  for(const c of cards){
+    const t = c.getAttribute('data-tab');
+    c.style.display = (t === tab) ? 'block' : 'none';
+  }
+  if(tabCam)    tabCam.classList.toggle('active', tab==='cam');
+  if(tabVisual) tabVisual.classList.toggle('active', tab==='visual');
+  if(tabAudio)  tabAudio.classList.toggle('active', tab==='audio');
+}
+safeOn(tabCam,'click',   ()=>setSettingsTab('cam'));
+safeOn(tabVisual,'click',()=>setSettingsTab('visual'));
+safeOn(tabAudio,'click', ()=>setSettingsTab('audio'));
 
-    const fpsToggle = $('fpsToggle');
-    const fpsSwitch = $('fpsSwitch');
+// Tabs (DEVONO stare QUI, prima di usarli)
+const tabCam    = $('tabCam');
+const tabVisual = $('tabVisual');
+const tabAudio  = $('tabAudio');
+
+function setSettingsTab(tab){
+  const cards = settingsOverlay?.querySelectorAll('.card') || [];
+  for(const c of cards){
+    const t = c.getAttribute('data-tab');
+    c.style.display = (t === tab) ? 'block' : 'none';
+  }
+  if(tabCam)    tabCam.classList.toggle('active', tab==='cam');
+  if(tabVisual) tabVisual.classList.toggle('active', tab==='visual');
+  if(tabAudio)  tabAudio.classList.toggle('active', tab==='audio');
+}
+
+safeOn(tabCam,   'click', ()=>setSettingsTab('cam'));
+safeOn(tabVisual,'click', ()=>setSettingsTab('visual'));
+safeOn(tabAudio, 'click', ()=>setSettingsTab('audio'));
+
+// (poi sotto continui con gli altri settings)
+const audioToggle= $('audioToggle');
+const audioSwitch= $('audioSwitch');
+const shakeToggle = $('shakeToggle');
+const shakeSwitch = $('shakeSwitch');
+
+// FPS mode segmented + live button
+const fpsModeToggle = $('fpsModeToggle');
+const btnFpsReal   = $('btnFpsReal');
+const btnFpsStable = $('btnFpsStable');
+const btnFpsLive   = $('btnFpsLive');
+
+// Motion blur + DynFov (FPS)
+const motionToggle = $('motionToggle');
+const motionSwitch = $('motionSwitch');
+const dynFovToggle = $('dynFovToggle');
+const dynFovSwitch = $('dynFovSwitch');
 
     const fovSlider = $('fovSlider');
     const camSlider = $('camSlider');
@@ -848,6 +1076,7 @@
       shake: true,
       view: 'front',
       debug: false,
+      motionBlur: true,
 
       // ✅ opzioni FPS (salvate)
       fpsRealistic: true,   // true = bob + micro movimento, false = stabile
@@ -860,6 +1089,7 @@
     let baseCamY = clamp(Number(saved.baseCamY ?? DEFAULTS.baseCamY), 0, 8);
     let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
     let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
+    let motionBlurEnabled = (saved.motionBlur ?? DEFAULTS.motionBlur) !== false;
 
     let viewMode = (saved.view ?? DEFAULTS.view);
     if(!['front','back','fps'].includes(viewMode)) viewMode = 'front';
@@ -884,7 +1114,6 @@
       if(btnCamBack)  btnCamBack.classList.toggle('active', viewMode==='back');
       if(btnCamFPS)   btnCamFPS.classList.toggle('active', viewMode==='fps');
       if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
-      if(fpsSwitch)   fpsSwitch.classList.toggle('on', viewMode==='fps');
     }
 
     function setDebugUI(){
@@ -906,7 +1135,22 @@
 
       if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
       if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
+      
+      // segmented FPS
+if(btnFpsReal)   btnFpsReal.classList.toggle('active', !!fpsRealistic);
+if(btnFpsStable) btnFpsStable.classList.toggle('active', !fpsRealistic);
 
+// motion blur
+if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
+
+// dyn fov
+if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
+
+// live button label (solo se in FPS)
+if(btnFpsLive){
+  btnFpsLive.style.display = (viewMode==='fps') ? 'flex' : 'none';
+  btnFpsLive.textContent = fpsRealistic ? 'FPS: REAL' : 'FPS: STAB';}
+  
       setActiveCamBtns();
       setDebugUI();
     }
@@ -916,18 +1160,47 @@
     safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
     safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
 
-    function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); }
+    function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); setSettingsTab('cam'); }
     function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
 
     safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
     safeOn(closeSettingsBtn,'click', closeSettings);
 
+    function setFpsMode(real){
+  fpsRealistic = !!real;
+  saveCam();
+  syncCamUI();
+}
+
+safeOn(btnFpsReal,'click', ()=>{ initAudio(); setFpsMode(true); });
+safeOn(btnFpsStable,'click',()=>{ initAudio(); setFpsMode(false); });
+
+safeOn(btnFpsLive,'click', ()=>{
+  initAudio();
+  setFpsMode(!fpsRealistic);
+});
+
+    safeOn(shakeToggle,'click', ()
+safeOn(shakeToggle,'click', ()
     safeOn(shakeToggle,'click', ()=>{
       shakeEnabled = !shakeEnabled;
       if(shakeSwitch) shakeSwitch.classList.toggle('on', !!shakeEnabled);
       saveCam();
     });
 
+    safeOn(motionToggle,'click', ()=>{
+  initAudio();
+  motionBlurEnabled = !motionBlurEnabled;
+  if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
+  saveCam();
+});
+
+safeOn(dynFovToggle,'click', ()=>{
+  initAudio();
+  fpsDynFov = !fpsDynFov;
+  if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
+  saveCam();
+});
     safeOn(resetCamBtn,'click', ()=>{
       baseFov = DEFAULTS.baseFov;
       baseCamZ = DEFAULTS.baseCamZ;
@@ -2047,11 +2320,6 @@ sfx.lane();
     safeOn(btnCamFront,'click',()=>{ initAudio(); applyViewMode('front'); });
     safeOn(btnCamFPS,'click',  ()=>{ initAudio(); applyViewMode('fps'); });
 
-    safeOn(fpsToggle,'click', ()=>{
-      initAudio();
-      applyViewMode(viewMode==='fps' ? 'front' : 'fps');
-      syncCamUI();
-    });
 
     // Debug toggle
     safeOn(btnDebug,'click', ()=>{
@@ -2546,59 +2814,76 @@ camX = damp(camX, targetCamX, 5, dt);
 
       camera.up.set(0,1,0);
 
-      // ===== CAMERA MODES =====
+      
       // ===== CAMERA MODES =====
 if(viewMode === 'fps'){
   camera.up.set(0,1,0);
 
-  // ----- base eye position -----
   const eyeBaseY = 1.58;
   const eyeFwd   = 1.05;
   const eyeZ     = 0.10;
 
   const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
-  const breatheAmpY = (stoppedOrMenu ? 0.010 : 0.0);
-  const breatheAmpX = (stoppedOrMenu ? 0.006 : 0.0);
-  const breatheY = Math.sin(tNow*0.0019) * breatheAmpY;
-  const breatheX = Math.sin(tNow*0.0015) * breatheAmpX;
 
-  // ----- grounded / landing detect -----
-  const grounded = (game.y === 0 && !game.jumping);
-  if(fpsGroundPrev === false && grounded === true){
-    fpsLandKick = 1.0;
+  // ===== motion blur fake solo in boost =====
+  const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+  if(renderer?.domElement){
+    renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
   }
+
+  // ===== breathe in menu/stop =====
+  const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
+  const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
+
+  const grounded = (game.y === 0 && !game.jumping);
+
+  // landing kick
+  if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
   fpsGroundPrev = grounded;
 
-  // smoothed vertical velocity feel
   fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
-
-  // decays
   fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
-  fpsLaneKick = damp(fpsLaneKick, 0.0, 12, dt);
 
-  // ----- RUN bob -----
-  if(camDynamic && fpsRealistic){
-    const speedLike = 1.0 + ((game.foodBoostT>0 || game.ringBoostT>0) ? 0.35 : 0.0);
-    fpsPhase += dt * (9.0 * speedLike);
+  // ===== elastic lane lag (spring) =====
+  // "fpsLaneKick" lo usi già quando cambi corsia: qui lo trasformiamo in elasticità vera
+  // (più realistico) oppure lo spengo in stabile
+  if(!fpsRealistic){
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
+  }else{
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
   }
 
-  const runAmpY = (camDynamic && fpsRealistic) ? 0.052 : 0.0;
-  const runAmpX = (camDynamic && fpsRealistic) ? 0.028 : 0.0;
+  // ===== non-linear bob based on speed =====
+  // speedNormalized 0..1 circa
+  const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
+  const nonLinear = Math.pow(sNorm, 1.65); // non lineare (cresce più forte a velocità alte)
+
+  if(!stoppedOrMenu && fpsRealistic){
+    fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
+  } else {
+    fpsPhase += dt * 2.0;
+  }
+
+  const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
+  const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
+
   const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
   const runX = Math.sin(fpsPhase*0.5) * runAmpX;
 
   const air = grounded ? 0.0 : 1.0;
   const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
-
   const landY = -fpsLandKick * 0.020;
 
-  const slideManualChin = (game.sliding ? 0.10 : 0.0);
-  const yFollow = runnerPivot.position.y + eyeBaseY - slideManualChin;
+  const slideChin = (game.sliding ? 0.10 : 0.0);
+  const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
 
-  const laneKickX = fpsLaneKick * 0.030;
+  // micro lag corsia (elasticità)
+  const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
+
+  const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
 
   const xOff = breatheX + (1-air)*runX + laneKickX;
-  const yOff = breatheY + (1-air)*runY + airFloat + landY + (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
+  const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
 
   camera.position.set(
     runnerPivot.position.x + xOff,
