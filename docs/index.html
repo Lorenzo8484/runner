@@ -2487,27 +2487,28 @@ camera.updateProjectionMatrix();
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps'){
-        // ✅ FPS FISSA attaccata al player (NON segue la testa/ossa)
-        // Direzione corsa: verso -Z
-        const eyeY = 1.58;     // altezza “occhi”
-        const eyeZ = 0.35;     // leggermente avanti rispetto al pivot
-        const eyeX = runnerPivot.position.x;
+  camera.up.set(0,1,0);
 
-        camera.position.set(
-          eyeX,
-          eyeY + runnerPivot.position.y,
-          eyeZ
-        );
+  // posizione fissa “attaccata al player”
+  const eyeY   = 1.55;  // altezza occhi
+  const eyeFwd = 0.55;  // ✅ aumenta questo per andare più avanti (es: 0.70 / 0.85)
+  const eyeZ   = 0.18;  // piccolo offset base
 
-        // guarda dritto lungo la strada (verso -Z)
-        camera.lookAt(
-          eyeX,
-          eyeY + runnerPivot.position.y,
-          -10
-        );
+  camera.position.set(
+    runnerPivot.position.x,        // attaccata al player (lane)
+    eyeY,
+    eyeZ - eyeFwd                  // ✅ avanti = verso -Z
+  );
 
-        // niente roll in FPS
-      }
+  // guarda avanti lungo la strada
+  camera.lookAt(
+    runnerPivot.position.x,
+    eyeY,
+    -10
+  );
+
+  camera.rotation.z = 0;
+}
       else if(viewMode === 'back'){
         // dietro al player (classico)
         const lookAtY = lerp(0.35, 1.45, framing);
