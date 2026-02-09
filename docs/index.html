@@ -2476,9 +2476,15 @@ function setFpsMaskHidden(on){
 
   camera.up.set(0,1,0);
 
-  camera.position.set(tmpV3.x, tmpV3.y + 0.04, tmpV3.z + 0.12);
+  // sposta la camera LEGGERMENTE in avanti lungo la strada (verso -Z)
+  camera.position.set(tmpV3.x, tmpV3.y + 0.06, tmpV3.z - 0.12);
 
-  camera.lookAt(tmpV3.x, tmpV3.y + 0.03, tmpV3.z - 10);
+  // guarda sempre avanti lungo la strada (sempre -Z)
+  camera.lookAt(
+    camera.position.x,
+    camera.position.y,
+    camera.position.z - 10
+  );
 
   camera.rotation.z = 0;
 }
