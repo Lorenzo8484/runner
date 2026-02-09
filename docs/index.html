@@ -1969,8 +1969,12 @@
       if(game.stopped) return;
       if(game.trioT>0) return;
       game.lane = clamp(game.lane+dir, 0, 3);
-      tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
-      sfx.lane();
+tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
+
+// micro kick (usato dalla camera FPS, "inerzia")
+fpsLaneKick = clamp(fpsLaneKick + dir * 0.55, -1.2, 1.2);
+
+sfx.lane();
     }
 
     function jump(){
@@ -2457,6 +2461,19 @@
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
+ 
+    // ===============================
+// FPS Camera Motion (realistic)
+// ===============================
+let fpsStepPhase = 0;          // fase passo (solo quando corri)
+let fpsLandKick = 0;           // piccolo kick atterraggio
+let prevGrounded = true;       // per detect landing
+let fpsVelYSm = 0;             // smooth verticale (per jump feel)
+let fpsLaneKick = 0;           // micro kick laterale cambio corsia
+let lanePrev = 1;
+
+// helper (soft clamp)
+const sClamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
@@ -2518,80 +2535,95 @@
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps'){
-        camera.up.set(0,1,0);
+  camera.up.set(0,1,0);
 
-        const eyeBaseY = 1.55;
-        const eyeFwd   = 1.10;
-        const eyeZ     = 0.18;
+  // ----- base eye position -----
+  const eyeBaseY = 1.58;     // leggermente più naturale
+  const eyeFwd   = 1.05;     // quanto guarda avanti
+  const eyeZ     = 0.10;     // quanto "dentro" al corpo
 
-        // ✅ in FPS NON abbassiamo la camera quando “slide” (togliamo l’effetto visibile sui rings)
-        const slideDrop = 0.0;
+  // ✅ STOP/menu: breathing sway super leggero e stabile
+  const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
+  const breatheAmpY = (stoppedOrMenu ? 0.010 : 0.0);
+  const breatheAmpX = (stoppedOrMenu ? 0.006 : 0.0);
+  const breatheY = Math.sin(tNow*0.0019) * breatheAmpY;
+  const breatheX = Math.sin(tNow*0.0015) * breatheAmpX;
 
-        // ✅ spring follow (corsie più fluide e “dinamiche”)
-        const targetFx = runnerPivot.position.x;
-        const targetFy = runnerPivot.position.y + eyeBaseY - slideDrop;
+  // ----- grounded / landing detect -----
+  const grounded = (game.y === 0 && !game.jumping); // nel tuo game: y==0 = a terra
+  if(prevGrounded === false && grounded === true){
+    // atterraggio: micro kick che poi rientra
+    fpsLandKick = 1.0;
+  }
+  prevGrounded = grounded;
 
-        // smoothing “attaccata al corpo”, ma non rigida
-        fpsX = damp(fpsX, targetFx, 16, dt);
-        fpsY = damp(fpsY, targetFy, 18, dt);
+  // smoothed vertical velocity feel (jump bob)
+  fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt); // dt è nel closure di animate
 
-        // ✅ head-bob “reale” legato alla velocità (solo quando si corre)
-        const runningNow = camDynamic && fpsRealistic;
-        const grounded = !!game.grounded;
+  // decays
+  fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
+  fpsLaneKick = damp(fpsLaneKick, 0.0, 12, dt);
 
-        // landing kick (camera attaccata al corpo)
-        if(!fpsGroundPrev && grounded){
-          fpsLandKick = clamp(fpsLandKick + Math.abs(fpsVyPrev) * 0.010, 0, 0.06);
-        }
-        fpsLandKick = damp(fpsLandKick, 0, 10, dt);
-        fpsGroundPrev = grounded;
-        fpsVyPrev = game.vyNow;
+  // ----- RUN bob (solo quando corri) -----
+  // fase passo cresce con la velocità percepita (leggero, “real FPS”)
+  if(camDynamic && fpsRealistic){
+    const speedLike = 1.0 + (game.foodBoostT>0 || game.ringBoostT>0 ? 0.35 : 0.0);
+    fpsStepPhase += dt * (9.0 * speedLike); // frequenza passi
+  }
 
-        // step phase
-        const speedNorm = clamp((game.camSpeed || 0) / 13.0, 0, 2.5);
-        const stepHz = runningNow ? lerp(1.55, 2.55, clamp(speedNorm,0,1)) : 0; // “camminata/corsa”
-        fpsPhase += (stepHz * Math.PI * 2) * dt;
+  // bob: verticale + laterale + micro roll (molto piccolo)
+  const runAmpY = (camDynamic && fpsRealistic) ? 0.030 : 0.0;
+  const runAmpX = (camDynamic && fpsRealistic) ? 0.014 : 0.0;
+  const runY = Math.abs(Math.sin(fpsStepPhase)) * runAmpY;      // up-down tipo passo
+  const runX = Math.sin(fpsStepPhase*0.5) * runAmpX;            // sway laterale
 
-        const airFactor = grounded ? 1.0 : 0.35; // bob ridotto in aria (ma camera segue il salto)
+  // ----- Jump / air “camera attaccata al corpo” -----
+  // in aria riduco il passo, ma mantengo un floating morbido
+  const air = grounded ? 0.0 : 1.0;
+  const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
 
-        const bobAmpY = runningNow ? (0.020 * clamp(speedNorm,0,1) * airFactor) : 0.0;
-        const bobAmpX = runningNow ? (0.010 * clamp(speedNorm,0,1) * airFactor) : 0.0;
+  // kick atterraggio (rapido e sottile)
+  const landY = -fpsLandKick * 0.020;
 
-        // profilo bob più “FPS”: una componente principale + armonica
-        const step = Math.sin(fpsPhase);
-        const step2 = Math.sin(fpsPhase * 2.0 + 0.6);
-        const fpsBobY = (step * bobAmpY * 0.75) + (step2 * bobAmpY * 0.25);
+  // ✅ RIMOSSO l’effetto ring/slide in FPS:
+  // prima c’era slideDrop che abbassava la camera -> tolto.
+  // Se vuoi un minimo di “chin” quando slide manuale, metti 0.10.
+  const slideManualChin = (game.sliding ? 0.10 : 0.0);
 
-        // sway laterale leggero, più “stabile”
-        const fpsBobX = (Math.sin(fpsPhase + 1.2) * bobAmpX);
+  // follow Y: segue il corpo (runnerPivot.position.y = -game.y)
+  const yFollow = runnerPivot.position.y + eyeBaseY - slideManualChin;
 
-        // ✅ micro sway da cambio corsia (lag/inerzia)
-        const vx = (fpsX - fpsXPrev) / Math.max(0.0001, dt);
-        fpsXPrev = fpsX;
-        const laneSway = clamp(-vx * 0.012, -0.028, 0.028);
+  // lane inertia: micro kick laterale quando cambi corsia (fluido)
+  const laneKickX = fpsLaneKick * 0.030;
 
-        // ✅ micro “breathing sway” SOLO quando fermo (STOP/menu) — super leggero e stabile
-        const idleBreathOn = (!gameplayOn) || (game.started && game.stopped) || game.paused;
-        const breathY = idleBreathOn ? (Math.sin(tNow*0.0018) * 0.006) : 0.0;
-        const breathX = idleBreathOn ? (Math.sin(tNow*0.0012) * 0.003) : 0.0;
+  // compositing finale
+  const xOff = breatheX + (1-air)*runX + laneKickX;
+  const yOff = breatheY + (1-air)*runY + airFloat + landY + (air * sClamp(-fpsVelYSm*0.002, -0.02, 0.02));
 
-        // posizione finale FPS
-        const finalX = fpsX + fpsBobX + laneSway + breathX;
-        const finalY = fpsY + fpsBobY - fpsLandKick + breathY;
-        const finalZ = eyeZ - eyeFwd;
+  camera.position.set(
+    runnerPivot.position.x + xOff,
+    yFollow + yOff,
+    eyeZ - eyeFwd
+  );
 
-        camera.position.set(finalX, finalY, finalZ);
+  camera.lookAt(
+    runnerPivot.position.x + xOff,
+    yFollow + yOff,
+    -10
+  );
 
-        // look a bit forward (stabile, niente roll/tilt)
-        camera.lookAt(finalX, finalY, -10);
-        camera.rotation.z = 0;
+  // mai roll in FPS (stabile)
+  camera.rotation.z = 0;
+
       }
       else if(viewMode === 'back'){
         const lookAtY = lerp(0.35, 1.45, framing);
         const lookAtZ = -6.5;
         camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-        camera.rotation.z = (camDynamic ? camRoll : 0);
+        // ✅ FIX FRONT: niente roll (evita effetto camera capovolta / testa in giù)
+      camera.rotation.z = 0;
+      camera.up.set(0,1,0);
       }
       else {
         // ✅ FIX FRONT “girata al contrario”: roll invertito (così non ti ritrovi il mondo sottosopra)
