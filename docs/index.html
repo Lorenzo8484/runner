@@ -1134,8 +1134,7 @@ if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
 
 // live button label (solo se in FPS)
 if(btnFpsLive){
-  btnFpsLive.style.display = (viewMode==='fps') ? 'flex' : 'none';
-  btnFpsLive.textContent = fpsRealistic ? 'FPS: REAL' : 'FPS: STAB';}
+  btnFpsLive.style.display = 'none'; // ❌ mai visibile in HUD
   
       setActiveCamBtns();
       setDebugUI();
