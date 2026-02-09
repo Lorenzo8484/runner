@@ -2467,36 +2467,19 @@ function setFpsMaskHidden(on){
       const bob = Math.sin(tNow*0.0020) * 0.005;
 
       // ===== CAMERA MODES =====
-      if(viewMode === 'fps' && headBone){
-  headBone.getWorldPosition(tmpV3);
-  headBone.getWorldQuaternion(tmpQ);
+      if(viewMode === 'fps'){
+  if(headBone){
+    headBone.getWorldPosition(tmpV3);
+  }else{
+    tmpV3.set(runnerPivot.position.x, 1.55, 0.15);
+  }
 
-  // Direzione "in avanti" attesa nel gioco: verso -Z (la strada arriva da lì)
-  const desiredFwd = tmpF.set(0,0,-1);
+  camera.up.set(0,1,0);
 
-  // Prova due forward possibili del bone: -Z e +Z
-  const fwdA = new THREE.Vector3(0,0,-1).applyQuaternion(tmpQ).normalize();
-  const fwdB = new THREE.Vector3(0,0, 1).applyQuaternion(tmpQ).normalize();
+  camera.position.set(tmpV3.x, tmpV3.y + 0.04, tmpV3.z + 0.12);
 
-  // scegli quello più vicino a desiredFwd
-  let fwd = (fwdA.dot(desiredFwd) >= fwdB.dot(desiredFwd)) ? fwdA : fwdB;
+  camera.lookAt(tmpV3.x, tmpV3.y + 0.03, tmpV3.z - 10);
 
-  // Up del bone -> per evitare camera capovolta
-  const up = new THREE.Vector3(0,1,0).applyQuaternion(tmpQ).normalize();
-  camera.up.copy(up);
-
-  // Se è sottosopra rispetto al mondo, inverti l'up
-  if(camera.up.dot(new THREE.Vector3(0,1,0)) < 0) camera.up.multiplyScalar(-1);
-
-  // Posizione FPS: camera "attaccata alla faccia" (più avanti = meno rischio di vedere mesh)
-const pos = tmpV3.clone()
-  .add(fwd.clone().multiplyScalar(0.16)) // <-- era 0.10
-  .add(new THREE.Vector3(0,1,0).multiplyScalar(0.04));
-
-  camera.position.copy(pos);
-  camera.lookAt(pos.clone().add(fwd.multiplyScalar(10)));
-
-  // niente roll manuale
   camera.rotation.z = 0;
 }
       else if(viewMode === 'back'){
