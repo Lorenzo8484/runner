@@ -739,34 +739,70 @@ canvas.blurBoost{
   </div>
 
   <!-- ✅ TOP RIGHT: Home+Impostazioni + (sotto) camera buttons + debug -->
-  <div class="topLeftBtns">
-    <div class="btnGroup pillFx" aria-label="Menu">
-      <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-          <defs>
-            <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-              <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
-              <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
-            </linearGradient>
-          </defs>
-          <path fill="url(#gHome)" d="M12 3.2 3 10.7v1.6h2v8.5h5.6v-5.7h2.8v5.7H19v-8.5h2v-1.6L12 3.2z"/>
-        </svg>
-      </button>
+<div class="topLeftBtns">
+  <div class="btnGroup pillFx" aria-label="Menu">
 
-      <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-          <defs>
-            <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
-              <stop offset=".45" stop-color="#d8eeff" stop-opacity=".96"/>
-              <stop offset="1" stop-color="#8ac0ff" stop-opacity=".92"/>
-            </linearGradient>
-          </defs>
-          <path fill="url(#gGear)" d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
-        </svg>
-      </button>
-    </div>
+    <!-- HOME -->
+    <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gradHome" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#23E7FF"/>
+            <stop offset=".42" stop-color="#3E7BFF"/>
+            <stop offset=".72" stop-color="#8B4DFF"/>
+            <stop offset="1" stop-color="#FF2DAA"/>
+          </linearGradient>
+          <filter id="glowHome" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx="0" dy="0" stdDeviation="1.4" flood-color="#6FD6FF" flood-opacity=".35"/>
+            <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#8B4DFF" flood-opacity=".22"/>
+          </filter>
+        </defs>
+
+        <path
+          d="M12 3.3 3.2 10.3v1.5h2v8.8h5.7v-6h2.2v6h5.7v-8.8h2v-1.5L12 3.3z"
+          fill="rgba(255,255,255,.06)"
+          stroke="url(#gradHome)"
+          stroke-width="2.1"
+          stroke-linejoin="round"
+          filter="url(#glowHome)"
+        />
+      </svg>
+    </button>
+
+    <!-- IMPOSTAZIONI (SLIDER) -->
+    <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gradSet" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#23E7FF"/>
+            <stop offset=".42" stop-color="#3E7BFF"/>
+            <stop offset=".72" stop-color="#8B4DFF"/>
+            <stop offset="1" stop-color="#FF2DAA"/>
+          </linearGradient>
+          <filter id="glowSet" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx="0" dy="0" stdDeviation="1.4" flood-color="#6FD6FF" flood-opacity=".35"/>
+            <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#8B4DFF" flood-opacity=".22"/>
+          </filter>
+        </defs>
+
+        <!-- linee -->
+        <g stroke="url(#gradSet)" stroke-width="2.1" stroke-linecap="round" fill="none" filter="url(#glowSet)">
+          <path d="M6 7h12"/>
+          <path d="M6 12h12"/>
+          <path d="M6 17h12"/>
+        </g>
+
+        <!-- slider -->
+        <g filter="url(#glowSet)">
+          <circle cx="9"  cy="7"  r="2.35" fill="rgba(255,255,255,.08)" stroke="url(#gradSet)" stroke-width="1.9"/>
+          <circle cx="15" cy="12" r="2.35" fill="rgba(255,255,255,.08)" stroke="url(#gradSet)" stroke-width="1.9"/>
+          <circle cx="11" cy="17" r="2.35" fill="rgba(255,255,255,.08)" stroke="url(#gradSet)" stroke-width="1.9"/>
+        </g>
+      </svg>
+    </button>
+
+  </div>
+</div>
 
     <!-- Camera buttons -->
     <div class="camGroup">
