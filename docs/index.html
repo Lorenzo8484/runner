@@ -982,6 +982,7 @@
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
+    camera.up.set(0,1,0); // ✅ sempre “dritta” (fix strada capovolta)
 
     // lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
@@ -1433,81 +1434,80 @@
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
 
     // FPS: testa/maschera INVISIBILE ma con OMBRE corrette (shadow-only)
-let fpsHiddenMeshes = [];
+    let fpsHiddenMeshes = [];
 
-function setFpsMaskHidden(on){
-  if(viewMode==='fps') bubble.visible = false;
+    function setFpsMaskHidden(on){
+      if(viewMode==='fps') bubble.visible = false;
 
-  // ripristina tutto
-  for(const it of fpsHiddenMeshes){
-    const m = it.mesh;
-    try{
-      m.visible = it.visible;
-      m.castShadow = it.castShadow;
-      if(m.material){
-        const mats = Array.isArray(m.material) ? m.material : [m.material];
-        const saved = it.materialStates || [];
-        for(let i=0;i<mats.length;i++){
-          const mat = mats[i];
-          const st  = saved[i];
-          if(!mat || !st) continue;
-          mat.transparent = st.transparent;
-          mat.opacity     = st.opacity;
-          mat.colorWrite  = st.colorWrite;
-          mat.depthWrite  = st.depthWrite;
-          mat.depthTest   = st.depthTest;
+      // ripristina tutto
+      for(const it of fpsHiddenMeshes){
+        const m = it.mesh;
+        try{
+          m.visible = it.visible;
+          m.castShadow = it.castShadow;
+          if(m.material){
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            const saved = it.materialStates || [];
+            for(let i=0;i<mats.length;i++){
+              const mat = mats[i];
+              const st  = saved[i];
+              if(!mat || !st) continue;
+              mat.transparent = st.transparent;
+              mat.opacity     = st.opacity;
+              mat.colorWrite  = st.colorWrite;
+              mat.depthWrite  = st.depthWrite;
+              mat.depthTest   = st.depthTest;
+              mat.needsUpdate = true;
+            }
+          }
+        }catch{}
+      }
+      fpsHiddenMeshes = [];
+      if(!on) return;
+
+      // nasconde solo head/face/hair/helmet/mask ecc… ma mantiene le ombre
+      runnerModel.traverse(o=>{
+        if(!o.isMesh) return;
+
+        const n = (o.name||'').toLowerCase();
+        const hit =
+          n.includes('head') || n.includes('face') || n.includes('hair') ||
+          n.includes('helmet') || n.includes('hat') || n.includes('mask') ||
+          n.includes('cap') || n.includes('hood') || n.includes('visor');
+
+        if(!hit) return;
+
+        const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+        const materialStates = mats.map(mat => mat ? ({
+          transparent: mat.transparent,
+          opacity: mat.opacity,
+          colorWrite: mat.colorWrite,
+          depthWrite: mat.depthWrite,
+          depthTest: mat.depthTest
+        }) : null);
+
+        fpsHiddenMeshes.push({
+          mesh: o,
+          visible: o.visible,
+          castShadow: o.castShadow,
+          materialStates
+        });
+
+        // shadow-only: invisibile ma continua a fare ombre
+        o.visible = true;
+        o.castShadow = true;
+
+        for(const mat of mats){
+          if(!mat) continue;
+          mat.transparent = true;
+          mat.opacity = 0.0;
+          mat.colorWrite = false;
+          mat.depthWrite = false;
+          mat.depthTest  = true;
           mat.needsUpdate = true;
         }
-      }
-    }catch{}
-  }
-  fpsHiddenMeshes = [];
-  if(!on) return;
-
-  // nasconde solo head/face/hair/helmet/mask ecc… ma mantiene le ombre
-  runnerModel.traverse(o=>{
-    if(!o.isMesh) return;
-
-    const n = (o.name||'').toLowerCase();
-    const hit =
-      n.includes('head') || n.includes('face') || n.includes('hair') ||
-      n.includes('helmet') || n.includes('hat') || n.includes('mask') ||
-      n.includes('cap') || n.includes('hood') || n.includes('visor');
-
-    if(!hit) return;
-
-    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
-    const materialStates = mats.map(mat => mat ? ({
-      transparent: mat.transparent,
-      opacity: mat.opacity,
-      colorWrite: mat.colorWrite,
-      depthWrite: mat.depthWrite,
-      depthTest: mat.depthTest
-    }) : null);
-
-    fpsHiddenMeshes.push({
-      mesh: o,
-      visible: o.visible,
-      castShadow: o.castShadow,
-      materialStates
-    });
-
-    // shadow-only: invisibile ma continua a fare ombre
-    o.visible = true;
-    o.castShadow = true;
-
-    for(const mat of mats){
-      if(!mat) continue;
-      mat.transparent = true;
-      mat.opacity = 0.0;
-      mat.colorWrite = false;
-      mat.depthWrite = false;
-      mat.depthTest  = true;
-      mat.needsUpdate = true;
+      });
     }
-  });
-}
-
 
     const animState = { mode:'idle' };
     let deadSnapPending = false;
@@ -2013,6 +2013,9 @@ function setFpsMaskHidden(on){
       saveCam();
       setActiveCamBtns();
 
+      // ✅ reset “up” sempre (fix capovolgimento quando cambi modalità)
+      camera.up.set(0,1,0);
+
       // camera near in FPS per evitare clipping
       if(viewMode==='fps'){
         camera.near = 0.02;
@@ -2438,6 +2441,9 @@ function setFpsMaskHidden(on){
 
       update(dt,tNow);
 
+      const gameplayOn = game.started && !game.paused && !game.over;
+      const camDynamic = gameplayOn && !game.stopped; // ✅ quando fermo: camera fissa
+
       const bothBoost = (game.foodBoostT>0 && game.ringBoostT>0);
       const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
 
@@ -2459,65 +2465,58 @@ function setFpsMaskHidden(on){
       camX = damp(camX, targetCamX, 6, dt);
 
       let shakeX = 0, shakeY = 0;
-      if(anyBoost && shakeEnabled && viewMode!=='fps'){
+      if(camDynamic && anyBoost && shakeEnabled && viewMode!=='fps'){
         const intensity = bothBoost ? 0.018 : 0.011;
         shakeX = Math.sin(tNow*0.020) * intensity;
         shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
-      const bob = Math.sin(tNow*0.0020) * 0.005;
+      const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0; // ✅ niente “ondeggio” da fermo
+
+      // ✅ up stabile sempre (fix strada capovolta)
+      camera.up.set(0,1,0);
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps'){
-  // 1) posizione testa (world)
-  if(headBone){
-    headBone.getWorldPosition(tmpV3);
-    headBone.getWorldQuaternion(tmpQ);
-  }else{
-    tmpV3.set(runnerPivot.position.x, 1.55, 0.15);
-    tmpQ.identity();
-  }
+        // ✅ FPS FISSA attaccata al player (NON segue la testa/ossa)
+        // Direzione corsa: verso -Z
+        const eyeY = 1.58;     // altezza “occhi”
+        const eyeZ = 0.22;     // leggermente avanti rispetto al pivot
+        const eyeX = runnerPivot.position.x;
 
-  // 2) forward reale della testa (world)
-  tmpF.set(0,0,-1).applyQuaternion(tmpQ).normalize();
+        camera.position.set(
+          eyeX,
+          eyeY + runnerPivot.position.y,
+          eyeZ
+        );
 
-  // 3) up stabile
-  camera.up.set(0,1,0);
+        // guarda dritto lungo la strada (verso -Z)
+        camera.lookAt(
+          eyeX,
+          eyeY + runnerPivot.position.y,
+          -10
+        );
 
-  // 4) camera un filo sopra + un filo avanti (fuori da faccia/torso)
-  const eyeUp = 0.06;     // alza/abbassa
-  const eyeFwd = 0.35;    // aumenta se vedi ancora mesh (prova 0.28 / 0.35)
-
-  camera.position.set(
-    tmpV3.x + tmpF.x * eyeFwd,
-    tmpV3.y + eyeUp,
-    tmpV3.z + tmpF.z * eyeFwd
-  );
-
-  // 5) guarda avanti lungo la stessa direzione
-  const lookDist = 10;
-  camera.lookAt(
-    camera.position.x + tmpF.x * lookDist,
-    camera.position.y + tmpF.y * lookDist,
-    camera.position.z + tmpF.z * lookDist
-  );
-
-  camera.rotation.z = 0;
-}
+        // niente roll in FPS
+      }
       else if(viewMode === 'back'){
         // dietro al player (classico)
         const lookAtY = lerp(0.35, 1.45, framing);
         const lookAtZ = -6.5; // avanti lungo strada (negativo)
         camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-        camera.rotation.z = camRoll;
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+        // ✅ roll DOPO lookAt (se lo fai prima, lookAt lo sovrascrive)
+        camera.rotateZ(camDynamic ? camRoll : 0);
       }
       else {
         // front (davanti al player)
         const lookAtY = lerp(0.30, 1.55, framing);
         const lookAtZ = 0.10;
         camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
-        camera.rotation.z = camRoll;
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+        // ✅ roll DOPO lookAt
+        camera.rotateZ(camDynamic ? camRoll : 0);
       }
 
       // ===== Debug panel update (non ogni frame, ma a timer) =====
