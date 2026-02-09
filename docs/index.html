@@ -2524,7 +2524,8 @@ sfx.lane();
       camera.up.set(0,1,0);
 
       // ===== CAMERA MODES =====
-      if(viewMode === 'fps'){
+      // ===== CAMERA MODES =====
+if(viewMode === 'fps'){
   camera.up.set(0,1,0);
 
   // ----- base eye position -----
@@ -2568,9 +2569,7 @@ sfx.lane();
 
   const landY = -fpsLandKick * 0.020;
 
-  // se vuoi “chin” in slide metti 0.10, altrimenti 0
   const slideManualChin = (game.sliding ? 0.10 : 0.0);
-
   const yFollow = runnerPivot.position.y + eyeBaseY - slideManualChin;
 
   const laneKickX = fpsLaneKick * 0.030;
@@ -2590,17 +2589,17 @@ sfx.lane();
     -10
   );
 
-  // mai roll in FPS
   camera.rotation.z = 0;
-
-      }
-      else if(viewMode === 'back'){
-        const lookAtY = lerp(0.35, 1.45, framing);
-        const lookAtZ = -6.5;
-        camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-        camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-        // ✅ FIX FRONT: niente roll (evita effetto camera capovolta / testa in giù)
-      else {
+}
+else if(viewMode === 'back'){
+  const lookAtY = lerp(0.35, 1.45, framing);
+  const lookAtZ = -6.5;
+  camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
+  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+  camera.rotation.z = 0;
+  camera.up.set(0,1,0);
+}
+else { // FRONT
   const lookAtY = lerp(0.30, 1.55, framing);
   const lookAtZ = 0.10;
   camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
