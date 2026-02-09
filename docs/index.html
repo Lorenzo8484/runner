@@ -2200,6 +2200,8 @@ sfx.lane();
     let fpsLandKick = 0;      // piccolo “kick” atterraggio
     let fpsVyPrev = 0;
     let fpsGroundPrev = true;
+    let fpsVelYSm = 0;
+    let fpsLaneKick = 0;
 
     function update(dt, tNow){
       if(runnerMixer){
@@ -2462,18 +2464,6 @@ sfx.lane();
       camRoll = damp(camRoll, tiltTarget, 10, dt);
     }
  
-    // ===============================
-// FPS Camera Motion (realistic)
-// ===============================
-let fpsStepPhase = 0;          // fase passo (solo quando corri)
-let fpsLandKick = 0;           // piccolo kick atterraggio
-let prevGrounded = true;       // per detect landing
-let fpsVelYSm = 0;             // smooth verticale (per jump feel)
-let fpsLaneKick = 0;           // micro kick laterale cambio corsia
-let lanePrev = 1;
-
-// helper (soft clamp)
-const sClamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
@@ -2598,7 +2588,7 @@ const sClamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
   // compositing finale
   const xOff = breatheX + (1-air)*runX + laneKickX;
-  const yOff = breatheY + (1-air)*runY + airFloat + landY + (air * sClamp(-fpsVelYSm*0.002, -0.02, 0.02));
+  const yOff = breatheY + (1-air)*runY + airFloat + landY + (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
 
   camera.position.set(
     runnerPivot.position.x + xOff,
