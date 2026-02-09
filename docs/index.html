@@ -743,31 +743,160 @@ canvas.blurBoost{
   <div class="btnGroup pillFx" aria-label="Menu">
 
     <!-- HOME -->
-    <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gradHome" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#23E7FF"/>
-            <stop offset=".42" stop-color="#3E7BFF"/>
-            <stop offset=".72" stop-color="#8B4DFF"/>
-            <stop offset="1" stop-color="#FF2DAA"/>
-          </linearGradient>
-          <filter id="glowHome" x="-60%" y="-60%" width="220%" height="220%">
-            <feDropShadow dx="0" dy="0" stdDeviation="1.4" flood-color="#6FD6FF" flood-opacity=".35"/>
-            <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#8B4DFF" flood-opacity=".22"/>
-          </filter>
-        </defs>
+<button class="btnSub" id="btnHome" aria-label="Home" title="Home">
+  <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+    <defs>
+      <linearGradient id="gradHomeGear" x1="2" y1="2" x2="22" y2="22">
+        <stop offset="0" stop-color="#36CFFF"/>
+        <stop offset=".45" stop-color="#2F6BFF"/>
+        <stop offset="1" stop-color="#B12BFF"/>
+      </linearGradient>
 
-        <path
-          d="M12 3.3 3.2 10.3v1.5h2v8.8h5.7v-6h2.2v6h5.7v-8.8h2v-1.5L12 3.3z"
-          fill="rgba(255,255,255,.06)"
-          stroke="url(#gradHome)"
-          stroke-width="2.1"
-          stroke-linejoin="round"
-          filter="url(#glowHome)"
-        />
-      </svg>
-    </button>
+      <radialGradient id="homeCore" cx="45%" cy="40%" r="70%">
+        <stop offset="0" stop-color="#BFE9FF" stop-opacity=".95"/>
+        <stop offset=".55" stop-color="#8C7BFF" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#B12BFF" stop-opacity="0"/>
+      </radialGradient>
+
+      <filter id="glowHomeGear" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#49D6FF" flood-opacity=".35"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="2.2" flood-color="#8B4DFF" flood-opacity=".18"/>
+      </filter>
+    </defs>
+
+    <!-- core soft -->
+    <circle cx="12" cy="12" r="6.6" fill="url(#homeCore)"/>
+
+    <!-- outline house (stile spesso + gradiente) -->
+    <path
+      d="M5.2 11.2 12 5.6l6.8 5.6M7.2 10.9v8.2h3.9v-4.7h1.8v4.7h3.9v-8.2"
+      fill="none"
+      stroke="url(#gradHomeGear)"
+      stroke-width="2.25"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      filter="url(#glowHomeGear)"
+    />
+
+    <!-- ring centrale come nella foto -->
+    <circle
+      cx="12" cy="13.0" r="2.85"
+      fill="none"
+      stroke="url(#gradHomeGear)"
+      stroke-width="2.05"
+      opacity=".95"
+      filter="url(#glowHomeGear)"
+    />
+  </svg>
+</button>
+
+<!-- SETTINGS -->
+<button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+  <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+    <defs>
+      <linearGradient id="gradSetGear" x1="2" y1="2" x2="22" y2="22">
+        <stop offset="0" stop-color="#36CFFF"/>
+        <stop offset=".45" stop-color="#2F6BFF"/>
+        <stop offset="1" stop-color="#B12BFF"/>
+      </linearGradient>
+
+      <radialGradient id="setCore" cx="45%" cy="40%" r="70%">
+        <stop offset="0" stop-color="#BFE9FF" stop-opacity=".95"/>
+        <stop offset=".55" stop-color="#8C7BFF" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#B12BFF" stop-opacity="0"/>
+      </radialGradient>
+
+      <filter id="glowSetGear" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#49D6FF" flood-opacity=".35"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="2.2" flood-color="#8B4DFF" flood-opacity=".18"/>
+      </filter>
+    </defs>
+
+    <!-- core soft -->
+    <circle cx="12" cy="12" r="7.2" fill="url(#setCore)"/>
+
+    <!-- gear outline (semplice, pulito, leggibile in pillola) -->
+    <path
+      d="M12 3.7
+         L13.35 3.95
+         C13.65 4.02 13.88 4.25 13.95 4.55
+         L14.2 5.65
+         C14.55 5.78 14.88 5.97 15.18 6.19
+         L16.25 5.65
+         C16.52 5.52 16.84 5.58 17.04 5.79
+         L18.21 6.96
+         C18.42 7.16 18.48 7.48 18.35 7.75
+         L17.81 8.82
+         C18.03 9.12 18.22 9.45 18.35 9.8
+         L19.45 10.05
+         C19.75 10.12 19.98 10.35 20.05 10.65
+         L20.3 12
+         L20.05 13.35
+         C19.98 13.65 19.75 13.88 19.45 13.95
+         L18.35 14.2
+         C18.22 14.55 18.03 14.88 17.81 15.18
+         L18.35 16.25
+         C18.48 16.52 18.42 16.84 18.21 17.04
+         L17.04 18.21
+         C16.84 18.42 16.52 18.48 16.25 18.35
+         L15.18 17.81
+         C14.88 18.03 14.55 18.22 14.2 18.35
+         L13.95 19.45
+         C13.88 19.75 13.65 19.98 13.35 20.05
+         L12 20.3
+         L10.65 20.05
+         C10.35 19.98 10.12 19.75 10.05 19.45
+         L9.8 18.35
+         C9.45 18.22 9.12 18.03 8.82 17.81
+         L7.75 18.35
+         C7.48 18.48 7.16 18.42 6.96 18.21
+         L5.79 17.04
+         C5.58 16.84 5.52 16.52 5.65 16.25
+         L6.19 15.18
+         C5.97 14.88 5.78 14.55 5.65 14.2
+         L4.55 13.95
+         C4.25 13.88 4.02 13.65 3.95 13.35
+         L3.7 12
+         L3.95 10.65
+         C4.02 10.35 4.25 10.12 4.55 10.05
+         L5.65 9.8
+         C5.78 9.45 5.97 9.12 6.19 8.82
+         L5.65 7.75
+         C5.52 7.48 5.58 7.16 5.79 6.96
+         L6.96 5.79
+         C7.16 5.58 7.48 5.52 7.75 5.65
+         L8.82 6.19
+         C9.12 5.97 9.45 5.78 9.8 5.65
+         L10.05 4.55
+         C10.12 4.25 10.35 4.02 10.65 3.95
+         Z"
+      fill="none"
+      stroke="url(#gradSetGear)"
+      stroke-width="2.1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      filter="url(#glowSetGear)"
+    />
+
+    <!-- ring centrale come nella foto -->
+    <circle
+      cx="12" cy="12" r="5.35"
+      fill="none"
+      stroke="url(#gradSetGear)"
+      stroke-width="2.05"
+      opacity=".95"
+      filter="url(#glowSetGear)"
+    />
+    <circle
+      cx="12" cy="12" r="2.25"
+      fill="rgba(140,180,255,.35)"
+      stroke="url(#gradSetGear)"
+      stroke-width="1.6"
+      opacity=".9"
+      filter="url(#glowSetGear)"
+    />
+  </svg>
+</button>
 
     <!-- IMPOSTAZIONI (SLIDER) -->
     <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
