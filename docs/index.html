@@ -2616,7 +2616,7 @@ else if(viewMode === 'back'){
   const lookAtZ = -6.5;
   camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
   camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = 0;
+  camera.rotation.z = camRoll * 0.55;
   camera.up.set(0,1,0);
 }
 else { // FRONT
@@ -2624,7 +2624,7 @@ else { // FRONT
   const lookAtZ = 0.10;
   camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
   camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = 0;
+  camera.rotation.z = camRoll * 0.55;
   camera.up.set(0,1,0);
 }
 
