@@ -993,26 +993,12 @@ canvas.blurBoost{
     const dbgLane = $('dbgLane');
     const dbgBoosts = $('dbgBoosts');
 
-    // ===== Settings overlay =====
-const settingsOverlay = $('settingsOverlay');
-const closeSettingsBtn = $('closeSettings');
-const resetCamBtn = $('resetCam');
+// ===== Settings overlay =====
+const settingsOverlay   = $('settingsOverlay');
+const closeSettingsBtn  = $('closeSettings');
+const resetCamBtn       = $('resetCam');
 
-function setSettingsTab(tab){
-  const cards = settingsOverlay?.querySelectorAll('.card') || [];
-  for(const c of cards){
-    const t = c.getAttribute('data-tab');
-    c.style.display = (t === tab) ? 'block' : 'none';
-  }
-  if(tabCam)    tabCam.classList.toggle('active', tab==='cam');
-  if(tabVisual) tabVisual.classList.toggle('active', tab==='visual');
-  if(tabAudio)  tabAudio.classList.toggle('active', tab==='audio');
-}
-safeOn(tabCam,'click',   ()=>setSettingsTab('cam'));
-safeOn(tabVisual,'click',()=>setSettingsTab('visual'));
-safeOn(tabAudio,'click', ()=>setSettingsTab('audio'));
-
-// Tabs (DEVONO stare QUI, prima di usarli)
+// Tabs (prima di usarli!)
 const tabCam    = $('tabCam');
 const tabVisual = $('tabVisual');
 const tabAudio  = $('tabAudio');
@@ -1032,21 +1018,20 @@ safeOn(tabCam,   'click', ()=>setSettingsTab('cam'));
 safeOn(tabVisual,'click', ()=>setSettingsTab('visual'));
 safeOn(tabAudio, 'click', ()=>setSettingsTab('audio'));
 
-// (poi sotto continui con gli altri settings)
-const audioToggle= $('audioToggle');
-const audioSwitch= $('audioSwitch');
-const shakeToggle = $('shakeToggle');
-const shakeSwitch = $('shakeSwitch');
+// Toggles / UI refs
+const audioToggle  = $('audioToggle');
+const audioSwitch  = $('audioSwitch');
 
-// FPS mode segmented + live button
-const fpsModeToggle = $('fpsModeToggle');
+const shakeToggle  = $('shakeToggle');
+const shakeSwitch  = $('shakeSwitch');
+
 const btnFpsReal   = $('btnFpsReal');
 const btnFpsStable = $('btnFpsStable');
 const btnFpsLive   = $('btnFpsLive');
 
-// Motion blur + DynFov (FPS)
 const motionToggle = $('motionToggle');
 const motionSwitch = $('motionSwitch');
+
 const dynFovToggle = $('dynFovToggle');
 const dynFovSwitch = $('dynFovSwitch');
 
@@ -1103,6 +1088,7 @@ const dynFovSwitch = $('dynFovSwitch');
       localStorage.setItem(CAM_KEY, JSON.stringify({
         baseFov, baseCamZ, baseCamY, framing,
         shake: !!shakeEnabled,
+        motionBlur: !!motionBlurEnabled,
         view: viewMode,
         debug: !!debugOn,
         fpsRealistic: !!fpsRealistic,
@@ -1180,8 +1166,6 @@ safeOn(btnFpsLive,'click', ()=>{
   setFpsMode(!fpsRealistic);
 });
 
-    safeOn(shakeToggle,'click', ()
-safeOn(shakeToggle,'click', ()
     safeOn(shakeToggle,'click', ()=>{
       shakeEnabled = !shakeEnabled;
       if(shakeSwitch) shakeSwitch.classList.toggle('on', !!shakeEnabled);
