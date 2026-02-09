@@ -2582,8 +2582,8 @@ if(viewMode === 'fps'){
     fpsPhase += dt * (9.0 * speedLike);
   }
 
-  const runAmpY = (camDynamic && fpsRealistic) ? 0.030 : 0.0;
-  const runAmpX = (camDynamic && fpsRealistic) ? 0.014 : 0.0;
+  const runAmpY = (camDynamic && fpsRealistic) ? 0.052 : 0.0;
+  const runAmpX = (camDynamic && fpsRealistic) ? 0.028 : 0.0;
   const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
   const runX = Math.sin(fpsPhase*0.5) * runAmpX;
 
