@@ -630,6 +630,13 @@
       </div>
       <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
 
+      <!-- ✅ NUOVO: Altezza camera -->
+      <div class="settingsRow">
+        <div><label>Altezza camera</label><br><small>0=terra • 8=alto</small></div>
+        <div class="settingsVal" id="camYVal">4.6</div>
+      </div>
+      <input id="camYSlider" type="range" min="0" max="8" step="0.1" value="4.6" />
+
       <div class="settingsRow">
         <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
         <div class="settingsVal" id="frameVal">0.06</div>
@@ -706,9 +713,12 @@
 
     const fovSlider = $('fovSlider');
     const camSlider = $('camSlider');
+    const camYSlider = $('camYSlider');     // ✅ nuovo
     const frameSlider = $('frameSlider');
+
     const fovVal = $('fovVal');
     const camVal = $('camVal');
+    const camYVal = $('camYVal');           // ✅ nuovo
     const frameVal = $('frameVal');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -718,22 +728,30 @@
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // ===== SETTINGS =====
-    const CAM_KEY = 'jr_cam_settings_v8';
-    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, framing: 0.06, shake: true };
+    const CAM_KEY = 'jr_cam_settings_v9';
+    const DEFAULTS = { baseFov: 60, baseCamZ: 5.0, baseCamY: 4.6, framing: 0.06, shake: true };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = clamp(Number(saved.baseFov ?? DEFAULTS.baseFov), 30, 110);
     let baseCamZ = clamp(Number(saved.baseCamZ ?? DEFAULTS.baseCamZ), 2, 15);
+    let baseCamY = clamp(Number(saved.baseCamY ?? DEFAULTS.baseCamY), 0, 8); // ✅ nuovo
     let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
     let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
 
-    function saveCam(){ localStorage.setItem(CAM_KEY, JSON.stringify({ baseFov, baseCamZ, framing, shake: !!shakeEnabled })); }
+    function saveCam(){
+      localStorage.setItem(CAM_KEY, JSON.stringify({
+        baseFov, baseCamZ, baseCamY, framing, shake: !!shakeEnabled
+      }));
+    }
     function syncCamUI(){
       if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
       if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
 
       if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); }
       if(camVal){ camVal.textContent = baseCamZ.toFixed(1); }
+
+      if(camYSlider){ camYSlider.value = String(baseCamY.toFixed(1)); }
+      if(camYVal){ camYVal.textContent = baseCamY.toFixed(1); }
 
       if(frameSlider){ frameSlider.value = String(framing.toFixed(2)); }
       if(frameVal){ frameVal.textContent = framing.toFixed(2); }
@@ -744,6 +762,7 @@
 
     safeOn(fovSlider, 'input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); if(fovVal) fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
     safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
     safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
 
     function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); }
@@ -759,7 +778,11 @@
     });
 
     safeOn(resetCamBtn,'click', ()=>{
-      baseFov = DEFAULTS.baseFov; baseCamZ = DEFAULTS.baseCamZ; framing = DEFAULTS.framing; shakeEnabled = DEFAULTS.shake;
+      baseFov = DEFAULTS.baseFov;
+      baseCamZ = DEFAULTS.baseCamZ;
+      baseCamY = DEFAULTS.baseCamY;
+      framing = DEFAULTS.framing;
+      shakeEnabled = DEFAULTS.shake;
       saveCam(); syncCamUI();
     });
 
@@ -1192,7 +1215,7 @@
     dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
     const dummyHead = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 18, 14),
-      new THREE.MeshStandardMaterial({ color:0xb7ccb2, roughness:0.6, metalness:0.0 })
+      new THREE.MeshStandardMaterial({ color:0x<b7ccb2, roughness:0.6, metalness:0.0 })
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
 
@@ -1351,7 +1374,6 @@
           a.clampWhenFinished = false;
         }catch{}
       }
-      // torna subito a un idle (poi quando parte il game, va in run)
       startIdleRandom();
     }
 
@@ -1864,7 +1886,7 @@
     }
 
     // ===== Update loop =====
-    let camZ = baseCamZ, camY = 4.6, camFov = baseFov, camX = 0;
+    let camZ = baseCamZ, camY = baseCamY, camFov = baseFov, camX = 0;
     let tPrev=performance.now();
 
     function update(dt, tNow){
@@ -2131,13 +2153,15 @@
       const targetFov = clamp(baseFov + fovBoost, 30, 110);
       const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
 
-      const lookAtY = lerp(0.05, 1.45, framing);
-      const lookAtZ = lerp(-22.0, -38.0, framing);
-      const camYBase = lerp(3.9, 5.8, framing);
+      // ✅ Camera davanti al player: si posiziona "in avanti" (Z negativo) e guarda il player (Z ~ 0)
+      const lookAtY = lerp(0.30, 1.55, framing);
+      const lookAtZ = 0.10; // guarda verso il player
+
+      const targetY = clamp(baseCamY + (bothBoost?0.10:0), 0.0, 12.0);
 
       camFov = damp(camFov, targetFov, 8, dt);
       camZ   = damp(camZ,   targetZ,   8, dt);
-      camY   = damp(camY,   camYBase + (bothBoost?0.10:0), 8, dt);
+      camY   = damp(camY,   targetY,   8, dt);
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
@@ -2153,8 +2177,12 @@
       }
 
       const bob = Math.sin(tNow*0.0020) * 0.005;
-      camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
+
+      // ✅ Z NEGATIVO = davanti al player
+      camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
       camera.rotation.z = camRoll;
+
+      // ✅ guarda il player (centro corsia)
       camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 
       renderer.render(scene, camera);
