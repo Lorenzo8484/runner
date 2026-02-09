@@ -2191,6 +2191,7 @@ sfx.lane();
     let tPrev=performance.now();
     // ✅ Lane smoothing (posizione X del runner “morbida”)
     let runnerX = lanesX[game.lane];
+    let runPhase = 0; // ✅ fase per bob corsa
 
     // debug fps
     let fpsAcc=0, fpsN=0, fpsShow=0;
@@ -2239,9 +2240,7 @@ sfx.lane();
         return;
       }
 
-      runnerCenter.position.y = 0.95;
-      runnerCenter.rotation.z = 0;
-
+      // runnerCenter.position.y e rotation vengono gestiti dal bob corsa (più sotto)
       const trafficMul = (1.0 - game.stopBlend);
       if(game.stopped){
         // ✅ STOP: niente gameplay, ma lasciamo info camera per “breathing sway”
@@ -2274,6 +2273,20 @@ sfx.lane();
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
+      // ✅ Run bob (solo quando corri)
+runPhase += dt * (9.5 + (speedMul-1.0)*2.0);  // accelera un po’ con i boost
+
+const grounded = (game.y === 0 && !game.jumping);
+const bobOn = grounded ? 1.0 : 0.25;          // in aria quasi zero
+const slideOn = game.sliding ? 0.35 : 1.0;    // in slide riduci
+
+const bobY = Math.abs(Math.sin(runPhase)) * 0.045 * bobOn * slideOn;      // su/giù
+const sway = Math.sin(runPhase*0.5) * 0.035 * bobOn * slideOn;            // sway laterale
+const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;                // roll lieve
+
+runnerCenter.position.y = 0.95 + bobY;
+runnerCenter.rotation.z = lean;
+runnerCenter.rotation.x = -sway * 0.35; // micro “nodding”
 
       // ✅ info per camera FPS (step/bob)
       game.camSpeed = speed;
