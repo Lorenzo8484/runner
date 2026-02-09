@@ -2525,8 +2525,11 @@ runnerPivot.position.y = (-game.y);
         camZ   = damp(camZ,   targetZ,   8, dt);
         camY   = damp(camY,   targetY,   8, dt);
 
-        const targetCamX = clamp(runnerPivot.position.x * 0.35, -1.2, 1.6);
-        camX = damp(camX, targetCamX, 6, dt);
+        // segue di più la corsia (prima 0.35)
+const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
+
+// un filo più morbido (prima lambda 6)
+camX = damp(camX, targetCamX, 5, dt);
       }
 
       camera.fov = camFov;
