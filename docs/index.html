@@ -2489,21 +2489,23 @@ camera.updateProjectionMatrix();
       if(viewMode === 'fps'){
   camera.up.set(0,1,0);
 
-  // posizione fissa “attaccata al player”
-  const eyeY   = 1.55;  // altezza occhi
-  const eyeFwd = 1.10;  // ✅ aumenta questo per andare più avanti (es: 0.70 / 0.85)
-  const eyeZ   = 0.18;  // piccolo offset base
+  const eyeBaseY = 1.55;      // altezza “occhi” sopra al pivot
+  const eyeFwd   = 1.10;      // il tuo valore (ok)
+  const eyeZ     = 0.18;
+
+  // ✅ segue il player: salto (runnerPivot.position.y) + crouch quando slide
+  const slideDrop = game.sliding ? 0.55 : 0.0;   // abbassa camera in slide (regola 0.4–0.8)
+  const yFollow   = runnerPivot.position.y + eyeBaseY - slideDrop;
 
   camera.position.set(
-    runnerPivot.position.x,        // attaccata al player (lane)
-    eyeY,
-    eyeZ - eyeFwd                  // ✅ avanti = verso -Z
+    runnerPivot.position.x,
+    yFollow,
+    eyeZ - eyeFwd
   );
 
-  // guarda avanti lungo la strada
   camera.lookAt(
     runnerPivot.position.x,
-    eyeY,
+    yFollow,
     -10
   );
 
