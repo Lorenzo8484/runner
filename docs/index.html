@@ -2468,22 +2468,37 @@ function setFpsMaskHidden(on){
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps'){
+  // 1) posizione testa (world)
   if(headBone){
     headBone.getWorldPosition(tmpV3);
+    headBone.getWorldQuaternion(tmpQ);
   }else{
     tmpV3.set(runnerPivot.position.x, 1.55, 0.15);
+    tmpQ.identity();
   }
 
+  // 2) forward reale della testa (world)
+  tmpF.set(0,0,-1).applyQuaternion(tmpQ).normalize();
+
+  // 3) up stabile
   camera.up.set(0,1,0);
 
-  // sposta la camera LEGGERMENTE in avanti lungo la strada (verso -Z)
-  camera.position.set(tmpV3.x, tmpV3.y + 0.06, tmpV3.z - 0.12);
+  // 4) camera un filo sopra + un filo avanti (fuori da faccia/torso)
+  const eyeUp = 0.06;     // alza/abbassa
+  const eyeFwd = 0.22;    // aumenta se vedi ancora mesh (prova 0.28 / 0.35)
 
-  // guarda sempre avanti lungo la strada (sempre -Z)
+  camera.position.set(
+    tmpV3.x + tmpF.x * eyeFwd,
+    tmpV3.y + eyeUp,
+    tmpV3.z + tmpF.z * eyeFwd
+  );
+
+  // 5) guarda avanti lungo la stessa direzione
+  const lookDist = 10;
   camera.lookAt(
-    camera.position.x,
-    camera.position.y,
-    camera.position.z - 10
+    camera.position.x + tmpF.x * lookDist,
+    camera.position.y + tmpF.y * lookDist,
+    camera.position.z + tmpF.z * lookDist
   );
 
   camera.rotation.z = 0;
