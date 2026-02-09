@@ -1789,6 +1789,11 @@
       stopBlend:1.0,
 
       lastTurtleZ: [-99999, -99999, -99999],
+
+      /* ✅ info per camera FPS “realistica” */
+      camSpeed: 0,
+      grounded: true,
+      vyNow: 0
     };
 
     if(bestEl) bestEl.textContent = String(game.best);
@@ -2184,6 +2189,14 @@
     let fpsAcc=0, fpsN=0, fpsShow=0;
     let dbgTimer=0;
 
+    // ✅ FPS camera state (bob + sway “reale” + spring)
+    let fpsPhase = 0;
+    let fpsX = 0, fpsY = 0;
+    let fpsXPrev = 0;
+    let fpsLandKick = 0;      // piccolo “kick” atterraggio
+    let fpsVyPrev = 0;
+    let fpsGroundPrev = true;
+
     function update(dt, tNow){
       if(runnerMixer){
         runnerMixer.timeScale = 1.0;
@@ -2209,6 +2222,11 @@
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
 
+        // ✅ per FPS idle/menu
+        game.camSpeed = 0;
+        game.grounded = true;
+        game.vyNow = 0;
+
         return;
       }
 
@@ -2216,7 +2234,13 @@
       runnerCenter.rotation.z = 0;
 
       const trafficMul = (1.0 - game.stopBlend);
-      if(game.stopped) return;
+      if(game.stopped){
+        // ✅ STOP: niente gameplay, ma lasciamo info camera per “breathing sway”
+        game.camSpeed = 0;
+        game.grounded = true;
+        game.vyNow = 0;
+        return;
+      }
 
       if(game.invincibleT>0){
         game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
@@ -2241,6 +2265,11 @@
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
+
+      // ✅ info per camera FPS (step/bob)
+      game.camSpeed = speed;
+      game.grounded = (game.y === 0);
+      game.vyNow = game.vy;
 
       const g=22.0;
       game.vy += g*dt;
@@ -2495,27 +2524,66 @@
         const eyeFwd   = 1.10;
         const eyeZ     = 0.18;
 
-        const slideDrop = game.sliding ? 0.55 : 0.0;
-        const yFollow   = runnerPivot.position.y + eyeBaseY - slideDrop;
+        // ✅ in FPS NON abbassiamo la camera quando “slide” (togliamo l’effetto visibile sui rings)
+        const slideDrop = 0.0;
 
-        // ✅ micro-bob/sway solo se "fpsRealistic"
-        const fpsBobAmp = (camDynamic && fpsRealistic) ? 0.010 : 0.0;
-        const fpsSwayAmp = (camDynamic && fpsRealistic) ? 0.006 : 0.0;
-        const fpsBob = Math.sin(tNow*0.013) * fpsBobAmp;
-        const fpsSway = Math.sin(tNow*0.010) * fpsSwayAmp;
+        // ✅ spring follow (corsie più fluide e “dinamiche”)
+        const targetFx = runnerPivot.position.x;
+        const targetFy = runnerPivot.position.y + eyeBaseY - slideDrop;
 
-        camera.position.set(
-          runnerPivot.position.x + fpsSway,
-          yFollow + fpsBob,
-          eyeZ - eyeFwd
-        );
+        // smoothing “attaccata al corpo”, ma non rigida
+        fpsX = damp(fpsX, targetFx, 16, dt);
+        fpsY = damp(fpsY, targetFy, 18, dt);
 
-        camera.lookAt(
-          runnerPivot.position.x + fpsSway,
-          yFollow + fpsBob,
-          -10
-        );
+        // ✅ head-bob “reale” legato alla velocità (solo quando si corre)
+        const runningNow = camDynamic && fpsRealistic;
+        const grounded = !!game.grounded;
 
+        // landing kick (camera attaccata al corpo)
+        if(!fpsGroundPrev && grounded){
+          fpsLandKick = clamp(fpsLandKick + Math.abs(fpsVyPrev) * 0.010, 0, 0.06);
+        }
+        fpsLandKick = damp(fpsLandKick, 0, 10, dt);
+        fpsGroundPrev = grounded;
+        fpsVyPrev = game.vyNow;
+
+        // step phase
+        const speedNorm = clamp((game.camSpeed || 0) / 13.0, 0, 2.5);
+        const stepHz = runningNow ? lerp(1.55, 2.55, clamp(speedNorm,0,1)) : 0; // “camminata/corsa”
+        fpsPhase += (stepHz * Math.PI * 2) * dt;
+
+        const airFactor = grounded ? 1.0 : 0.35; // bob ridotto in aria (ma camera segue il salto)
+
+        const bobAmpY = runningNow ? (0.020 * clamp(speedNorm,0,1) * airFactor) : 0.0;
+        const bobAmpX = runningNow ? (0.010 * clamp(speedNorm,0,1) * airFactor) : 0.0;
+
+        // profilo bob più “FPS”: una componente principale + armonica
+        const step = Math.sin(fpsPhase);
+        const step2 = Math.sin(fpsPhase * 2.0 + 0.6);
+        const fpsBobY = (step * bobAmpY * 0.75) + (step2 * bobAmpY * 0.25);
+
+        // sway laterale leggero, più “stabile”
+        const fpsBobX = (Math.sin(fpsPhase + 1.2) * bobAmpX);
+
+        // ✅ micro sway da cambio corsia (lag/inerzia)
+        const vx = (fpsX - fpsXPrev) / Math.max(0.0001, dt);
+        fpsXPrev = fpsX;
+        const laneSway = clamp(-vx * 0.012, -0.028, 0.028);
+
+        // ✅ micro “breathing sway” SOLO quando fermo (STOP/menu) — super leggero e stabile
+        const idleBreathOn = (!gameplayOn) || (game.started && game.stopped) || game.paused;
+        const breathY = idleBreathOn ? (Math.sin(tNow*0.0018) * 0.006) : 0.0;
+        const breathX = idleBreathOn ? (Math.sin(tNow*0.0012) * 0.003) : 0.0;
+
+        // posizione finale FPS
+        const finalX = fpsX + fpsBobX + laneSway + breathX;
+        const finalY = fpsY + fpsBobY - fpsLandKick + breathY;
+        const finalZ = eyeZ - eyeFwd;
+
+        camera.position.set(finalX, finalY, finalZ);
+
+        // look a bit forward (stabile, niente roll/tilt)
+        camera.lookAt(finalX, finalY, -10);
         camera.rotation.z = 0;
       }
       else if(viewMode === 'back'){
@@ -2526,11 +2594,12 @@
         camera.rotation.z = (camDynamic ? camRoll : 0);
       }
       else {
+        // ✅ FIX FRONT “girata al contrario”: roll invertito (così non ti ritrovi il mondo sottosopra)
         const lookAtY = lerp(0.30, 1.55, framing);
         const lookAtZ = 0.10;
         camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
         camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-        camera.rotation.z = (camDynamic ? camRoll : 0);
+        camera.rotation.z = (camDynamic ? -camRoll : 0);
       }
 
       // ===== Debug panel update (timer) =====
