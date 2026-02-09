@@ -2073,6 +2073,7 @@ sfx.lane();
 
     function resetRun(){
       game.lane=1;
+      runnerX = lanesX[1];
       game.y=0; game.vy=0; game.jumping=false;
       game.sliding=false; game.slideT=0.55*0;
       game.autoSlideCooldown=0;
@@ -2188,6 +2189,8 @@ sfx.lane();
     // ===== Update loop =====
     let camZ = baseCamZ, camY = baseCamY, camFov = baseFov, camX = 0;
     let tPrev=performance.now();
+    // ✅ Lane smoothing (posizione X del runner “morbida”)
+    let runnerX = lanesX[game.lane];
 
     // debug fps
     let fpsAcc=0, fpsN=0, fpsShow=0;
@@ -2284,8 +2287,12 @@ sfx.lane();
 
       if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
 
-      runnerPivot.position.x = lanesX[ clamp(game.lane, 0, 3) ];
-      runnerPivot.position.y = (-game.y);
+      // ✅ Smooth lane follow
+const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
+runnerX = damp(runnerX, laneTargetX, 14, dt);   // 14 = velocità “naturale”
+runnerPivot.position.x = runnerX;
+
+runnerPivot.position.y = (-game.y);
 
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
