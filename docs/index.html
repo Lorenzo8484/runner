@@ -2418,26 +2418,37 @@
 
       // ===== CAMERA MODES =====
       if(viewMode === 'fps' && headBone){
-        // camera sugli occhi: segue testa + rotazione
-        headBone.getWorldPosition(tmpV3);
-        headBone.getWorldQuaternion(tmpQ);
+  headBone.getWorldPosition(tmpV3);
+  headBone.getWorldQuaternion(tmpQ);
 
-        // forward locale (-Z)
-        tmpF.set(0,0,-1).applyQuaternion(tmpQ).normalize();
+  // Direzione "in avanti" attesa nel gioco: verso -Z (la strada arriva da lì)
+  const desiredFwd = tmpF.set(0,0,-1);
 
-        // piccolo offset avanti e un pelo su (per evitare clipping)
-        const pos = tmpV3.clone()
-          .add(tmpF.clone().multiplyScalar(0.09))
-          .add(tmpU.clone().multiplyScalar(0.03));
+  // Prova due forward possibili del bone: -Z e +Z
+  const fwdA = new THREE.Vector3(0,0,-1).applyQuaternion(tmpQ).normalize();
+  const fwdB = new THREE.Vector3(0,0, 1).applyQuaternion(tmpQ).normalize();
 
-        camera.position.copy(pos);
+  // scegli quello più vicino a desiredFwd
+  let fwd = (fwdA.dot(desiredFwd) >= fwdB.dot(desiredFwd)) ? fwdA : fwdB;
 
-        // invece di copiare direttamente quaternion (spesso assi mixamo),
-        // guardiamo nella direzione forward calcolata
-        camera.lookAt(pos.clone().add(tmpF.multiplyScalar(10)));
+  // Up del bone -> per evitare camera capovolta
+  const up = new THREE.Vector3(0,1,0).applyQuaternion(tmpQ).normalize();
+  camera.up.copy(up);
 
-        camera.rotation.z = 0; // no roll in FPS
-      }
+  // Se è sottosopra rispetto al mondo, inverti l'up
+  if(camera.up.dot(new THREE.Vector3(0,1,0)) < 0) camera.up.multiplyScalar(-1);
+
+  // Posizione FPS: un filo avanti e un filo su (per non clippare dentro la testa)
+  const pos = tmpV3.clone()
+    .add(fwd.clone().multiplyScalar(0.10))
+    .add(new THREE.Vector3(0,1,0).multiplyScalar(0.03));
+
+  camera.position.copy(pos);
+  camera.lookAt(pos.clone().add(fwd.multiplyScalar(10)));
+
+  // niente roll manuale
+  camera.rotation.z = 0;
+}
       else if(viewMode === 'back'){
         // dietro al player (classico)
         const lookAtY = lerp(0.35, 1.45, framing);
