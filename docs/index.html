@@ -165,7 +165,7 @@
 .lifePill{
   pointer-events:none;
 
-  /* identico a .hudP */
+  /* stessa struttura di .hudP / Rings */
   padding:
     calc(4px * var(--hudScale))
     calc(6px * var(--hudScale));
@@ -178,26 +178,8 @@
 
   line-height:1;
 }
-<!-- Vita (uguale a Rings) -->
-<div class="hudP pillFx hudHalf">
-  <div class="hudL">
-    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <radialGradient id="gLife" cx="35%" cy="30%" r="80%">
-          <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
-          <stop offset=".35" stop-color="#ffb0a8" stop-opacity=".95"/>
-          <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
-        </radialGradient>
-      </defs>
-      <path fill="url(#gLife)" d="M12 21s-7.5-4.6-7.5-9.4C4.5 8 6.8 6 9.2 6c1.3 0 2.4.6 2.8 1.4C12.4 6.6 13.5 6 14.8 6c2.4 0 4.7 2 4.7 5.6C19.5 16.4 12 21 12 21z"/>
-    </svg>
-    <div class="hudT">Vita</div>
-  </div>
 
-  <div class="hudV">
-    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
-  </div>
-</div>
+
 
     /* =========================================================
        BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
@@ -806,6 +788,13 @@ canvas.blurBoost{
   <div class="hudWrap">
     <div class="hudCard">
       <div class="hudGrid">
+        
+        <!-- Vita (uguale a Rings) -->
+<div class="hudP pillFx hudHalf lifePill">
+  <div class="hudV">
+    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
+  </div>
+</div>
 
         <!-- Score (sx) -->
         <div class="hudP pillFx hudHalf">
@@ -939,6 +928,7 @@ canvas.blurBoost{
   <!-- Home + Settings -->
   <div class="btnGroup pillFx" aria-label="Menu">
     <button class="btnSub" id="btnHome" aria-label="Home" title="Home">
+      <!-- icona home -->
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
         <defs>
           <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
@@ -953,6 +943,7 @@ canvas.blurBoost{
     </button>
 
     <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni">
+      <!-- icona gear -->
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
         <defs>
           <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
@@ -967,16 +958,23 @@ canvas.blurBoost{
     </button>
   </div>
 
-  <!-- Camera BACK / FPS / FRONT (stile Rings) -->
+  <!-- Camera BACK / FPS / FRONT (UNICA) -->
   <div class="camSegWrap">
     <div class="camSegPill pillFx" aria-label="Camera">
       <span class="camThumb" id="camThumb"></span>
 
-      <button class="camSegBtn" id="btnCamBack">BACK</button>
-      <button class="camSegBtn" id="btnCamFPS">FPS</button>
-      <button class="camSegBtn" id="btnCamFront">FRONT</button>
+      <button class="camSegBtn" id="btnCamBack"  type="button">BACK</button>
+      <button class="camSegBtn" id="btnCamFPS"   type="button">FPS</button>
+      <button class="camSegBtn" id="btnCamFront" type="button">FRONT</button>
     </div>
   </div>
+
+</div>
+
+  <!-- live FPS toggle (nascosto, serve al JS) -->
+  <button class="camBtn pillFx" id="btnFpsLive" style="display:none;">
+    FPS: REAL
+  </button>
 
 </div>
 
@@ -1016,19 +1014,6 @@ canvas.blurBoost{
   </div>
 </div>
 
-    <!-- Camera segmented pill (sotto Home+Impostazioni) -->
-<div class="camSegWrap" aria-label="Camera">
-  <div class="camSegPill pillFx" id="camSegPill">
-    <div class="camThumb" id="camThumb" aria-hidden="true"></div>
-
-    <button class="camSegBtn" id="btnCamBack" type="button" data-cam="back" title="Visuale dietro">BACK</button>
-    <button class="camSegBtn" id="btnCamFPS"  type="button" data-cam="fps"  title="Visuale FPS">FPS</button>
-    <button class="camSegBtn" id="btnCamFront"type="button" data-cam="front"title="Visuale davanti">FRONT</button>
-  </div>
-
-  <!-- resta nascosto, lo lasciamo per compatibilità col tuo JS -->
-  <button class="camBtn pillFx" id="btnFpsLive" title="FPS realistico/stabile" style="display:none;">FPS: REAL</button>
-</div>
 
     <!-- Debug button -->
     <div class="debugRow">
