@@ -108,6 +108,11 @@
     }
 
     .hudP{
+      
+      /* ✅ ALTEZZA UNICA per tutte le pillole HUD (Score/Emoji/Rings/Vita/Magnete/Boost/Cibo) */
+.hudP{
+  min-height: calc(24px * var(--hudScale));
+}
       pointer-events:none;
       padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
       border-radius:999px;
@@ -161,26 +166,22 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE: altezza come Rings, cuori centrati e NON tagliati ===== */
+    /* ✅ LIFE: cuori centrati e sempre visibili */
 .lifePill{
-  position:relative;
   justify-content:center;
 }
-
 .lifePill .hudV{
   width:100%;
   justify-content:center;
+  overflow:visible;      /* importantissimo: niente taglio */
 }
-
-/* spacer invisibile che non ruba spazio */
-.lifePill .lifeSpacer{
-  position:absolute;
-  inset:0;
-  display:flex;
+#hpTxt{
+  display:inline-flex;
   align-items:center;
-  gap:calc(5px * var(--hudScale));
-  opacity:0;
-  pointer-events:none;
+  justify-content:center;
+  line-height:1;
+  white-space:nowrap;
+  transform: translateY(0.2px); /* micro-fix iOS */
 }
 
 
@@ -884,13 +885,7 @@ canvas.blurBoost{
       </div>
 
       <!-- Vita (dx) -->
-      <div class="hudP pillFx hudHalf lifePill">
-  <!-- spacer invisibile: crea la stessa altezza, ma NON occupa spazio -->
-  <div class="hudL lifeSpacer" aria-hidden="true">
-    <svg class="ico" viewBox="0 0 24 24"></svg>
-    <div class="hudT">Life</div>
-  </div>
-
+<div class="hudP pillFx hudHalf lifePill">
   <div class="hudV">
     <span id="hpTxt">❤️❤️❤️🖤🖤</span>
   </div>
