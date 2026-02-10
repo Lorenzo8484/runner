@@ -161,16 +161,24 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE IDENTICA A RINGS ===== */
-.lifeGhost{
-  width: auto;
-  min-width: calc(22px * var(--hudScale)); /* stessa presenza visiva di icon+label */
-}
+    /* ===== LIFE: stessa misura di Rings + cuori centrati DAVVERO ===== */
 .lifePill{
-  justify-content: space-between;
+  position:relative;          /* serve per centrare assoluto */
+  justify-content:space-between;
 }
+
+.lifeGhost{
+  min-width: calc(22px * var(--hudScale));  /* mantiene la stessa “presenza” di Rings */
+  visibility:hidden;                        /* non si vede ma occupa spazio */
+}
+
 .lifePill .hudV{
-  justify-content: center;
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);           /* centro perfetto della pillola */
+  width:auto;
+  justify-content:center;
 }
 
 
