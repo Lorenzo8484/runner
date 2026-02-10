@@ -108,20 +108,18 @@
     }
 
     .hudP{
-      pointer-events:none;
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      border-radius:999px;
-
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-
-      gap:calc(5px * var(--hudScale));
-      min-width:0;
-      line-height:1;
-
-      overflow:hidden;
-    }
+  pointer-events:none;
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:calc(5px * var(--hudScale));
+  min-width:0;
+  min-height: calc(18px * var(--hudScale)); /* 🔒 ALTEZZA BLOCCATA */
+  line-height:1;
+  overflow:hidden;
+}
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
