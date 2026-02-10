@@ -235,54 +235,48 @@
       display:inline-block;
     }
 
-    /* =========================================================
-       TOP BUTTONS: pillola unica Home + Impostazioni (+50%)
-       ========================================================= */
-    .topLeftBtns{
-      position:fixed;
-      top:calc(5px * var(--menuScale));
-      right:calc(5px * var(--menuScale));
-      left:auto;
-      display:flex;
-      gap:calc(5px * var(--menuScale));
-      z-index:30;
-      pointer-events:none;
-      transform:none;
-      flex-direction:column;
-      align-items:flex-end;
-    }
+    /* ===== TOP RIGHT: Home + Impostazioni -> sorella delle HUD pill ===== */
+.btnGroup{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 
-    .btnGroup{
-      pointer-events:auto;
-      display:flex;
-      align-items:center;
-      gap:calc(6px * var(--menuScale));
-      height:calc(16px * var(--menuScale));
-      padding:0 calc(6px * var(--menuScale));
-      border-radius:999px;
-      border:none;
-      background:transparent;
-    }
-    .btnSub{
-      pointer-events:auto;
-      cursor:pointer;
-      user-select:none;
-      border:none;
-      background:transparent;
-      padding:0;
-      margin:0;
+  /* stessa “taglia” delle pillole HUD */
+  height:auto;
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
+  border:none;
+  background:transparent;
 
-      width:calc(30px * var(--menuScale));
-      height:calc(16px * var(--menuScale));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-    }
-    .btnSub .ico{
-      width:calc(10px * var(--menuScale) * 1.25);
-      height:calc(10px * var(--menuScale) * 1.25);
-    }
+  /* larghezza più stretta (come avevi chiesto) */
+  width:calc(118px * var(--hudScale));   /* puoi abbassare a 110 se la vuoi ancora più stretta */
+  gap:calc(6px * var(--hudScale));
+}
+
+.btnSub{
+  pointer-events:auto;
+  cursor:pointer;
+  user-select:none;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
+
+  /* area click coerente con pillole HUD */
+  width:calc(36px * var(--hudScale));
+  height:calc(16px * var(--hudScale));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+}
+
+/* icone +25% circa (ma legate all’hudScale, così sono coerenti) */
+.btnSub .ico{
+  width:calc(11px * var(--hudScale) * 1.25);
+  height:calc(11px * var(--hudScale) * 1.25);
+}
 
     /* ===== Camera buttons (sotto Home) ===== */
     .camGroup{
