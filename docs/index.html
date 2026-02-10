@@ -1237,7 +1237,7 @@ canvas.blurBoost{
 
 // ===== Settings overlay =====
 const settingsOverlay   = $('settingsOverlay');
-const closeSettingsBtn  = $('closeSettings');
+const closeSettingsBtn  = $('btnCloseSettings');
 const resetCamBtn       = $('resetCam');
 
 // Tabs (prima di usarli!)
@@ -1407,7 +1407,7 @@ function setActiveCamBtns(){
     function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
 
     safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
-    const closeSettingsBtn  = $('btnCloseSettings');
+    
 
     function setFpsMode(real){
   fpsRealistic = !!real;
