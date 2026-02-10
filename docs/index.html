@@ -161,21 +161,31 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE: stessa larghezza di Emoji (colonna dx), cuori centrati, zero danni ===== */
+    /* ===== LIFE: NON deve cambiare altezza pillola (iOS emoji fix) ===== */
 .lifePill{
-  width:100%;
-  justify-content:center;   /* centra contenuto */
-}
-
-.lifePill .hudL{
-  display:none;             /* elimina del tutto l'influenza sulla larghezza */
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .lifePill .hudV{
   width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+
+/* iPhone: emoji hearts hanno metriche più “alte” -> le blocchiamo */
+#hpTxt{
+  display:inline-flex;
+  align-items:center;
   justify-content:center;
   white-space:nowrap;
-  overflow:visible;         /* non taglia mai i cuori */
+  line-height:1;
+
+  /* chiave: non far “alzare” la pillola */
+  font-size: calc(8px * var(--hudScale));
 }
 
 
