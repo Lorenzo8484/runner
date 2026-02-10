@@ -83,31 +83,36 @@
     }
     .icoSm{ width:9px; height:9px; }
 
-    /* =========================================================
-       HUD (sinistra): +40% e -30% larghezza
-       ========================================================= */
-    .hudWrap{
-      position:fixed;
-      top:calc(5px * var(--menuScale));
-      left:calc(8px * var(--hudScale));
-      z-index:28;
-      pointer-events:none;
+/* =========================================================
+   HUD (sinistra): +40% e -30% larghezza
+   + TOP RIGHT (Home/Impostazioni) sorelle HUD
+   + LIFE pill fix iOS
+   ========================================================= */
 
-      width:min(
-        calc(230px * var(--hudScale) * var(--hudW)),
-        calc(100vw - calc(16px * var(--hudScale)))
-      );
-    }
-    .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
+/* HUD wrapper */
+.hudWrap{
+  position:fixed;
+  top:calc(5px * var(--menuScale));
+  left:calc(8px * var(--hudScale));
+  z-index:28;
+  pointer-events:none;
 
-    .hudGrid{
-      display:grid;
-      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-      gap:calc(6px * var(--hudScale));
-      align-items:start;
-    }
+  width:min(
+    calc(230px * var(--hudScale) * var(--hudW)),
+    calc(100vw - calc(16px * var(--hudScale)))
+  );
+}
+.hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
 
-    .hudP{
+.hudGrid{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap:calc(6px * var(--hudScale));
+  align-items:start;
+}
+
+/* PILL HUD base (altezza unica via --hudPillH) */
+.hudP{
   pointer-events:none;
   padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
   border-radius:999px;
@@ -116,28 +121,71 @@
   justify-content:space-between;
   gap:calc(5px * var(--hudScale));
   min-width:0;
-  min-height: calc(var(--hudPillH) * var(--hudScale));
+  min-height:calc(var(--hudPillH) * var(--hudScale));
   line-height:1;
   overflow:hidden;
 }
 
-/* ===== TOP RIGHT: Home + Impostazioni -> sorella HUD ===== */
+.hudHalf{ grid-column: span 1; }
+.hudFull{ grid-column: 1 / -1; }
+
+.hudL{
+  display:flex;
+  align-items:center;
+  gap:calc(5px * var(--hudScale));
+  min-width:0;
+  line-height:1;
+  overflow:hidden;
+}
+.hudT{
+  font-weight:950;
+  font-size:calc(7px * var(--hudScale));
+  white-space:nowrap;
+  line-height:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.hudV{
+  font-weight:950;
+  font-size:calc(8px * var(--hudScale));
+  white-space:nowrap;
+  line-height:1;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:calc(3px * var(--hudScale));
+
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* icone HUD */
+.hudWrap .ico{
+  width:calc(11px * var(--hudScale));
+  height:calc(11px * var(--hudScale));
+}
+
+/* =========================================================
+   TOP RIGHT: Home + Impostazioni (SORELLE HUD)
+   NOTA: il posizionamento (top/right) sta su .topLeftBtns,
+   qui definiamo solo dimensioni/altezza coerenti.
+   ========================================================= */
 .topLeftBtns .btnGroup.pillFx{
   pointer-events:auto;
   display:flex;
   align-items:center;
   justify-content:space-between;
 
-  /* IDENTICO alla pillola HUD */
+  /* identico alle HUD pill */
   padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
   min-height:calc(var(--hudPillH) * var(--hudScale));
   border-radius:999px;
 
-  /* niente “card” extra */
   border:none;
   background:transparent;
 
-  /* più stretta come avevi chiesto */
+  /* più stretta come richiesto */
   width:calc(118px * var(--hudScale));
   gap:calc(6px * var(--hudScale));
 }
@@ -151,6 +199,7 @@
   padding:0;
   margin:0;
 
+  /* stessa altezza pill */
   height:100%;
   min-height:calc(var(--hudPillH) * var(--hudScale));
   line-height:1;
@@ -167,58 +216,36 @@
   width:calc(11px * var(--hudScale) * 1.25);
   height:calc(11px * var(--hudScale) * 1.25);
 }
-    .hudHalf{ grid-column: span 1; }
-    .hudFull{ grid-column: 1 / -1; }
 
-    .hudL{
-      display:flex;
-      align-items:center;
-      gap:calc(5px * var(--hudScale));
-      min-width:0;
-      line-height:1;
-      overflow:hidden;
-    }
-    .hudT{
-      font-weight:950;
-      font-size:calc(7px * var(--hudScale));
-      white-space:nowrap;
-      line-height:1;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .hudV{
-      font-weight:950;
-      font-size:calc(8px * var(--hudScale));
-      white-space:nowrap;
-      line-height:1;
-
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:calc(3px * var(--hudScale));
-
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .hudWrap .ico{
-      width:calc(11px * var(--hudScale));
-      height:calc(11px * var(--hudScale));
-    }
-
-    /* ===== LIFE: NON deve cambiare altezza pillola (iOS emoji fix) ===== */
+/* =========================================================
+   LIFE: cuori centrati + altezza NON cambia (iOS emoji fix)
+   ========================================================= */
 .lifePill{
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
+/* nasconde label a sinistra per essere gemella di Rings */
+.lifePill .hudL{ display:none; }
+
 .lifePill .hudV{
+  flex:1;
   width:100%;
   display:flex;
   align-items:center;
   justify-content:center;
   line-height:1;
+}
+
+/* blocca le metriche “alte” degli emoji su iPhone */
+#hpTxt{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  line-height:1;
+  font-size:calc(8px * var(--hudScale));
 }
 
 /* iPhone: emoji hearts hanno metriche più “alte” -> le blocchiamo */
@@ -859,13 +886,6 @@ canvas.blurBoost{
   </div>
 </div>
 
-
-
-/* icone +25% */
-.topLeftBtns .btnSub .ico{
-  width:calc(11px * var(--hudScale) * 1.25);
-  height:calc(11px * var(--hudScale) * 1.25);
-}
 
   <!-- Camera BACK / FPS / FRONT (UNICA) -->
   <div class="camSegWrap">
