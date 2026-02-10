@@ -236,7 +236,7 @@
     }
 
     /* ===== TOP RIGHT: Home + Impostazioni -> sorella delle HUD pill ===== */
-.btnGroup{
+.topLeftBtns .btnGroup{
   pointer-events:auto;
   display:flex;
   align-items:center;
@@ -249,12 +249,12 @@
   border:none;
   background:transparent;
 
-  /* larghezza più stretta (come avevi chiesto) */
-  width:calc(118px * var(--hudScale));   /* puoi abbassare a 110 se la vuoi ancora più stretta */
+  /* larghezza più stretta */
+  width:calc(118px * var(--hudScale)); /* prova 110 se la vuoi più stretta */
   gap:calc(6px * var(--hudScale));
 }
 
-.btnSub{
+.topLeftBtns .btnSub{
   pointer-events:auto;
   cursor:pointer;
   user-select:none;
@@ -263,7 +263,7 @@
   padding:0;
   margin:0;
 
-  /* area click coerente con pillole HUD */
+  /* area click coerente */
   width:calc(36px * var(--hudScale));
   height:calc(16px * var(--hudScale));
   display:flex;
@@ -272,10 +272,21 @@
   border-radius:999px;
 }
 
-/* icone +25% circa (ma legate all’hudScale, così sono coerenti) */
-.btnSub .ico{
+/* icone +25% circa */
+.topLeftBtns .btnSub .ico{
   width:calc(11px * var(--hudScale) * 1.25);
   height:calc(11px * var(--hudScale) * 1.25);
+}
+
+/* ===== FIX colonna destra: niente "fuga" ===== */
+.camSegWrap{
+  transform: none !important;
+  margin-top: calc(6px * var(--hudScale)) !important;
+}
+
+.topLeftBtns{
+  top: calc(8px * var(--hudScale)) !important;
+  right: calc(8px * var(--hudScale)) !important;
 }
 
     /* ===== Camera buttons (sotto Home) ===== */
