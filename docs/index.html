@@ -1235,36 +1235,70 @@ canvas.blurBoost{
     const dbgLane = $('dbgLane');
     const dbgBoosts = $('dbgBoosts');
 
-// ===== Settings overlay =====
-const settingsOverlay   = $('settingsOverlay');
-const closeSettingsBtn  = $('btnCloseSettings');   // ✅ ID GIUSTO
-const resetCamBtn       = $('resetCam');
+// ===== Settings overlay (FIX) =====
+const settingsOverlay  = $('settingsOverlay');
+const closeSettingsBtn = $('btnCloseSettings');
+const resetCamBtn      = $('resetCam');
 
 // Tabs
 const tabCam    = $('tabCam');
 const tabVisual = $('tabVisual');
 const tabAudio  = $('tabAudio');
 
+// (opzionale) metti la X un po' più in alto via JS (se vuoi farlo in CSS, vedi sotto)
+if (closeSettingsBtn) {
+  closeSettingsBtn.style.top = '2px';   // <-- più in alto (prima era 8px * scale)
+}
+
+// Tabs switch
 function setSettingsTab(tab){
-  const cards = settingsOverlay?.querySelectorAll('.card') || [];
+  if(!settingsOverlay) return;
+
+  const cards = settingsOverlay.querySelectorAll('.card');
   for(const c of cards){
     const t = c.getAttribute('data-tab');
     c.style.display = (t === tab) ? 'block' : 'none';
   }
-  if(tabCam)    tabCam.classList.toggle('active', tab==='cam');
-  if(tabVisual) tabVisual.classList.toggle('active', tab==='visual');
-  if(tabAudio)  tabAudio.classList.toggle('active', tab==='audio');
+
+  if(tabCam)    tabCam.classList.toggle('active', tab === 'cam');
+  if(tabVisual) tabVisual.classList.toggle('active', tab === 'visual');
+  if(tabAudio)  tabAudio.classList.toggle('active', tab === 'audio');
 }
 
-safeOn(tabCam,   'click', ()=>setSettingsTab('cam'));
-safeOn(tabVisual,'click', ()=>setSettingsTab('visual'));
-safeOn(tabAudio, 'click', ()=>setSettingsTab('audio'));
+// Open / Close (UNA SOLA VOLTA)
+function openSettings(){
+  if(!settingsOverlay) return;
+  settingsOverlay.style.display = 'flex';
 
-function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); setSettingsTab('cam'); }
-function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
+  // evita crash se syncCamUI non esiste ancora per qualche motivo
+  try { syncCamUI && syncCamUI(); } catch(e){ console.warn('syncCamUI error:', e); }
 
-safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
-safeOn(closeSettingsBtn,'click', closeSettings);   // ✅ AGGANCIO X
+  setSettingsTab('cam');
+}
+function closeSettings(){
+  if(!settingsOverlay) return;
+  settingsOverlay.style.display = 'none';
+}
+
+// Event listeners
+safeOn(tabCam,    'click', ()=>setSettingsTab('cam'));
+safeOn(tabVisual, 'click', ()=>setSettingsTab('visual'));
+safeOn(tabAudio,  'click', ()=>setSettingsTab('audio'));
+
+safeOn(btnSettings,      'click', ()=>{ initAudio(); openSettings(); });
+safeOn(closeSettingsBtn, 'click', (e)=>{ e.preventDefault(); closeSettings(); });
+
+// (comodo) ESC per chiudere
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && settingsOverlay && settingsOverlay.style.display === 'flex'){
+    closeSettings();
+  }
+});
+
+// (comodo) click fuori dal pannello per chiudere
+safeOn(settingsOverlay, 'pointerdown', (e)=>{
+  if(e.target === settingsOverlay) closeSettings();
+});
 
 // Toggles / UI refs
 const audioToggle  = $('audioToggle');
