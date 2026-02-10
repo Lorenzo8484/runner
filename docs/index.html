@@ -161,13 +161,26 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE (come Rings, ma centrata) ===== */
+    /* ===== LIFE: altezza come Rings, cuori centrati e NON tagliati ===== */
 .lifePill{
-  justify-content:center;   /* non cambiare padding/height: li prende da .hudP */
+  position:relative;
+  justify-content:center;
 }
+
 .lifePill .hudV{
   width:100%;
   justify-content:center;
+}
+
+/* spacer invisibile che non ruba spazio */
+.lifePill .lifeSpacer{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  gap:calc(5px * var(--hudScale));
+  opacity:0;
+  pointer-events:none;
 }
 
 
@@ -872,8 +885,8 @@ canvas.blurBoost{
 
       <!-- Vita (dx) -->
       <div class="hudP pillFx hudHalf lifePill">
-  <!-- spacer invisibile per pareggiare altezza -->
-  <div class="hudL" aria-hidden="true" style="opacity:0; pointer-events:none;">
+  <!-- spacer invisibile: crea la stessa altezza, ma NON occupa spazio -->
+  <div class="hudL lifeSpacer" aria-hidden="true">
     <svg class="ico" viewBox="0 0 24 24"></svg>
     <div class="hudT">Life</div>
   </div>
