@@ -178,13 +178,14 @@
 
   line-height:1;
 }
-/* ===== FIX DEFINITIVO: Vita = Rings (altezza identica) ===== */
+/* ===== FIX FINALE: Vita identica a Rings (non più alta) ===== */
 .lifePill{
-  min-height: calc(16px * var(--hudScale)); /* identica a Rings */
+  padding-top: calc(4px * var(--hudScale));
+  padding-bottom: calc(4px * var(--hudScale));
 }
 
 .lifePill .hudV{
-  min-height: calc(16px * var(--hudScale));
+  line-height: 1;
   display:flex;
   align-items:center;
   justify-content:center;
