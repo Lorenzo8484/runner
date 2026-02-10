@@ -161,13 +161,16 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE (come Rings, ma centrata) ===== */
+    /* ===== LIFE IDENTICA A RINGS ===== */
+.lifeGhost{
+  width: auto;
+  min-width: calc(22px * var(--hudScale)); /* stessa presenza visiva di icon+label */
+}
 .lifePill{
-  justify-content:center;   /* non cambiare padding/height: li prende da .hudP */
+  justify-content: space-between;
 }
 .lifePill .hudV{
-  width:100%;
-  justify-content:center;
+  justify-content: center;
 }
 
 
@@ -870,12 +873,12 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita (dx) - copia di Rings ma solo cuori centrati -->
+      <!-- Vita (dx) – IDENTICA A RINGS -->
 <div class="hudP pillFx hudHalf lifePill">
-  <div class="hudL">
-    <div class="hudT" style="display:none;"></div>
+  <div class="hudL lifeGhost"></div>
+  <div class="hudV">
+    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
   </div>
-  <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
 </div>
 
       <!-- Magnete -->
