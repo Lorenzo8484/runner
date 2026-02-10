@@ -757,6 +757,48 @@ input[type="range"]{
   padding:10px 12px;
 }
 
+/* ===== CLOSE SETTINGS (X) ===== */
+.settingsClose{
+  position:absolute;
+  top:calc(8px * var(--hudScale));
+  right:calc(8px * var(--hudScale));
+  z-index:10;
+
+  width:calc(22px * var(--hudScale));
+  height:calc(22px * var(--hudScale));
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-weight:900;
+  font-size:calc(10px * var(--hudScale));
+  line-height:1;
+
+  color:#eaf1ff;
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.10),
+    rgba(255,255,255,.04)
+  );
+  border:1px solid rgba(145,205,255,.25);
+
+  box-shadow:
+    0 0 0 1px rgba(95,160,255,.10),
+    0 0 10px rgba(110,175,255,.18),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.22);
+
+  cursor:pointer;
+  pointer-events:auto;
+}
+
+/* feedback tap */
+.settingsClose:active{
+  transform:scale(.94);
+}
+
 /* Motion blur fake (solo boost) */
 canvas.blurBoost{
   filter: blur(0.9px) saturate(1.03);
@@ -1035,6 +1077,11 @@ canvas.blurBoost{
 <div class="settingsOverlay" id="settingsOverlay">
   <div class="panel pillFx">
 
+    <!-- ❌ X CHIUSURA (PUNTO 1) -->
+    <button class="settingsClose pillFx" id="btnCloseSettings" aria-label="Chiudi impostazioni">
+      ✕
+    </button>
+
     <div class="settingsTop">
       <div class="title">Impostazioni</div>
       <div class="tabs pillFx" aria-label="Tabs impostazioni">
@@ -1129,7 +1176,6 @@ canvas.blurBoost{
 
     <div class="settingsFooter">
       <button class="btnGroup pillFx" id="resetCam">Reset</button>
-      <button class="btnGroup pillFx" id="closeSettings">Chiudi</button>
     </div>
   </div>
 </div>
