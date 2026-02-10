@@ -454,63 +454,62 @@
 }
 
 /* =========================================================
-   CAMERA SEGMENTED PILL (UNICA)
+   CAMERA: BACK / FPS / FRONT → SORELLA HUD
    ========================================================= */
+
 .camSegWrap{
   pointer-events:auto;
   display:flex;
-  align-items:center;
   justify-content:flex-end;
-
-  /* sotto Home+Impostazioni */
-  margin-top:calc(6px * var(--menuScale));
-
-  /* stessa linea della vita */
-  transform: translateY(calc(21px * var(--hudScale)));
 }
 
-.camSegPill{
+/* PILLOLA IDENTICA ALLE HUD */
+.camSegPill.pillFx{
   position:relative;
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  align-items:center;
   overflow:hidden;
 
-  /* altezza coerente con HUD */
-  padding:calc(4px * var(--hudScale)) calc(4px * var(--hudScale));
-  width:calc(78px * var(--hudScale));
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  align-items:center;
+
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  min-height:calc(var(--hudPillH) * var(--hudScale));
   border-radius:999px;
+
+  width:calc(118px * var(--hudScale)); /* stessa delle Home */
+  gap:0;
 }
 
+/* BOTTONI INTERNI */
 .camSegBtn{
-  position:relative;
-  z-index:2;
+  pointer-events:auto;
   border:none;
   background:transparent;
   cursor:pointer;
   user-select:none;
 
+  height:100%;
+  border-radius:999px;
+
   font-weight:950;
-  font-size:calc(6.6px * var(--hudScale));
-  letter-spacing:.2px;
+  font-size:calc(7px * var(--hudScale));
+  letter-spacing:.25px;
+  line-height:1;
+
   color:#eaf1ff;
+  opacity:.9;
 
   display:flex;
   align-items:center;
   justify-content:center;
-
-  height:100%;
-  padding:0;
-  line-height:1;
-  opacity:.85;
 }
 
 .camSegBtn.active{ opacity:1; }
 
-/* Thumb che scorre */
+/* SLIDER INTERNO (thumb) */
 .camThumb{
   position:absolute;
-  z-index:1;
+  z-index:0;
 
   top:calc(2px * var(--hudScale));
   bottom:calc(2px * var(--hudScale));
@@ -519,16 +518,20 @@
   width:calc((100% - calc(4px * var(--hudScale))) / 3);
   border-radius:999px;
 
-  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
-  border:1px solid rgba(145,205,255,.26);
-  box-shadow:
-    0 0 0 1px rgba(95,160,255,.10),
-    0 0 12px rgba(110,175,255,.18),
-    inset 0 1px 0 rgba(255,255,255,.14),
-    inset 0 -1px 0 rgba(0,0,0,.22);
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.12),
+    rgba(255,255,255,.05)
+  );
+  border:1px solid rgba(145,205,255,.28);
 
-  transform: translateX(0%);
-  transition: transform .18s ease;
+  box-shadow:
+    0 0 0 1px rgba(95,160,255,.12),
+    0 0 12px rgba(110,175,255,.20),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.25);
+
+  transition:transform .18s ease;
 }
 
 /* Assicura che stia sopra HUD */
