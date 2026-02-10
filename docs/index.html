@@ -102,7 +102,7 @@
 
     .hudGrid{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       gap:calc(6px * var(--hudScale));
       align-items:start;
     }
@@ -161,26 +161,21 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE: COPIA 1:1 di RINGS (stessa misura), cuori centrati ===== */
+    /* ===== LIFE: stessa larghezza di Emoji (colonna dx), cuori centrati, zero danni ===== */
 .lifePill{
-  width:100%;              /* identica larghezza della cella come Rings */
-  position:relative;
+  width:100%;
+  justify-content:center;   /* centra contenuto */
 }
 
-/* blocco sinistro "fantasma" per avere stessa struttura/spazi di Rings */
 .lifePill .hudL{
-  visibility:hidden;       /* occupa spazio ma non si vede */
+  display:none;             /* elimina del tutto l'influenza sulla larghezza */
 }
 
-/* cuori centrati nel vero centro della pillola */
 .lifePill .hudV{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:auto;
+  width:100%;
   justify-content:center;
   white-space:nowrap;
+  overflow:visible;         /* non taglia mai i cuori */
 }
 
 
