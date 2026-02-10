@@ -1408,7 +1408,7 @@ function setActiveCamBtns(){
     function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
 
     safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
-    safeOn(closeSettingsBtn,'click', closeSettings);
+    const closeSettingsBtn  = $('btnCloseSettings');
 
     function setFpsMode(real){
   fpsRealistic = !!real;
