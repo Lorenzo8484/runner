@@ -1362,7 +1362,13 @@ function setActiveCamBtns(){
   if(btnCamBack)  btnCamBack.classList.toggle('active', viewMode==='back');
   if(btnCamFPS)   btnCamFPS.classList.toggle('active', viewMode==='fps');
   if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
-  setCamThumb(viewMode);
+
+  // thumb che scorre: 0 = back, 1 = fps, 2 = front
+  const thumb = document.getElementById('camThumb');
+  if(thumb){
+    const idx = (viewMode==='back') ? 0 : (viewMode==='fps' ? 1 : 2);
+    thumb.style.transform = `translateX(${idx * 100}%)`;
+  }
 }
 
     function setDebugUI(){
