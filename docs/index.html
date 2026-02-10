@@ -161,22 +161,13 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE = IDENTICA A RINGS ===== */
+    /* ===== LIFE (come Rings, ma centrata) ===== */
 .lifePill{
-  pointer-events:none;
-
-  /* stessa struttura di .hudP / Rings */
-  padding:
-    calc(4px * var(--hudScale))
-    calc(6px * var(--hudScale));
-
-  border-radius:999px;
-
-  display:flex;
-  align-items:center;
+  justify-content:center;   /* non cambiare padding/height: li prende da .hudP */
+}
+.lifePill .hudV{
+  width:100%;
   justify-content:center;
-
-  line-height:1;
 }
 
 
@@ -789,76 +780,41 @@ canvas.blurBoost{
     <div class="hudCard">
       <div class="hudGrid">
         
-        <!-- Vita (uguale a Rings) -->
-<div class="hudP pillFx hudHalf lifePill">
-  <div class="hudV">
-    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
-  </div>
-</div>
 
         <!-- Score (sx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gFlag" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".45" stop-color="#b7d9ff" stop-opacity=".9"/>
-                  <stop offset="1" stop-color="#7fb4ff" stop-opacity=".85"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gFlag)" d="M6 3c.6 0 1 .4 1 1v1h9.4c.4 0 .7.1 1 .3l2.1 1.4c.6.4.6 1.2 0 1.6L18.4 11c-.3.2-.6.3-1 .3H7v9a1 1 0 0 1-2 0V4c0-.6.4-1 1-1Z"/>
-              <path fill="rgba(255,255,255,.25)" d="M7 6h10.8l1.1.7-1.1.7H7z"/>
-            </svg>
-            <div class="hudT">Score</div>
-          </div>
-          <div class="hudV"><span id="score">0</span></div>
-        </div>
+<div class="hudP pillFx hudHalf">
+  <div class="hudL">
+    <!-- SVG score -->
+    ...
+    <div class="hudT">Score</div>
+  </div>
+  <div class="hudV"><span id="score">0</span></div>
+</div>
 
-        <!-- Emoji (dx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <radialGradient id="gSmile" cx="30%" cy="25%" r="80%">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".35" stop-color="#ffe8a8" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#ffb84d" stop-opacity=".95"/>
-                </radialGradient>
-              </defs>
-              <circle cx="12" cy="12" r="9" fill="url(#gSmile)"/>
-              <circle cx="9" cy="10" r="1.1" fill="rgba(0,0,0,.65)"/>
-              <circle cx="15" cy="10" r="1.1" fill="rgba(0,0,0,.65)"/>
-              <path d="M8.3 13.3c.9 2.5 6.5 2.5 7.4 0" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-            <div class="hudT">Emoji</div>
-          </div>
-          <div class="hudV"><span id="coins">0</span></div>
-        </div>
+<!-- Emoji (dx) -->
+<div class="hudP pillFx hudHalf">
+  <div class="hudL">
+    <!-- SVG emoji -->
+    ...
+    <div class="hudT">Emoji</div>
+  </div>
+  <div class="hudV"><span id="coins">0</span></div>
+</div>
 
-        <!-- Rings (sx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <radialGradient id="gRing" cx="35%" cy="30%" r="80%">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".9"/>
-                  <stop offset=".35" stop-color="#ffb0a8" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
-                </radialGradient>
-              </defs>
-              <circle cx="12" cy="12" r="7.8" fill="url(#gRing)"/>
-              <circle cx="12" cy="12" r="4.6" fill="#0b0f18"/>
-            </svg>
-            <div class="hudT">Rings</div>
-          </div>
-          <div class="hudV"><span id="rings">0</span></div>
-        </div>
+<!-- Rings (sx) -->
+<div class="hudP pillFx hudHalf">
+  <div class="hudL">
+    <!-- SVG rings -->
+    ...
+    <div class="hudT">Rings</div>
+  </div>
+  <div class="hudV"><span id="rings">0</span></div>
+</div>
 
-        <!-- Vita -->
-        <div class="hudP pillFx hudHalf lifePill">
-          <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
-        </div>
+<!-- Vita (dx) -->
+<div class="hudP pillFx hudHalf lifePill">
+  <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
+</div>
 
         <!-- Magnete -->
         <div class="hudP pillFx hudFull">
