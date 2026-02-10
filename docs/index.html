@@ -427,19 +427,23 @@
   margin-top:calc(6px * var(--menuScale));
 
   /* “stessa linea” della vita: se vuoi più preciso, ritocca questo offset */
-  transform: translateY(calc(20px * var(--hudScale)));
+  transform: translateY(calc(21px * var(--hudScale)));
 }
 
 .camSegPill{
   position:relative;
   display:grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap:0;
   overflow:hidden;
 
-  height:calc(15px * var(--menuScale));
-  width:calc(132px * var(--menuScale)); /* larghezza totale pillola */
-  padding:calc(2px * var(--menuScale));
+  /* === ALTEZZA IDENTICA A RINGS === */
+  padding:
+    calc(4px * var(--hudScale))
+    calc(4px * var(--hudScale));
+
+  /* === PIÙ CORTA === */
+  width:calc(78px * var(--hudScale));
+
   border-radius:999px;
 }
 
@@ -451,25 +455,23 @@
   cursor:pointer;
   user-select:none;
 
-  width:100%;
-  height:100%;
-  border-radius:999px;
-
   font-weight:950;
-  font-size:calc(7px * var(--menuScale));
-  letter-spacing:.25px;
-  color:rgba(234,241,255,.92);
+  font-size:calc(6.6px * var(--hudScale)); /* come HUD */
+  letter-spacing:.2px;
+  color:#eaf1ff;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  opacity:.92;
+  height:100%;
+  opacity:.85;
 }
 
 .camSegBtn.active{
   opacity:1;
 }
+
 
 /* Thumb che scorre */
 .camThumb{
