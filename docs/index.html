@@ -169,45 +169,43 @@
   height:calc(11px * var(--hudScale));
 }
 
-/* =========================================================
-   TOP RIGHT: Home + Impostazioni
-   IDENTICHE alle pillole HUD (altezza, padding, allineamento)
-   ========================================================= */
+/* TOP RIGHT: Home + Impostazioni = stessa altezza delle HUD */
 .topLeftBtns{
   position:fixed;
   top:calc(5px * var(--menuScale));
   right:calc(8px * var(--hudScale));
   z-index:35;
-  pointer-events:auto;
+  pointer-events:none;
 }
 
 .topLeftBtns .btnGroup.pillFx{
+  pointer-events:auto;
   display:flex;
   align-items:center;
   justify-content:space-between;
 
-  /* 🔒 IDENTICO a .hudP */
-  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-  height:calc(var(--hudPillH) * var(--hudScale));
+  /* ✅ stesso “peso” delle HUD pill */
   min-height:calc(var(--hudPillH) * var(--hudScale));
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
   box-sizing:border-box;
 
-  border-radius:999px;
-  border:none;
-  background:transparent;
-
+  /* larghezza come avevi deciso tu */
   width:calc(118px * var(--hudScale));
+  flex:0 0 auto;
+
   gap:calc(6px * var(--hudScale));
 }
 
-/* singoli pulsanti (Home / Settings) */
 .topLeftBtns .btnSub{
-  all:unset;
-  cursor:pointer;
+  pointer-events:auto;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
 
-  width:calc(36px * var(--hudScale));
-  height:100%;
-
+  /* ✅ stessa altezza della pillola */
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  height:calc(var(--hudPillH) * var(--hudScale));
   display:flex;
   align-items:center;
   justify-content:center;
@@ -215,12 +213,12 @@
   border-radius:999px;
 }
 
-/* icone +25% ma CENTRATE */
+/* icone +25% come volevi */
 .topLeftBtns .btnSub .ico{
   width:calc(11px * var(--hudScale) * 1.25);
   height:calc(11px * var(--hudScale) * 1.25);
-  display:block;
 }
+
 /* =========================================================
    LIFE: gemella di Rings + cuori centrati + iOS emoji fix
    ========================================================= */
