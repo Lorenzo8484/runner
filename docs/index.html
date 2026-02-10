@@ -13,6 +13,7 @@
       --hudScale:  1.40; /* Score, Emoji, Anelli, Vita, Magnete, Boost, Cibo Boost (+40%) */
       --hudW:      0.70; /* -30% larghezza (0.70) */
       --hudPillH: 12px; /* altezza base di TUTTE le pillole HUD */
+      --camOffsetY: 10px; /* ↓ aumenta questo valore se la vuoi ancora più in basso */
       /* barra base */
       --hud-bar-w: 60px;
     }
@@ -460,16 +461,21 @@
 .camSegWrap{
   position:fixed;
   right:calc(8px * var(--hudScale));
+  left:auto;
+
   top:calc(
     (5px * var(--menuScale)) +
     (var(--hudPillH) * var(--hudScale)) +
-    (6px * var(--hudScale))
+    (6px * var(--hudScale)) +
+    var(--camOffsetY)
   );
-  z-index:34;
+
+  z-index:36;
   pointer-events:auto;
 
   display:flex;
   justify-content:flex-end;
+  width:fit-content;
 }
 
 /* PILLOLA IDENTICA ALLE HUD */
