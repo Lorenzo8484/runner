@@ -872,8 +872,16 @@ canvas.blurBoost{
 
       <!-- Vita (dx) -->
       <div class="hudP pillFx hudHalf lifePill">
-        <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
-      </div>
+  <!-- spacer invisibile per pareggiare altezza -->
+  <div class="hudL" aria-hidden="true" style="opacity:0; pointer-events:none;">
+    <svg class="ico" viewBox="0 0 24 24"></svg>
+    <div class="hudT">Life</div>
+  </div>
+
+  <div class="hudV">
+    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
+  </div>
+</div>
 
       <!-- Magnete -->
       <div class="hudP pillFx hudFull">
