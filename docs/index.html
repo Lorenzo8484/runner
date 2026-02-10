@@ -170,50 +170,57 @@
 }
 
 /* =========================================================
-   TOP RIGHT: HOME + IMPOSTAZIONI (visibili)
+   TOP RIGHT: Home + Impostazioni
+   IDENTICHE alle pillole HUD (altezza, padding, allineamento)
    ========================================================= */
 .topLeftBtns{
-  position: fixed;
-  top: calc(5px * var(--menuScale));
-  right: calc(8px * var(--hudScale));
-  z-index: 35;
-  pointer-events: auto;
+  position:fixed;
+  top:calc(5px * var(--menuScale));
+  right:calc(8px * var(--hudScale));
+  z-index:35;
+  pointer-events:auto;
 }
 
-.topLeftBtns .btnGroup{
+.topLeftBtns .btnGroup.pillFx{
   display:flex;
   align-items:center;
-  gap:calc(6px * var(--hudScale));
+  justify-content:space-between;
+
+  /* 🔒 IDENTICO a .hudP */
   padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  height:calc(var(--hudPillH) * var(--hudScale));
   min-height:calc(var(--hudPillH) * var(--hudScale));
+  box-sizing:border-box;
+
   border-radius:999px;
-
-  /* più stretta come richiesto */
-  width:calc(118px * var(--hudScale));
-}
-
-.topLeftBtns .btnSub{
   border:none;
   background:transparent;
-  padding:0;
-  margin:0;
+
+  width:calc(118px * var(--hudScale));
+  gap:calc(6px * var(--hudScale));
+}
+
+/* singoli pulsanti (Home / Settings) */
+.topLeftBtns .btnSub{
+  all:unset;
   cursor:pointer;
-  user-select:none;
 
   width:calc(36px * var(--hudScale));
-  min-height:calc(var(--hudPillH) * var(--hudScale));
+  height:100%;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   border-radius:999px;
 }
 
-/* icone +25% */
+/* icone +25% ma CENTRATE */
 .topLeftBtns .btnSub .ico{
   width:calc(11px * var(--hudScale) * 1.25);
   height:calc(11px * var(--hudScale) * 1.25);
+  display:block;
 }
-
 /* =========================================================
    LIFE: gemella di Rings + cuori centrati + iOS emoji fix
    ========================================================= */
