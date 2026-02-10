@@ -161,24 +161,26 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ===== LIFE: stessa misura di Rings + cuori centrati DAVVERO ===== */
+    /* ===== LIFE: COPIA 1:1 di RINGS (stessa misura), cuori centrati ===== */
 .lifePill{
-  position:relative;          /* serve per centrare assoluto */
-  justify-content:space-between;
+  width:100%;              /* identica larghezza della cella come Rings */
+  position:relative;
 }
 
-.lifeGhost{
-  min-width: calc(22px * var(--hudScale));  /* mantiene la stessa “presenza” di Rings */
-  visibility:hidden;                        /* non si vede ma occupa spazio */
+/* blocco sinistro "fantasma" per avere stessa struttura/spazi di Rings */
+.lifePill .hudL{
+  visibility:hidden;       /* occupa spazio ma non si vede */
 }
 
+/* cuori centrati nel vero centro della pillola */
 .lifePill .hudV{
   position:absolute;
   left:50%;
   top:50%;
-  transform:translate(-50%,-50%);           /* centro perfetto della pillola */
+  transform:translate(-50%,-50%);
   width:auto;
   justify-content:center;
+  white-space:nowrap;
 }
 
 
@@ -881,12 +883,15 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita (dx) – IDENTICA A RINGS -->
+      <!-- Vita (dx) - COPIA 1:1 di Rings, ma con cuori -->
 <div class="hudP pillFx hudHalf lifePill">
-  <div class="hudL lifeGhost"></div>
-  <div class="hudV">
-    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
+  <div class="hudL" aria-hidden="true">
+    <svg class="ico" viewBox="0 0 24 24">
+      <path fill="rgba(255,255,255,.0)" d="M0 0h24v24H0z"></path>
+    </svg>
+    <div class="hudT">Rings</div>
   </div>
+  <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
 </div>
 
       <!-- Magnete -->
