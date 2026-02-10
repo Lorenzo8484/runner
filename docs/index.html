@@ -488,20 +488,24 @@
 }
 
 /* PILLOLA IDENTICA ALLE HUD */
-.camSegPill.pillFx{
+.camSegPill{
   position:relative;
   overflow:hidden;
+
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
 
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
   align-items:center;
-
-  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-  min-height:calc(var(--hudPillH) * var(--hudScale));
-  border-radius:999px;
-
-  width:calc(80px * var(--hudScale)); /* stessa delle Home */
   gap:0;
+
+  width:calc(118px * var(--hudScale));
+}
+
+/* ✅ FIX fondamentale: evita sfasamenti del thumb */
+.camSegPill.pillFx{
+  box-sizing:border-box;
 }
 
 /* BOTTONI INTERNI */
@@ -550,14 +554,18 @@
   width:calc((100% - calc(4px * var(--hudScale))) / 3);
   border-radius:999px;
 
+  box-sizing:border-box;   /* ✅ fondamentale */
+
   background:linear-gradient(
     180deg,
     rgba(255,255,255,.12),
     rgba(255,255,255,.05)
   );
-  border:1px solid rgba(145,205,255,.28);
+
+  border:none;             /* ✅ evita che “allarga” e sfora */
 
   box-shadow:
+    inset 0 0 0 1px rgba(145,205,255,.28), /* ✅ al posto della border */
     0 0 0 1px rgba(95,160,255,.12),
     0 0 12px rgba(110,175,255,.20),
     inset 0 1px 0 rgba(255,255,255,.18),
