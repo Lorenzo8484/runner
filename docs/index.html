@@ -1442,10 +1442,6 @@ function setActiveCamBtns(){
     safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
     safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
     safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
-
-    function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); setSettingsTab('cam'); }
-    function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
-
     safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
     
 
