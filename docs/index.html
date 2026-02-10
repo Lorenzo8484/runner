@@ -1237,10 +1237,10 @@ canvas.blurBoost{
 
 // ===== Settings overlay =====
 const settingsOverlay   = $('settingsOverlay');
-const closeSettingsBtn  = $('btnCloseSettings');
+const closeSettingsBtn  = $('btnCloseSettings');   // ✅ ID GIUSTO
 const resetCamBtn       = $('resetCam');
 
-// Tabs (prima di usarli!)
+// Tabs
 const tabCam    = $('tabCam');
 const tabVisual = $('tabVisual');
 const tabAudio  = $('tabAudio');
@@ -1259,6 +1259,12 @@ function setSettingsTab(tab){
 safeOn(tabCam,   'click', ()=>setSettingsTab('cam'));
 safeOn(tabVisual,'click', ()=>setSettingsTab('visual'));
 safeOn(tabAudio, 'click', ()=>setSettingsTab('audio'));
+
+function openSettings(){ if(settingsOverlay){ settingsOverlay.style.display='flex'; } syncCamUI(); setSettingsTab('cam'); }
+function closeSettings(){ if(settingsOverlay){ settingsOverlay.style.display='none'; } }
+
+safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
+safeOn(closeSettingsBtn,'click', closeSettings);   // ✅ AGGANCIO X
 
 // Toggles / UI refs
 const audioToggle  = $('audioToggle');
