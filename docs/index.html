@@ -170,49 +170,45 @@
 }
 
 /* =========================================================
-   TOP RIGHT: Home + Impostazioni (SORELLE HUD)
-   NOTA: posizionamento (top/right) sta su .topLeftBtns
+   TOP RIGHT: HOME + IMPOSTAZIONI (visibili)
    ========================================================= */
-.topLeftBtns .btnGroup.pillFx{
+.topLeftBtns{
+  position:fixed;
+  top:calc(5px * var(--menuScale));
+  right:calc(6px * var(--menuScale));
+  z-index:40;
   pointer-events:auto;
+}
+
+.topLeftBtns .btnGroup{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-
-  /* identico alle HUD pill */
+  gap:calc(6px * var(--hudScale));
   padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
   min-height:calc(var(--hudPillH) * var(--hudScale));
   border-radius:999px;
 
-  border:none;
-  background:transparent;
-
   /* più stretta come richiesto */
   width:calc(118px * var(--hudScale));
-  gap:calc(6px * var(--hudScale));
 }
 
 .topLeftBtns .btnSub{
-  pointer-events:auto;
-  cursor:pointer;
-  user-select:none;
   border:none;
   background:transparent;
   padding:0;
   margin:0;
-
-  height:100%;
-  min-height:calc(var(--hudPillH) * var(--hudScale));
-  line-height:1;
+  cursor:pointer;
+  user-select:none;
 
   width:calc(36px * var(--hudScale));
+  min-height:calc(var(--hudPillH) * var(--hudScale));
   display:flex;
   align-items:center;
   justify-content:center;
   border-radius:999px;
 }
 
-/* icone Home/Impostazioni +25% */
+/* icone +25% */
 .topLeftBtns .btnSub .ico{
   width:calc(11px * var(--hudScale) * 1.25);
   height:calc(11px * var(--hudScale) * 1.25);
