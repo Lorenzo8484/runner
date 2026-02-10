@@ -8,10 +8,10 @@
     :root{
       color-scheme: dark;
 
-      /* ===== SCALE
+      /* ===== SCALE richieste ===== */
+      --menuScale: 1.50; /* Home, Impostazioni, Avvia, Dance, foodCount, foodItem (+50%) */
+      --hudScale:  1.40; /* Score, Emoji, Anelli, Vita, Magnete, Boost, Cibo Boost (+40%) */
       --hudW:      0.70; /* -30% larghezza (0.70) */
-      --menuScale: 1.00;  /* niente ingrandimento globale */
-      --hudScale:  1.00;  /* niente ingrandimento globale */
 
       /* barra base */
       --hud-bar-w: 60px;
@@ -107,24 +107,21 @@
       align-items:start;
     }
 
-      
-      /* ✅ ALTEZZA UNICA per tutte le pillole HUD */
-.hudP{
-  min-height: calc(24px * var(--hudScale));
-  pointer-events:none;
-  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-  border-radius:999px;
+    .hudP{
+      pointer-events:none;
+      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+      border-radius:999px;
 
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
 
-  gap:calc(5px * var(--hudScale));
-  min-width:0;
-  line-height:1;
+      gap:calc(5px * var(--hudScale));
+      min-width:0;
+      line-height:1;
 
-  overflow:hidden;
-}
+      overflow:hidden;
+    }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
@@ -163,9 +160,14 @@
       width:calc(11px * var(--hudScale));
       height:calc(11px * var(--hudScale));
     }
-    #hpTxt{
-  white-space:nowrap;
-  line-height:1;
+
+    /* ===== LIFE (come Rings, ma centrata) ===== */
+.lifePill{
+  justify-content:center;   /* non cambiare padding/height: li prende da .hudP */
+}
+.lifePill .hudV{
+  width:100%;
+  justify-content:center;
 }
 
 
@@ -868,12 +870,10 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita (SOLO cuori centrati) -->
-<div class="hudP pillFx hudHalf lifePill">
-  <div class="hudV">
-    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
-  </div>
-</div>
+      <!-- Vita (dx) -->
+      <div class="hudP pillFx hudHalf lifePill">
+        <div class="hudV"><span id="hpTxt">❤️❤️❤️🖤🖤</span></div>
+      </div>
 
       <!-- Magnete -->
       <div class="hudP pillFx hudFull">
