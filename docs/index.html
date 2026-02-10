@@ -116,7 +116,7 @@
   justify-content:space-between;
   gap:calc(5px * var(--hudScale));
   min-width:0;
-  min-height: calc(12px * var(--hudScale)); /* 🔒 ALTEZZA BLOCCATA */
+  min-height: calc(var(--hudPillH) * var(--hudScale));
   line-height:1;
   overflow:hidden;
 }
@@ -278,20 +278,6 @@
   height:calc(11px * var(--hudScale) * 1.25);
 }
 
-/* ===== FIX colonna destra: niente "fuga" ===== */
-.camSegWrap{
-  transform: none !important;
-  margin-top: calc(6px * var(--hudScale)) !important;
-}
-
-.topLeftBtns{
-  top: calc(14px * var(--hudScale)) !important;
-  right: calc(8px * var(--hudScale)) !important;
-}
-
-/* Assicura che stia sopra HUD */
-.camSegWrap, .topLeftBtns{ z-index:35; }
-    
 
     /* ===== Debug button (sotto Home) ===== */
     .debugRow{
@@ -868,39 +854,51 @@ canvas.blurBoost{
   </div>
 </div>
 
-<!-- ✅ TOP RIGHT: Home + Impostazioni + Camera segmented -->
-<div class="topLeftBtns">
+/* ===== TOP RIGHT: Home + Impostazioni -> sorella HUD ===== */
+.topLeftBtns .btnGroup.pillFx{
+  min-height: calc(var(--hudPillH) * var(--hudScale));
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 
-  <!-- Home + Settings -->
-  <div class="btnGroup pillFx" aria-label="Menu">
-    <button class="btnSub" id="btnHome" aria-label="Home" title="Home" type="button">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gHome" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-            <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
-            <stop offset="1" stop-color="#7fb4ff" stop-opacity=".9"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gHome)"
-              d="M12 3.2 3 10.7v1.6h2v8.5h5.6v-5.7h2.8v5.7H19v-8.5h2v-1.6L12 3.2z"/>
-      </svg>
-    </button>
+  /* IDENTICO alla pillola HUD */
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  border-radius:999px;
 
-    <button class="btnSub" id="btnSettings" aria-label="Impostazioni" title="Impostazioni" type="button">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gGear" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
-            <stop offset=".45" stop-color="#d8eeff" stop-opacity=".96"/>
-            <stop offset="1" stop-color="#8ac0ff" stop-opacity=".92"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gGear)"
-              d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.5-2-3.4-2.4 1c-.4-.33-.85-.6-1.3-.8l-.4-2.6H10l-.4 2.6c-.45.2-.9.47-1.3.8l-2.4-1-2 3.4 2 1.5c-.04.5-.04 1 0 1.5l-2 1.5 2 3.4 2.4-1c.4.33.85.6 1.3.8l.4 2.6h4.2l.4-2.6c.45-.2.9-.47 1.3-.8l2.4 1 2-3.4-2-1.5z"/>
-      </svg>
-    </button>
-  </div>
+  /* niente “card” extra */
+  border:none;
+  background:transparent;
+
+  /* più stretta come avevi chiesto */
+  width:calc(118px * var(--hudScale));
+  gap:calc(6px * var(--hudScale));
+}
+
+.topLeftBtns .btnSub{
+  pointer-events:auto;
+  cursor:pointer;
+  user-select:none;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
+
+  /* NON forzare un’altezza diversa dalla pillola */
+  height:100%;
+  width:calc(36px * var(--hudScale));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+}
+
+/* icone +25% */
+.topLeftBtns .btnSub .ico{
+  width:calc(11px * var(--hudScale) * 1.25);
+  height:calc(11px * var(--hudScale) * 1.25);
+}
 
   <!-- Camera BACK / FPS / FRONT (UNICA) -->
   <div class="camSegWrap">
