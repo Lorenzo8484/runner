@@ -120,6 +120,51 @@
   line-height:1;
   overflow:hidden;
 }
+
+/* ===== TOP RIGHT: Home + Impostazioni -> sorella HUD ===== */
+.topLeftBtns .btnGroup.pillFx{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  /* IDENTICO alla pillola HUD */
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  border-radius:999px;
+
+  /* niente “card” extra */
+  border:none;
+  background:transparent;
+
+  /* più stretta come avevi chiesto */
+  width:calc(118px * var(--hudScale));
+  gap:calc(6px * var(--hudScale));
+}
+
+.topLeftBtns .btnSub{
+  pointer-events:auto;
+  cursor:pointer;
+  user-select:none;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
+
+  /* NON forzare un’altezza diversa dalla pillola */
+  height:100%;
+  width:calc(36px * var(--hudScale));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+}
+
+/* icone +25% */
+.topLeftBtns .btnSub .ico{
+  width:calc(11px * var(--hudScale) * 1.25);
+  height:calc(11px * var(--hudScale) * 1.25);
+}
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
@@ -235,48 +280,6 @@
       display:inline-block;
     }
 
-    /* ===== TOP RIGHT: Home + Impostazioni -> sorella delle HUD pill ===== */
-.topLeftBtns .btnGroup{
-  pointer-events:auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-
-  /* stessa “taglia” delle pillole HUD */
-  height:auto;
-  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-  border-radius:999px;
-  border:none;
-  background:transparent;
-
-  /* larghezza più stretta */
-  width:calc(118px * var(--hudScale)); /* prova 110 se la vuoi più stretta */
-  gap:calc(6px * var(--hudScale));
-}
-
-.topLeftBtns .btnSub{
-  pointer-events:auto;
-  cursor:pointer;
-  user-select:none;
-  border:none;
-  background:transparent;
-  padding:0;
-  margin:0;
-
-  /* area click coerente */
-  width:calc(36px * var(--hudScale));
-  height:calc(16px * var(--hudScale));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:999px;
-}
-
-/* icone +25% circa */
-.topLeftBtns .btnSub .ico{
-  width:calc(11px * var(--hudScale) * 1.25);
-  height:calc(11px * var(--hudScale) * 1.25);
-}
 
 
     /* ===== Debug button (sotto Home) ===== */
