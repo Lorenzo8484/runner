@@ -165,23 +165,9 @@
       width:calc(11px * var(--hudScale));
       height:calc(11px * var(--hudScale));
     }
-
-    /* ✅ LIFE: cuori centrati e sempre visibili */
-.lifePill{
-  justify-content:center;
-}
-.lifePill .hudV{
-  width:100%;
-  justify-content:center;
-  overflow:visible;      /* importantissimo: niente taglio */
-}
-#hpTxt{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  line-height:1;
+    #hpTxt{
   white-space:nowrap;
-  transform: translateY(0.2px); /* micro-fix iOS */
+  line-height:1;
 }
 
 
@@ -884,8 +870,16 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita (dx) -->
-<div class="hudP pillFx hudHalf lifePill">
+      <!-- Vita (IDENTICA a Rings) -->
+<div class="hudP pillFx hudHalf">
+  <div class="hudL">
+    <!-- icona finta per mantenere altezza identica -->
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="opacity:0;">
+      <circle cx="12" cy="12" r="10"/>
+    </svg>
+    <div class="hudT">Vita</div>
+  </div>
+
   <div class="hudV">
     <span id="hpTxt">❤️❤️❤️🖤🖤</span>
   </div>
