@@ -107,26 +107,24 @@
       align-items:start;
     }
 
-    .hudP{
       
-      /* ✅ ALTEZZA UNICA per tutte le pillole HUD (Score/Emoji/Rings/Vita/Magnete/Boost/Cibo) */
+      /* ✅ ALTEZZA UNICA per tutte le pillole HUD */
 .hudP{
   min-height: calc(24px * var(--hudScale));
+  pointer-events:none;
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  gap:calc(5px * var(--hudScale));
+  min-width:0;
+  line-height:1;
+
+  overflow:hidden;
 }
-      pointer-events:none;
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      border-radius:999px;
-
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-
-      gap:calc(5px * var(--hudScale));
-      min-width:0;
-      line-height:1;
-
-      overflow:hidden;
-    }
     .hudHalf{ grid-column: span 1; }
     .hudFull{ grid-column: 1 / -1; }
 
@@ -870,16 +868,8 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
 
-      <!-- Vita (IDENTICA a Rings) -->
-<div class="hudP pillFx hudHalf">
-  <div class="hudL">
-    <!-- icona finta per mantenere altezza identica -->
-    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="opacity:0;">
-      <circle cx="12" cy="12" r="10"/>
-    </svg>
-    <div class="hudT">Vita</div>
-  </div>
-
+      <!-- Vita (SOLO cuori centrati) -->
+<div class="hudP pillFx hudHalf lifePill">
   <div class="hudV">
     <span id="hpTxt">❤️❤️❤️🖤🖤</span>
   </div>
