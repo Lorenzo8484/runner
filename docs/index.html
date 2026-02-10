@@ -178,6 +178,17 @@
 
   line-height:1;
 }
+/* ===== FIX DEFINITIVO: Vita = Rings (altezza identica) ===== */
+.lifePill{
+  min-height: calc(16px * var(--hudScale)); /* identica a Rings */
+}
+
+.lifePill .hudV{
+  min-height: calc(16px * var(--hudScale));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
     /* =========================================================
        BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
