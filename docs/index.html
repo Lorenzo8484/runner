@@ -161,9 +161,23 @@
       height:calc(11px * var(--hudScale));
     }
 
-    /* ✅ Vita: solo cuori centrati */
-    .lifePill{ justify-content:center; }
-    .lifePill .hudV{ width:100%; justify-content:center; }
+    /* ===== LIFE = IDENTICA A RINGS ===== */
+.lifePill{
+  pointer-events:none;
+
+  /* identico a .hudP */
+  padding:
+    calc(4px * var(--hudScale))
+    calc(6px * var(--hudScale));
+
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  line-height:1;
+}
 
     /* =========================================================
        BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
