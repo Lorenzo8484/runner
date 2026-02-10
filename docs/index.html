@@ -457,8 +457,17 @@
    CAMERA: BACK / FPS / FRONT → SORELLA HUD
    ========================================================= */
 
-.camSegWrap{
+camSegWrap{
+  position:fixed;
+  right:calc(8px * var(--hudScale));
+  top:calc(
+    (5px * var(--menuScale)) +
+    (var(--hudPillH) * var(--hudScale)) +
+    (6px * var(--hudScale))
+  );
+  z-index:34;
   pointer-events:auto;
+
   display:flex;
   justify-content:flex-end;
 }
