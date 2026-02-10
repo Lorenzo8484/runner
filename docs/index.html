@@ -492,7 +492,8 @@
    SETTINGS (SLEEK PILL TABS)
    ========================================================= */
 .settingsOverlay{
-  position:fixed; inset:0;
+  position:fixed;
+  inset:0;
   display:none;
   align-items:flex-start;
   justify-content:center;
@@ -502,7 +503,9 @@
   z-index:40;
 }
 
-/* ===== Camera segmented pill ===== */
+/* =========================================================
+   CAMERA SEGMENTED PILL (UNICA)
+   ========================================================= */
 .camSegWrap{
   pointer-events:auto;
   display:flex;
@@ -512,7 +515,7 @@
   /* sotto Home+Impostazioni */
   margin-top:calc(6px * var(--menuScale));
 
-  /* “stessa linea” della vita: se vuoi più preciso, ritocca questo offset */
+  /* stessa linea della vita */
   transform: translateY(calc(21px * var(--hudScale)));
 }
 
@@ -520,16 +523,12 @@
   position:relative;
   display:grid;
   grid-template-columns: 1fr 1fr 1fr;
+  align-items:center;
   overflow:hidden;
 
-  /* === ALTEZZA IDENTICA A RINGS === */
-  padding:
-    calc(4px * var(--hudScale))
-    calc(4px * var(--hudScale));
-
-  /* === PIÙ CORTA === */
+  /* altezza coerente con HUD */
+  padding:calc(4px * var(--hudScale)) calc(4px * var(--hudScale));
   width:calc(78px * var(--hudScale));
-
   border-radius:999px;
 }
 
@@ -542,7 +541,7 @@
   user-select:none;
 
   font-weight:950;
-  font-size:calc(6.6px * var(--hudScale)); /* come HUD */
+  font-size:calc(6.6px * var(--hudScale));
   letter-spacing:.2px;
   color:#eaf1ff;
 
@@ -551,25 +550,25 @@
   justify-content:center;
 
   height:100%;
+  padding:0;
+  line-height:1;
   opacity:.85;
 }
 
-.camSegBtn.active{
-  opacity:1;
-}
-
+.camSegBtn.active{ opacity:1; }
 
 /* Thumb che scorre */
 .camThumb{
   position:absolute;
   z-index:1;
-  top:calc(2px * var(--menuScale));
-  bottom:calc(2px * var(--menuScale));
-  left:calc(2px * var(--menuScale));
-  width:calc((100% - calc(4px * var(--menuScale))) / 3);
+
+  top:calc(2px * var(--hudScale));
+  bottom:calc(2px * var(--hudScale));
+  left:calc(2px * var(--hudScale));
+
+  width:calc((100% - calc(4px * var(--hudScale))) / 3);
   border-radius:999px;
 
-  /* look coerente col tuo HUD */
   background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
   border:1px solid rgba(145,205,255,.26);
   box-shadow:
@@ -584,6 +583,10 @@
 
 /* Assicura che stia sopra HUD */
 .camSegWrap, .topLeftBtns{ z-index:35; }
+
+/* =========================================================
+   SETTINGS PANEL
+   ========================================================= */
 .panel{
   width:min(740px,100%);
   border-radius:20px;
@@ -601,7 +604,12 @@
   gap:10px;
   margin-bottom:10px;
 }
-.title{font-size:16px;font-weight:950;margin:0;}
+
+.title{
+  font-size:16px;
+  font-weight:950;
+  margin:0;
+}
 
 .tabs{
   display:flex;
@@ -609,6 +617,7 @@
   padding:6px;
   border-radius:999px;
 }
+
 .tabBtn{
   border:none;
   background:transparent;
@@ -621,6 +630,7 @@
   letter-spacing:.2px;
   opacity:.85;
 }
+
 .tabBtn.active{
   opacity:1;
   box-shadow:
@@ -633,6 +643,7 @@
   grid-template-columns: 1fr;
   gap:10px;
 }
+
 @media (min-width:720px){
   .settingsBody{ grid-template-columns: 1fr 1fr; }
 }
@@ -660,10 +671,15 @@
   font-size:13px;
   margin-top:10px;
 }
-.settingsRow small{opacity:.8}
-.settingsVal{font-weight:950}
 
-input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85); }
+.settingsRow small{ opacity:.8; }
+.settingsVal{ font-weight:950; }
+
+input[type="range"]{
+  width:100%;
+  height:18px;
+  accent-color: rgba(255,255,255,.85);
+}
 
 .toggle{
   display:flex;
@@ -678,26 +694,37 @@ input[type="range"]{ width:100%; height:18px; accent-color: rgba(255,255,255,.85
   user-select:none;
   margin-top:10px;
 }
-.toggle label{font-weight:950;}
-.toggle span{opacity:.85;font-size:12px;}
+
+.toggle label{ font-weight:950; }
+.toggle span{ opacity:.85; font-size:12px; }
 
 .switch{
-  width:44px;height:26px;
+  width:44px;
+  height:26px;
   border-radius:99px;
   background:rgba(255,255,255,.14);
   position:relative;
   border:1px solid rgba(255,255,255,.14);
   flex:0 0 auto;
 }
+
 .switch i{
-  position:absolute;top:3px;left:3px;
-  width:20px;height:20px;
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:20px;
+  height:20px;
   border-radius:999px;
   background:rgba(255,255,255,.86);
   transition:transform .18s ease;
 }
-.switch.on{background:rgba(140,255,190,.18);border-color:rgba(140,255,190,.22);}
-.switch.on i{transform:translateX(18px);}
+
+.switch.on{
+  background:rgba(140,255,190,.18);
+  border-color:rgba(140,255,190,.22);
+}
+
+.switch.on i{ transform:translateX(18px); }
 
 /* Segmented pill (FPS REALISTICO / STABILE) */
 .seg{
