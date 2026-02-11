@@ -1213,7 +1213,21 @@
       if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
       setCamThumb(viewMode);
     }
-    
+    function applyViewMode(mode){
+  viewMode = (mode==='back'||mode==='fps'||mode==='front') ? mode : 'front';
+  saveCam();
+  setActiveCamBtns();
+
+  // maschera testa in FPS (solo quando la funzione esiste già)
+  if(typeof setFpsMaskHidden === 'function'){
+    setFpsMaskHidden(viewMode === 'fps');
+  }
+
+  // blur canvas reset quando NON sei in fps (solo se renderer esiste)
+  if(typeof renderer !== 'undefined' && renderer?.domElement){
+    if(viewMode !== 'fps') renderer.domElement.classList.remove('blurBoost');
+  }
+}
     
 
     function setDebugUI(){
@@ -2515,6 +2529,7 @@
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
 
     // ✅ “distanza visibile” strada ~ TURTLE_VIS_Z (già definito prima) → useremo per cooldown spawn
+    const TURTLE_VIS_Z = 70;
     const VISIBLE_DIST = TURTLE_VIS_Z; // 70
     const POWERUP_COOLDOWN_DIST = VISIBLE_DIST * 2.0; // 2x visibile
 
