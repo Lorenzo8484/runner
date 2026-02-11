@@ -1449,7 +1449,7 @@ function setActiveCamBtns(){
     safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
     safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
     safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
-    safeOn(btnSettings,'click', ()=>{ initAudio(); openSettings(); });
+  
     
 
     function setFpsMode(real){
@@ -2365,7 +2365,6 @@ safeOn(dynFovToggle,'click', ()=>{
     function updateFoodBoostButton(){
   if(!btnFoodBoost || !foodBoostLbl) return;
 
-  // visibile solo se hai almeno 1 carica
   if(game.foodBoostCharges > 0){
     btnFoodBoost.style.display = 'flex';
     foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
@@ -2375,20 +2374,9 @@ safeOn(dynFovToggle,'click', ()=>{
   }
 }
 
-    function refreshFoodUI(){
-  if(!btnFoodBoost || !foodBoostLbl) return;
-
-  // ✅ visibile solo se hai almeno 1 carica
-  if(game.foodBoostCharges > 0){
-    btnFoodBoost.style.display = 'flex';
-    foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
-  }else{
-    btnFoodBoost.style.display = 'none';
-    foodBoostLbl.textContent = `0 BOOST`;
-  }
-}
-      function refreshFoodUI(){
+function refreshFoodUI(){
   if(!foodStack || !foodCountEl) return;
+
   foodStack.innerHTML = "";
   const show = game.foodHistory.slice(-6).reverse();
   for(const emo of show){
@@ -2398,6 +2386,9 @@ safeOn(dynFovToggle,'click', ()=>{
     foodStack.appendChild(d);
   }
   foodCountEl.textContent = String(game.foodCount);
+
+  // ✅ così rimane sempre coerente anche il bottone
+  updateFoodBoostButton();
 }
 
     function setBoostUI(){
