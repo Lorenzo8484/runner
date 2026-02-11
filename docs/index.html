@@ -1,8 +1,4 @@
-<!-- =========================
-PART 1 / 6
-(HEAD + CSS + HTML UI fino a: HUD + TopRight + Camera Seg + RightStack + RightCol + Settings markup inizio)
-Incolla PART 1, poi dimmi “vai con PART 2”.
-========================= -->
+
 <!doctype html>
 <html lang="it">
 <head>
@@ -867,12 +863,7 @@ Incolla PART 1, poi dimmi “vai con PART 2”.
     <div class="foodStack" id="foodStack"></div>
   </div>
 
-<!-- =========================
-PART 2 / 6
-(continua: Debug panel + Settings markup completo + inizio <script type="module"> con refs UI e setup settings)
-Incolla subito dopo PART 1.
-Poi mi fermo.
-========================= -->
+
 
   <!-- DEBUG PANEL -->
   <div class="debugPanel pillFx" id="debugPanel" style="display:none;">
@@ -1055,6 +1046,7 @@ Poi mi fermo.
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
     const btnDance = $('btnDance');
+    const rightStack = document.querySelector('.rightStack');
 
     // Camera buttons
     const btnCamBack  = $('btnCamBack');
@@ -1404,12 +1396,7 @@ Poi mi fermo.
     };
     safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
 
-   <!-- =========================
-PART 3 / 6
-(continua dentro <script type="module">: Renderer/Scene + SKY naturale con nuvole + luci + strada + jungle)
-Incolla subito dopo PART 2.
-Poi mi fermo.
-========================= -->
+   
 
     // ===== Renderer / Scene =====
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -1911,12 +1898,7 @@ Poi mi fermo.
       }
     }
 
-<!-- =========================
-PART 4 / 6
-(continua dentro <script type="module">: Sprites + Entity visuals (ostacoli uniformi a terra) + Runner setup + FX “magia” (scaffolding))
-Incolla subito dopo PART 3.
-Poi mi fermo.
-========================= -->
+
 
     // =========================================================
     // ✅ UI “MAGIA” (luce/brillantini) verso HUD
@@ -2512,12 +2494,7 @@ Poi mi fermo.
       });
     }
 
-<!-- =========================
-PART 5 / 6
-(continua dentro <script type="module">: Game data + Spawn rules + Boost lock + HUD bars anim + Food stack bottom + Score autosize + Turtle flee + pickup magic hooks + intense boost shake)
-Incolla subito dopo PART 4.
-Poi mi fermo.
-========================= -->
+
 
     // =========================================================
     // ✅ GAME DATA
@@ -2669,10 +2646,8 @@ Poi mi fermo.
     // =========================================================
     // ✅ HUD Bars: animazione barra (ripple/shine) e update time
     // =========================================================
-    const magBar = $('magBar');
-    const boostTimeEl = $('boostTime');
-    const foodBoostTimeEl = $('foodBoostTime');
-    const foodBoostBar = $('foodBoostBar');
+    
+    
 
     let hudBarAnimPhase = 0;
 
@@ -3596,11 +3571,7 @@ Poi mi fermo.
     }
     window.addEventListener('resize', onResize);
 
-<!-- =========================
-PART 6 / 6
-(UI Boost contatore + ordine pulsanti + animazioni + dance camera 360/zoom + slider altezza FPS + focus slider + sky realistico + ostacoli uniformi + fix tartaruga flee no-collide + magia pickup + shimmer barre)
-Incolla subito dopo PART 5.
-========================= -->
+
 
     // =========================================================
     // ✅ 1) UI: ordine pulsanti (dal basso: DANCE, AVVIA, BOOST)
@@ -3877,34 +3848,6 @@ Incolla subito dopo PART 5.
     // =========================================================
     // ✅ 6) Slider Altezza FPS in impostazioni + salvataggio
     // =========================================================
-    let fpsEyeY = clamp(Number(saved.fpsEyeY ?? 1.58), 1.20, 2.20);
-
-    // aggiungi slider se non c’è
-    (function addFpsEyeSlider(){
-      const camCard = settingsOverlay?.querySelector('.card[data-tab="cam"]');
-      if(!camCard) return;
-
-      const existing = $('fpsEyeSlider');
-      if(existing) return;
-
-      const wrap = document.createElement('div');
-      wrap.innerHTML = `
-        <div class="settingsRow">
-          <div><label>Altezza FPS</label><br><small>1.2–2.2 (base 1.58)</small></div>
-          <div class="settingsVal" id="fpsEyeVal">${fpsEyeY.toFixed(2)}</div>
-        </div>
-        <input id="fpsEyeSlider" type="range" min="1.2" max="2.2" step="0.01" value="${fpsEyeY.toFixed(2)}" />
-      `;
-      camCard.appendChild(wrap);
-
-      const fpsEyeSlider = $('fpsEyeSlider');
-      const fpsEyeValEl  = $('fpsEyeVal');
-
-      safeOn(fpsEyeSlider, 'input', ()=>{
-        fpsEyeY = clamp(Number(fpsEyeSlider.value), 1.20, 2.20);
-        if(fpsEyeValEl) fpsEyeValEl.textContent = fpsEyeY.toFixed(2);
-        saveCam(); // aggiornata sotto
-      });
 
       // patch saveCam per includere fpsEyeY
       const _saveCam = saveCam;
