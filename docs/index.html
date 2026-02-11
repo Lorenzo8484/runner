@@ -2941,14 +2941,11 @@ runnerPivot.position.y = (-game.y);
 
         const th = T[e.type] || { x:0.60, y:1.0, z:0.85 };
 
-        // ring: valido SOLO in slide e con y più precisa
+        // ring: pickup normale (NON richiede slide)
         if(e.type === 'ring'){
-          if(!game.sliding) return false;
-
-          // mentre slide sei più basso, quindi ring deve stare "nel punto giusto"
-          // ring sta circa y=0.55, quindi dy deve essere più stretto
-          return (dx < th.x && dy < th.y && dz < th.z);
-        }
+  const yTh = game.sliding ? 0.55 : th.y;
+  return (dx < th.x && dy < yTh && dz < th.z);
+}
 
         // turtle: non deve colpirti se sei chiaramente in aria
         if(e.type === 'turtle'){
@@ -2959,19 +2956,6 @@ runnerPivot.position.y = (-game.y);
         return (dx < th.x && dy < th.y && dz < th.z);
       }
 
-      if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
-        for(const e of game.entities){
-          if(e.type!=='ring') continue;
-          if(e.lane !== game.lane) continue;
-          if(Math.abs(e.z - 0.25) < 2.55){
-            game.sliding = true;
-            game.slideT  = 0.48;
-            game.autoSlideCooldown = 0.24;
-            break;
-          }
-        }
-      }
-      game.autoSlideCooldown = Math.max(0, game.autoSlideCooldown - dt);
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
