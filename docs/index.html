@@ -1982,6 +1982,10 @@ function spawnTurtleExplosion(x, z){
 }
 
 function updateEffects(dt){
+  function update(dt, tNow){
+  updateEffects(dt); // ✅ aggiorna esplosioni, shockwave, particelle
+  ...
+}
   if(!game.effects?.length) return;
 
   for(let i=game.effects.length-1;i>=0;i--){
@@ -3128,85 +3132,42 @@ runnerPivot.position.y = (-game.y);
 
         // ✅ tartaruga: se “hit” aggiungi scivolata extra in avanti
 if (e.type === 'turtle' && e.hit) {
-  e.slideT = Math.max(0, e.slideT - dt);
-  
-  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-
-// ✅ esplode SOLO se non ha trovato/distrutto ostacoli
-if (almostStopped && !e.exploding) {
-  if (!e.destroyedAny) {
-    e.exploding = true;
-    e.explodeT = 0;
-
-    // qui poi ci mettiamo BOOM + shockwave (punto successivo)
-    // per ora, come minimo: rimuovi tartaruga
-    scene.remove(e.obj);
-    e._removeMe = true;
-  } else {
-    // ✅ se ha distrutto ostacoli: NO esplosione
-    // puoi farla sparire pulita quando si ferma
-    scene.remove(e.obj);
-    e._removeMe = true;
+  // ✅ timer colore: giallo -> rosso (durante la scivolata)
+  e.hitAge = (e.hitAge || 0) + dt;
+  const mats = e.obj?.userData?.mats || [];
+  if (mats.length) {
+    if (e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400)); // giallo
+    else                 mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
   }
-}
+
+  // ✅ scivolata (diminuisce nel tempo)
+  e.slideT = Math.max(0, e.slideT - dt);
 
   // attrito (smorza la spinta)
   e.slideV = damp(e.slideV, 0, 6.5, dt);
 
-  // extra in avanti
+  // movimento extra in avanti
   e.z += e.slideV * dt;
 
   // rotazione durante scivolata
   if (e.obj) {
     e.obj.rotation.y += e.spinV * dt;
-    e.obj.rotation.z = damp(e.obj.rotation.z, 0, 6, dt);
   }
 
-  // 👇 SMASH ostacoli davanti
-  turtleSmashLane(e);
-const didDestroy = turtleSmashLane(e);
-if (didDestroy) e.destroyedAny = true;
-  if (e.slideT <= 0) e.spinV = 0;
-}
+  // ✅ distrugge ostacoli davanti (UNA SOLA CHIAMATA!)
+  const didDestroy = turtleSmashLane(e);
+  if (didDestroy) e.destroyedAny = true;
 
-// applica z
-e.obj.position.z = e.z;
-        // magnete (solo pickup)
-        if (
-          magnetOn &&
-          (e.type === 'coin' || e.type === 'food' || e.type === 'heart' || e.type === 'magnet')
-        ) {
-          const dx = runnerPivot.position.x - e.obj.position.x;
-          const dz = (0 - e.z);
-          const dist = Math.hypot(dx * 2.2, dz);
-          if (dist < 12.0) {
-            e.obj.position.x += dx * dt * (5.6 * (1 - dist / 12.0));
-            if (e.obj.position.y < 1.1) e.obj.position.y += dt * 0.6;
-          }
-        }
-      }
+  // ✅ quando si ferma: esplode SOLO se non ha distrutto nulla
+  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
 
-      // ===== CLEANUP (dietro la camera) =====
-      for (let i = game.entities.length - 1; i >= 0; i--) {
-        const e = game.entities[i];
+  if (almostStopped) {
+    if (!e.destroyedAny) {
+      // ✅ BOOM realistico + shockwave
+      spawnTurtleExplosion(e.obj.position.x, e.z);
+    }
 
-        if (e.type === 'turtle' && e.hit) {
-          
-          const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-
-// ✅ esplode SOLO se non ha trovato/distrutto ostacoli
-if (almostStopped && !e.exploding) {
-  if (!e.destroyedAny) {
-    e.exploding = true;
-    e.explodeT = 0;
-
-    // qui poi ci mettiamo BOOM + shockwave (punto successivo)
-    // per ora, come minimo: rimuovi tartaruga
-    scene.remove(e.obj);
-    e._removeMe = true;
-  } else {
-    // ✅ se ha distrutto ostacoli: NO esplosione
-    // puoi farla sparire pulita quando si ferma
+    // rimuovi tartaruga (sia esplosa che non)
     scene.remove(e.obj);
     e._removeMe = true;
   }
