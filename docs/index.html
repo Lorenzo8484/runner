@@ -1870,24 +1870,171 @@ safeOn(dynFovToggle,'click', ()=>{
       return box;
     }
     function makeTurtle(){
-      const g = new THREE.Group();
-      const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(0.35, 18, 14),
-        new THREE.MeshStandardMaterial({ color:0x1f6a3a, roughness:0.9, metalness:0.02 })
-      );
-      shell.scale.set(1.2,0.75,1.0);
-      shell.position.y=0.35;
-      shell.castShadow=true; shell.receiveShadow=true;
-      g.add(shell);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.16, 16, 12),
-        new THREE.MeshStandardMaterial({ color:0x2f8a4d, roughness:0.9, metalness:0.02 })
-      );
-      head.position.set(0,0.25,0.42);
-      head.castShadow=true;
-      g.add(head);
-      return g;
+  const g = new THREE.Group();
+  const shell = new THREE.Mesh(
+    new THREE.SphereGeometry(0.35, 18, 14),
+    new THREE.MeshStandardMaterial({ color:0x1f6a3a, roughness:0.9, metalness:0.02 })
+  );
+  shell.scale.set(1.2,0.75,1.0);
+  shell.position.y=0.35;
+  g.add(shell);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 16, 12),
+    new THREE.MeshStandardMaterial({ color:0x2f8a4d, roughness:0.9, metalness:0.02 })
+  );
+  head.position.set(0,0.25,0.42);
+  g.add(head);
+
+  // ✅ per cambiare colore dopo il colpo
+  g.userData.mats = [shell.material, head.material];
+
+  return g;
+}
+    
+    // =========================================================
+// ✅ TURTLE EXPLOSION FX (flash + particles + shockwave)
+// =========================================================
+function makeRadialTex(size=256){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const g=c.getContext('2d');
+  g.clearRect(0,0,size,size);
+  const grd=g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.5);
+  grd.addColorStop(0,'rgba(255,255,255,0.95)');
+  grd.addColorStop(0.2,'rgba(255,210,120,0.55)');
+  grd.addColorStop(0.55,'rgba(255,70,50,0.22)');
+  grd.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=grd;
+  g.fillRect(0,0,size,size);
+  const t=new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const _explTex = makeRadialTex(256);
+
+function spawnTurtleExplosion(x, z){
+  const g = new THREE.Group();
+  g.position.set(x, 0.02, z);
+
+  // FLASH (billboard)
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_explTex,
+    transparent:true,
+    opacity:0.95,
+    depthWrite:false
+  }));
+  flash.scale.set(2.6, 2.6, 1);
+  flash.position.y = 0.65;
+  g.add(flash);
+
+  // SHOCKWAVE (anello sul terreno)
+  const wave = new THREE.Mesh(
+    new THREE.RingGeometry(0.15, 0.22, 64),
+    new THREE.MeshBasicMaterial({
+      color:0xffffff,
+      transparent:true,
+      opacity:0.75,
+      depthWrite:false
+    })
+  );
+  wave.rotation.x = -Math.PI/2;
+  wave.position.y = 0.01;
+  g.add(wave);
+
+  // PARTICELLE (piccoli sprite)
+  const parts = [];
+  const n = IS_IOS ? 22 : 34;
+  for(let i=0;i<n;i++){
+    const p = new THREE.Sprite(new THREE.SpriteMaterial({
+      map:_explTex,
+      transparent:true,
+      opacity:0.85,
+      depthWrite:false
+    }));
+    p.scale.set(0.35, 0.35, 1);
+    p.position.set(rnd(-0.15,0.15), rnd(0.25,0.85), rnd(-0.15,0.15));
+    g.add(p);
+
+    parts.push({
+      spr:p,
+      vx:rnd(-1.8,1.8),
+      vy:rnd(1.2,3.2),
+      vz:rnd(-2.2,1.0),
+      spin:rnd(-5,5)
+    });
+  }
+
+  scene.add(g);
+
+  // registra come “effect” aggiornabile
+  game.effects.push({
+    type:'turtleExpl',
+    g,
+    t:0,
+    flash,
+    wave,
+    parts
+  });
+
+  // piccolo SFX
+  try{ sfx.hit(); }catch{}
+}
+
+function updateEffects(dt){
+  if(!game.effects?.length) return;
+
+  for(let i=game.effects.length-1;i>=0;i--){
+    const fx = game.effects[i];
+    fx.t += dt;
+
+    if(fx.type === 'turtleExpl'){
+      const t = fx.t;
+
+      // FLASH: esplode subito e svanisce
+      const fLife = 0.18;
+      const fP = clamp(t / fLife, 0, 1);
+      fx.flash.material.opacity = (1 - fP) * 0.95;
+      const fS = 2.6 + fP * 2.2;
+      fx.flash.scale.set(fS, fS, 1);
+
+      // SHOCKWAVE: si allarga e sfuma
+      const wLife = 0.55;
+      const wP = clamp(t / wLife, 0, 1);
+      const inner = 0.18 + wP * 2.6;
+      const outer = inner + (0.12 + wP * 0.65);
+
+      // aggiorna ring geometry (leggero, ok così)
+      fx.wave.geometry.dispose();
+      fx.wave.geometry = new THREE.RingGeometry(inner, outer, 64);
+
+      fx.wave.material.opacity = (1 - wP) * 0.75;
+
+      // PARTICELLE
+      for(const p of fx.parts){
+        const s = p.spr;
+        p.vy -= 6.8 * dt;              // gravità
+        s.position.x += p.vx * dt;
+        s.position.y += p.vy * dt;
+        s.position.z += p.vz * dt;
+
+        // rotazione sprite (simulata con scale oscillante)
+        const k = 1 + Math.sin((t*12) + p.spin) * 0.12;
+        s.scale.set(0.28*k, 0.28*k, 1);
+
+        // fade
+        s.material.opacity = clamp(0.85 - t*1.4, 0, 0.85);
+      }
+
+      // fine effetto
+      if(t > 0.9){
+        scene.remove(fx.g);
+        // dispose materiali (sprite condividono texture, ok non distruggere tex)
+        game.effects.splice(i,1);
+      }
     }
+  }
+}
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -2338,6 +2485,7 @@ safeOn(dynFovToggle,'click', ()=>{
       trioT:0,
 
       entities:[],
+      effects: [],
       spawnT:0.30,
 
       paused:false,
@@ -2525,11 +2673,16 @@ function refreshFoodUI(){
   z:tz,
   obj:t,
 
-  // ✅ nuove proprietà per “scivolata”
   hit:false,
-  slideV:0,     // velocità extra in avanti (z)
-  slideT:0,     // tempo scivolata
-  spinV:0       // rotazione durante scivolata
+  slideV:0,
+  slideT:0,
+  spinV:0,
+
+  destroyedAny:false,
+  hitAge:0,
+  exploding:false,
+  explodeT:0,
+  _initialSlideV:-200
 });
           game.lastTurtleZ[lane] = tz;
         }
@@ -2826,6 +2979,8 @@ hookCamBtn(btnCamFront,'front');
   const zFront = turtle.z - TURTLE_SMASH_FRONT;
   const zMin   = zFront - TURTLE_SMASH_RANGE;
 
+  let destroyed = false;
+
   for(let i = game.entities.length - 1; i >= 0; i--){
     const e = game.entities[i];
     if(e.type !== 'obst') continue;
@@ -2834,8 +2989,10 @@ hookCamBtn(btnCamFront,'front');
     if(e.z <= zFront && e.z >= zMin){
       scene.remove(e.obj);
       game.entities.splice(i, 1);
+      destroyed = true;
     }
   }
+  return destroyed;
 }
 
 function update(dt, tNow){
@@ -2987,7 +3144,8 @@ if (e.type === 'turtle' && e.hit) {
 
   // 👇 SMASH ostacoli davanti
   turtleSmashLane(e);
-
+const didDestroy = turtleSmashLane(e);
+if (didDestroy) e.destroyedAny = true;
   if (e.slideT <= 0) e.spinV = 0;
 }
 
@@ -3013,6 +3171,17 @@ e.obj.position.z = e.z;
         const e = game.entities[i];
 
         if (e.type === 'turtle' && e.hit) {
+          
+          // ✅ colore veloce: verde -> giallo -> rosso
+e.hitAge = (e.hitAge || 0) + dt;
+const mats = e.obj?.userData?.mats || [];
+if (mats.length) {
+  if (e.hitAge < 0.10) {        // ~100ms
+    mats.forEach(m => m.color.setHex(0xffd400)); // giallo
+  } else {                       // dopo ~100ms
+    mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
+  }
+}
           // se scivola lontano, eliminala
           if (e.z < -120 || e.z > 6) {
             scene.remove(e.obj);
@@ -3100,6 +3269,12 @@ e.obj.position.z = e.z;
           if (!collideEntity(e)) continue;
 
           e.hit = true;
+        
+
+e.destroyedAny = false;
+e.hitAge = 0;
+e.exploding = false;
+e.explodeT = 0;
 
           // spinta in avanti (direzione corsa = Z negativo)
           e.slideV = -200.0;
