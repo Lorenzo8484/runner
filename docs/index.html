@@ -2905,20 +2905,58 @@ runnerPivot.position.y = (-game.y);
         }
       }
 
-      const px = runnerPivot.position.x;
-      const py = runnerPivot.position.y + (game.sliding ? 0.70 : 0.95);
+            const px = runnerPivot.position.x;
 
-      function collide(e){
-        const dz = Math.abs(e.z - 0.25);
-        const dx = Math.abs(e.obj.position.x - px);
+      // centro "reale" del player per collisioni
+      // - in slide il corpo è più basso
+      // - in salto sale davvero con runnerPivot.position.y
+      const playerCenterY = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
+
+      function collideEntity(e){
+        const ex = e.obj.position.x;
         const ey = (e.obj.position.y ?? 0);
-        const dy = Math.abs(ey - py);
-        return (dz < 0.75 && dx < 0.60 && dy < 1.05);
-      }
-      function collideTurtle(e){
-        const dz = Math.abs(e.z - 0.35);
-        const dx = Math.abs(e.obj.position.x - px);
-        return (dz < 1.05 && dx < 0.72);
+        const ez = e.z;
+
+        const dx = Math.abs(ex - px);
+        const dy = Math.abs(ey - playerCenterY);
+        const dz = Math.abs(ez - 0.25);
+
+        // hitbox per tipo (tweakabili)
+        // numeri piccoli = più precisione
+        const T = {
+          coin:   { x:0.55, y:0.95, z:0.80 },
+          food:   { x:0.58, y:0.98, z:0.85 },
+          heart:  { x:0.58, y:0.98, z:0.85 },
+          magnet: { x:0.60, y:1.05, z:0.90 },
+
+          // ring: più stretto e "frontale"
+          ring:   { x:0.42, y:0.75, z:0.55 },
+
+          // ostacolo: stretto e più punitivo solo se sei davvero dentro
+          obst:   { x:0.52, y:(game.sliding ? 0.60 : 0.85), z:0.70 },
+
+          // turtle: collisione a terra, più larga in z ma bassa in y
+          turtle: { x:0.62, y:0.55, z:0.95 }
+        };
+
+        const th = T[e.type] || { x:0.60, y:1.0, z:0.85 };
+
+        // ring: valido SOLO in slide e con y più precisa
+        if(e.type === 'ring'){
+          if(!game.sliding) return false;
+
+          // mentre slide sei più basso, quindi ring deve stare "nel punto giusto"
+          // ring sta circa y=0.55, quindi dy deve essere più stretto
+          return (dx < th.x && dy < th.y && dz < th.z);
+        }
+
+        // turtle: non deve colpirti se sei chiaramente in aria
+        if(e.type === 'turtle'){
+          if(game.jumping || runnerPivot.position.y > 0.35) return false;
+          return (dx < th.x && dy < th.y && dz < th.z);
+        }
+
+        return (dx < th.x && dy < th.y && dz < th.z);
       }
 
       if(!game.sliding && game.y===0 && game.autoSlideCooldown<=0 && game.lane<=2){
@@ -2939,8 +2977,7 @@ runnerPivot.position.y = (-game.y);
         const e=game.entities[i];
 
         if(e.type==='ring'){
-          if(!collide(e)) continue;
-          if(!game.sliding) continue;
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
           game.ringCount += 1;
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
@@ -2956,13 +2993,13 @@ runnerPivot.position.y = (-game.y);
         }
 
         if(e.type==='turtle'){
-          if(!collideTurtle(e)) continue;
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
           sfx.boost();
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
-        if(!collide(e)) continue;
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
 
         if(e.type==='coin'){
           game.coins += 1;
