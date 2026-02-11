@@ -1053,7 +1053,11 @@
     const btnCamFPS   = $('btnCamFPS');
     const btnCamFront = $('btnCamFront');
     const camThumb    = $('camThumb');
-
+    
+    safeOn(btnCamBack,  'click', ()=>{ initAudio(); applyViewMode('back');  });
+    safeOn(btnCamFPS,   'click', ()=>{ initAudio(); applyViewMode('fps');   });
+    safeOn(btnCamFront, 'click', ()=>{ initAudio(); applyViewMode('front'); });
+    
     // Debug
     const btnDebug = $('btnDebug');
     const debugPanel = $('debugPanel');
@@ -1209,6 +1213,8 @@
       if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
       setCamThumb(viewMode);
     }
+    
+    
 
     function setDebugUI(){
       if(debugPanel) debugPanel.style.display = debugOn ? 'block' : 'none';
@@ -2692,18 +2698,14 @@ function setFoodBoostPillUI(){
     if(foodBoostTime) foodBoostTime.textContent = '0.0s';
     return;
   }
+
   foodBoostPill.style.display = 'flex';
   const dur = 10.0;
   const pct = clamp((game.foodBoostT/dur)*100,0,100);
-
   setHudBar(foodBoostBar, pct);
+
   if(foodBoostTime) foodBoostTime.textContent = `${game.foodBoostT.toFixed(1)}s`;
 }
-
-      // ✅ animazione barra “disponibile”: aggiungo micro-oscillazione luminosa
-      setHudBar(foodBoostBar, pct);
-      foodBoostTimeEl.textContent = `${game.foodBoostT.toFixed(1)}s`;
-    }
 
     function setMagnetUI(){
       if(!magTxt || !magBar) return;
@@ -3171,6 +3173,8 @@ function setFoodBoostPillUI(){
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
       }
       loopJungle(scroll);
+      loopClouds(scroll);
+      
 
       // spawn
       game.spawnT -= dt;
@@ -3459,7 +3463,7 @@ function setFoodBoostPillUI(){
       if(viewMode === 'fps'){
         camera.up.set(0,1,0);
 
-        const eyeBaseY = 1.58;
+        const eyeBaseY = fpsEyeY;
         const eyeFwd   = 1.05;
         const eyeZ     = 0.10;
 
@@ -3996,22 +4000,7 @@ function setFoodBoostPillUI(){
     (function patchDanceCamera(){
       const _animate = animate;
       animate = function(tNow){
-        // aggiorna nuvole (movimento)
-        const speedHint = (game.started && !game.paused && !game.over && !game.stopped) ? game.camSpeed : 0;
-        const cloudScroll = (0.002 + speedHint*0.00006);
-        for(let i=0;i<clouds.length;i++){
-          const p = clouds[i];
-          p.position.z += speedHint * 0.018;
-          if(p.position.z > 15) p.position.z = -120 - i*16;
-          const m = p.material;
-          if(m?.map){
-            m.map.offset.x += cloudScroll * (0.5 + i*0.12);
-            m.map.offset.y += cloudScroll * 0.12;
-          }
-        }
-        if(skyTex){
-          skyTex.offset.x += 0.00018 + speedHint*0.000002;
-        }
+        
 
         // aggiorna lock boost UI (numero sempre)
         if(window.__jrBoostCount?.lbl){
