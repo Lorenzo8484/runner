@@ -1913,6 +1913,57 @@ function makeRadialTex(size=256){
 
 const _explTex = makeRadialTex(256);
 
+function makeDustTex(size=256){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const g=c.getContext('2d');
+  g.clearRect(0,0,size,size);
+
+  const grd=g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.48);
+  grd.addColorStop(0,'rgba(200,200,200,0.55)');
+  grd.addColorStop(0.35,'rgba(160,160,160,0.22)');
+  grd.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=grd;
+  g.fillRect(0,0,size,size);
+
+  const t=new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const _dustTex = makeDustTex(256);
+
+function spawnDust(x, z){
+  // sprite a terra, leggerissimo
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_dustTex,
+    transparent:true,
+    opacity:0.35,
+    depthWrite:false
+  }));
+  spr.position.set(
+    x + rnd(-0.12, 0.12),
+    0.05,
+    z + rnd(-0.10, 0.10)
+  );
+
+  const s0 = rnd(0.45, 0.70);
+  spr.scale.set(s0, s0, 1);
+  scene.add(spr);
+
+  game.effects.push({
+    type:'dust',
+    spr,
+    t:0,
+    life: rnd(0.35, 0.55),
+    s0,
+    sGrow: rnd(0.80, 1.35),
+    maxOp: rnd(0.22, 0.40),
+    vx: rnd(-0.12, 0.12),
+    vy: rnd(0.15, 0.35),
+    vz: rnd(0.05, 0.22)
+  });
+}
+
 function spawnTurtleExplosion(x, z){
   const g = new THREE.Group();
   g.position.set(x, 0.02, z);
@@ -1982,60 +2033,81 @@ function spawnTurtleExplosion(x, z){
 }
 
 function updateEffects(dt){
-  function update(dt, tNow){
-  updateEffects(dt); // ✅ aggiorna esplosioni, shockwave, particelle
-  ...
-}
-  if(!game.effects?.length) return;
+  if(!game.effects || game.effects.length===0) return;
 
-  for(let i=game.effects.length-1;i>=0;i--){
+  for(let i=game.effects.length-1; i>=0; i--){
     const fx = game.effects[i];
     fx.t += dt;
 
+    // ===============================
+    // TURTLE EXPLOSION
+    // ===============================
     if(fx.type === 'turtleExpl'){
       const t = fx.t;
 
-      // FLASH: esplode subito e svanisce
+      // FLASH
       const fLife = 0.18;
       const fP = clamp(t / fLife, 0, 1);
       fx.flash.material.opacity = (1 - fP) * 0.95;
       const fS = 2.6 + fP * 2.2;
       fx.flash.scale.set(fS, fS, 1);
 
-      // SHOCKWAVE: si allarga e sfuma
+      // SHOCKWAVE (anello)
       const wLife = 0.55;
       const wP = clamp(t / wLife, 0, 1);
       const inner = 0.18 + wP * 2.6;
       const outer = inner + (0.12 + wP * 0.65);
 
-      // aggiorna ring geometry (leggero, ok così)
       fx.wave.geometry.dispose();
       fx.wave.geometry = new THREE.RingGeometry(inner, outer, 64);
-
       fx.wave.material.opacity = (1 - wP) * 0.75;
 
       // PARTICELLE
       for(const p of fx.parts){
         const s = p.spr;
-        p.vy -= 6.8 * dt;              // gravità
+        p.vy -= 6.8 * dt;
         s.position.x += p.vx * dt;
         s.position.y += p.vy * dt;
         s.position.z += p.vz * dt;
 
-        // rotazione sprite (simulata con scale oscillante)
         const k = 1 + Math.sin((t*12) + p.spin) * 0.12;
         s.scale.set(0.28*k, 0.28*k, 1);
-
-        // fade
         s.material.opacity = clamp(0.85 - t*1.4, 0, 0.85);
       }
 
-      // fine effetto
       if(t > 0.9){
         scene.remove(fx.g);
-        // dispose materiali (sprite condividono texture, ok non distruggere tex)
         game.effects.splice(i,1);
       }
+      continue;
+    }
+
+    // ===============================
+    // DUST
+    // ===============================
+    if(fx.type === 'dust'){
+      const t = fx.t;
+      const life = fx.life;
+
+      // espansione + fade
+      const p = clamp(t / life, 0, 1);
+      fx.spr.material.opacity = (1 - p) * fx.maxOp;
+      const s = fx.s0 + p * fx.sGrow;
+      fx.spr.scale.set(s, s, 1);
+
+      // drift leggero
+      fx.spr.position.x += fx.vx * dt;
+      fx.spr.position.y += fx.vy * dt;
+      fx.spr.position.z += fx.vz * dt;
+
+      // “cade” un pelo
+      fx.vy -= 1.2 * dt;
+
+      if(t > life){
+        scene.remove(fx.spr);
+        game.effects.splice(i,1);
+      }
+      continue;
     }
   }
 }
@@ -2999,8 +3071,18 @@ hookCamBtn(btnCamFront,'front');
   return destroyed;
 }
 
-function update(dt, tNow){
-      if(runnerMixer){
+
+        function update(dt, tNow){
+        if(runnerMixer){
+    runnerMixer.timeScale = 1.0;
+    runnerMixer.update(dt);
+    ...
+  }
+
+  updateEffects(dt); // ✅ QUI, una sola volta
+
+  ...
+}
         runnerMixer.timeScale = 1.0;
         runnerMixer.update(dt);
 
@@ -3126,56 +3208,60 @@ runnerPivot.position.y = (-game.y);
         // ===== ENTITIES SCROLL + MAGNET + TURTLE SLIDE =====
       const magnetOn = game.magnetT > 0;
 
-      for (const e of game.entities) {
-        // base scroll (tutto il mondo viene verso la camera)
-        e.z += scroll;
+      for(let i = game.entities.length-1; i >= 0; i--){
+  const e = game.entities[i];
 
-        // ✅ tartaruga: se “hit” aggiungi scivolata extra in avanti
-if (e.type === 'turtle' && e.hit) {
-  // ✅ timer colore: giallo -> rosso (durante la scivolata)
-  e.hitAge = (e.hitAge || 0) + dt;
-  const mats = e.obj?.userData?.mats || [];
-  if (mats.length) {
-    if (e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400)); // giallo
-    else                 mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
-  }
+  // base scroll
+  e.z += scroll;
 
-  // ✅ scivolata (diminuisce nel tempo)
-  e.slideT = Math.max(0, e.slideT - dt);
+  // ✅ sync posizione mesh SEMPRE
+  if(e.obj) e.obj.position.z = e.z;
 
-  // attrito (smorza la spinta)
-  e.slideV = damp(e.slideV, 0, 6.5, dt);
+  // ===== TURTLE SLIDE / HIT =====
+  if(e.type === 'turtle' && e.hit){
+    e.hitAge = (e.hitAge || 0) + dt;
 
-  // movimento extra in avanti
-  e.z += e.slideV * dt;
-
-  // rotazione durante scivolata
-  if (e.obj) {
-    e.obj.rotation.y += e.spinV * dt;
-  }
-
-  // ✅ distrugge ostacoli davanti (UNA SOLA CHIAMATA!)
-  const didDestroy = turtleSmashLane(e);
-  if (didDestroy) e.destroyedAny = true;
-
-  // ✅ quando si ferma: esplode SOLO se non ha distrutto nulla
-  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-
-  if (almostStopped) {
-    if (!e.destroyedAny) {
-      // ✅ BOOM realistico + shockwave
-      spawnTurtleExplosion(e.obj.position.x, e.z);
+    const mats = e.obj?.userData?.mats || [];
+    if(mats.length){
+      if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400)); // giallo
+      else                 mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
     }
 
-    // rimuovi tartaruga (sia esplosa che non)
-    scene.remove(e.obj);
-    e._removeMe = true;
-  }
-}
+    e.slideT = Math.max(0, e.slideT - dt);
+    e.slideV = damp(e.slideV, 0, 6.5, dt);
 
-if (e._removeMe) {
-  game.entities.splice(i, 1);
-  continue;
+    // movimento extra (scivola via)
+    e.z += e.slideV * dt;
+    if(e.obj) e.obj.position.z = e.z; // ✅ risincronizza dopo la scivolata
+
+    if(e.obj) e.obj.rotation.y += e.spinV * dt;
+
+    // ✅ POLVERE durante scivolata (nuovo)
+    if(e.slideT > 0 && Math.abs(e.slideV) > 15){
+      spawnDust(e.obj.position.x, e.z + 0.25);
+    }
+
+    const didDestroy = turtleSmashLane(e);
+    if(didDestroy) e.destroyedAny = true;
+
+    const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+
+    if(almostStopped){
+      if(!e.destroyedAny){
+        spawnTurtleExplosion(e.obj.position.x, e.z);
+      }
+      scene.remove(e.obj);
+      game.entities.splice(i,1);
+      continue;
+    }
+  }
+
+  // cleanup dietro camera
+  if(e.z > 6){
+    scene.remove(e.obj);
+    game.entities.splice(i,1);
+    continue;
+  }
 }
           
           // ✅ colore veloce: verde -> giallo -> rosso
