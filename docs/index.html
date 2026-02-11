@@ -2986,12 +2986,18 @@ runnerPivot.position.y = (-game.y);
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
-        const killZ = (e.type === 'turtle' && e.hit) ? 14.0 : 6.0;
-if(e.z > killZ){
-  scene.remove(e.obj);
-  game.entities.splice(i,1);
+        if(e.type === 'turtle' && e.hit){
+  // ✅ se la tartaruga viene spinta avanti (Z negativo), eliminala quando è abbastanza lontana
+  if(e.z < -120 || e.z > 6){
+    scene.remove(e.obj);
+    game.entities.splice(i,1);
+  }
+}else{
+  if(e.z > 6){
+    scene.remove(e.obj);
+    game.entities.splice(i,1);
+  }
 }
-      }
 
             const px = runnerPivot.position.x;
 
@@ -3081,9 +3087,12 @@ if(e.z > killZ){
   // ✅ attiva scivolata
   e.hit = true;
 
-  // spinta extra in avanti (verso camera)
-  // valore “bello” → prova 16..26
-  e.slideV = 22.0;
+  // ✅ spinta “avanti” (direzione corsa = Z negativo)
+e.slideV = -22.0;      // prova -16 .. -28
+
+// ✅ piccolo scatto immediato così lo vedi subito nello stesso frame
+e.z -= 0.8;
+if(e.obj) e.obj.position.z = e.z;
 
   // durata scivolata
   e.slideT = 0.65;
