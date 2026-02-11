@@ -3129,6 +3129,26 @@ runnerPivot.position.y = (-game.y);
         // ✅ tartaruga: se “hit” aggiungi scivolata extra in avanti
 if (e.type === 'turtle' && e.hit) {
   e.slideT = Math.max(0, e.slideT - dt);
+  
+  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+
+// ✅ esplode SOLO se non ha trovato/distrutto ostacoli
+if (almostStopped && !e.exploding) {
+  if (!e.destroyedAny) {
+    e.exploding = true;
+    e.explodeT = 0;
+
+    // qui poi ci mettiamo BOOM + shockwave (punto successivo)
+    // per ora, come minimo: rimuovi tartaruga
+    scene.remove(e.obj);
+    e._removeMe = true;
+  } else {
+    // ✅ se ha distrutto ostacoli: NO esplosione
+    // puoi farla sparire pulita quando si ferma
+    scene.remove(e.obj);
+    e._removeMe = true;
+  }
+}
 
   // attrito (smorza la spinta)
   e.slideV = damp(e.slideV, 0, 6.5, dt);
@@ -3171,6 +3191,31 @@ e.obj.position.z = e.z;
         const e = game.entities[i];
 
         if (e.type === 'turtle' && e.hit) {
+          
+          const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+
+// ✅ esplode SOLO se non ha trovato/distrutto ostacoli
+if (almostStopped && !e.exploding) {
+  if (!e.destroyedAny) {
+    e.exploding = true;
+    e.explodeT = 0;
+
+    // qui poi ci mettiamo BOOM + shockwave (punto successivo)
+    // per ora, come minimo: rimuovi tartaruga
+    scene.remove(e.obj);
+    e._removeMe = true;
+  } else {
+    // ✅ se ha distrutto ostacoli: NO esplosione
+    // puoi farla sparire pulita quando si ferma
+    scene.remove(e.obj);
+    e._removeMe = true;
+  }
+}
+
+if (e._removeMe) {
+  game.entities.splice(i, 1);
+  continue;
+}
           
           // ✅ colore veloce: verde -> giallo -> rosso
 e.hitAge = (e.hitAge || 0) + dt;
