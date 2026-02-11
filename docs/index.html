@@ -2945,6 +2945,8 @@ runnerPivot.position.y = (-game.y);
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
       const scroll = speed*dt;
+      // ✅ fai scorrere anche il “last spawn z” delle tartarughe, così dopo un po’ possono respawnare
+      for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
 
