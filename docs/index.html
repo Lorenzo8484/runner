@@ -5,7 +5,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Jungle Emoji Runner (Three.js)</title>
-
   <style>
     :root{
       color-scheme: dark;
@@ -14,12 +13,10 @@
       --menuScale: 1.50; /* Home, Impostazioni, Avvia, Dance, foodCount, foodItem (+50%) */
       --hudScale:  1.40; /* Score, Emoji, Anelli, Vita, Magnete, Boost, Cibo Boost (+40%) */
       --hudW:      0.70; /* -30% larghezza (0.70) */
-      --hudPillH: 12px;  /* altezza base di TUTTE le pillole HUD */
-      --camOffsetY: 12px;
+      --hudPillH: 12px; /* altezza base di TUTTE le pillole HUD */
+      --camOffsetY: 12px; /* ↓ aumenta questo valore se la vuoi ancora più in basso */
+      /* barra base */
       --hud-bar-w: 60px;
-
-      /* ✅ extra UI */
-      --shakeBoostInt: 0.028; /* sarà usato nel JS (shake più intenso in boost) */
     }
 
     html,body{
@@ -49,7 +46,6 @@
         inset 0 1px 0 rgba(255,255,255,.13),
         inset 0 -1px 0 rgba(0,0,0,.28);
       -webkit-tap-highlight-color: transparent;
-      transform: translateZ(0);
     }
     .pillFx::after{
       content:"";
@@ -78,7 +74,7 @@
     button.pillFx:active{ transform:scale(.985); }
 
     /* =========================================================
-       ICON BASE
+       ICON BASE (poi vengono scalate per zona)
        ========================================================= */
     .ico{
       width:11px;
@@ -89,149 +85,204 @@
     }
     .icoSm{ width:9px; height:9px; }
 
+/* =========================================================
+   HUD (sinistra): +40% e -30% larghezza
+   + TOP RIGHT (Home/Impostazioni) sorelle HUD
+   + LIFE pill fix iOS
+   ========================================================= */
+
+/* HUD wrapper */
+.hudWrap{
+  position:fixed;
+  top:calc(5px * var(--menuScale));
+  left:calc(8px * var(--hudScale));
+  z-index:28;
+  pointer-events:none;
+
+  width:min(
+    calc(230px * var(--hudScale) * var(--hudW)),
+    calc(100vw - calc(16px * var(--hudScale)))
+  );
+}
+
+.hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
+
+.hudGrid{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap:calc(6px * var(--hudScale));
+  align-items:start;
+}
+
+/* PILL HUD base (altezza unica via --hudPillH) */
+.hudP{
+  pointer-events:none;
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:calc(5px * var(--hudScale));
+  min-width:0;
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  line-height:1;
+  overflow:hidden;
+}
+
+.hudHalf{ grid-column: span 1; }
+.hudFull{ grid-column: 1 / -1; }
+
+.hudL{
+  display:flex;
+  align-items:center;
+  gap:calc(5px * var(--hudScale));
+  min-width:0;
+  line-height:1;
+  overflow:hidden;
+}
+
+.hudT{
+  font-weight:950;
+  font-size:calc(7px * var(--hudScale));
+  white-space:nowrap;
+  line-height:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.hudV{
+  font-weight:950;
+  font-size:calc(8px * var(--hudScale));
+  white-space:nowrap;
+  line-height:1;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:calc(3px * var(--hudScale));
+
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* icone HUD */
+.hudWrap .ico{
+  width:calc(11px * var(--hudScale));
+  height:calc(11px * var(--hudScale));
+}
+
+/* TOP RIGHT: Home + Impostazioni = stessa altezza delle HUD */
+.topLeftBtns{
+  position:fixed;
+  top:calc(5px * var(--menuScale));
+  right:calc(8px * var(--hudScale));
+  z-index:35;
+  pointer-events:none;
+}
+
+.topLeftBtns .btnGroup.pillFx{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  /* ✅ stesso “peso” delle HUD pill */
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  box-sizing:border-box;
+
+  /* larghezza come avevi deciso tu */
+  width:calc(66px * var(--hudScale));
+  flex:0 0 auto;
+
+  gap:calc(6px * var(--hudScale));
+}
+
+.topLeftBtns .btnSub{
+  pointer-events:auto;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0;
+
+  /* ✅ stessa altezza della pillola */
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+  height:calc(var(--hudPillH) * var(--hudScale));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:999px;
+}
+
+/* icone +25% come volevi */
+.topLeftBtns .btnSub .ico{
+  width:calc(13px * var(--hudScale) * 1.25);
+  height:calc(13px * var(--hudScale) * 1.25);
+}
+
+/* =========================================================
+   LIFE: gemella di Rings + cuori centrati + iOS emoji fix
+   ========================================================= */
+.lifePill{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* gemella di Rings: niente colonna sinistra */
+.lifePill .hudL{ display:none; }
+
+/* cuori centrati */
+.lifePill .hudV{
+  flex:1;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+
+/* iPhone: blocca metriche “alte” emoji */
+#hpTxt{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  white-space:nowrap;
+  line-height:1;
+  font-size:calc(8px * var(--hudScale));
+}
+
+/* iPhone: emoji hearts hanno metriche più “alte” -> le blocchiamo */
+#hpTxt{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  line-height:1;
+
+  /* chiave: non far “alzare” la pillola */
+  font-size: calc(8px * var(--hudScale));
+}
+
+/* 🔒 FIX DEFINITIVO: Vita gemella di Rings */
+.lifePill .hudL{ 
+  display:none; 
+}
+
+.lifePill .hudV{ 
+  flex:1; 
+}
+
+#hpTxt{ 
+  width:100%; 
+  justify-content:center; 
+}
+
+
     /* =========================================================
-       HUD (sinistra) + TOP RIGHT
-       ========================================================= */
-    .hudWrap{
-      position:fixed;
-      top:calc(5px * var(--menuScale));
-      left:calc(8px * var(--hudScale));
-      z-index:28;
-      pointer-events:none;
-      width:min(
-        calc(230px * var(--hudScale) * var(--hudW)),
-        calc(100vw - calc(16px * var(--hudScale)))
-      );
-    }
-    .hudCard{ pointer-events:none; background:transparent; border:none; padding:0; margin:0; }
-    .hudGrid{
-      display:grid;
-      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-      gap:calc(6px * var(--hudScale));
-      align-items:start;
-    }
-    .hudP{
-      pointer-events:none;
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:calc(5px * var(--hudScale));
-      min-width:0;
-      min-height:calc(var(--hudPillH) * var(--hudScale));
-      line-height:1;
-      overflow:hidden;
-    }
-    .hudHalf{ grid-column: span 1; }
-    .hudFull{ grid-column: 1 / -1; }
-
-    .hudL{
-      display:flex;
-      align-items:center;
-      gap:calc(5px * var(--hudScale));
-      min-width:0;
-      line-height:1;
-      overflow:hidden;
-    }
-    .hudT{
-      font-weight:950;
-      font-size:calc(7px * var(--hudScale));
-      white-space:nowrap;
-      line-height:1;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .hudV{
-      font-weight:950;
-      font-size:calc(8px * var(--hudScale));
-      white-space:nowrap;
-      line-height:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:calc(3px * var(--hudScale));
-      overflow:hidden;
-      text-overflow:ellipsis;
-      min-width:0;
-    }
-    .hudWrap .ico{
-      width:calc(11px * var(--hudScale));
-      height:calc(11px * var(--hudScale));
-    }
-
-    /* ✅ Score: numeri “adattabili” (JS aggiorna anche font-size) */
-    #score{
-      display:inline-block;
-      max-width:100%;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* TOP RIGHT: Home + Impostazioni */
-    .topLeftBtns{
-      position:fixed;
-      top:calc(5px * var(--menuScale));
-      right:calc(8px * var(--hudScale));
-      z-index:35;
-      pointer-events:none;
-    }
-    .topLeftBtns .btnGroup.pillFx{
-      pointer-events:auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      min-height:calc(var(--hudPillH) * var(--hudScale));
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      box-sizing:border-box;
-      width:calc(66px * var(--hudScale));
-      flex:0 0 auto;
-      gap:calc(6px * var(--hudScale));
-    }
-    .topLeftBtns .btnSub{
-      pointer-events:auto;
-      border:none;
-      background:transparent;
-      padding:0;
-      margin:0;
-      min-height:calc(var(--hudPillH) * var(--hudScale));
-      height:calc(var(--hudPillH) * var(--hudScale));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-    }
-    .topLeftBtns .btnSub .ico{
-      width:calc(13px * var(--hudScale) * 1.25);
-      height:calc(13px * var(--hudScale) * 1.25);
-    }
-
-    /* LIFE pill fix */
-    .lifePill{ display:flex; align-items:center; justify-content:center; }
-    .lifePill .hudL{ display:none; }
-    .lifePill .hudV{
-      flex:1;
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      line-height:1;
-    }
-    #hpTxt{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:100%;
-      white-space:nowrap;
-      line-height:1;
-      font-size: calc(8px * var(--hudScale));
-    }
-
-    /* =========================================================
-       BAR ROW (Magnete/Boost/FoodBoost)
-       + ✅ animazione barra “disponibile” (shimmer)
+       BAR ROW (Magnete/Boost/FoodBoost) con -30% larghezza
        ========================================================= */
     .hudBarRow{
       display:grid;
@@ -251,39 +302,12 @@
       background:rgba(255,255,255,.12);
       overflow:hidden;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-      position:relative;
     }
     .hudBar>i{
-      display:block;
-      height:100%;
-      width:0%;
+      display:block;height:100%;width:0%;
       background:rgba(200,210,255,.88);
       box-shadow: 0 0 7px rgba(140,200,255,.22);
-      position:relative;
-      overflow:hidden;
     }
-    .hudBar>i::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      transform:translateX(-120%);
-      background: linear-gradient(90deg,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,.18) 45%,
-        rgba(255,255,255,0) 90%
-      );
-      filter: blur(.2px);
-      opacity:.85;
-      animation: barShimmer 1.15s linear infinite;
-      pointer-events:none;
-    }
-    @keyframes barShimmer{
-      0%{ transform:translateX(-120%); }
-      100%{ transform:translateX(120%); }
-    }
-    /* shimmer solo quando attivo (JS aggiunge .barActive sulla pill) */
-    .barActive .hudBar>i::after{ display:block; }
-    .hudP:not(.barActive) .hudBar>i::after{ display:none; }
 
     #pillBoost #boostIcon{
       font-size:calc(9px * var(--hudScale));
@@ -291,37 +315,44 @@
       display:inline-block;
     }
 
+
+
     /* =========================================================
-       DEBUG BUTTON
-       ========================================================= */
-    .debugRow{
-      pointer-events:auto;
-      display:flex;
-      justify-content:flex-start;
-      margin-top:calc(6px * var(--hudScale));
-    }
-    .dbgBtn{
-      pointer-events:auto;
-      border:none;
-      background:transparent;
-      cursor:pointer;
-      user-select:none;
-      height:calc(var(--hudPillH) * var(--hudScale));
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
+   DEBUG BUTTON → sotto Magnete
+   ========================================================= */
+
+.debugRow{
+  pointer-events:auto;
+  display:flex;
+  justify-content:flex-start;
+
+  margin-top:calc(6px * var(--hudScale)); /* spazio sotto Magnete */
+}
+
+.dbgBtn{
+  pointer-events:auto;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+
+  /* stessa altezza delle HUD pill */
+  height:calc(var(--hudPillH) * var(--hudScale));
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
     .dbgBtn .ico{
       width:calc(10px * var(--menuScale) * 1.25);
       height:calc(10px * var(--menuScale) * 1.25);
     }
 
     /* =========================================================
-       Start/Dance/Boost stack
-       ✅ ordine dal basso verso l’alto: DANCE, START, BOOST
-       (quindi HTML: BOOST, START, DANCE)
+       Start/Dance
        ========================================================= */
     .rightStack{
       position:fixed;
@@ -338,23 +369,28 @@
     .bigBtn{
       pointer-events:auto;
       position:relative;
+
       width:calc(70px * var(--menuScale) * 0.75);
       height:calc(20px * var(--menuScale) * 1.50);
+
       border-radius:999px;
       font-weight:950;
       font-size:calc(7px * var(--menuScale) * 1.125);
+
       letter-spacing:.25px;
+
       display:flex;
       align-items:center;
       justify-content:center;
       gap:0;
+
       color:#eaf1ff;
       background:transparent;
       border:none;
       line-height:1;
       text-align:center;
-      overflow:hidden;
     }
+
     .bigBtn .centerLbl{
       width:100%;
       display:flex;
@@ -364,114 +400,36 @@
       text-transform:uppercase;
     }
 
-    /* ✅ BOOST row: pulsante numero (corto) a sinistra + pulsante uso boost a destra */
-    .boostRow{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:calc(5px * var(--menuScale));
-      pointer-events:auto;
-    }
-    .boostCountBtn{
-      pointer-events:auto;
-      width:calc(26px * var(--menuScale));
-      height:calc(20px * var(--menuScale) * 1.50);
-      border-radius:999px;
-      border:none;
-      background:transparent;
-      color:#eaf1ff;
-      font-weight:950;
-      font-size:calc(7px * var(--menuScale) * 1.05);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-variant-numeric: tabular-nums;
-      user-select:none;
-      position:relative;
-      overflow:hidden;
-    }
-    /* ✅ animazione “bella” sul numero boost (pulse + sheen) */
-    .boostCountBtn.pulse{
-      animation: boostPulse .38s ease-out;
-    }
-    @keyframes boostPulse{
-      0%{ transform:scale(1); }
-      55%{ transform:scale(1.10); }
-      100%{ transform:scale(1); }
-    }
-    .boostCountBtn::after{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      border-radius:999px;
-      background: linear-gradient(110deg,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,.22) 40%,
-        rgba(255,255,255,0) 80%
-      );
-      transform: translateX(-140%);
-      opacity:.75;
-      pointer-events:none;
-    }
-    .boostCountBtn.sheen::after{
-      animation: boostSheen .85s ease-out;
-    }
-    @keyframes boostSheen{
-      0%{ transform: translateX(-140%); }
-      100%{ transform: translateX(140%); }
-    }
-
-    /* ✅ pulsante boost disabilitato quando boost già attivo (JS mette .disabled) */
-    .bigBtn.disabled,
-    .boostCountBtn.disabled{
-      opacity:.45;
-      filter:saturate(.85);
-      pointer-events:none;
-    }
-
-    /* ✅ animazione DANCE quando premi (JS aggiunge .danceOn su btnDance) */
-    #btnDance.danceOn{
-      animation: danceGlow .65s ease-in-out infinite alternate;
-    }
-    @keyframes danceGlow{
-      0%{
-        box-shadow:
-          0 7px 22px rgba(0,0,0,.50),
-          0 0 0 1px rgba(95,160,255,.10),
-          0 0 12px rgba(140,200,255,.22),
-          inset 0 1px 0 rgba(255,255,255,.13),
-          inset 0 -1px 0 rgba(0,0,0,.28);
-        transform: translateZ(0) scale(1);
-      }
-      100%{
-        box-shadow:
-          0 10px 28px rgba(0,0,0,.58),
-          0 0 0 1px rgba(95,160,255,.14),
-          0 0 22px rgba(155,220,255,.32),
-          inset 0 1px 0 rgba(255,255,255,.16),
-          inset 0 -1px 0 rgba(0,0,0,.30);
-        transform: translateZ(0) scale(1.02);
-      }
-    }
-
     /* =========================================================
        Colonna cibo
-       ✅ barra fissa, cibi partono da sotto e accumulano verso il basso
        ========================================================= */
     .rightCol{
       position:fixed;
       top:calc(67px * var(--menuScale));
       right:calc(5px * var(--menuScale));
       width:calc(32px * var(--menuScale));
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:calc(5px * var(--menuScale));
-      pointer-events:none;
-      z-index:20;
+      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--menuScale));
+      pointer-events:none; z-index:20;
     }
+    .foodStack{
+      width:calc(32px * var(--menuScale));
+      max-height:calc(100px * var(--menuScale));
+      overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--menuScale));
+      background:transparent; border:none; padding:0;
+    }
+    .foodItem{
+      width:calc(27px * var(--menuScale));
+      height:calc(15px * var(--menuScale));
+      border-radius:999px;
 
-    /* ✅ ora prima la “barra” (foodCount), poi lo stack dei cibi sotto */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      font-size:calc(8px * var(--menuScale));
+      line-height:1;
+    }
     .foodCount{
       width:calc(60px * var(--menuScale));
       text-align:center;
@@ -479,142 +437,395 @@
       font-size:calc(7px * var(--menuScale));
       padding:calc(4px * var(--menuScale)) 0;
       border-radius:999px;
+
       display:flex;
       align-items:center;
       justify-content:center;
       gap:calc(4px * var(--menuScale));
       line-height:1;
-      pointer-events:none;
     }
     .foodCount .icoSm{
       width:calc(9px * var(--menuScale));
       height:calc(9px * var(--menuScale));
     }
 
-    .foodStack{
-      width:calc(32px * var(--menuScale));
-      max-height:calc(110px * var(--menuScale));
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;          /* ✅ cresce verso il basso */
-      align-items:center;
-      justify-content:flex-start;
-      gap:calc(5px * var(--menuScale));
-      background:transparent;
-      border:none;
-      padding:0;
-      pointer-events:none;
-    }
-    .foodItem{
-      width:calc(27px * var(--menuScale));
-      height:calc(15px * var(--menuScale));
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:calc(8px * var(--menuScale));
-      line-height:1;
-    }
+    /* =========================================================
+   SETTINGS (SLEEK PILL TABS)
+   ========================================================= */
+.settingsOverlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:14px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.72));
+  backdrop-filter:blur(10px);
+  z-index:40;
+}
+
+/* =========================================================
+   CAMERA: BACK / FPS / FRONT → SORELLA HUD
+   ========================================================= */
+
+.camSegWrap{
+  position:fixed;
+  right:calc(8px * var(--hudScale));
+  left:auto;
+
+  top:calc(
+    (5px * var(--menuScale)) +
+    (var(--hudPillH) * var(--hudScale)) +
+    (6px * var(--hudScale)) +
+    var(--camOffsetY)
+  );
+
+  z-index:36;
+  pointer-events:auto;
+
+  display:flex;
+  justify-content:flex-end;
+  width:fit-content;
+}
+
+/* PILLOLA IDENTICA ALLE HUD */
+.camSegPill{
+  position:relative;
+  overflow:hidden;
+
+  padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
+  border-radius:999px;
+
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  align-items:center;
+  gap:0;
+
+  width:calc(118px * var(--hudScale));
+}
+
+/* ✅ FIX fondamentale: evita sfasamenti del thumb */
+.camSegPill.pillFx{
+  box-sizing:border-box;
+  width:calc(90px * var(--hudScale)); /* 👈 torna compatta */
+}
+
+/* BOTTONI INTERNI */
+.camSegBtn{
+  -webkit-appearance:none;
+  appearance:none;
+  padding:0;
+  margin:0;
+  width:100%;
+  height:calc(var(--hudPillH) * var(--hudScale));
+  pointer-events:auto;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+
+  height:100%;
+  min-height:calc(var(--hudPillH) * var(--hudScale));
+
+  border-radius:999px;
+
+  font-weight:950;
+  font-size:calc(7px * var(--hudScale));
+  letter-spacing:.25px;
+  line-height:1;
+
+  color:#eaf1ff;
+  opacity:.9;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.camSegBtn.active{ opacity:1; }
+
+/* SLIDER INTERNO (thumb) */
+.camThumb{
+  position:absolute;
+  z-index:0;
+
+  top:calc(2px * var(--hudScale));
+  bottom:calc(2px * var(--hudScale));
+  left:calc(2px * var(--hudScale));
+
+  width:calc((100% - calc(4px * var(--hudScale))) / 3);
+  border-radius:999px;
+
+  box-sizing:border-box;   /* ✅ fondamentale */
+
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.12),
+    rgba(255,255,255,.05)
+  );
+
+  border:none;             /* ✅ evita che “allarga” e sfora */
+
+  box-shadow:
+    inset 0 0 0 1px rgba(145,205,255,.28), /* ✅ al posto della border */
+    0 0 0 1px rgba(95,160,255,.12),
+    0 0 12px rgba(110,175,255,.20),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.25);
+
+  transition:transform .18s ease;
+}
+
+/* Assicura che stia sopra HUD */
+.camSegWrap, .topLeftBtns{ z-index:35; }
+
+/* =========================================================
+   SETTINGS PANEL
+   ========================================================= */
+.panel{
+  width:min(740px,100%);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(10,14,22,.88);
+  box-shadow:0 18px 60px rgba(0,0,0,.60);
+  padding:14px;
+  color:#eaf1ff;
+}
+
+.settingsTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.title{
+  font-size:16px;
+  font-weight:950;
+  margin:0;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  padding:6px;
+  border-radius:999px;
+}
+
+.tabBtn{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:12px;
+  letter-spacing:.2px;
+  opacity:.85;
+}
+
+.tabBtn.active{
+  opacity:1;
+  box-shadow:
+    0 0 0 1px rgba(145,205,255,.28),
+    0 0 16px rgba(110,175,255,.18);
+}
+
+.settingsBody{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+@media (min-width:720px){
+  .settingsBody{ grid-template-columns: 1fr 1fr; }
+}
+
+.card{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  padding:12px;
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:12px;
+  letter-spacing:.25px;
+  text-transform:uppercase;
+  opacity:.9;
+}
+
+.settingsRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
+  font-size:13px;
+  margin-top:10px;
+}
+
+.settingsRow small{ opacity:.8; }
+.settingsVal{ font-weight:950; }
+
+input[type="range"]{
+  width:100%;
+  height:18px;
+  accent-color: rgba(255,255,255,.85);
+}
+
+.toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.04);
+  cursor:pointer;
+  user-select:none;
+  margin-top:10px;
+}
+
+.toggle label{ font-weight:950; }
+.toggle span{ opacity:.85; font-size:12px; }
+
+.switch{
+  width:44px;
+  height:26px;
+  border-radius:99px;
+  background:rgba(255,255,255,.14);
+  position:relative;
+  border:1px solid rgba(255,255,255,.14);
+  flex:0 0 auto;
+}
+
+.switch i{
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  background:rgba(255,255,255,.86);
+  transition:transform .18s ease;
+}
+
+.switch.on{
+  background:rgba(140,255,190,.18);
+  border-color:rgba(140,255,190,.22);
+}
+
+.switch.on i{ transform:translateX(18px); }
+
+/* Segmented pill (FPS REALISTICO / STABILE) */
+.seg{
+  display:flex;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+}
+.segBtn{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:12px;
+  opacity:.85;
+  white-space:nowrap;
+}
+.segBtn.active{
+  opacity:1;
+  box-shadow:
+    0 0 0 1px rgba(145,205,255,.30),
+    0 0 14px rgba(110,175,255,.18);
+}
+
+.settingsFooter{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.settingsFooter .btnGroup{
+  height:auto;
+  padding:10px 12px;
+}
+
+/* ===== CLOSE SETTINGS (X) ===== */
+.settingsClose{
+  position:absolute;
+  top:calc(env(safe-area-inset-top, 0px) + 2px);
+  right:calc(env(safe-area-inset-right, 0px) + 8px);
+  z-index:10;
+
+  width:calc(22px * var(--hudScale));
+  height:calc(22px * var(--hudScale));
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-weight:900;
+  font-size:calc(10px * var(--hudScale));
+  line-height:1;
+
+  color:#eaf1ff;
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.10),
+    rgba(255,255,255,.04)
+  );
+  border:1px solid rgba(145,205,255,.25);
+
+  box-shadow:
+    0 0 0 1px rgba(95,160,255,.10),
+    0 0 10px rgba(110,175,255,.18),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.22);
+
+  cursor:pointer;
+  pointer-events:auto;
+}
+
+/* feedback tap */
+.settingsClose:active{
+  transform:scale(.94);
+}
+
+/* Motion blur fake (solo boost) */
+canvas.blurBoost{
+  filter: blur(0.9px) saturate(1.03);
+}
 
     /* =========================================================
-       SETTINGS + CAMERA SEG (come prima, invariato qui)
+       DEBUG PANEL
        ========================================================= */
-    .settingsOverlay{
+    .debugPanel{
       position:fixed;
-      inset:0;
+      right:calc(6px * var(--menuScale));
+      top:calc(5px * var(--menuScale) + calc(16px * var(--menuScale)) + calc(16px * var(--menuScale)) + 80px);
+      z-index:60;
+      width:min(320px, calc(100vw - 20px));
+      padding:10px 12px;
+      border-radius:16px;
       display:none;
-      align-items:flex-start;
-      justify-content:center;
-      padding:14px;
-      background:radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.72));
-      backdrop-filter:blur(10px);
-      z-index:40;
-    }
-
-    .camSegWrap{
-      position:fixed;
-      right:calc(8px * var(--hudScale));
-      left:auto;
-      top:calc(
-        (5px * var(--menuScale)) +
-        (var(--hudPillH) * var(--hudScale)) +
-        (6px * var(--hudScale)) +
-        var(--camOffsetY)
-      );
-      z-index:36;
       pointer-events:auto;
-      display:flex;
-      justify-content:flex-end;
-      width:fit-content;
-    }
-    .camSegPill{
-      position:relative;
-      overflow:hidden;
-      padding:calc(4px * var(--hudScale)) calc(6px * var(--hudScale));
-      border-radius:999px;
-      display:grid;
-      grid-template-columns:1fr 1fr 1fr;
-      align-items:center;
-      gap:0;
-      width:calc(118px * var(--hudScale));
-    }
-    .camSegPill.pillFx{
-      box-sizing:border-box;
-      width:calc(90px * var(--hudScale));
-    }
-    .camSegBtn{
-      -webkit-appearance:none;
-      appearance:none;
-      padding:0;
-      margin:0;
-      width:100%;
-      pointer-events:auto;
-      border:none;
-      background:transparent;
-      cursor:pointer;
-      user-select:none;
-      height:100%;
-      min-height:calc(var(--hudPillH) * var(--hudScale));
-      border-radius:999px;
-      font-weight:950;
-      font-size:calc(7px * var(--hudScale));
-      letter-spacing:.25px;
-      line-height:1;
+      font-size:12px;
+      line-height:1.35;
       color:#eaf1ff;
-      opacity:.9;
-      display:flex;
-      align-items:center;
-      justify-content:center;
     }
-    .camSegBtn.active{ opacity:1; }
-    .camThumb{
-      position:absolute;
-      z-index:0;
-      top:calc(2px * var(--hudScale));
-      bottom:calc(2px * var(--hudScale));
-      left:calc(2px * var(--hudScale));
-      width:calc((100% - calc(4px * var(--hudScale))) / 3);
-      border-radius:999px;
-      box-sizing:border-box;
-      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
-      border:none;
-      box-shadow:
-        inset 0 0 0 1px rgba(145,205,255,.28),
-        0 0 0 1px rgba(95,160,255,.12),
-        0 0 12px rgba(110,175,255,.20),
-        inset 0 1px 0 rgba(255,255,255,.18),
-        inset 0 -1px 0 rgba(0,0,0,.25);
-      transition:transform .18s ease;
-    }
-    .camSegWrap, .topLeftBtns{ z-index:35; }
-
-    /* (resto SETTINGS CSS resta identico, lo continuo in PART 2 per non spezzare male) */
-
-    /* Motion blur fake (solo boost) */
-    canvas.blurBoost{
-      filter: blur(0.9px) saturate(1.03);
-    }
-
+    .dbgRow{ display:flex; justify-content:space-between; gap:10px; }
+    .dbgRow b{ font-weight:950; }
+    .dbgSmall{ opacity:.85; font-size:11px; }
+    .dbgSep{ height:1px; background:rgba(255,255,255,.10); margin:8px 0; }
   </style>
 
   <script type="importmap">
@@ -626,182 +837,184 @@
   }
   </script>
 </head>
-
 <body>
 
   <!-- ✅ HUD SINISTRA -->
-  <div class="hudWrap">
-    <div class="hudCard">
-      <div class="hudGrid">
+<div class="hudWrap">
+  <div class="hudCard">
+    <div class="hudGrid">
 
-        <!-- Score (sx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gScoreIcon" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#7fb4ff" stop-opacity=".90"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gScoreIcon)" d="M12 13.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4z"/>
-              <path fill="rgba(0,0,0,.20)" d="M12 6.3a2.7 2.7 0 1 1 0 5.4 2.7 2.7 0 0 1 0-5.4z"/>
-              <path fill="url(#gScoreIcon)" d="M7.2 13.1 5 21l4-2 3 2-2.1-7.9c-.9.5-1.9.8-2.7.0z" opacity=".95"/>
-              <path fill="url(#gScoreIcon)" d="M16.8 13.1 19 21l-4-2-3 2 2.1-7.9c.9.5 1.9.8 2.7.0z" opacity=".95"/>
-            </svg>
-            <div class="hudT">Score</div>
-          </div>
-          <div class="hudV"><span id="score">0</span></div>
+      <!-- Score (sx) -->
+      <div class="hudP pillFx hudHalf">
+        <div class="hudL">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="gScoreIcon" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                <stop offset=".45" stop-color="#cfe6ff" stop-opacity=".95"/>
+                <stop offset="1" stop-color="#7fb4ff" stop-opacity=".90"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#gScoreIcon)" d="M12 13.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4z"/>
+            <path fill="rgba(0,0,0,.20)" d="M12 6.3a2.7 2.7 0 1 1 0 5.4 2.7 2.7 0 0 1 0-5.4z"/>
+            <path fill="url(#gScoreIcon)" d="M7.2 13.1 5 21l4-2 3 2-2.1-7.9c-.9.5-1.9.8-2.7.0z" opacity=".95"/>
+            <path fill="url(#gScoreIcon)" d="M16.8 13.1 19 21l-4-2-3 2 2.1-7.9c.9.5 1.9.8 2.7.0z" opacity=".95"/>
+          </svg>
+          <div class="hudT">Score</div>
         </div>
-
-        <!-- Emoji (dx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gEmojiIcon" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".40" stop-color="#d6ffe9" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-                </linearGradient>
-              </defs>
-              <circle cx="12" cy="12" r="8" fill="url(#gEmojiIcon)"/>
-              <circle cx="9.3" cy="10.2" r="1.1" fill="rgba(0,0,0,.28)"/>
-              <circle cx="14.7" cy="10.2" r="1.1" fill="rgba(0,0,0,.28)"/>
-              <path d="M8.7 14.1c1 .9 2.1 1.4 3.3 1.4s2.3-.5 3.3-1.4"
-                    fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.7" stroke-linecap="round"/>
-            </svg>
-            <div class="hudT">Emoji</div>
-          </div>
-          <div class="hudV"><span id="coins">0</span></div>
-        </div>
-
-        <!-- Rings (sx) -->
-        <div class="hudP pillFx hudHalf">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gRingsIcon" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".45" stop-color="#ffd1d1" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#ff3b30" stop-opacity=".92"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gRingsIcon)"
-                    d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5S7.9 19.5 12 19.5s7.5-3.4 7.5-7.5S16.1 4.5 12 4.5zm0 3c2.5 0 4.5 2 4.5 4.5S14.5 16.5 12 16.5 7.5 14.5 7.5 12 9.5 7.5 12 7.5z"/>
-              <path fill="rgba(255,255,255,.22)" d="M14.8 7.9c1.2.8 2 2.2 2 3.8 0 .5-.1 1-.2 1.4-.2.8-1.2.9-1.6.2-.2-.4-.3-.9-.3-1.4 0-1.1-.6-2.1-1.4-2.7-.6-.4-.3-1.7.5-1.3z"/>
-            </svg>
-            <div class="hudT">Rings</div>
-          </div>
-          <div class="hudV"><span id="rings">0</span></div>
-        </div>
-
-        <!-- Vita -->
-        <div class="hudP pillFx hudHalf lifePill">
-          <div class="hudL"></div>
-          <div class="hudV">
-            <span id="hpTxt">❤️❤️❤️🖤🖤</span>
-          </div>
-        </div>
-
-        <!-- Magnete -->
-        <div class="hudP pillFx hudFull" id="magPill">
-          <div class="hudBarRow">
-            <div class="hudL">
-              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-                <defs>
-                  <linearGradient id="gMag" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                    <stop offset=".35" stop-color="#ffd1d1" stop-opacity=".95"/>
-                    <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
-                  </linearGradient>
-                </defs>
-                <path fill="url(#gMag)" d="M7 3h4v9a1 1 0 0 0 2 0V3h4v9c0 3.9-3.1 7-7 7s-7-3.1-7-7V3Z"/>
-                <path fill="rgba(0,0,0,.25)" d="M7 3h4v2H7V3zm10 0h-4v2h4V3z"/>
-              </svg>
-              <div class="hudT">Magnete</div>
-            </div>
-            <div class="hudBar"><i id="magBar"></i></div>
-            <div class="hudV"><span id="magTxt">🧲 0</span></div>
-          </div>
-        </div>
-
-        <!-- Debug button -->
-        <div class="debugRow">
-          <button class="dbgBtn pillFx" id="btnDebug" title="Debug" type="button">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gBug" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
-                  <stop offset=".45" stop-color="#d6ffe9" stop-opacity=".96"/>
-                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gBug)"
-                d="M14 7.2c.6-.5 1-1.2 1-2 0-1.5-1.3-2.7-3-2.7S9 3.7 9 5.2c0 .8.4 1.5 1 2C7.7 8 6.2 10 6.2 12.4V14H5v1.6h1.2c.1.8.4 1.6.8 2.3l-1 .9 1 1.2 1.1-1c.9.7 2 .9 3.2.9s2.3-.2 3.2-.9l1.1 1 1-1.2-1-.9c.4-.7.7-1.5.8-2.3H19V14h-1.2v-1.6c0-2.4-1.5-4.4-3.8-5.2ZM8.8 14h6.4v1.6H8.8V14Zm0-3.2h6.4V12.4H8.8v-1.6Z"/>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Boost (HUD pill, in alto a sinistra) -->
-        <div class="hudP pillFx hudFull" id="pillBoost" style="display:none;">
-          <div class="hudBarRow">
-            <div class="hudL">
-              <span id="boostIcon">⚡️</span>
-              <div class="hudT"><strong id="boostName">BOOST</strong></div>
-            </div>
-            <div class="hudBar"><i id="boostBar"></i></div>
-            <div class="hudV"><span id="boostTime">0.0s</span></div>
-          </div>
-        </div>
-
-        <!-- Food Boost (HUD pill) -->
-        <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
-          <div class="hudBarRow">
-            <div class="hudL">
-              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-                <defs>
-                  <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                    <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
-                    <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-                  </linearGradient>
-                </defs>
-                <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
-                <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
-              </svg>
-              <div class="hudT">Cibo</div>
-            </div>
-            <div class="hudBar"><i id="foodBoostBar"></i></div>
-            <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
-          </div>
-        </div>
-
+        <div class="hudV"><span id="score">0</span></div>
       </div>
 
-      <span id="best" style="display:none;">0</span>
-    </div>
-  </div>
+      <!-- Emoji (dx) -->
+      <div class="hudP pillFx hudHalf">
+        <div class="hudL">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="gEmojiIcon" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                <stop offset=".40" stop-color="#d6ffe9" stop-opacity=".95"/>
+                <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+              </linearGradient>
+            </defs>
+            <circle cx="12" cy="12" r="8" fill="url(#gEmojiIcon)"/>
+            <circle cx="9.3" cy="10.2" r="1.1" fill="rgba(0,0,0,.28)"/>
+            <circle cx="14.7" cy="10.2" r="1.1" fill="rgba(0,0,0,.28)"/>
+            <path d="M8.7 14.1c1 .9 2.1 1.4 3.3 1.4s2.3-.5 3.3-1.4"
+                  fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <div class="hudT">Emoji</div>
+        </div>
+        <div class="hudV"><span id="coins">0</span></div>
+      </div>
 
+      <!-- Rings (sx) -->
+      <div class="hudP pillFx hudHalf">
+        <div class="hudL">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="gRingsIcon" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                <stop offset=".45" stop-color="#ffd1d1" stop-opacity=".95"/>
+                <stop offset="1" stop-color="#ff3b30" stop-opacity=".92"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#gRingsIcon)"
+                  d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5S7.9 19.5 12 19.5s7.5-3.4 7.5-7.5S16.1 4.5 12 4.5zm0 3c2.5 0 4.5 2 4.5 4.5S14.5 16.5 12 16.5 7.5 14.5 7.5 12 9.5 7.5 12 7.5z"/>
+            <path fill="rgba(255,255,255,.22)" d="M14.8 7.9c1.2.8 2 2.2 2 3.8 0 .5-.1 1-.2 1.4-.2.8-1.2.9-1.6.2-.2-.4-.3-.9-.3-1.4 0-1.1-.6-2.1-1.4-2.7-.6-.4-.3-1.7.5-1.3z"/>
+          </svg>
+          <div class="hudT">Rings</div>
+        </div>
+        <div class="hudV"><span id="rings">0</span></div>
+      </div>
+
+      <!-- Vita (GEMELLA + cuori centrati) -->
+<div class="hudP pillFx hudHalf lifePill">
+  <div class="hudL"></div>
+  <div class="hudV">
+    <span id="hpTxt">❤️❤️❤️🖤🖤</span>
+  </div>
+</div>
+
+      <!-- Magnete -->
+      <div class="hudP pillFx hudFull">
+        <div class="hudBarRow">
+          <div class="hudL">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="gMag" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                  <stop offset=".35" stop-color="#ffd1d1" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#ff3b30" stop-opacity=".95"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#gMag)" d="M7 3h4v9a1 1 0 0 0 2 0V3h4v9c0 3.9-3.1 7-7 7s-7-3.1-7-7V3Z"/>
+              <path fill="rgba(0,0,0,.25)" d="M7 3h4v2H7V3zm10 0h-4v2h4V3z"/>
+            </svg>
+            <div class="hudT">Magnete</div>
+          </div>
+          <div class="hudBar"><i id="magBar"></i></div>
+          <div class="hudV"><span id="magTxt">🧲 0</span></div>
+        </div>
+      </div>
+      
+      <!-- Debug button -->
+<div class="debugRow">
+  <button class="dbgBtn pillFx" id="btnDebug" title="Debug" type="button">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="gBug" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".98"/>
+          <stop offset=".45" stop-color="#d6ffe9" stop-opacity=".96"/>
+          <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#gBug)"
+        d="M14 7.2c.6-.5 1-1.2 1-2 0-1.5-1.3-2.7-3-2.7S9 3.7 9 5.2c0 .8.4 1.5 1 2C7.7 8 6.2 10 6.2 12.4V14H5v1.6h1.2c.1.8.4 1.6.8 2.3l-1 .9 1 1.2 1.1-1c.9.7 2 .9 3.2.9s2.3-.2 3.2-.9l1.1 1 1-1.2-1-.9c.4-.7.7-1.5.8-2.3H19V14h-1.2v-1.6c0-2.4-1.5-4.4-3.8-5.2ZM8.8 14h6.4v1.6H8.8V14Zm0-3.2h6.4V12.4H8.8v-1.6Z"/>
+    </svg>
+  </button>
+</div>
+
+      <!-- Boost -->
+      <div class="hudP pillFx hudFull" id="pillBoost" style="display:none;">
+        <div class="hudBarRow">
+          <div class="hudL">
+            <span id="boostIcon">⚡️</span>
+            <div class="hudT"><strong id="boostName">BOOST</strong></div>
+          </div>
+          <div class="hudBar"><i id="boostBar"></i></div>
+          <div class="hudV"><span id="boostTime">0.0s</span></div>
+        </div>
+      </div>
+
+      <!-- Food Boost -->
+      <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
+        <div class="hudBarRow">
+          <div class="hudL">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                  <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
+              <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
+            </svg>
+            <div class="hudT">Cibo</div>
+          </div>
+          <div class="hudBar"><i id="foodBoostBar"></i></div>
+          <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
+        </div>
+      </div>
+
+    </div>
+
+       <span id="best" style="display:none;">0</span>
+  </div>
+</div>
+   
   <!-- ✅ TOP RIGHT: HOME + IMPOSTAZIONI -->
-  <div class="topLeftBtns">
-    <div class="btnGroup pillFx">
-      <button class="btnSub" id="btnHome" type="button" title="Home">
-        <svg class="ico" viewBox="0 0 24 24">
-          <path fill="rgba(255,255,255,.95)"
-            d="M12 3.2 3 10.5v9.3c0 .6.5 1 1 1h5.3v-6.1c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1v6.1H20c.6 0 1-.4 1-1v-9.3L12 3.2z"/>
-        </svg>
-      </button>
+<div class="topLeftBtns">
+  <div class="btnGroup pillFx">
 
-      <button class="btnSub" id="btnSettings" type="button" title="Impostazioni">
-        <svg class="ico" viewBox="0 0 24 24">
-          <path fill="rgba(255,255,255,.95)"
-            d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.6c.2-.2.25-.5.12-.75l-1.9-3.3c-.13-.25-.43-.35-.7-.26l-2.35.95a7.9 7.9 0 0 0-1.3-.75l-.36-2.5A.63.63 0 0 0 14.3 3h-3.8c-.3 0-.56.22-.6.52l-.36 2.5c-.46.2-.9.45-1.3.75L5.9 5.82c-.27-.1-.57 0-.7.26L3.3 9.38c-.13.25-.08.56.12.75l2 1.6c-.04.5-.04 1 0 1.5l-2 1.6c-.2.2-.25.5-.12.75l1.9 3.3c.13.25.43.35.7.26l2.35-.95c.4.3.84.56 1.3.75l.36 2.5c.04.3.3.52.6.52h3.8c.3 0 .56-.22.6-.52l.36-2.5c.46-.2.9-.45 1.3-.75l2.35.95c.27.1.57 0 .7-.26l1.9-3.3c.13-.25.08-.56-.12-.75l-2-1.6z"/>
-        </svg>
-      </button>
-    </div>
+    <button class="btnSub" id="btnHome" type="button" title="Home">
+      <svg class="ico" viewBox="0 0 24 24">
+        <path fill="rgba(255,255,255,.95)"
+          d="M12 3.2 3 10.5v9.3c0 .6.5 1 1 1h5.3v-6.1c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1v6.1H20c.6 0 1-.4 1-1v-9.3L12 3.2z"/>
+      </svg>
+    </button>
+
+    <button class="btnSub" id="btnSettings" type="button" title="Impostazioni">
+      <svg class="ico" viewBox="0 0 24 24">
+        <path fill="rgba(255,255,255,.95)"
+          d="M19.4 13.5c.04-.5.04-1 0-1.5l2-1.6c.2-.2.25-.5.12-.75l-1.9-3.3c-.13-.25-.43-.35-.7-.26l-2.35.95a7.9 7.9 0 0 0-1.3-.75l-.36-2.5A.63.63 0 0 0 14.3 3h-3.8c-.3 0-.56.22-.6.52l-.36 2.5c-.46.2-.9.45-1.3.75L5.9 5.82c-.27-.1-.57 0-.7.26L3.3 9.38c-.13.25-.08.56.12.75l2 1.6c-.04.5-.04 1 0 1.5l-2 1.6c-.2.2-.25.5-.12.75l1.9 3.3c.13.25.43.35.7.26l2.35-.95c.4.3.84.56 1.3.75l.36 2.5c.04.3.3.52.6.52h3.8c.3 0 .56-.22.6-.52l.36-2.5c.46-.2.9-.45 1.3-.75l2.35.95c.27.1.57 0 .7-.26l1.9-3.3c.13-.25.08-.56-.12-.75l-2-1.6z"/>
+      </svg>
+    </button>
+
   </div>
+</div>
+
 
   <!-- Camera BACK / FPS / FRONT (UNICA) -->
   <div class="camSegWrap">
@@ -818,34 +1031,26 @@
     FPS: REAL
   </button>
 
-  <!-- ✅ Right stack: TOP->BOTTOM = BOOST, START, DANCE -->
-  <div class="rightStack">
 
-    <!-- ✅ BOOST (sopra START) -->
-    <div class="boostRow" id="boostRow" style="display:none;">
-      <button class="boostCountBtn pillFx" id="btnBoostCount" type="button" aria-label="Boost disponibili">
-        <span id="boostCountLbl">0</span>
-      </button>
+<!-- Start / Dance -->
+<div class="rightStack">
+  <button class="bigBtn pillFx" id="btnMain" type="button">
+    <span class="centerLbl" id="mainLbl">AVVIA</span>
+  </button>
+  
+  <!-- ✅ Boost -->
+  <button class="bigBtn pillFx" id="btnFoodBoost" type="button" style="display:none;">
+    <span class="centerLbl" id="foodBoostLbl">0 BOOST</span>
+  </button>
 
-      <button class="bigBtn pillFx" id="btnFoodBoost" type="button" aria-label="Usa boost">
-        <span class="centerLbl" id="foodBoostLbl">BOOST</span>
-      </button>
-    </div>
+  <button class="bigBtn pillFx" id="btnDance" type="button">
+    <span class="centerLbl">DANCE</span>
+  </button>
+</div>
 
-    <!-- START -->
-    <button class="bigBtn pillFx" id="btnMain" type="button">
-      <span class="centerLbl" id="mainLbl">AVVIA</span>
-    </button>
-
-    <!-- DANCE (bottom) -->
-    <button class="bigBtn pillFx" id="btnDance" type="button">
-      <span class="centerLbl">DANCE</span>
-    </button>
-
-  </div>
-
-  <!-- ✅ Colonna cibo: barra fissa sopra, cibi sotto -->
+  <!-- Colonna cibo -->
   <div class="rightCol">
+    <div class="foodStack" id="foodStack"></div>
     <div class="foodCount pillFx">
       <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
         <defs>
@@ -859,14 +1064,10 @@
       </svg>
       <span><span id="foodCount">0</span>/10</span>
     </div>
-
-    <div class="foodStack" id="foodStack"></div>
   </div>
 
-
-
   <!-- DEBUG PANEL -->
-  <div class="debugPanel pillFx" id="debugPanel" style="display:none;">
+  <div class="debugPanel pillFx" id="debugPanel">
     <div class="dbgRow"><b>DEBUG</b><span class="dbgSmall" id="dbgFps">fps: --</span></div>
     <div class="dbgSep"></div>
     <div class="dbgRow"><span>camera</span><span id="dbgCam">--</span></div>
@@ -878,130 +1079,121 @@
   </div>
 
   <!-- SETTINGS -->
-  <div class="settingsOverlay" id="settingsOverlay">
-    <div class="panel pillFx">
+<div class="settingsOverlay" id="settingsOverlay">
+  <div class="panel pillFx">
 
-      <!-- ❌ X CHIUSURA -->
-      <button class="settingsClose pillFx" id="btnCloseSettings" aria-label="Chiudi impostazioni">
-        ✕
-      </button>
+    <!-- ❌ X CHIUSURA (PUNTO 1) -->
+    <button class="settingsClose pillFx" id="btnCloseSettings" aria-label="Chiudi impostazioni">
+      ✕
+    </button>
 
-      <div class="settingsTop">
-        <div class="title">Impostazioni</div>
-        <div class="tabs pillFx" aria-label="Tabs impostazioni">
-          <button class="tabBtn active" id="tabCam">CAMERA</button>
-          <button class="tabBtn" id="tabVisual">VISUAL</button>
-          <button class="tabBtn" id="tabAudio">AUDIO</button>
-        </div>
-      </div>
-
-      <div class="settingsBody" id="settingsBody">
-
-        <!-- CAMERA TAB -->
-        <div class="card" data-tab="cam">
-          <h3>Camera</h3>
-
-          <div class="settingsRow">
-            <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
-            <div class="settingsVal" id="fovVal">60</div>
-          </div>
-          <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
-
-          <div class="settingsRow">
-            <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
-            <div class="settingsVal" id="camVal">5.0</div>
-          </div>
-          <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
-
-          <div class="settingsRow">
-            <div><label>Altezza camera</label><br><small>0=terra • 8=alto</small></div>
-            <div class="settingsVal" id="camYVal">4.6</div>
-          </div>
-          <input id="camYSlider" type="range" min="0" max="8" step="0.1" value="4.6" />
-
-          <!-- ✅ NEW: slider altezza FPS (richiesto) -->
-          <div class="settingsRow">
-            <div><label>Altezza visuale (FPS)</label><br><small>1.2=bassa • 2.2=alta</small></div>
-            <div class="settingsVal" id="fpsYVal">1.58</div>
-          </div>
-          <input id="fpsYSlider" type="range" min="1.2" max="2.2" step="0.01" value="1.58" />
-
-          <div class="settingsRow">
-            <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
-            <div class="settingsVal" id="frameVal">0.06</div>
-          </div>
-          <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
-
-          <!-- ✅ “Preview mode slider”: quando tocchi uno slider, nascondo impostazioni e resta solo la linea -->
-          <div id="sliderPreviewHint" class="dbgSmall" style="opacity:.7;margin-top:10px;">
-            Suggerimento: tieni premuto e trascina uno slider per vedere il player pulito.
-          </div>
-        </div>
-
-        <!-- VISUAL TAB -->
-        <div class="card" data-tab="visual" style="display:none;">
-          <h3>Visual (FPS)</h3>
-
-          <div class="toggle" id="fpsModeToggle">
-            <div>
-              <label>FPS</label><br/>
-              <span>Realistico: bob + elasticità. Stabile: camera “ferma”.</span>
-            </div>
-            <div class="seg pillFx" id="fpsSeg">
-              <button class="segBtn" id="btnFpsReal">REALISTICO</button>
-              <button class="segBtn" id="btnFpsStable">STABILE</button>
-            </div>
-          </div>
-
-          <div class="toggle" id="motionToggle">
-            <div>
-              <label>Motion blur</label><br/>
-              <span>Fake blur solo durante i boost (leggero).</span>
-            </div>
-            <div class="switch" id="motionSwitch"><i></i></div>
-          </div>
-
-          <div class="toggle" id="dynFovToggle">
-            <div>
-              <label>FOV dinamico (FPS)</label><br/>
-              <span>Aumenta il FOV solo in boost quando sei in FPS.</span>
-            </div>
-            <div class="switch on" id="dynFovSwitch"><i></i></div>
-          </div>
-
-          <div class="toggle" id="shakeToggle">
-            <div><label>Camera shake</label><br/><span>Micro shake durante i boost (non in FPS).</span></div>
-            <div class="switch on" id="shakeSwitch"><i></i></div>
-          </div>
-        </div>
-
-        <!-- AUDIO TAB -->
-        <div class="card" data-tab="audio" style="display:none;">
-          <h3>Audio</h3>
-
-          <div class="toggle" id="audioToggle">
-            <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
-            <div class="switch on" id="audioSwitch"><i></i></div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="settingsFooter">
-        <button class="btnGroup pillFx" id="resetCam">Reset</button>
+    <div class="settingsTop">
+      <div class="title">Impostazioni</div>
+      <div class="tabs pillFx" aria-label="Tabs impostazioni">
+        <button class="tabBtn active" id="tabCam">CAMERA</button>
+        <button class="tabBtn" id="tabVisual">VISUAL</button>
+        <button class="tabBtn" id="tabAudio">AUDIO</button>
       </div>
     </div>
+
+    <div class="settingsBody" id="settingsBody">
+
+      <!-- CAMERA TAB -->
+      <div class="card" data-tab="cam">
+        <h3>Camera</h3>
+
+        <div class="settingsRow">
+          <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
+          <div class="settingsVal" id="fovVal">60</div>
+        </div>
+        <input id="fovSlider" type="range" min="30" max="110" step="1" value="60" />
+
+        <div class="settingsRow">
+          <div><label>Distanza camera</label><br><small>2–15 (base 5.0)</small></div>
+          <div class="settingsVal" id="camVal">5.0</div>
+        </div>
+        <input id="camSlider" type="range" min="2" max="15" step="0.1" value="5.0" />
+
+        <div class="settingsRow">
+          <div><label>Altezza camera</label><br><small>0=terra • 8=alto</small></div>
+          <div class="settingsVal" id="camYVal">4.6</div>
+        </div>
+        <input id="camYSlider" type="range" min="0" max="8" step="0.1" value="4.6" />
+
+        <div class="settingsRow">
+          <div><label>Inquadratura player</label><br><small>0=alto • 1=molto in basso</small></div>
+          <div class="settingsVal" id="frameVal">0.06</div>
+        </div>
+        <input id="frameSlider" type="range" min="0" max="1" step="0.01" value="0.06" />
+      </div>
+
+      <!-- VISUAL TAB -->
+      <div class="card" data-tab="visual" style="display:none;">
+        <h3>Visual (FPS)</h3>
+
+        <!-- FPS Realistico / Stabile -->
+        <div class="toggle" id="fpsModeToggle">
+          <div>
+            <label>FPS</label><br/>
+            <span>Realistico: bob + elasticità. Stabile: camera “ferma”.</span>
+          </div>
+          <div class="seg pillFx" id="fpsSeg">
+            <button class="segBtn" id="btnFpsReal">REALISTICO</button>
+            <button class="segBtn" id="btnFpsStable">STABILE</button>
+          </div>
+        </div>
+
+        <!-- Motion blur -->
+        <div class="toggle" id="motionToggle">
+          <div>
+            <label>Motion blur</label><br/>
+            <span>Fake blur solo durante i boost (leggero).</span>
+          </div>
+          <div class="switch" id="motionSwitch"><i></i></div>
+        </div>
+
+        <!-- FOV dinamico solo in FPS -->
+        <div class="toggle" id="dynFovToggle">
+          <div>
+            <label>FOV dinamico (FPS)</label><br/>
+            <span>Aumenta il FOV solo in boost quando sei in FPS.</span>
+          </div>
+          <div class="switch on" id="dynFovSwitch"><i></i></div>
+        </div>
+
+        <div class="toggle" id="shakeToggle">
+          <div><label>Camera shake</label><br/><span>Micro shake durante i boost (non in FPS).</span></div>
+          <div class="switch on" id="shakeSwitch"><i></i></div>
+        </div>
+      </div>
+
+      <!-- AUDIO TAB -->
+      <div class="card" data-tab="audio" style="display:none;">
+        <h3>Audio</h3>
+
+        <div class="toggle" id="audioToggle">
+          <div><label>Suoni</label><br/><span>Fallback semplice (stabile su iPhone).</span></div>
+          <div class="switch on" id="audioSwitch"><i></i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="settingsFooter">
+      <button class="btnGroup pillFx" id="resetCam">Reset</button>
+    </div>
   </div>
+</div>
 
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     /* =========================================================
-       ✅ MINI FIX “SAFE”
+       ✅ MINI FIX “SAFE” (anti-schermo-nero)
        ========================================================= */
     const $ = (id)=>document.getElementById(id);
-    function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn, { passive:false }); }
+    function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
 
     window.addEventListener('error', (e)=>{
       console.warn('JS error caught:', e?.message || e);
@@ -1017,18 +1209,10 @@
     const hpTxt   = $('hpTxt');
     const magTxt  = $('magTxt');
 
-    const magPill  = $('magPill');
-    const magBar   = $('magBar');
-
     const pillBoost = $('pillBoost');
     const boostIcon = $('boostIcon');
     const boostName = $('boostName');
     const boostBar  = $('boostBar');
-    const boostTime = $('boostTime');
-
-    const foodBoostPill = $('foodBoostPill');
-    const foodBoostBar  = $('foodBoostBar');
-    const foodBoostTime = $('foodBoostTime');
 
     const foodStack = $('foodStack');
     const foodCountEl = $('foodCount');
@@ -1036,28 +1220,18 @@
     // ===== UI: Buttons =====
     const btnHome = $('btnHome');
     const btnSettings = $('btnSettings');
-
-    const boostRow = $('boostRow');
-    const btnFoodBoost = $('btnFoodBoost');      // usa boost
-    const foodBoostLbl = $('foodBoostLbl');      // testo “BOOST”
-    const btnBoostCount = $('btnBoostCount');    // pillola numero
-    const boostCountLbl = $('boostCountLbl');    // numero
+    const btnFoodBoost = $('btnFoodBoost');
+    const foodBoostLbl = $('foodBoostLbl');
 
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
     const btnDance = $('btnDance');
-    const rightStack = document.querySelector('.rightStack');
 
     // Camera buttons
     const btnCamBack  = $('btnCamBack');
     const btnCamFPS   = $('btnCamFPS');
     const btnCamFront = $('btnCamFront');
-    const camThumb    = $('camThumb');
-    
-    safeOn(btnCamBack,  'click', ()=>{ initAudio(); applyViewMode('back');  });
-    safeOn(btnCamFPS,   'click', ()=>{ initAudio(); applyViewMode('fps');   });
-    safeOn(btnCamFront, 'click', ()=>{ initAudio(); applyViewMode('front'); });
-    
+
     // Debug
     const btnDebug = $('btnDebug');
     const debugPanel = $('debugPanel');
@@ -1069,43 +1243,96 @@
     const dbgLane = $('dbgLane');
     const dbgBoosts = $('dbgBoosts');
 
-    // ===== Settings overlay =====
-    const settingsOverlay  = $('settingsOverlay');
-    const closeSettingsBtn = $('btnCloseSettings');
-    const resetCamBtn      = $('resetCam');
+// ===== Settings overlay (FIX) =====
+const settingsOverlay  = $('settingsOverlay');
+const closeSettingsBtn = $('btnCloseSettings');
+const resetCamBtn      = $('resetCam');
 
-    // Tabs
-    const tabCam    = $('tabCam');
-    const tabVisual = $('tabVisual');
-    const tabAudio  = $('tabAudio');
+// Tabs
+const tabCam    = $('tabCam');
+const tabVisual = $('tabVisual');
+const tabAudio  = $('tabAudio');
 
-    // Toggles / UI refs
-    const audioToggle  = $('audioToggle');
-    const audioSwitch  = $('audioSwitch');
+// (opzionale) metti la X un po' più in alto via JS (se vuoi farlo in CSS, vedi sotto)
+if (closeSettingsBtn) {
+  closeSettingsBtn.style.top = '2px';   // <-- più in alto (prima era 8px * scale)
+}
 
-    const shakeToggle  = $('shakeToggle');
-    const shakeSwitch  = $('shakeSwitch');
+// Tabs switch
+function setSettingsTab(tab){
+  if(!settingsOverlay) return;
 
-    const btnFpsReal   = $('btnFpsReal');
-    const btnFpsStable = $('btnFpsStable');
-    const btnFpsLive   = $('btnFpsLive');
+  const cards = settingsOverlay.querySelectorAll('.card');
+  for(const c of cards){
+    const t = c.getAttribute('data-tab');
+    c.style.display = (t === tab) ? 'block' : 'none';
+  }
 
-    const motionToggle = $('motionToggle');
-    const motionSwitch = $('motionSwitch');
+  if(tabCam)    tabCam.classList.toggle('active', tab === 'cam');
+  if(tabVisual) tabVisual.classList.toggle('active', tab === 'visual');
+  if(tabAudio)  tabAudio.classList.toggle('active', tab === 'audio');
+}
 
-    const dynFovToggle = $('dynFovToggle');
-    const dynFovSwitch = $('dynFovSwitch');
+// Open / Close (UNA SOLA VOLTA)
+function openSettings(){
+  if(!settingsOverlay) return;
+  settingsOverlay.style.display = 'flex';
 
-    const fovSlider  = $('fovSlider');
-    const camSlider  = $('camSlider');
+  // evita crash se syncCamUI non esiste ancora per qualche motivo
+  try { syncCamUI && syncCamUI(); } catch(e){ console.warn('syncCamUI error:', e); }
+
+  setSettingsTab('cam');
+}
+function closeSettings(){
+  if(!settingsOverlay) return;
+  settingsOverlay.style.display = 'none';
+}
+
+// Event listeners
+safeOn(tabCam,    'click', ()=>setSettingsTab('cam'));
+safeOn(tabVisual, 'click', ()=>setSettingsTab('visual'));
+safeOn(tabAudio,  'click', ()=>setSettingsTab('audio'));
+
+safeOn(btnSettings,      'click', ()=>{ initAudio(); openSettings(); });
+safeOn(closeSettingsBtn, 'click', (e)=>{ e.preventDefault(); closeSettings(); });
+
+// (comodo) ESC per chiudere
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && settingsOverlay && settingsOverlay.style.display === 'flex'){
+    closeSettings();
+  }
+});
+
+// (comodo) click fuori dal pannello per chiudere
+safeOn(settingsOverlay, 'pointerdown', (e)=>{
+  if(e.target === settingsOverlay) closeSettings();
+});
+
+// Toggles / UI refs
+const audioToggle  = $('audioToggle');
+const audioSwitch  = $('audioSwitch');
+
+const shakeToggle  = $('shakeToggle');
+const shakeSwitch  = $('shakeSwitch');
+
+const btnFpsReal   = $('btnFpsReal');
+const btnFpsStable = $('btnFpsStable');
+const btnFpsLive   = $('btnFpsLive');
+
+const motionToggle = $('motionToggle');
+const motionSwitch = $('motionSwitch');
+
+const dynFovToggle = $('dynFovToggle');
+const dynFovSwitch = $('dynFovSwitch');
+
+    const fovSlider = $('fovSlider');
+    const camSlider = $('camSlider');
     const camYSlider = $('camYSlider');
-    const fpsYSlider = $('fpsYSlider');   // ✅ NEW
-    const frameSlider= $('frameSlider');
+    const frameSlider = $('frameSlider');
 
-    const fovVal   = $('fovVal');
-    const camVal   = $('camVal');
-    const camYVal  = $('camYVal');
-    const fpsYVal  = $('fpsYVal');        // ✅ NEW
+    const fovVal = $('fovVal');
+    const camVal = $('camVal');
+    const camYVal = $('camYVal');
     const frameVal = $('frameVal');
 
     const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1114,32 +1341,28 @@
     const lerp=(a,b,t)=>a+(b-a)*t;
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
-    /* =========================================================
-       ✅ SETTINGS + save
-       ========================================================= */
-    const CAM_KEY = 'jr_cam_settings_v11';
+    // ===== SETTINGS =====
+    const CAM_KEY = 'jr_cam_settings_v10';
     const DEFAULTS = {
       baseFov: 60,
       baseCamZ: 5.0,
       baseCamY: 4.6,
-      fpsEyeY: 1.58,   // ✅ NEW
       framing: 0.06,
       shake: true,
       view: 'front',
       debug: false,
       motionBlur: true,
-      fpsRealistic: true,
-      fpsDynFov: true
-    };
 
+      // ✅ opzioni FPS (salvate)
+      fpsRealistic: true,   // true = bob + micro movimento, false = stabile
+      fpsDynFov: true       // true = FOV dinamico SOLO in FPS
+    };
     const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
 
     let baseFov  = clamp(Number(saved.baseFov ?? DEFAULTS.baseFov), 30, 110);
     let baseCamZ = clamp(Number(saved.baseCamZ ?? DEFAULTS.baseCamZ), 2, 15);
     let baseCamY = clamp(Number(saved.baseCamY ?? DEFAULTS.baseCamY), 0, 8);
-    let fpsEyeY  = clamp(Number(saved.fpsEyeY  ?? DEFAULTS.fpsEyeY), 1.2, 2.2);  // ✅ NEW
     let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
-
     let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
     let motionBlurEnabled = (saved.motionBlur ?? DEFAULTS.motionBlur) !== false;
 
@@ -1147,12 +1370,13 @@
     if(!['front','back','fps'].includes(viewMode)) viewMode = 'front';
 
     let debugOn = !!(saved.debug ?? DEFAULTS.debug);
+
     let fpsRealistic = (saved.fpsRealistic ?? DEFAULTS.fpsRealistic) !== false;
     let fpsDynFov    = (saved.fpsDynFov ?? DEFAULTS.fpsDynFov) !== false;
 
     function saveCam(){
       localStorage.setItem(CAM_KEY, JSON.stringify({
-        baseFov, baseCamZ, baseCamY, fpsEyeY, framing,
+        baseFov, baseCamZ, baseCamY, framing,
         shake: !!shakeEnabled,
         motionBlur: !!motionBlurEnabled,
         view: viewMode,
@@ -1162,184 +1386,86 @@
       }));
     }
 
-    function setSettingsTab(tab){
-      if(!settingsOverlay) return;
-      const cards = settingsOverlay.querySelectorAll('.card');
-      for(const c of cards){
-        const t = c.getAttribute('data-tab');
-        c.style.display = (t === tab) ? 'block' : 'none';
-      }
-      if(tabCam)    tabCam.classList.toggle('active', tab === 'cam');
-      if(tabVisual) tabVisual.classList.toggle('active', tab === 'visual');
-      if(tabAudio)  tabAudio.classList.toggle('active', tab === 'audio');
-    }
+    const camThumb = $('camThumb');
 
-    function openSettings(){
-      if(!settingsOverlay) return;
-      settingsOverlay.style.display = 'flex';
-      try { syncCamUI && syncCamUI(); } catch(e){ console.warn('syncCamUI error:', e); }
-      setSettingsTab('cam');
-    }
-    function closeSettings(){
-      if(!settingsOverlay) return;
-      settingsOverlay.style.display = 'none';
-      exitSliderPreview(); // ✅ se eri in preview slider, esci
-    }
+function setCamThumb(mode){
+  if(!camThumb) return;
+  const idx = (mode==='back') ? 0 : (mode==='fps') ? 1 : 2;
+  camThumb.style.transform = `translateX(${idx*100}%)`;
+}
 
-    safeOn(tabCam,    'click', ()=>setSettingsTab('cam'));
-    safeOn(tabVisual, 'click', ()=>setSettingsTab('visual'));
-    safeOn(tabAudio,  'click', ()=>setSettingsTab('audio'));
+function setActiveCamBtns(){
+  if(btnCamBack)  btnCamBack.classList.toggle('active', viewMode==='back');
+  if(btnCamFPS)   btnCamFPS.classList.toggle('active', viewMode==='fps');
+  if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
 
-    safeOn(btnSettings, 'click', ()=>{ initAudio(); openSettings(); });
-    safeOn(closeSettingsBtn, 'click', (e)=>{ e.preventDefault(); closeSettings(); });
-
-    window.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape' && settingsOverlay && settingsOverlay.style.display === 'flex'){
-        closeSettings();
-      }
-    });
-    safeOn(settingsOverlay, 'pointerdown', (e)=>{
-      if(e.target === settingsOverlay) closeSettings();
-    });
-
-    function setCamThumb(mode){
-      if(!camThumb) return;
-      const idx = (mode==='back') ? 0 : (mode==='fps') ? 1 : 2;
-      camThumb.style.transform = `translateX(${idx*100}%)`;
-    }
-    function setActiveCamBtns(){
-      if(btnCamBack)  btnCamBack.classList.toggle('active', viewMode==='back');
-      if(btnCamFPS)   btnCamFPS.classList.toggle('active', viewMode==='fps');
-      if(btnCamFront) btnCamFront.classList.toggle('active', viewMode==='front');
-      setCamThumb(viewMode);
-    }
-    function applyViewMode(mode){
-  viewMode = (mode==='back'||mode==='fps'||mode==='front') ? mode : 'front';
-  saveCam();
-  setActiveCamBtns();
-
-  // maschera testa in FPS (solo quando la funzione esiste già)
-  if(typeof setFpsMaskHidden === 'function'){
-    setFpsMaskHidden(viewMode === 'fps');
-  }
-
-  // blur canvas reset quando NON sei in fps (solo se renderer esiste)
-  if(typeof renderer !== 'undefined' && renderer?.domElement){
-    if(viewMode !== 'fps') renderer.domElement.classList.remove('blurBoost');
+  // thumb che scorre: 0 = back, 1 = fps, 2 = front
+  const thumb = document.getElementById('camThumb');
+  if(thumb){
+    const idx = (viewMode==='back') ? 0 : (viewMode==='fps' ? 1 : 2);
+    thumb.style.transform = `translateX(${idx * 100}%)`;
   }
 }
-    
 
     function setDebugUI(){
       if(debugPanel) debugPanel.style.display = debugOn ? 'block' : 'none';
     }
 
-    /* ✅ slider “preview mode”:
-       - quando tocchi/trascini uno slider: nascondo pannello e lascio solo una linea sottile
-       - rilasciando: torna tutto */
-    let previewingSlider = null;
-    function enterSliderPreview(sliderEl){
-      if(!settingsOverlay) return;
-      if(!sliderEl) return;
-      previewingSlider = sliderEl;
-
-      const panel = settingsOverlay.querySelector('.panel');
-      if(panel) panel.style.opacity = '0.0';
-
-      // lascia solo una linea sottile dello slider
-      sliderEl.style.position = 'fixed';
-      sliderEl.style.left = '12px';
-      sliderEl.style.right = '12px';
-      sliderEl.style.bottom = '12px';
-      sliderEl.style.top = 'auto';
-      sliderEl.style.zIndex = '9999';
-      sliderEl.style.height = '18px';
-      sliderEl.style.opacity = '0.95';
-
-      // riduco il “click” sul resto
-      settingsOverlay.style.background = 'rgba(0,0,0,0.08)';
-      settingsOverlay.style.backdropFilter = 'blur(2px)';
-    }
-    function exitSliderPreview(){
-      if(!previewingSlider || !settingsOverlay) return;
-      const sliderEl = previewingSlider;
-      previewingSlider = null;
-
-      const panel = settingsOverlay.querySelector('.panel');
-      if(panel) panel.style.opacity = '';
-
-      // ripristina stile inline slider
-      sliderEl.style.position = '';
-      sliderEl.style.left = '';
-      sliderEl.style.right = '';
-      sliderEl.style.bottom = '';
-      sliderEl.style.top = '';
-      sliderEl.style.zIndex = '';
-      sliderEl.style.height = '';
-      sliderEl.style.opacity = '';
-
-      settingsOverlay.style.background = '';
-      settingsOverlay.style.backdropFilter = '';
-    }
-
-    function hookSliderPreview(sl){
-      if(!sl) return;
-      safeOn(sl, 'pointerdown', (e)=>{ e.preventDefault(); enterSliderPreview(sl); });
-      safeOn(sl, 'pointerup',   ()=>{ exitSliderPreview(); });
-      safeOn(sl, 'pointercancel',()=>{ exitSliderPreview(); });
-      safeOn(sl, 'lostpointercapture',()=>{ exitSliderPreview(); });
-    }
-    hookSliderPreview(fovSlider);
-    hookSliderPreview(camSlider);
-    hookSliderPreview(camYSlider);
-    hookSliderPreview(fpsYSlider);
-    hookSliderPreview(frameSlider);
-
     function syncCamUI(){
-      if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
-      if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
+  if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
+  if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
 
-      if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); }
-      if(camVal){ camVal.textContent = baseCamZ.toFixed(1); }
+  if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); }
+  if(camVal){ camVal.textContent = baseCamZ.toFixed(1); }
 
-      if(camYSlider){ camYSlider.value = String(baseCamY.toFixed(1)); }
-      if(camYVal){ camYVal.textContent = baseCamY.toFixed(1); }
+  if(camYSlider){ camYSlider.value = String(baseCamY.toFixed(1)); }
+  if(camYVal){ camYVal.textContent = baseCamY.toFixed(1); }
 
-      if(fpsYSlider){ fpsYSlider.value = String(fpsEyeY.toFixed(2)); }
-      if(fpsYVal){ fpsYVal.textContent = fpsEyeY.toFixed(2); }
+  if(frameSlider){ frameSlider.value = String(framing.toFixed(2)); }
+  if(frameVal){ frameVal.textContent = framing.toFixed(2); }
 
-      if(frameSlider){ frameSlider.value = String(framing.toFixed(2)); }
-      if(frameVal){ frameVal.textContent = framing.toFixed(2); }
+  if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
+  if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
 
-      if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
-      if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
+  // segmented FPS
+  if(btnFpsReal)   btnFpsReal.classList.toggle('active', !!fpsRealistic);
+  if(btnFpsStable) btnFpsStable.classList.toggle('active', !fpsRealistic);
 
-      if(btnFpsReal)   btnFpsReal.classList.toggle('active', !!fpsRealistic);
-      if(btnFpsStable) btnFpsStable.classList.toggle('active', !fpsRealistic);
+  // motion blur
+  if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
 
-      if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
-      if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
+  // dyn fov
+  if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
 
-      if(btnFpsLive){ btnFpsLive.style.display = 'none'; }
+  // live button label (mai visibile in HUD)
+  if(btnFpsLive){
+    btnFpsLive.style.display = 'none';
+  }
 
-      setActiveCamBtns();
-      setDebugUI();
-    }
+  setActiveCamBtns();
+  setDebugUI();
+}
 
-    safeOn(fovSlider,'input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); if(fovVal) fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
-    safeOn(camSlider,'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
-    safeOn(camYSlider,'input',()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
-    safeOn(fpsYSlider,'input',()=>{ fpsEyeY = clamp(Number(fpsYSlider.value), 1.2, 2.2); if(fpsYVal) fpsYVal.textContent = fpsEyeY.toFixed(2); saveCam(); });
-    safeOn(frameSlider,'input',()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
+    safeOn(fovSlider, 'input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); if(fovVal) fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
+    safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
+    safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
+    safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
+  
+    
 
     function setFpsMode(real){
-      fpsRealistic = !!real;
-      saveCam();
-      syncCamUI();
-    }
-    safeOn(btnFpsReal,'click', ()=>{ initAudio(); setFpsMode(true); });
-    safeOn(btnFpsStable,'click',()=>{ initAudio(); setFpsMode(false); });
-    safeOn(btnFpsLive,'click', ()=>{ initAudio(); setFpsMode(!fpsRealistic); });
+  fpsRealistic = !!real;
+  saveCam();
+  syncCamUI();
+}
+
+safeOn(btnFpsReal,'click', ()=>{ initAudio(); setFpsMode(true); });
+safeOn(btnFpsStable,'click',()=>{ initAudio(); setFpsMode(false); });
+
+safeOn(btnFpsLive,'click', ()=>{
+  initAudio();
+  setFpsMode(!fpsRealistic);
+});
 
     safeOn(shakeToggle,'click', ()=>{
       shakeEnabled = !shakeEnabled;
@@ -1348,33 +1474,29 @@
     });
 
     safeOn(motionToggle,'click', ()=>{
-      initAudio();
-      motionBlurEnabled = !motionBlurEnabled;
-      if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
-      saveCam();
-    });
+  initAudio();
+  motionBlurEnabled = !motionBlurEnabled;
+  if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
+  saveCam();
+});
 
-    safeOn(dynFovToggle,'click', ()=>{
-      initAudio();
-      fpsDynFov = !fpsDynFov;
-      if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
-      saveCam();
-    });
-
+safeOn(dynFovToggle,'click', ()=>{
+  initAudio();
+  fpsDynFov = !fpsDynFov;
+  if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
+  saveCam();
+});
     safeOn(resetCamBtn,'click', ()=>{
       baseFov = DEFAULTS.baseFov;
       baseCamZ = DEFAULTS.baseCamZ;
       baseCamY = DEFAULTS.baseCamY;
-      fpsEyeY  = DEFAULTS.fpsEyeY;
-      framing  = DEFAULTS.framing;
+      framing = DEFAULTS.framing;
       shakeEnabled = DEFAULTS.shake;
       viewMode = DEFAULTS.view;
       debugOn = DEFAULTS.debug;
       fpsRealistic = DEFAULTS.fpsRealistic;
       fpsDynFov = DEFAULTS.fpsDynFov;
-      motionBlurEnabled = DEFAULTS.motionBlur;
-      saveCam();
-      syncCamUI();
+      saveCam(); syncCamUI();
       applyViewMode(viewMode);
     });
 
@@ -1412,11 +1534,8 @@
       jump: ()=>{ beep('square', 420, 0.05, 0.08); },
       slide:()=>{ beep('sine', 220, 0.06, 0.06); },
       boost:()=>{ beep('sawtooth', 520, 0.10, 0.09); beep('triangle', 880, 0.10, 0.07); },
-      ui:   ()=>{ beep('triangle', 980, 0.04, 0.06); }
     };
     safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
-
-   
 
     // ===== Renderer / Scene =====
     const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
@@ -1428,218 +1547,29 @@
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-
-    // ✅ FIX: evita qualsiasi “flip” strano
-    // (alcuni device/webview possono fare casino se camera.up viene toccato altrove)
-    function hardFixCameraUp(){
-      camera.up.set(0,1,0);
-      camera.rotation.order = 'YXZ';
-    }
-
-    // =========================================================
-    // ✅ SKY NATURALE: gradiente + nuvole + raggi sole (realistico)
-    // =========================================================
-    function makeSkyDome(){
-      const geo = new THREE.SphereGeometry(180, 32, 20);
-      const mat = new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite:false,
-        uniforms:{
-          topCol:   { value: new THREE.Color(0x74b9ff) },  // azzurro
-          midCol:   { value: new THREE.Color(0xbfe7ff) },  // chiaro
-          botCol:   { value: new THREE.Color(0xe9f6ff) },  // vicino orizzonte
-          sunDir:   { value: new THREE.Vector3(0.4,0.65,0.3).normalize() },
-          haze:     { value: 0.55 },
-          time:     { value: 0.0 },
-        },
-        vertexShader: `
-          varying vec3 vPos;
-          void main(){
-            vPos = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-          }
-        `,
-        fragmentShader: `
-          precision highp float;
-          varying vec3 vPos;
-          uniform vec3 topCol;
-          uniform vec3 midCol;
-          uniform vec3 botCol;
-          uniform vec3 sunDir;
-          uniform float haze;
-          uniform float time;
-
-          float hash(vec2 p){
-            p = fract(p*vec2(123.34, 456.21));
-            p += dot(p,p+45.32);
-            return fract(p.x*p.y);
-          }
-          float noise(vec2 p){
-            vec2 i = floor(p);
-            vec2 f = fract(p);
-            float a = hash(i);
-            float b = hash(i+vec2(1,0));
-            float c = hash(i+vec2(0,1));
-            float d = hash(i+vec2(1,1));
-            vec2 u = f*f*(3.0-2.0*f);
-            return mix(a,b,u.x) + (c-a)*u.y*(1.0-u.x) + (d-b)*u.x*u.y;
-          }
-          float fbm(vec2 p){
-            float v=0.0;
-            float a=0.5;
-            for(int i=0;i<5;i++){
-              v += a*noise(p);
-              p *= 2.03;
-              a *= 0.5;
-            }
-            return v;
-          }
-
-          void main(){
-            vec3 n = normalize(vPos);
-            float h = clamp(n.y*0.5 + 0.5, 0.0, 1.0);
-
-            // base gradiente cielo
-            vec3 col = mix(botCol, midCol, smoothstep(0.0, 0.55, h));
-            col = mix(col, topCol, smoothstep(0.45, 1.0, h));
-
-            // alone e foschia orizzonte
-            float hazeAmt = (1.0 - h);
-            col += vec3(1.0,1.0,1.0) * hazeAmt * 0.06 * haze;
-
-            // raggi di sole “soft”
-            float sd = max(dot(n, sunDir), 0.0);
-            float sunCore = pow(sd, 140.0) * 0.9;
-            float sunGlow = pow(sd, 18.0) * 0.22;
-            col += vec3(1.0, 0.96, 0.86) * (sunCore + sunGlow);
-
-            // “god rays” leggeri (finti) vicino sole
-            float rays = pow(sd, 10.0) * (0.5 + 0.5*sin((n.x+n.z)*18.0 + time*0.8));
-            col += vec3(1.0, 0.95, 0.85) * rays * 0.02;
-
-            gl_FragColor = vec4(col, 1.0);
-          }
-        `
-      });
-      const dome = new THREE.Mesh(geo, mat);
-      dome.renderOrder = -999;
-      return dome;
-    }
-
-    // nuvole: texture procedurale su sprite
-    function makeCloudTexture(size=256){
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const g = c.getContext('2d');
-      g.clearRect(0,0,size,size);
-
-      // blob multipli con blur
-      for(let k=0;k<30;k++){
-        const x = (0.15 + Math.random()*0.70) * size;
-        const y = (0.20 + Math.random()*0.55) * size;
-        const r = (0.10 + Math.random()*0.22) * size;
-        const a = 0.03 + Math.random()*0.07;
-
-        const grd = g.createRadialGradient(x,y,0, x,y,r);
-        grd.addColorStop(0, `rgba(255,255,255,${a})`);
-        grd.addColorStop(0.65, `rgba(255,255,255,${a*0.55})`);
-        grd.addColorStop(1, `rgba(255,255,255,0)`);
-        g.fillStyle = grd;
-        g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
-      }
-
-      // leggero soft blur manuale (semplice)
-      g.globalAlpha = 0.85;
-      g.drawImage(c, -2, -2);
-      g.drawImage(c,  2,  2);
-
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-      tex.needsUpdate = true;
-      return tex;
-    }
-
-    function makeCloudSprite(tex){
-      const mat = new THREE.SpriteMaterial({
-        map: tex,
-        transparent:true,
-        opacity: 0.85,
-        depthWrite:false
-      });
-      const s = new THREE.Sprite(mat);
-      return s;
-    }
+    scene.background = new THREE.Color(0x08120b);
+    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
 
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
-    hardFixCameraUp();
+    camera.up.set(0,1,0);
 
-    // SKY
-    const skyDome = makeSkyDome();
-    scene.add(skyDome);
-
-    const cloudTex = makeCloudTexture(IS_IOS ? 192 : 256);
-    const clouds = new THREE.Group();
-    scene.add(clouds);
-
-    // nuvole piccole “ogni tanto”, movimento in avanti col run
-    const cloudPool = [];
-    const CLOUD_N = IS_IOS ? 18 : 26;
-    for(let i=0;i<CLOUD_N;i++){
-      const s = makeCloudSprite(cloudTex);
-      const y = 14 + Math.random()*18;
-      const z = -40 - Math.random()*180;
-      const x = (Math.random()*2-1) * 35;
-      s.position.set(x, y, z);
-      const sc = 8 + Math.random()*10;
-      s.scale.set(sc*(1.4+Math.random()*0.9), sc, 1);
-      s.material.opacity = 0.35 + Math.random()*0.35;
-      clouds.add(s);
-      cloudPool.push(s);
-    }
-    function loopClouds(scroll){
-      const wrap = 220;
-      for(const c of cloudPool){
-        c.position.z += scroll * 0.35; // lento rispetto alla strada
-        // micro drift orizzontale (vento)
-        c.position.x += Math.sin(c.position.z*0.02) * 0.002 * scroll;
-        if(c.position.z > 20){
-          c.position.z -= wrap;
-          c.position.x = (Math.random()*2-1) * 35;
-          c.position.y = 14 + Math.random()*18;
-          const sc = 8 + Math.random()*10;
-          c.scale.set(sc*(1.4+Math.random()*0.9), sc, 1);
-          c.material.opacity = 0.35 + Math.random()*0.35;
-        }
-      }
-    }
-
-    // fog coerente col cielo (niente nero)
-    scene.fog = IS_IOS
-      ? new THREE.Fog(0xcfeeff, 40, 130)
-      : new THREE.FogExp2(0xcfeeff, 0.017);
-
-    // =========================================================
-    // LUCI (sole naturale)
-    // =========================================================
-    const sun = new THREE.DirectionalLight(0xfff3d9, IS_IOS ? 2.5 : 1.9);
-    sun.position.set(10, 16, 10);
+    // lights
+    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
+    sun.position.set(6, 10, 6);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048,2048);
     sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 90;
-    sun.shadow.camera.left = -14;
-    sun.shadow.camera.right=  14;
-    sun.shadow.camera.top  =  14;
-    sun.shadow.camera.bottom=-14;
+    sun.shadow.camera.far = 80;
+    sun.shadow.camera.left = -12;
+    sun.shadow.camera.right=  12;
+    sun.shadow.camera.top  =  12;
+    sun.shadow.camera.bottom=-12;
     sun.shadow.bias = -0.00023;
     scene.add(sun);
-
-    scene.add(new THREE.HemisphereLight(0xe9f8ff, 0x2b3b2a, IS_IOS ? 0.95 : 0.70));
-    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.42 : 0.22));
-
-    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 0.85 : 0.40);
-    front.position.set(0, 6, 12);
+    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
+    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.24));
+    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.25 : 0.55);
+    front.position.set(0, 4, 9);
     scene.add(front);
 
     // Contact shadow
@@ -1663,16 +1593,13 @@
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
-    // =========================================================
-    // STRADA
-    // =========================================================
+    // ===== STRADA =====
     const segLen = 9.0, segCount = 10;
     const laneW = 1.35;
     const mainRoadWidth = laneW * 3;
     const shoulderWidth = 1.40;
     const totalRoadWidth = mainRoadWidth + shoulderWidth;
     const leftEdge = -totalRoadWidth/2;
-
     const lanesX = [
       leftEdge + laneW*0.5,
       leftEdge + laneW*1.5,
@@ -1684,7 +1611,6 @@
       const c = document.createElement('canvas');
       c.width = c.height = size;
       const g = c.getContext('2d');
-
       g.fillStyle = '#2b2f35';
       g.fillRect(0,0,size,size);
 
@@ -1710,24 +1636,29 @@
 
       const xOuterL = px(leftEdge + 0.03);
       const xOuterR = px(leftEdge + totalRoadWidth - 0.03);
-      g.fillRect(Math.round(xOuterL - solidW/2), 0, solidW, size);
-      g.fillRect(Math.round(xOuterR - solidW/2), 0, solidW, size);
+      const xOuterLi = Math.round(xOuterL - solidW/2);
+      const xOuterRi = Math.round(xOuterR - solidW/2);
+      g.fillRect(xOuterLi, 0, solidW, size);
+      g.fillRect(xOuterRi, 0, solidW, size);
 
       const xShoulderSep = px(shoulderStartX);
-      g.fillRect(Math.round(xShoulderSep - solidW/2), 0, solidW, size);
+      const xShoulderSepI = Math.round(xShoulderSep - solidW/2);
+      g.fillRect(xShoulderSepI, 0, solidW, size);
 
       const xDash1 = px(leftEdge + laneW*1);
       const xDash2 = px(leftEdge + laneW*2);
+      const xDash1I = Math.round(xDash1 - dashW/2);
+      const xDash2I = Math.round(xDash2 - dashW/2);
 
       for(let y=0; y<size; y += (dashLen + dashGap)){
         const yi = Math.round(y);
-        g.fillRect(Math.round(xDash1 - dashW/2), yi, dashW, dashLen);
-        g.fillRect(Math.round(xDash2 - dashW/2), yi, dashW, dashLen);
+        g.fillRect(xDash1I, yi, dashW, dashLen);
+        g.fillRect(xDash2I, yi, dashW, dashLen);
       }
 
       const t = new THREE.CanvasTexture(c);
-      t.colorSpace=THREE.SRGBColorSpace;
-      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.repeat.set(1.0, 10.0);
       return t;
     }
@@ -1779,8 +1710,8 @@
       }
 
       const t = new THREE.CanvasTexture(c);
-      t.colorSpace=THREE.SRGBColorSpace;
-      t.wrapS=t.wrapT=THREE.RepeatWrapping;
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.repeat.set(1.0, 10.0);
       return t;
     }
@@ -1855,10 +1786,10 @@
       segments.push(mesh);
     }
 
-    // terreno laterale (più “naturale” col cielo chiaro)
+    // terreno laterale
     const sideGeo = new THREE.PlaneGeometry(44, segLen*segCount);
     sideGeo.rotateX(-Math.PI/2);
-    const sideMat = new THREE.MeshStandardMaterial({ color:0x2e5a35, roughness:1, metalness:0 });
+    const sideMat = new THREE.MeshStandardMaterial({ color:0x0d2416, roughness:1, metalness:0 });
     const side = new THREE.Mesh(sideGeo, sideMat);
     side.position.set(0, -0.02, -segLen*segCount/2 + segLen/2);
     side.receiveShadow = true;
@@ -1875,12 +1806,12 @@
       trunk.position.y=0.8; trunk.castShadow=true; trunk.receiveShadow=true; g.add(trunk);
       const crown = new THREE.Mesh(
         new THREE.ConeGeometry(0.75, 1.6, 12),
-        new THREE.MeshStandardMaterial({ color:0x2a8a43, roughness:1, metalness:0 })
+        new THREE.MeshStandardMaterial({ color:0x1c6b33, roughness:1, metalness:0 })
       );
       crown.position.y=1.9; crown.castShadow=true; crown.receiveShadow=true; g.add(crown);
       const crown2 = new THREE.Mesh(
         new THREE.ConeGeometry(0.6, 1.3, 12),
-        new THREE.MeshStandardMaterial({ color:0x1f6f34, roughness:1, metalness:0 })
+        new THREE.MeshStandardMaterial({ color:0x135226, roughness:1, metalness:0 })
       );
       crown2.position.y=2.3; crown2.castShadow=true; crown2.receiveShadow=true; g.add(crown2);
       return g;
@@ -1890,7 +1821,6 @@
     const treeSpacing=2.8;
     const treeSideX = (totalRoadWidth/2) + 1.9;
     const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
-
     for(let i=0;i<jungleCount;i++){
       const z = -i*treeSpacing;
       for(const sideSign of [-1,1]){
@@ -1899,8 +1829,7 @@
         t.scale.setScalar(rnd(0.8,1.2));
         t.rotation.y = rnd(0,Math.PI*2);
         t.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-        jungle.add(t);
-        treePool.push(t);
+        jungle.add(t); treePool.push(t);
       }
     }
     function loopJungle(scroll){
@@ -1911,197 +1840,54 @@
       }
     }
 
-    // SKY time update (per shader rays)
-    function updateSkyTime(tNow){
-      if(skyDome?.material?.uniforms?.time){
-        skyDome.material.uniforms.time.value = tNow * 0.001;
-      }
-    }
-
-
-
-    // =========================================================
-    // ✅ UI “MAGIA” (luce/brillantini) verso HUD
-    // - useremo proiezione world->screen e Web Animations
-    // - chiameremo flyToEl(...) quando raccogli cibo/magnete (in PART 5)
-    // =========================================================
-    const fxLayer = document.createElement('div');
-    fxLayer.style.position = 'fixed';
-    fxLayer.style.inset = '0';
-    fxLayer.style.pointerEvents = 'none';
-    fxLayer.style.zIndex = '55';
-    fxLayer.style.overflow = 'hidden';
-    document.body.appendChild(fxLayer);
-
-    function worldToScreen(v3){
-      const v = v3.clone().project(camera);
-      const x = (v.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
-      return { x, y, onScreen: (v.z < 1) };
-    }
-
-    function makeSparkNode(char='✨'){
-      const d = document.createElement('div');
-      d.textContent = char;
-      d.style.position = 'absolute';
-      d.style.left = '0px';
-      d.style.top = '0px';
-      d.style.transform = 'translate(-50%,-50%)';
-      d.style.fontSize = '18px';
-      d.style.filter = 'drop-shadow(0 6px 10px rgba(0,0,0,.55))';
-      d.style.willChange = 'transform, opacity';
-      return d;
-    }
-
-    // 🔥 volo “magico” (sparkle) da world position a un elemento UI
-    function flyToEl(fromWorldPos, toEl, options={}){
-      if(!toEl) return;
-      const { icon='✨', duration=520, scatter=10 } = options;
-
-      const from = worldToScreen(fromWorldPos);
-      const r = toEl.getBoundingClientRect();
-      const to = { x: r.left + r.width*0.15, y: r.top + r.height*0.5 };
-
-      // se è fuori schermo, fallback: parte dal centro
-      const sx = from.onScreen ? from.x : window.innerWidth*0.5;
-      const sy = from.onScreen ? from.y : window.innerHeight*0.55;
-
-      // 1 spark grande + 4 micro
-      const main = makeSparkNode(icon);
-      main.style.fontSize = '22px';
-      main.style.opacity = '0.98';
-      fxLayer.appendChild(main);
-
-      const micros = [];
-      for(let i=0;i<4;i++){
-        const m = makeSparkNode('✨');
-        m.style.fontSize = (12 + Math.random()*6).toFixed(0) + 'px';
-        m.style.opacity = '0.75';
-        fxLayer.appendChild(m);
-        micros.push(m);
-      }
-
-      // curva (cubic-bezier) “cinematografica”
-      const mid = {
-        x: (sx+to.x)*0.5 + (Math.random()*2-1)*scatter,
-        y: Math.min(sy,to.y) - (40 + Math.random()*40)
-      };
-
-      const keyframesMain = [
-        { transform:`translate(${sx}px,${sy}px) scale(1.0)`, opacity: 0.0 },
-        { transform:`translate(${sx}px,${sy}px) scale(1.10)`, opacity: 1.0, offset: 0.08 },
-        { transform:`translate(${mid.x}px,${mid.y}px) scale(1.10)`, opacity: 1.0, offset: 0.55 },
-        { transform:`translate(${to.x}px,${to.y}px) scale(0.85)`, opacity: 0.0 }
-      ];
-
-      const a1 = main.animate(keyframesMain, {
-        duration,
-        easing: 'cubic-bezier(.2,.9,.2,1)',
-        fill: 'forwards'
-      });
-
-      for(let i=0;i<micros.length;i++){
-        const m = micros[i];
-        const jx = sx + (Math.random()*2-1)*16;
-        const jy = sy + (Math.random()*2-1)*16;
-        const mm = {
-          x: (sx+to.x)*0.5 + (Math.random()*2-1)*scatter*1.4,
-          y: Math.min(sy,to.y) - (20 + Math.random()*65)
-        };
-        m.animate([
-          { transform:`translate(${jx}px,${jy}px) scale(0.8)`, opacity: 0.0 },
-          { transform:`translate(${jx}px,${jy}px) scale(1.0)`, opacity: 0.85, offset: 0.10 },
-          { transform:`translate(${mm.x}px,${mm.y}px) scale(1.0)`, opacity: 0.75, offset: 0.55 },
-          { transform:`translate(${to.x}px,${to.y}px) scale(0.65)`, opacity: 0.0 }
-        ], {
-          duration: duration + 90 + i*25,
-          easing: 'cubic-bezier(.2,.85,.2,1)',
-          fill:'forwards'
-        });
-      }
-
-      a1.onfinish = ()=>{
-        try{ fxLayer.removeChild(main); }catch{}
-        for(const m of micros){ try{ fxLayer.removeChild(m); }catch{} }
-      };
-    }
-
-    // =========================================================
-    // Sprites
-    // =========================================================
+    // ===== Sprites =====
     function makeEmojiSprite(emoji, size=256){
       const c=document.createElement('canvas'); c.width=c.height=size;
       const g=c.getContext('2d');
       g.clearRect(0,0,size,size);
-
-      // glow soft
       g.globalAlpha=0.18;
       g.fillStyle='#cfefff';
       g.beginPath(); g.arc(size/2,size/2,size*0.33,0,Math.PI*2); g.fill();
-
       g.globalAlpha=1;
       g.font=`${size*0.55}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
       g.textAlign='center'; g.textBaseline='middle';
       g.fillText(emoji, size/2, size/2+8);
-
       const tex=new THREE.CanvasTexture(c);
       tex.colorSpace=THREE.SRGBColorSpace;
-
       const mat=new THREE.SpriteMaterial({ map:tex, transparent:true });
       const spr=new THREE.Sprite(mat);
       spr.scale.set(0.78,0.78,1);
       return spr;
     }
 
-    // =========================================================
-    // ✅ Entities visuals
-    // - ostacoli TUTTI stessa misura, appoggiati sul terreno, non troppo larghi
-    // =========================================================
-    const OBST_W = 0.78;
-    const OBST_H = 0.95;
-    const OBST_D = 0.78;
-
+    // ===== Entities visuals =====
     function spawnObstacleVisual(){
       const box = new THREE.Mesh(
-        new THREE.BoxGeometry(OBST_W, OBST_H, OBST_D),
+        new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
         new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
       );
       box.castShadow=true; box.receiveShadow=true;
-      // ✅ appoggiato a terra: y = metà altezza
-      box.position.y = OBST_H * 0.5;
       return box;
     }
-
     function makeTurtle(){
       const g = new THREE.Group();
-
       const shell = new THREE.Mesh(
         new THREE.SphereGeometry(0.35, 18, 14),
         new THREE.MeshStandardMaterial({ color:0x1f6a3a, roughness:0.9, metalness:0.02 })
       );
       shell.scale.set(1.2,0.75,1.0);
-      shell.position.y=0.33;
+      shell.position.y=0.35;
       shell.castShadow=true; shell.receiveShadow=true;
       g.add(shell);
-
       const head = new THREE.Mesh(
         new THREE.SphereGeometry(0.16, 16, 12),
         new THREE.MeshStandardMaterial({ color:0x2f8a4d, roughness:0.9, metalness:0.02 })
       );
-      head.position.set(0,0.22,0.42);
+      head.position.set(0,0.25,0.42);
       head.castShadow=true;
       g.add(head);
-
-      // ✅ appoggiato a terra
-      g.position.y = 0;
-
-      // stato “fuga”
-      g.userData.fleeT = 0;     // secondi di fuga rimanenti
-      g.userData.fleeV = 0;     // velocità extra
-
       return g;
     }
-
     function makeVerticalRing(){
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.55, 0.09, 14, 44),
@@ -2117,14 +1903,12 @@
       return ring;
     }
 
-    // =========================================================
-    // Runner
-    // =========================================================
+    // ===== Runner =====
     const runnerPivot = new THREE.Group(); scene.add(runnerPivot);
     const runnerCenter = new THREE.Group(); runnerCenter.position.set(0, 0.95, 0); runnerPivot.add(runnerCenter);
     const runnerModel = new THREE.Group(); runnerModel.position.set(0, -0.95, 0); runnerCenter.add(runnerModel);
 
-    // Bubble (invincibilità)
+    // Bubble
     const bubble = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 24, 18),
       new THREE.MeshStandardMaterial({
@@ -2150,9 +1934,7 @@
     );
     dummyHead.position.set(0, 1.25, 0.05); dummyHead.castShadow=true; fallbackRunner.add(dummyHead);
 
-    // =========================================================
-    // GLB loader + Animations
-    // =========================================================
+    // ===== GLB loader + Animations =====
     const gltfLoader = new GLTFLoader();
 
     const RUNNER_GLB_URL = './running.glb';
@@ -2220,11 +2002,13 @@
     let mixamoHips=null, mixamoRootNode=null, headBone=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
 
-    // FPS mask “shadow-only” (rimane identico)
+    // FPS: testa/maschera INVISIBILE ma con OMBRE corrette (shadow-only)
     let fpsHiddenMeshes = [];
+
     function setFpsMaskHidden(on){
       if(viewMode==='fps') bubble.visible = false;
 
+      // ripristina tutto
       for(const it of fpsHiddenMeshes){
         const m = it.mesh;
         try{
@@ -2250,6 +2034,7 @@
       fpsHiddenMeshes = [];
       if(!on) return;
 
+      // nasconde solo head/face/hair/helmet/mask ecc… ma mantiene le ombre
       runnerModel.traverse(o=>{
         if(!o.isMesh) return;
 
@@ -2277,6 +2062,7 @@
           materialStates
         });
 
+        // shadow-only: invisibile ma continua a fare ombre
         o.visible = true;
         o.castShadow = true;
 
@@ -2369,6 +2155,7 @@
         }
       }catch{}
     }
+
     function playDie(){
       if(!actions.die) return;
       animState.mode='dead';
@@ -2379,6 +2166,7 @@
       fadeTo(actions.die, 0.08);
     }
 
+    /* ✅ FIX RESTART: reset totale delle animazioni (esce da "dead") */
     function resetAnimationsToIdle(){
       animState.mode = 'idle';
       deadSnapPending = false;
@@ -2514,11 +2302,7 @@
       });
     }
 
-
-
-    // =========================================================
-    // ✅ GAME DATA
-    // =========================================================
+    // ===== Game data =====
     const EMOJIS = ["✨","🍀","💎","⚡️","🌈","🍋","⭐️","🍓","🥝"];
     const FOOD   = ["🍕","🍔","🍟","🌮","🍩","🍪","🍰","🍜","🍣","🥐"];
     const HEART  = "❤️";
@@ -2527,14 +2311,6 @@
     const BEST_KEY='jungle_runner_best_v4';
     const loadBest=()=>Number(localStorage.getItem(BEST_KEY)||'0')||0;
     const saveBest=(v)=>localStorage.setItem(BEST_KEY,String(v));
-
-    // ✅ “distanza visibile” strada ~ TURTLE_VIS_Z (già definito prima) → useremo per cooldown spawn
-    const TURTLE_VIS_Z = 70;
-    const VISIBLE_DIST = TURTLE_VIS_Z; // 70
-    const POWERUP_COOLDOWN_DIST = VISIBLE_DIST * 2.0; // 2x visibile
-
-    // ✅ riduci magneti ~20%
-    const MAGNET_SPAWN_P = 0.10 * 0.80; // prima 0.10
 
     const game = {
       lane:1,
@@ -2561,12 +2337,6 @@
       magnetT:0,
       trioT:0,
 
-      // ✅ lock boost: non puoi riattivare finché boost attivo
-      boostLock: false,
-
-      // ✅ cooldown spawn magnet/heart dopo raccolta (distanza in world units)
-      powerupCooldownZ: 0, // finché >0 blocca spawn magnet/heart
-
       entities:[],
       spawnT:0.30,
 
@@ -2579,7 +2349,7 @@
 
       lastTurtleZ: [-99999, -99999, -99999],
 
-      // camera FPS info
+      /* ✅ info per camera FPS “realistica” */
       camSpeed: 0,
       grounded: true,
       vyNow: 0
@@ -2593,176 +2363,85 @@
       return s;
     }
 
-    // =========================================================
-    // ✅ SCORE autosize: se numero lungo, riduci font per farlo stare nella pillola
-    // =========================================================
-    function fitScoreText(){
-      if(!scoreEl) return;
-      const el = scoreEl;
-      const parent = el.closest('.hudV') || el.parentElement;
-      if(!parent) return;
-
-      // base via CSS: font-size ereditato
-      el.style.transformOrigin = 'center';
-      el.style.transform = 'scale(1)';
-
-      // misura overflow
-      const maxW = parent.clientWidth - 2;
-      const w = el.scrollWidth;
-      if(w > maxW && maxW > 0){
-        const s = clamp(maxW / w, 0.72, 1.0);
-        el.style.transform = `scale(${s.toFixed(3)})`;
-      }
-    }
-
-    // =========================================================
-    // ✅ Food UI: accumulo dal basso (stack fisso a destra)
-    // - CSS della colonna rimane fissa
-    // - qui invertiamo il layout: ultimi elementi stanno in basso
-    // =========================================================
     function updateFoodBoostButton(){
-      if(!btnFoodBoost || !foodBoostLbl) return;
-      // ✅ ora il bottone boost NON mostra più conteggio dentro (lo sposteremo in UI in PART 6)
-      // ma per ora manteniamo compatibilità: mostriamo "BOOST"
-      if(game.foodBoostCharges > 0){
-        btnFoodBoost.style.display = 'flex';
-        foodBoostLbl.textContent = `BOOST`;
-      }else{
-        btnFoodBoost.style.display = 'none';
-        foodBoostLbl.textContent = `BOOST`;
-      }
-    }
+  if(!btnFoodBoost || !foodBoostLbl) return;
 
-    function refreshFoodUI(){
-      if(!foodStack || !foodCountEl) return;
+  if(game.foodBoostCharges > 0){
+    btnFoodBoost.style.display = 'flex';
+    foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
+  }else{
+    btnFoodBoost.style.display = 'none';
+    foodBoostLbl.textContent = `0 BOOST`;
+  }
+}
 
-      // ✅ stack: gli elementi devono accumulare verso il basso
-      // Mostriamo max 6: i più recenti finiscono in basso
-      foodStack.innerHTML = "";
+function refreshFoodUI(){
+  if(!foodStack || !foodCountEl) return;
 
-      const show = game.foodHistory.slice(-6); // in ordine cronologico
-      // creiamo un wrapper che spinge in basso
-      const frag = document.createDocumentFragment();
+  foodStack.innerHTML = "";
+  const show = game.foodHistory.slice(-6).reverse();
+  for(const emo of show){
+    const d=document.createElement('div');
+    d.className = 'foodItem pillFx';
+    d.textContent=emo;
+    foodStack.appendChild(d);
+  }
+  foodCountEl.textContent = String(game.foodCount);
 
-      for(const emo of show){
-        const d=document.createElement('div');
-        d.className = 'foodItem pillFx';
-        d.textContent=emo;
-        frag.appendChild(d);
-      }
-      foodStack.appendChild(frag);
-
-      // ✅ “spingi” visivamente in basso usando margin-top auto
-      // (se il browser non supporta bene, resta ok comunque)
-      foodStack.style.display = 'flex';
-      foodStack.style.flexDirection = 'column';
-      foodStack.style.justifyContent = 'flex-end';
-
-      foodCountEl.textContent = String(game.foodCount);
-
-      updateFoodBoostButton();
-      fitScoreText();
-    }
-
-    // =========================================================
-    // ✅ HUD Bars: animazione barra (ripple/shine) e update time
-    // =========================================================
-    
-    
-
-    let hudBarAnimPhase = 0;
-
-    function setHudBar(el, pct){
-      if(!el) return;
-      el.style.width = `${clamp(pct,0,100).toFixed(1)}%`;
-      // “pulse” via box-shadow in base a pct (leggero)
-      const glow = 0.18 + 0.22*(pct/100);
-      el.style.boxShadow = `0 0 7px rgba(140,200,255,${glow.toFixed(3)})`;
-    }
+  // ✅ così rimane sempre coerente anche il bottone
+  updateFoodBoostButton();
+}
 
     function setBoostUI(){
-  if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
+      if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
 
-  const t = Math.max(game.foodBoostT, game.ringBoostT);
-  if(t <= 0){
-    pillBoost.style.display='none';
-    setHudBar(boostBar, 0);
-    if(boostTime) boostTime.textContent = '0.0s';
-    return;
-  }
-  pillBoost.style.display='flex';
-
-  const both = (game.foodBoostT>0 && game.ringBoostT>0);
-  if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
-  else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
-  else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
-
-  const dur = 10.0;
-  const pct = clamp((t/dur)*100,0,100);
-  setHudBar(boostBar, pct);
-
-  if(boostTime) boostTime.textContent = `${t.toFixed(1)}s`;
-}
-
-function setFoodBoostPillUI(){
-  if(!foodBoostPill || !foodBoostBar) return;
-
-  if(game.foodBoostT <= 0){
-    foodBoostPill.style.display = 'none';
-    setHudBar(foodBoostBar, 0);
-    if(foodBoostTime) foodBoostTime.textContent = '0.0s';
-    return;
-  }
-
-  foodBoostPill.style.display = 'flex';
-  const dur = 10.0;
-  const pct = clamp((game.foodBoostT/dur)*100,0,100);
-  setHudBar(foodBoostBar, pct);
-
-  if(foodBoostTime) foodBoostTime.textContent = `${game.foodBoostT.toFixed(1)}s`;
-}
-
-    function setMagnetUI(){
-      if(!magTxt || !magBar) return;
-      if(game.magnetT <= 0){
-        magTxt.textContent = `🧲 0`;
-        setHudBar(magBar, 0);
+      const t = Math.max(game.foodBoostT, game.ringBoostT);
+      if(t <= 0){
+        pillBoost.style.display='none';
+        boostBar.style.width='0%';
         return;
       }
-      const dur = 8.0;
-      const pct = clamp((game.magnetT/dur)*100,0,100);
-      magTxt.textContent = `🧲 ${game.magnetT.toFixed(1)}`;
-      setHudBar(magBar, pct);
+      pillBoost.style.display='flex';
+
+      const both = (game.foodBoostT>0 && game.ringBoostT>0);
+      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
+
+      const dur = 10.0;
+      const pct = clamp((t/dur)*100,0,100);
+      boostBar.style.width = pct.toFixed(1)+'%';
     }
 
-    // =========================================================
-    // ✅ Main button label
-    // =========================================================
     function updateMainButton(){
       if(!mainLbl) return;
-      if(game.over){ mainLbl.textContent = 'RESTART'; return; }
-      if(!game.started){ mainLbl.textContent = 'AVVIA'; return; }
-      if(game.stopped){ mainLbl.textContent = 'AVVIA'; return; }
+
+      if(game.over){
+        mainLbl.textContent = 'RESTART';
+        return;
+      }
+      if(!game.started){
+        mainLbl.textContent = 'AVVIA';
+        return;
+      }
+      if(game.stopped){
+        mainLbl.textContent = 'AVVIA';
+        return;
+      }
       mainLbl.textContent = 'STOP';
     }
 
-    // =========================================================
-    // Spawn helper
-    // =========================================================
     function obstacleMultiplier(){
       const steps = Math.floor(game.score / 5000);
       return 1 + 0.05 * steps;
     }
 
     // ===== Spawn =====
+    const TURTLE_VIS_Z = 70;
     const TURTLE_MIN_GAP = TURTLE_VIS_Z * 3.0;
+
     function canSpawnTurtle(lane, z){
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
-    }
-
-    // ✅ blocca magnet/heart se cooldown attivo
-    function powerupAllowed(){
-      return game.powerupCooldownZ <= 0;
     }
 
     function spawnRow(){
@@ -2785,8 +2464,7 @@ function setFoodBoostPillUI(){
 
       blocked.forEach(l=>{
         const obj = spawnObstacleVisual();
-        obj.position.x = lanesX[l];
-        obj.position.z = z0;
+        obj.position.set(lanesX[l], 0.65, z0);
         scene.add(obj);
         game.entities.push({ type:'obst', lane:l, z:z0, obj });
       });
@@ -2808,8 +2486,7 @@ function setFoodBoostPillUI(){
         game.entities.push({ type:'food', lane, z:spr.position.z, obj:spr, emo });
       }
 
-      // ✅ Magneti meno + cooldown post-raccolta
-      if(powerupAllowed() && Math.random() < MAGNET_SPAWN_P){
+      if(Math.random() < 0.10){
         const lane=rndi(0,2);
         const spr = makeEmojiSprite(MAGNET);
         spr.position.set(lanesX[lane], 1.15, z0 - rnd(1,7));
@@ -2818,8 +2495,7 @@ function setFoodBoostPillUI(){
         game.entities.push({ type:'magnet', lane, z:spr.position.z, obj:spr });
       }
 
-      // ✅ Vita: stessa regola cooldown (2x visibile dopo raccolta heart o magnet)
-      if(powerupAllowed() && game.lives < game.maxLives){
+      if(game.lives < game.maxLives){
         let spawnHeart = false;
         if(game.coins>0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
         if(!spawnHeart && Math.random() < 0.03) spawnHeart = true;
@@ -2859,9 +2535,7 @@ function setFoodBoostPillUI(){
       }
     }
 
-    // =========================================================
-    // Controls
-    // =========================================================
+    // ===== Controls =====
     let tiltTarget=0, camRoll=0;
 
     function moveLane(dir){
@@ -2870,9 +2544,12 @@ function setFoodBoostPillUI(){
       if(game.stopped) return;
       if(game.trioT>0) return;
       game.lane = clamp(game.lane+dir, 0, 3);
-      tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
-      fpsLaneKick = clamp(fpsLaneKick + dir * 0.55, -1.2, 1.2);
-      sfx.lane();
+tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
+
+// micro kick (usato dalla camera FPS, "inerzia")
+fpsLaneKick = clamp(fpsLaneKick + dir * 0.55, -1.2, 1.2);
+
+sfx.lane();
     }
 
     function jump(){
@@ -2895,9 +2572,71 @@ function setFoodBoostPillUI(){
       sfx.slide();
     }
 
-    // =========================================================
-    // Start/Stop/Dance/Home + Boost button (lock while active)
-    // =========================================================
+    window.addEventListener('keydown', (e)=>{
+      const k=e.key.toLowerCase();
+      if(k==='arrowleft') moveLane(-1);
+      if(k==='arrowright') moveLane(1);
+      if(k==='arrowup' || k===' ') jump();
+      if(k==='arrowdown') slide();
+      if(k==='p') togglePause();
+    });
+
+    let touchStart=null;
+    renderer.domElement.addEventListener('pointerdown',(e)=>{
+      initAudio();
+      renderer.domElement.setPointerCapture(e.pointerId);
+      touchStart={x:e.clientX,y:e.clientY,t:performance.now()};
+    });
+    renderer.domElement.addEventListener('pointerup',(e)=>{
+      if(!touchStart) return;
+      const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+      const adx=Math.abs(dx), ady=Math.abs(dy);
+      touchStart=null;
+      const min=30;
+      if(adx<min && ady<min) return;
+      if(adx>ady) moveLane(dx>0?1:-1);
+      else { if(dy<0) jump(); else slide(); }
+    });
+
+    // ===== View mode handling =====
+    function applyViewMode(mode){
+      if(!['front','back','fps'].includes(mode)) mode = 'front';
+      viewMode = mode;
+      saveCam();
+      setActiveCamBtns();
+
+      camera.up.set(0,1,0);
+
+      // camera near in FPS per evitare clipping
+      if(viewMode==='fps'){
+        camera.near = 0.02;
+      }else{
+        camera.near = 0.1;
+      }
+      camera.updateProjectionMatrix();
+
+      setFpsMaskHidden(viewMode==='fps');
+    }
+
+    function hookCamBtn(btn, mode){
+  safeOn(btn,'click', ()=>{
+    initAudio();
+    applyViewMode(mode);
+  });
+}
+hookCamBtn(btnCamBack,'back');
+hookCamBtn(btnCamFPS,'fps');
+hookCamBtn(btnCamFront,'front');
+
+
+    // Debug toggle
+    safeOn(btnDebug,'click', ()=>{
+      debugOn = !debugOn;
+      saveCam();
+      setDebugUI();
+    });
+
+    // ===== Start/Stop/Pause/Home/Dance =====
     function setStop(on){
       game.stopped = !!on;
       if(game.stopped){
@@ -2917,12 +2656,8 @@ function setFoodBoostPillUI(){
 
       game.score=0; game.coins=0;
       game.ringCount=0;
-
       game.foodCount=0; game.foodHistory=[];
       game.foodBoostCharges = 0;
-      game.boostLock = false;
-      game.powerupCooldownZ = 0;
-
       refreshFoodUI();
 
       game.invincibleT=0;
@@ -2952,14 +2687,12 @@ function setFoodBoostPillUI(){
       if(coinsEl) coinsEl.textContent = '0';
       if(ringsEl) ringsEl.textContent = '0';
       if(hpTxt) hpTxt.textContent = hpString();
-      setMagnetUI();
+      if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
-      setFoodBoostPillUI();
-
+      
       updateFoodBoostButton();
       updateMainButton();
       startIdleRandom();
-      fitScoreText();
     }
 
     function startGame(){
@@ -2973,7 +2706,9 @@ function setFoodBoostPillUI(){
     function togglePause(){
       if(game.over) return;
       if(!game.started) return;
+
       game.paused = !game.paused;
+
       if(game.paused){
         startIdleRandom();
       }else{
@@ -2982,43 +2717,57 @@ function setFoodBoostPillUI(){
       }
     }
 
-    // NOTE: i listener dei bottoni già in PART 3, qui solo boost handler aggiornato
-    safeOn(btnFoodBoost,'click', ()=>{
+    safeOn(btnMain,'click', ()=>{
       initAudio();
 
-      if(game.over || game.paused) return;
-      if(!game.started) return;
-      if(game.stopped) return;
-
-      // ✅ se boost già attivo o lock, non permettere
-      if(game.boostLock) return;
-      const active = (game.foodBoostT > 0 || game.ringBoostT > 0);
-      if(active) return;
-
-      if(game.foodBoostCharges <= 0) return;
-
-      // consuma 1 carica
-      game.foodBoostCharges -= 1;
-
-      // attiva boost cibo
-      game.foodBoostT = 10.0;
-      game.invincibleT = Math.max(game.invincibleT, 10.0);
-      bubble.visible = true;
-
-      // ✅ lock finché non finisce
-      game.boostLock = true;
-
-      updateFoodBoostButton();
-      setFoodBoostPillUI();
-      setBoostUI();
-      sfx.boost();
-
-      // ✅ animazione pill numero (verrà aggiunta in PART 6 con il nuovo pulsante contatore)
+      if(game.over){
+        resetRun();
+        startGame();
+        return;
+      }
+      if(!game.started){
+        startGame();
+        return;
+      }
+      if(game.paused) return;
+      setStop(!game.stopped);
     });
 
-    // =========================================================
-    // Life / pickups
-    // =========================================================
+    safeOn(btnDance,'click', ()=>{
+      initAudio();
+      if(game.over) return;
+      if(game.started && !game.paused && !game.stopped) setStop(true);
+      playDance();
+    });
+
+    safeOn(btnHome,'click', ()=>{
+      initAudio();
+      resetRun();
+    });
+    
+    safeOn(btnFoodBoost,'click', ()=>{
+  initAudio();
+
+  // non farlo usare se non stai giocando davvero
+  if(game.over || game.paused) return;
+  if(!game.started) return;
+  if(game.stopped) return;
+
+  if(game.foodBoostCharges <= 0) return;
+
+  // consuma 1 carica
+  game.foodBoostCharges -= 1;
+
+  // attiva boost cibo
+  game.foodBoostT = 10.0;
+  game.invincibleT = Math.max(game.invincibleT, 10.0);
+  bubble.visible = true;
+
+  updateFoodBoostButton();
+  sfx.boost();
+});
+
+    // ===== Life / pickups =====
     function loseLife(){
       if(game.invincibleT>0) return;
       game.lives = Math.max(0, game.lives-1);
@@ -3037,23 +2786,22 @@ function setFoodBoostPillUI(){
       sfx.boost();
     }
 
-    // =========================================================
-    // Update loop
-    // =========================================================
+    // ===== Update loop =====
     let camZ = baseCamZ, camY = baseCamY, camFov = baseFov, camX = 0;
     let tPrev=performance.now();
+    // ✅ Lane smoothing (posizione X del runner “morbida”)
     let runnerX = lanesX[game.lane];
-    let runPhase = 0;
+    let runPhase = 0; // ✅ fase per bob corsa
 
     // debug fps
     let fpsAcc=0, fpsN=0, fpsShow=0;
     let dbgTimer=0;
 
-    // FPS camera state
+    // ✅ FPS camera state (bob + sway “reale” + spring)
     let fpsPhase = 0;
     let fpsX = 0, fpsY = 0;
     let fpsXPrev = 0;
-    let fpsLandKick = 0;
+    let fpsLandKick = 0;      // piccolo “kick” atterraggio
     let fpsVyPrev = 0;
     let fpsGroundPrev = true;
     let fpsVelYSm = 0;
@@ -3063,6 +2811,7 @@ function setFoodBoostPillUI(){
       if(runnerMixer){
         runnerMixer.timeScale = 1.0;
         runnerMixer.update(dt);
+
         if(mixamoHips){ mixamoHips.position.x = hipsBaseX; mixamoHips.position.z = hipsBaseZ; }
         if(mixamoRootNode){ mixamoRootNode.position.x = rootBaseX; mixamoRootNode.position.z = rootBaseZ; }
       }
@@ -3074,6 +2823,7 @@ function setFoodBoostPillUI(){
       if(!gameplayOn){
         runnerPivot.position.x = lanesX[1];
         runnerPivot.position.y = 0;
+
         contact.position.x = runnerPivot.position.x;
         contact.scale.set(1.10, 1.10, 1);
         contact.material.opacity = 0.55;
@@ -3082,6 +2832,7 @@ function setFoodBoostPillUI(){
         runnerCenter.position.y = 0.95 + breathe;
         runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
 
+        // ✅ per FPS idle/menu
         game.camSpeed = 0;
         game.grounded = true;
         game.vyNow = 0;
@@ -3089,15 +2840,16 @@ function setFoodBoostPillUI(){
         return;
       }
 
+      // runnerCenter.position.y e rotation vengono gestiti dal bob corsa (più sotto)
       const trafficMul = (1.0 - game.stopBlend);
       if(game.stopped){
+        // ✅ STOP: niente gameplay, ma lasciamo info camera per “breathing sway”
         game.camSpeed = 0;
         game.grounded = true;
         game.vyNow = 0;
         return;
       }
 
-      // ✅ timers
       if(game.invincibleT>0){
         game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
         if(game.invincibleT<=0){
@@ -3108,18 +2860,7 @@ function setFoodBoostPillUI(){
       if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
       if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
 
-      // ✅ cooldown distanze powerup
-      if(game.powerupCooldownZ > 0){
-        // si “consuma” in base allo scroll: qui lo decrementiamo dopo aver calcolato speed
-      }
-
-      // ✅ quando il boost finisce → sblocca
-      const anyBoostActive = (game.foodBoostT>0 || game.ringBoostT>0);
-      if(!anyBoostActive && game.boostLock){
-        game.boostLock = false;
-      }
-
-      const anyBoost = anyBoostActive;
+      const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
       if(anyBoost && game.invincibleT<0.05){
         game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
         bubble.visible=true;
@@ -3132,32 +2873,26 @@ function setFoodBoostPillUI(){
 
       const speedMul = foodMul * ringMul * crazyMul;
       const speed = game.baseSpeed * speedMul * trafficMul;
+      // ✅ Run bob (solo quando corri)
+runPhase += dt * (9.5 + (speedMul-1.0)*2.0);  // accelera un po’ con i boost
 
-      // ✅ ora decremento cooldown distanza
-      if(game.powerupCooldownZ > 0){
-        game.powerupCooldownZ = Math.max(0, game.powerupCooldownZ - (speed*dt));
-      }
+const grounded = (game.y === 0 && !game.jumping);
+const bobOn = grounded ? 1.0 : 0.25;          // in aria quasi zero
+const slideOn = game.sliding ? 0.35 : 1.0;    // in slide riduci
 
-      // ✅ Run bob
-      runPhase += dt * (9.5 + (speedMul-1.0)*2.0);
+const bobY = Math.abs(Math.sin(runPhase)) * 0.045 * bobOn * slideOn;      // su/giù
+const sway = Math.sin(runPhase*0.5) * 0.035 * bobOn * slideOn;            // sway laterale
+const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;                // roll lieve
 
-      const grounded = (game.y === 0 && !game.jumping);
-      const bobOn = grounded ? 1.0 : 0.25;
-      const slideOn = game.sliding ? 0.35 : 1.0;
+runnerCenter.position.y = 0.95 + bobY;
+runnerCenter.rotation.z = lean;
+runnerCenter.rotation.x = -sway * 0.35; // micro “nodding”
 
-      const bobY = Math.abs(Math.sin(runPhase)) * 0.045 * bobOn * slideOn;
-      const sway = Math.sin(runPhase*0.5) * 0.035 * bobOn * slideOn;
-      const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;
-
-      runnerCenter.position.y = 0.95 + bobY;
-      runnerCenter.rotation.z = lean;
-      runnerCenter.rotation.x = -sway * 0.35;
-
+      // ✅ info per camera FPS (step/bob)
       game.camSpeed = speed;
       game.grounded = (game.y === 0);
       game.vyNow = game.vy;
 
-      // physics
       const g=22.0;
       game.vy += g*dt;
       game.y  += game.vy*dt;
@@ -3165,11 +2900,12 @@ function setFoodBoostPillUI(){
 
       if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
 
-      // lane follow
-      const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
-      runnerX = damp(runnerX, laneTargetX, 14, dt);
-      runnerPivot.position.x = runnerX;
-      runnerPivot.position.y = (-game.y);
+      // ✅ Smooth lane follow
+const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
+runnerX = damp(runnerX, laneTargetX, 14, dt);   // 14 = velocità “naturale”
+runnerPivot.position.x = runnerX;
+
+runnerPivot.position.y = (-game.y);
 
       const h = runnerPivot.position.y;
       const s = 1.10 + clamp(h*0.65, 0, 0.85);
@@ -3178,8 +2914,6 @@ function setFoodBoostPillUI(){
       contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
 
       const scroll = speed*dt;
-
-      // road scroll
       highwayTex.offset.y -= scroll*0.085;
       for(const t of patchTexPool) t.offset.y -= scroll*0.085;
 
@@ -3188,10 +2922,7 @@ function setFoodBoostPillUI(){
         if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
       }
       loopJungle(scroll);
-      loopClouds(scroll);
-      
 
-      // spawn
       game.spawnT -= dt;
       if(game.spawnT<=0){
         spawnRow();
@@ -3200,23 +2931,10 @@ function setFoodBoostPillUI(){
 
       const magnetOn = game.magnetT > 0;
 
-      // entity update + turtle flee
       for(const e of game.entities){
-        // ✅ turtle scappa avanti se in fuga
-        if(e.type === 'turtle' && e.obj?.userData){
-          if(e.obj.userData.fleeT > 0){
-            e.obj.userData.fleeT = Math.max(0, e.obj.userData.fleeT - dt);
-            const fleeSpeed = 18.0 + e.obj.userData.fleeV; // extra
-            e.z += fleeSpeed * dt; // scappa verso camera (più veloce del scroll)
-          }else{
-            e.z += scroll;
-          }
-        }else{
-          e.z += scroll;
-        }
+        e.z += scroll;
         e.obj.position.z = e.z;
 
-        // magnet attraction
         if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
           const dx = runnerPivot.position.x - e.obj.position.x;
           const dz = (0 - e.z);
@@ -3228,7 +2946,6 @@ function setFoodBoostPillUI(){
         }
       }
 
-      // cleanup behind
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
         if(e.z > 6.0){
@@ -3237,10 +2954,14 @@ function setFoodBoostPillUI(){
         }
       }
 
-      const px = runnerPivot.position.x;
-      const playerCenterY = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
+            const px = runnerPivot.position.x;
 
+      // centro "reale" del player per collisioni
+      // - in slide il corpo è più basso
+      // - in salto sale davvero con runnerPivot.position.y
+      const playerCenterY = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
       function collideEntity(e){
+
         const ex = e.obj.position.x;
         const ey = (e.obj.position.y ?? 0);
         const ez = e.z;
@@ -3249,23 +2970,33 @@ function setFoodBoostPillUI(){
         const dy = Math.abs(ey - playerCenterY);
         const dz = Math.abs(ez - 0.25);
 
+        // hitbox per tipo (tweakabili)
+        // numeri piccoli = più precisione
         const T = {
           coin:   { x:0.55, y:0.95, z:0.80 },
           food:   { x:0.58, y:0.98, z:0.85 },
           heart:  { x:0.58, y:0.98, z:0.85 },
           magnet: { x:0.60, y:1.05, z:0.90 },
+
+          // ring: più stretto e "frontale"
           ring:   { x:0.42, y:0.75, z:0.55 },
+
+          // ostacolo: stretto e più punitivo solo se sei davvero dentro
           obst:   { x:0.52, y:(game.sliding ? 0.60 : 0.85), z:0.70 },
+
+          // turtle: collisione a terra, più larga in z ma bassa in y
           turtle: { x:0.62, y:0.55, z:0.95 }
         };
 
         const th = T[e.type] || { x:0.60, y:1.0, z:0.85 };
 
+        // ring: pickup normale (NON richiede slide)
         if(e.type === 'ring'){
-          const yTh = game.sliding ? 0.55 : th.y;
-          return (dx < th.x && dy < yTh && dz < th.z);
-        }
+  const yTh = game.sliding ? 0.55 : th.y;
+  return (dx < th.x && dy < yTh && dz < th.z);
+}
 
+        // turtle: non deve colpirti se sei chiaramente in aria
         if(e.type === 'turtle'){
           if(game.jumping || runnerPivot.position.y > 0.35) return false;
           return (dx < th.x && dy < th.y && dz < th.z);
@@ -3274,17 +3005,13 @@ function setFoodBoostPillUI(){
         return (dx < th.x && dy < th.y && dz < th.z);
       }
 
-      // collisions
+
       for(let i=game.entities.length-1;i>=0;i--){
         const e=game.entities[i];
 
         if(e.type==='ring'){
-          if(!collideEntity(e)) continue;
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
           game.ringCount += 1;
-
-          // ✨ magia verso HUD rings
-          flyToEl(e.obj.getWorldPosition(new THREE.Vector3()), ringsEl, { icon:'✨', duration:520 });
-
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.ring();
 
@@ -3299,27 +3026,17 @@ function setFoodBoostPillUI(){
         }
 
         if(e.type==='turtle'){
-          if(!collideEntity(e)) continue;
-
-          // ✅ FIX: la tartaruga scappa avanti quando la colpisci (non sparisce)
-          // la rimuoviamo solo dopo un attimo (quando esce dalla scena)
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
           sfx.boost();
-          try{
-            e.obj.userData.fleeT = 1.0;
-            e.obj.userData.fleeV = 10 + Math.random()*8;
-          }catch{}
-          // niente remove/splice qui
+          scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
-        if(!collideEntity(e)) continue;
+        if(!collideEntity(e)) continue; // ✅ usa la nuova
 
         if(e.type==='coin'){
           game.coins += 1;
           game.score += 28;
-
-          flyToEl(e.obj.getWorldPosition(new THREE.Vector3()), coinsEl, { icon:'✨', duration:520 });
-
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.coin();
           continue;
@@ -3329,45 +3046,34 @@ function setFoodBoostPillUI(){
           game.foodCount += 1;
           game.foodHistory.push(e.emo);
           refreshFoodUI();
-
-          // ✨ magia verso colonna cibo (foodStack)
-          flyToEl(e.obj.getWorldPosition(new THREE.Vector3()), foodStack, { icon:'✨', duration:560 });
-
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.food();
 
           if(game.foodCount >= 10){
-            game.foodBoostCharges += 1;
-            game.foodCount = 0;
-            game.foodHistory = [];
-            refreshFoodUI();
-            updateFoodBoostButton();
-            sfx.boost();
-          }
+  // ✅ guadagni 1 carica (NON si attiva il boost da solo)
+  game.foodBoostCharges += 1;
+
+  // reset contatore 0/10
+  game.foodCount = 0;
+  game.foodHistory = [];
+  refreshFoodUI();
+
+  // aggiorna il pulsante BOOST
+  updateFoodBoostButton();
+
+  sfx.boost();
+}
           continue;
         }
 
         if(e.type==='heart'){
           if(game.lives < game.maxLives) addLife();
-
-          // ✅ cooldown spawn powerup (heart)
-          game.powerupCooldownZ = POWERUP_COOLDOWN_DIST;
-
-          flyToEl(e.obj.getWorldPosition(new THREE.Vector3()), hpTxt, { icon:'✨', duration:540 });
-
           scene.remove(e.obj); game.entities.splice(i,1);
           continue;
         }
 
         if(e.type==='magnet'){
           game.magnetT = 8.0;
-
-          // ✅ cooldown spawn powerup (magnet)
-          game.powerupCooldownZ = POWERUP_COOLDOWN_DIST;
-
-          // ✨ magia verso pill magnete (magTxt)
-          flyToEl(e.obj.getWorldPosition(new THREE.Vector3()), magTxt, { icon:'✨', duration:540 });
-
           scene.remove(e.obj); game.entities.splice(i,1);
           sfx.magnet();
           continue;
@@ -3381,7 +3087,6 @@ function setFoodBoostPillUI(){
         }
       }
 
-      // score tick
       game.score += (18 * speedMul) * dt;
 
       if(game.score > game.best){
@@ -3394,38 +3099,28 @@ function setFoodBoostPillUI(){
       if(bestEl)  bestEl.textContent  = String(game.best);
       if(ringsEl) ringsEl.textContent = String(game.ringCount);
       if(hpTxt)   hpTxt.textContent   = hpString();
-
-      // ✅ HUD bars
-      setMagnetUI();
+      if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
       setBoostUI();
-      setFoodBoostPillUI();
 
-      // bubble glow
       if(bubble.visible){
         bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
       }
 
       tiltTarget *= 0.92;
       camRoll = damp(camRoll, tiltTarget, 10, dt);
-
-      fitScoreText();
     }
+ 
 
-    // =========================================================
-    // Animate (camera shake boost INTENSO + bar shimmer phase)
-    // =========================================================
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
 
+      // debug fps calc
       fpsAcc += dt; fpsN++;
       if(fpsAcc >= 0.5){
         fpsShow = fpsN / fpsAcc;
         fpsAcc = 0; fpsN = 0;
       }
-
-      // phase per shimmer bars (usato in PART 6 per animazioni CSS/JS)
-      hudBarAnimPhase += dt * 4.2;
 
       update(dt,tNow);
 
@@ -3438,6 +3133,7 @@ function setFoodBoostPillUI(){
       const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
       const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
 
+      // ✅ FOV dinamico SOLO in FPS se fpsDynFov=true
       const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
 
       const targetFov = clamp(baseFov + (useFovBoost ? fovBoost : 0), 30, 110);
@@ -3455,116 +3151,130 @@ function setFoodBoostPillUI(){
         camZ   = damp(camZ,   targetZ,   8, dt);
         camY   = damp(camY,   targetY,   8, dt);
 
-        const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
-        camX = damp(camX, targetCamX, 5, dt);
+        // segue di più la corsia (prima 0.35)
+const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
+
+// un filo più morbido (prima lambda 6)
+camX = damp(camX, targetCamX, 5, dt);
       }
 
       camera.fov = camFov;
       camera.updateProjectionMatrix();
 
-      // ✅ shake abbastanza intenso quando boost attivo (NON in FPS)
       let shakeX = 0, shakeY = 0;
       if(camDynamic && anyBoost && shakeEnabled && viewMode!=='fps'){
-        const base = bothBoost ? 0.030 : 0.022; // più intenso
-        shakeX = Math.sin(tNow*0.028) * base + Math.sin(tNow*0.071)*base*0.35;
-        shakeY = Math.sin(tNow*0.035) * (base*0.65) + Math.sin(tNow*0.091)*base*0.25;
+        const intensity = bothBoost ? 0.018 : 0.011;
+        shakeX = Math.sin(tNow*0.020) * intensity;
+        shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
       }
 
       const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
 
       camera.up.set(0,1,0);
 
+      
       // ===== CAMERA MODES =====
-      if(viewMode === 'fps'){
-        camera.up.set(0,1,0);
+if(viewMode === 'fps'){
+  camera.up.set(0,1,0);
 
-        const eyeBaseY = fpsEyeY;
-        const eyeFwd   = 1.05;
-        const eyeZ     = 0.10;
+  const eyeBaseY = 1.58;
+  const eyeFwd   = 1.05;
+  const eyeZ     = 0.10;
 
-        const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
+  const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
 
-        // blur fake solo in boost
-        if(renderer?.domElement){
-          renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
-        }
+  // ===== motion blur fake solo in boost =====
+  const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+  if(renderer?.domElement){
+    renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
+  }
 
-        const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
-        const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
+  // ===== breathe in menu/stop =====
+  const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
+  const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
 
-        const grounded = (game.y === 0 && !game.jumping);
+  const grounded = (game.y === 0 && !game.jumping);
 
-        if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
-        fpsGroundPrev = grounded;
+  // landing kick
+  if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
+  fpsGroundPrev = grounded;
 
-        fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
-        fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
+  fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
+  fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
 
-        if(!fpsRealistic){
-          fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
-        }else{
-          fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
-        }
+  // ===== elastic lane lag (spring) =====
+  // "fpsLaneKick" lo usi già quando cambi corsia: qui lo trasformiamo in elasticità vera
+  // (più realistico) oppure lo spengo in stabile
+  if(!fpsRealistic){
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
+  }else{
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
+  }
 
-        const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
-        const nonLinear = Math.pow(sNorm, 1.65);
+  // ===== non-linear bob based on speed =====
+  // speedNormalized 0..1 circa
+  const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
+  const nonLinear = Math.pow(sNorm, 1.65); // non lineare (cresce più forte a velocità alte)
 
-        if(!stoppedOrMenu && fpsRealistic){
-          fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
-        } else {
-          fpsPhase += dt * 2.0;
-        }
+  if(!stoppedOrMenu && fpsRealistic){
+    fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
+  } else {
+    fpsPhase += dt * 2.0;
+  }
 
-        const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
-        const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
+  const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
+  const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
 
-        const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
-        const runX = Math.sin(fpsPhase*0.5) * runAmpX;
+  const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
+  const runX = Math.sin(fpsPhase*0.5) * runAmpX;
 
-        const air = grounded ? 0.0 : 1.0;
-        const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
-        const landY = -fpsLandKick * 0.020;
+  const air = grounded ? 0.0 : 1.0;
+  const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
+  const landY = -fpsLandKick * 0.020;
 
-        const slideChin = (game.sliding ? 0.10 : 0.0);
-        const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
+  const slideChin = (game.sliding ? 0.10 : 0.0);
+  const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
 
-        const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
-        const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
+  // micro lag corsia (elasticità)
+  const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
 
-        const xOff = breatheX + (1-air)*runX + laneKickX;
-        const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
+  const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
 
-        camera.position.set(
-          runnerPivot.position.x + xOff,
-          yFollow + yOff,
-          eyeZ - eyeFwd
-        );
+  const xOff = breatheX + (1-air)*runX + laneKickX;
+  const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
 
-        camera.lookAt(
-          runnerPivot.position.x + xOff,
-          yFollow + yOff,
-          -10
-        );
+  camera.position.set(
+    runnerPivot.position.x + xOff,
+    yFollow + yOff,
+    eyeZ - eyeFwd
+  );
 
-        camera.rotation.z = 0;
-      }
-      else if(viewMode === 'back'){
-        const lookAtY = lerp(0.35, 1.45, framing);
-        const lookAtZ = -6.5;
-        camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-        camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-        camera.rotation.z = camRoll * 0.55;
-        camera.up.set(0,1,0);
-      }
-      else { // FRONT
-        const lookAtY = lerp(0.30, 1.55, framing);
-        const lookAtZ = 0.10;
-        camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
-        camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-        camera.rotation.z = camRoll * 0.55;
-        camera.up.set(0,1,0);
-      }
+  camera.lookAt(
+    runnerPivot.position.x + xOff,
+    yFollow + yOff,
+    -10
+  );
 
+  camera.rotation.z = 0;
+}
+else if(viewMode === 'back'){
+  const lookAtY = lerp(0.35, 1.45, framing);
+  const lookAtZ = -6.5;
+  camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
+  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+  camera.rotation.z = camRoll * 0.55;
+  camera.up.set(0,1,0);
+}
+else { // FRONT
+  const lookAtY = lerp(0.30, 1.55, framing);
+  const lookAtZ = 0.10;
+  camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
+  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+  camera.rotation.z = camRoll * 0.55;
+  camera.up.set(0,1,0);
+}
+
+      // ===== Debug panel update (timer) =====
       if(debugOn){
         dbgTimer += dt;
         if(dbgTimer > 0.12){
@@ -3583,543 +3293,14 @@ function setFoodBoostPillUI(){
       requestAnimationFrame(animate);
     }
 
-    // =========================================================
-    // Resize + Boot continue in PART 6
-    // =========================================================
     function onResize(){
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      fitScoreText();
     }
     window.addEventListener('resize', onResize);
 
-
-
-    // =========================================================
-    // ✅ 1) UI: ordine pulsanti (dal basso: DANCE, AVVIA, BOOST)
-    // + bottone contatore BOOST corto a sinistra
-    // + rimuovi conteggio dal bottone BOOST (già fatto) e mostra numero nel contatore
-    // =========================================================
-    (function setupBoostUI(){
-      if(!rightStack || !btnDance || !btnMain || !btnFoodBoost) return;
-
-      // ✅ riordina DOM: TOP->BOTTOM deve essere: BOOST, START, DANCE
-      // (perché flex-direction: column)
-      try{
-        rightStack.innerHTML = '';
-        // wrapper boost row: [countBtn][boostBtn]
-        const boostRow = document.createElement('div');
-        boostRow.style.display = 'flex';
-        boostRow.style.gap = `calc(5px * var(--menuScale))`;
-        boostRow.style.alignItems = 'center';
-        boostRow.style.pointerEvents = 'auto';
-
-        // pulsante contatore (stessa altezza, più corto)
-        const btnBoostCount = document.createElement('button');
-        btnBoostCount.id = 'btnBoostCount';
-        btnBoostCount.type = 'button';
-        btnBoostCount.className = 'bigBtn pillFx';
-        btnBoostCount.style.width = `calc(30px * var(--menuScale) * 0.75)`;
-        btnBoostCount.style.padding = '0';
-        btnBoostCount.style.justifyContent = 'center';
-        btnBoostCount.style.display = 'flex';
-        btnBoostCount.innerHTML = `<span class="centerLbl" id="boostCountLbl">0</span>`;
-
-        // rendi boostBtn un pelo più largo per stare bene col row
-        btnFoodBoost.style.width = `calc(70px * var(--menuScale) * 0.75)`;
-
-        boostRow.appendChild(btnBoostCount);
-        boostRow.appendChild(btnFoodBoost);
-
-        // ✅ inserisci in ordine: BoostRow, Start, Dance
-        rightStack.appendChild(boostRow);
-        rightStack.appendChild(btnMain);
-        rightStack.appendChild(btnDance);
-
-        // mostra/aggiorna numero cariche
-        const boostCountLbl = $('boostCountLbl');
-
-        // animazioni CSS via style inject
-        const st = document.createElement('style');
-        st.textContent = `
-          @keyframes pulsePop { 
-            0%{transform:scale(1)} 
-            35%{transform:scale(1.18)} 
-            100%{transform:scale(1)} 
-          }
-          @keyframes glowSweep {
-            0%{filter:drop-shadow(0 0 0 rgba(160,220,255,0));}
-            50%{filter:drop-shadow(0 0 10px rgba(160,220,255,.35));}
-            100%{filter:drop-shadow(0 0 0 rgba(160,220,255,0));}
-          }
-          .pulsePop{ animation:pulsePop .28s ease; }
-          .danceFlash{ animation:glowSweep .45s ease; }
-          /* shimmer barre */
-          .hudBar>i{
-            background: linear-gradient(90deg,
-              rgba(200,210,255,.65),
-              rgba(255,255,255,.95),
-              rgba(200,210,255,.65)
-            );
-            background-size: 180% 100%;
-          }
-          @keyframes barShine{ 
-            0%{ background-position: 0% 0%; } 
-            100%{ background-position: 180% 0%; } 
-          }
-          .barActive{ animation: barShine .9s linear infinite; }
-        `;
-        document.head.appendChild(st);
-
-        function bump(el){
-          if(!el) return;
-          el.classList.remove('pulsePop');
-          void el.offsetWidth;
-          el.classList.add('pulsePop');
-        }
-
-        // esponi helper globale per altri punti
-        window.__jrBoostCount = {
-          el: btnBoostCount,
-          lbl: boostCountLbl,
-          bump
-        };
-
-        // aggiorna sempre
-        const _oldUpdateFoodBoostButton = updateFoodBoostButton;
-        updateFoodBoostButton = function(){
-          // bottone boost visibile solo se cariche >0
-          if(game.foodBoostCharges > 0){
-            btnFoodBoost.style.display = 'flex';
-            if(btnBoostCount) btnBoostCount.style.display = 'flex';
-          }else{
-            btnFoodBoost.style.display = 'none';
-            if(btnBoostCount) btnBoostCount.style.display = 'none';
-          }
-          if(boostCountLbl) boostCountLbl.textContent = String(game.foodBoostCharges);
-        };
-
-        // bump quando cambia cariche
-        let prev = game.foodBoostCharges;
-        const _oldRefreshFoodUI = refreshFoodUI;
-        refreshFoodUI = function(){
-          _oldRefreshFoodUI();
-          if(game.foodBoostCharges !== prev){
-            prev = game.foodBoostCharges;
-            if(window.__jrBoostCount?.el) window.__jrBoostCount.bump(window.__jrBoostCount.el);
-          }
-          updateFoodBoostButton();
-        };
-
-        // bump quando usi boost
-        safeOn(btnFoodBoost, 'click', ()=>{
-          if(window.__jrBoostCount?.el) window.__jrBoostCount.bump(window.__jrBoostCount.el);
-        });
-
-      }catch(e){
-        console.warn('setupBoostUI err', e);
-      }
-    })();
-
-    // =========================================================
-    // ✅ 2) Fix tartaruga: dopo hit NON collide più ma continua a scappare
-    // (sposta turtle in lista separata)
-    // =========================================================
-    const fleeingTurtles = [];
-    (function patchTurtleFlee(){
-      const _update = update;
-      update = function(dt, tNow){
-        _update(dt, tNow);
-
-        // sposta turtles “in fuga” fuori dalle entities per evitare collisioni ripetute
-        for(let i=game.entities.length-1;i>=0;i--){
-          const e = game.entities[i];
-          if(e.type === 'turtle' && e.obj?.userData?.fleeT > 0){
-            // trasferisci
-            fleeingTurtles.push({
-              obj: e.obj,
-              z: e.z,
-              v: 18 + (e.obj.userData.fleeV||0)
-            });
-            game.entities.splice(i,1);
-          }
-        }
-
-        // aggiorna turtles in fuga
-        if(fleeingTurtles.length){
-          // scappa “avanti” e sparisce quando passa la camera
-          for(let i=fleeingTurtles.length-1;i>=0;i--){
-            const t = fleeingTurtles[i];
-            t.z += (t.v * dt);
-            t.obj.position.z = t.z;
-            if(t.z > 6.0){
-              scene.remove(t.obj);
-              fleeingTurtles.splice(i,1);
-            }
-          }
-        }
-      };
-    })();
-
-    // =========================================================
-    // ✅ 3) Ostacoli: stessi size + appoggiati a terra
-    // =========================================================
-    spawnObstacleVisual = function(){
-      const w = 0.82, h = 1.02, d = 0.82;
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(w,h,d),
-        new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
-      );
-      box.castShadow=true; box.receiveShadow=true;
-      // appoggia a terra: y = h/2 (strada è y=0)
-      box.position.y = h/2;
-      return box;
-    };
-
-    // =========================================================
-    // ✅ 5) Fix “camera capovolta” (robusto): nessuna transform CSS sul canvas
-    // =========================================================
-    if(renderer?.domElement){
-      renderer.domElement.style.transform = 'none';
-      renderer.domElement.style.webkitTransform = 'none';
-    }
-
-    // =========================================================
-    // ✅ 6) Slider Altezza FPS in impostazioni + salvataggio
-    // =========================================================
-
-      // refresh UI quando entri
-      const _syncCamUI = syncCamUI;
-      syncCamUI = function(){
-        _syncCamUI();
-        const s = $('fpsEyeSlider');
-        const v = $('fpsEyeVal');
-        if(s) s.value = fpsEyeY.toFixed(2);
-        if(v) v.textContent = fpsEyeY.toFixed(2);
-      };
-
-    // =========================================================
-    // ✅ 7) “Focus slider”: quando tocchi uno slider, spariscono impostazioni (vedi bene player)
-    // resta solo una striscia sottile con lo slider
-    // =========================================================
-    (function sliderFocusMode(){
-      if(!settingsOverlay) return;
-      const panel = settingsOverlay.querySelector('.panel');
-      if(!panel) return;
-
-      const focusStrip = document.createElement('div');
-      focusStrip.id = 'focusStrip';
-      focusStrip.className = 'pillFx';
-      focusStrip.style.position = 'fixed';
-      focusStrip.style.left = '50%';
-      focusStrip.style.bottom = `calc(env(safe-area-inset-bottom, 0px) + 10px)`;
-      focusStrip.style.transform = 'translateX(-50%)';
-      focusStrip.style.width = 'min(520px, calc(100vw - 28px))';
-      focusStrip.style.padding = '10px 12px';
-      focusStrip.style.display = 'none';
-      focusStrip.style.zIndex = '80';
-      focusStrip.style.pointerEvents = 'auto';
-      focusStrip.innerHTML = `<div style="font-weight:950;font-size:12px;opacity:.9;margin-bottom:8px" id="focusTitle">Regola</div>`;
-      document.body.appendChild(focusStrip);
-
-      let moved = null;
-
-      function enterFocus(slider, title){
-        if(!slider) return;
-        moved = { slider, parent: slider.parentElement, next: slider.nextSibling };
-        // nascondi panel quasi tutto
-        panel.style.display = 'none';
-        settingsOverlay.style.background = 'radial-gradient(ellipse at center, rgba(0,0,0,.08), rgba(0,0,0,.38))';
-
-        const ft = $('focusTitle');
-        if(ft) ft.textContent = title || 'Regola';
-
-        focusStrip.appendChild(slider);
-        focusStrip.style.display = 'block';
-      }
-
-      function exitFocus(){
-        if(!moved) return;
-        const { slider, parent, next } = moved;
-        // ripristina
-        if(next) parent.insertBefore(slider, next);
-        else parent.appendChild(slider);
-        focusStrip.style.display = 'none';
-        panel.style.display = 'block';
-        settingsOverlay.style.background = 'radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.72))';
-        moved = null;
-      }
-
-      // aggancia a tutti i range (anche quello creato ora)
-      function hookAll(){
-        const ranges = settingsOverlay.querySelectorAll('input[type="range"]');
-        ranges.forEach(r=>{
-          r.addEventListener('pointerdown', ()=>{
-            // titolo dal label sopra
-            const row = r.previousElementSibling;
-            const lab = row?.querySelector('label')?.textContent || 'Regola';
-            enterFocus(r, lab);
-          }, { passive:true });
-          r.addEventListener('pointerup', exitFocus, { passive:true });
-          r.addEventListener('pointercancel', exitFocus, { passive:true });
-        });
-      }
-      hookAll();
-
-      // quando apri settings, ri-hook
-      const _openSettings = openSettings;
-      openSettings = function(){
-        _openSettings();
-        setTimeout(hookAll, 40);
-      };
-    })();
-
-    // =========================================================
-    // ✅ 8) Animazione “magia” pickup → HUD target
-    // =========================================================
-    function worldToScreen(v3){
-      const v = v3.clone().project(camera);
-      const x = (v.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
-      return { x, y };
-    }
-
-    function elCenter(el){
-      if(!el) return { x: window.innerWidth*0.5, y: window.innerHeight*0.5 };
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width*0.5, y: r.top + r.height*0.5 };
-    }
-
-    function flyToEl(worldPos, targetEl, opt={}){
-      const { duration=520 } = opt;
-      const start = worldToScreen(worldPos);
-      const end   = elCenter(targetEl);
-
-      const d = document.createElement('div');
-      d.style.position = 'fixed';
-      d.style.left = `${start.x}px`;
-      d.style.top  = `${start.y}px`;
-      d.style.width = '10px';
-      d.style.height = '10px';
-      d.style.borderRadius = '999px';
-      d.style.pointerEvents = 'none';
-      d.style.zIndex = '9999';
-      d.style.background = 'rgba(255,255,255,.95)';
-      d.style.boxShadow = '0 0 14px rgba(160,220,255,.55), 0 0 30px rgba(160,220,255,.22)';
-      document.body.appendChild(d);
-
-      // brillantini
-      const sparkN = IS_IOS ? 5 : 8;
-      const sparks = [];
-      for(let i=0;i<sparkN;i++){
-        const s = document.createElement('div');
-        s.style.position='fixed';
-        s.style.left=`${start.x}px`;
-        s.style.top =`${start.y}px`;
-        s.style.width='4px';
-        s.style.height='4px';
-        s.style.borderRadius='999px';
-        s.style.pointerEvents='none';
-        s.style.zIndex='9998';
-        s.style.background='rgba(255,255,255,.85)';
-        s.style.boxShadow='0 0 10px rgba(255,255,255,.35)';
-        document.body.appendChild(s);
-        sparks.push({ el:s, a: rnd(0,Math.PI*2), r: rnd(10,22) });
-      }
-
-      const t0 = performance.now();
-      function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
-      function tick(now){
-        const t = clamp((now - t0)/duration, 0, 1);
-        const k = easeOutCubic(t);
-
-        // curva “cinematica”
-        const cx = (start.x + end.x)*0.5 + rnd(-30,30);
-        const cy = Math.min(start.y, end.y) - rnd(40,80);
-
-        // bezier quad
-        const x = (1-k)*(1-k)*start.x + 2*(1-k)*k*cx + k*k*end.x;
-        const y = (1-k)*(1-k)*start.y + 2*(1-k)*k*cy + k*k*end.y;
-
-        d.style.left = `${x}px`;
-        d.style.top  = `${y}px`;
-        d.style.transform = `translate(-50%,-50%) scale(${(0.9 + 0.3*(1-t)).toFixed(3)})`;
-
-        for(const sp of sparks){
-          const wob = (1-t);
-          const sx = x + Math.cos(sp.a + now*0.02) * sp.r * wob;
-          const sy = y + Math.sin(sp.a + now*0.02) * sp.r * wob;
-          sp.el.style.left = `${sx}px`;
-          sp.el.style.top  = `${sy}px`;
-          sp.el.style.transform = `translate(-50%,-50%) scale(${(0.7 + 0.6*wob).toFixed(3)})`;
-          sp.el.style.opacity = `${(1-t).toFixed(3)}`;
-        }
-
-        if(t < 1){
-          requestAnimationFrame(tick);
-        }else{
-          d.remove();
-          for(const sp of sparks) sp.el.remove();
-        }
-      }
-      requestAnimationFrame(tick);
-    }
-
-    // =========================================================
-    // ✅ 9) Dance: animazione bottone + camera 360 + zoom “cinematic”
-    // =========================================================
-    let danceCamOn = false;
-    let orbitAz = 0.0;
-    let orbitRad = 4.6;
-    let orbitRadTarget = 4.6;
-    let orbitY = 2.0;
-
-    function setDanceCam(on){
-      danceCamOn = !!on;
-      orbitAz = 0.0;
-      orbitRad = orbitRadTarget = 4.8;
-    }
-
-    safeOn(btnDance, 'click', ()=>{
-      // flash UI
-      btnDance.classList.remove('danceFlash'); void btnDance.offsetWidth; btnDance.classList.add('danceFlash');
-      setDanceCam(true);
-    });
-
-    // input orbit solo se dance
-    let danceTouch = null;
-    renderer.domElement.addEventListener('pointerdown', (e)=>{
-      if(!danceCamOn) return;
-      renderer.domElement.setPointerCapture(e.pointerId);
-      danceTouch = { x:e.clientX, y:e.clientY, id:e.pointerId };
-    });
-    renderer.domElement.addEventListener('pointermove', (e)=>{
-      if(!danceCamOn || !danceTouch || danceTouch.id!==e.pointerId) return;
-      const dx = e.clientX - danceTouch.x;
-      const dy = e.clientY - danceTouch.y;
-      danceTouch.x = e.clientX; danceTouch.y = e.clientY;
-
-      // 360 orbit
-      orbitAz += dx * 0.006;
-
-      // swipe su -> zoom in (cinematic)
-      orbitRadTarget = clamp(orbitRadTarget + (dy * 0.010), 2.2, 7.0);
-    });
-    renderer.domElement.addEventListener('pointerup', (e)=>{
-      if(danceTouch && danceTouch.id===e.pointerId) danceTouch = null;
-    });
-    renderer.domElement.addEventListener('pointercancel', ()=>{ danceTouch=null; });
-
-    // patch animate: se danceCamOn e animState.dance, camera orbit intorno player
-    (function patchDanceCamera(){
-      const _animate = animate;
-      animate = function(tNow){
-        
-
-        // aggiorna lock boost UI (numero sempre)
-        if(window.__jrBoostCount?.lbl){
-          window.__jrBoostCount.lbl.textContent = String(game.foodBoostCharges);
-          // lock: se boost attivo, fai shimmer sul contatore
-          const active = (game.foodBoostT>0 || game.ringBoostT>0);
-          window.__jrBoostCount.el?.classList.toggle('barActive', active);
-        }
-
-        // barra shimmer quando timer >0
-        if(magBar) magBar.classList.toggle('barActive', game.magnetT>0);
-        if(boostBar) boostBar.classList.toggle('barActive', (game.foodBoostT>0 || game.ringBoostT>0));
-        if(foodBoostBar) foodBoostBar.classList.toggle('barActive', game.foodBoostT>0);
-
-        _animate(tNow);
-
-        // after _animate ha già renderizzato: qui NO.
-        // (quindi facciamo la camera orbit DENTRO al loop render vero: patchiamo la camera nel ramo fps/front/back in PART 5 non era facile)
-        // -> soluzione: se danceCamOn, forziamo camera subito prima del render nel frame successivo:
-      };
-    })();
-
-    // ⚠️ Patch camera orbit dentro requestAnimationFrame: usiamo un hook prima del render
-    // Rimettiamo un render “override” leggero: spostiamo la camera orbit in un wrapper su renderer.render
-    (function patchRendererRenderForDance(){
-      const _render = renderer.render.bind(renderer);
-      renderer.render = function(sc, cam){
-        if(danceCamOn && animState.mode === 'dance'){
-          // smoothing
-          orbitRad = damp(orbitRad, orbitRadTarget, 8, 1/60);
-
-          const cx = runnerPivot.position.x;
-          const cy = runnerPivot.position.y + orbitY;
-          const cz = 0.0;
-
-          const x = cx + Math.sin(orbitAz) * orbitRad;
-          const z = cz + Math.cos(orbitAz) * orbitRad;
-
-          cam.position.set(x, cy, z);
-          cam.lookAt(cx, cy - 0.25, cz);
-
-          cam.rotation.z = 0;
-          cam.up.set(0,1,0);
-        } else {
-          // se non stai danzando, spegni danceCam
-          if(danceCamOn && animState.mode !== 'dance') danceCamOn = false;
-        }
-
-        // ✅ FPS eye height slider applicato
-        if(viewMode === 'fps'){
-          // il calcolo completo è nel ramo FPS già in PART 5
-          // qui basta assicurare che il valore sia usato: lo usiamo con una variabile letta nel ramo FPS:
-          // -> patchiamo una variabile globale letta nel ramo FPS usando "fpsEyeY" sostituendo eyeBaseY (vedi patch sotto).
-        }
-
-        return _render(sc, cam);
-      };
-    })();
-
-    // =========================================================
-    // ✅ 10) Patch FPS eyeBaseY: usa fpsEyeY (slider)
-    // (override leggero: ridefinisco applyViewMode non serve; patcho nel ramo FPS via variabile globale letta)
-    // =========================================================
-    // Hack pulito: rendiamo disponibile un getter globale e usiamo fpsEyeY al posto di 1.58
-    // Nel ramo FPS di PART 5 è "const eyeBaseY = 1.58;" → non possiamo cambiare quella const ormai.
-    // Quindi forziamo l’altezza extra aggiungendo un offset alla camera in FPS ad ogni render.
-    (function fpsEyeOffsetPatch(){
-      const _render = renderer.render.bind(renderer);
-      renderer.render = function(sc, cam){
-        // dance wrapper già sopra? se sì, questo rimpiazzo deve preservare l’altro render:
-        // quindi controlliamo se è già patchato
-        return _render(sc, cam);
-      };
-      // Invece patchiamo nella tick FPS: aggiungiamo offset in animate via camera.position.y
-      // (funziona perché nel ramo FPS la camera.position viene settata ogni frame)
-      const _animate2 = animate;
-      animate = function(tNow){
-        _animate2(tNow);
-        if(viewMode === 'fps' && (game.started && !game.paused && !game.over)){
-          // aggiungi offset differenza (fpsEyeY - 1.58)
-          const off = fpsEyeY - 1.58;
-          camera.position.y += off;
-        }
-      };
-    })();
-
-    // =========================================================
-    // ✅ 11) Boost lock: quando boost finisce, niente spam
-    // (già fatto in PART 5) + feedback UI: disabilita bottone mentre attivo
-    // =========================================================
-    (function boostDisableFeedback(){
-      const _setFoodBoostPillUI = setFoodBoostPillUI;
-      setFoodBoostPillUI = function(){
-        _setFoodBoostPillUI();
-        const active = (game.foodBoostT>0 || game.ringBoostT>0);
-        if(btnFoodBoost){
-          btnFoodBoost.style.opacity = active ? '0.65' : '1';
-        }
-      };
-    })();
-
-    // =========================================================
-    // ✅ 12) Boot finale
-    // =========================================================
+    // ===== Boot =====
     (async ()=>{
       refreshFoodUI();
       updateFoodBoostButton();
@@ -4140,16 +3321,15 @@ function setFoodBoostPillUI(){
       if(coinsEl) coinsEl.textContent = '0';
       if(bestEl)  bestEl.textContent = String(game.best);
       if(ringsEl) ringsEl.textContent = '0';
-      setMagnetUI();
+      if(magTxt)  magTxt.textContent = '🧲 0';
       setBoostUI();
-      setFoodBoostPillUI();
 
+      // applica modalità salvata
       applyViewMode(viewMode);
       setDebugUI();
 
-      // forza update UI cariche
-      updateFoodBoostButton();
-      fitScoreText();
-
       requestAnimationFrame(animate);
     })();
+  </script>
+</body>
+</html>
