@@ -2362,8 +2362,20 @@ safeOn(dynFovToggle,'click', ()=>{
       return s;
     }
 
-    function refreshFoodUI(){
     function updateFoodBoostButton(){
+  if(!btnFoodBoost || !foodBoostLbl) return;
+
+  // visibile solo se hai almeno 1 carica
+  if(game.foodBoostCharges > 0){
+    btnFoodBoost.style.display = 'flex';
+    foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
+  }else{
+    btnFoodBoost.style.display = 'none';
+    foodBoostLbl.textContent = `0 BOOST`;
+  }
+}
+
+    function refreshFoodUI(){
   if(!btnFoodBoost || !foodBoostLbl) return;
 
   // ✅ visibile solo se hai almeno 1 carica
@@ -2375,17 +2387,18 @@ safeOn(dynFovToggle,'click', ()=>{
     foodBoostLbl.textContent = `0 BOOST`;
   }
 }
-      if(!foodStack || !foodCountEl) return;
-      foodStack.innerHTML = "";
-      const show = game.foodHistory.slice(-6).reverse();
-      for(const emo of show){
-        const d=document.createElement('div');
-        d.className = 'foodItem pillFx';
-        d.textContent=emo;
-        foodStack.appendChild(d);
-      }
-      foodCountEl.textContent = String(game.foodCount);
-    }
+      function refreshFoodUI(){
+  if(!foodStack || !foodCountEl) return;
+  foodStack.innerHTML = "";
+  const show = game.foodHistory.slice(-6).reverse();
+  for(const emo of show){
+    const d=document.createElement('div');
+    d.className = 'foodItem pillFx';
+    d.textContent=emo;
+    foodStack.appendChild(d);
+  }
+  foodCountEl.textContent = String(game.foodCount);
+}
 
     function setBoostUI(){
       if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
