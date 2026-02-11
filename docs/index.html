@@ -2660,41 +2660,45 @@
     }
 
     function setBoostUI(){
-      if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
+  if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
 
-      const t = Math.max(game.foodBoostT, game.ringBoostT);
-      if(t <= 0){
-        pillBoost.style.display='none';
-        setHudBar(boostBar, 0);
-        if(boostTimeEl) boostTimeEl.textContent = '0.0s';
-        return;
-      }
-      pillBoost.style.display='flex';
+  const t = Math.max(game.foodBoostT, game.ringBoostT);
+  if(t <= 0){
+    pillBoost.style.display='none';
+    setHudBar(boostBar, 0);
+    if(boostTime) boostTime.textContent = '0.0s';
+    return;
+  }
+  pillBoost.style.display='flex';
 
-      const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
-      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
-      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
+  const both = (game.foodBoostT>0 && game.ringBoostT>0);
+  if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+  else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+  else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
 
-      const dur = 10.0;
-      const pct = clamp((t/dur)*100,0,100);
-      setHudBar(boostBar, pct);
+  const dur = 10.0;
+  const pct = clamp((t/dur)*100,0,100);
+  setHudBar(boostBar, pct);
 
-      if(boostTimeEl) boostTimeEl.textContent = `${t.toFixed(1)}s`;
-    }
+  if(boostTime) boostTime.textContent = `${t.toFixed(1)}s`;
+}
 
-    function setFoodBoostPillUI(){
-      if(!foodBoostPill || !foodBoostBar || !foodBoostTimeEl) return;
+function setFoodBoostPillUI(){
+  if(!foodBoostPill || !foodBoostBar) return;
 
-      if(game.foodBoostT <= 0){
-        foodBoostPill.style.display = 'none';
-        setHudBar(foodBoostBar, 0);
-        foodBoostTimeEl.textContent = '0.0s';
-        return;
-      }
-      foodBoostPill.style.display = 'flex';
-      const dur = 10.0;
-      const pct = clamp((game.foodBoostT/dur)*100,0,100);
+  if(game.foodBoostT <= 0){
+    foodBoostPill.style.display = 'none';
+    setHudBar(foodBoostBar, 0);
+    if(foodBoostTime) foodBoostTime.textContent = '0.0s';
+    return;
+  }
+  foodBoostPill.style.display = 'flex';
+  const dur = 10.0;
+  const pct = clamp((game.foodBoostT/dur)*100,0,100);
+
+  setHudBar(foodBoostBar, pct);
+  if(foodBoostTime) foodBoostTime.textContent = `${game.foodBoostT.toFixed(1)}s`;
+}
 
       // ✅ animazione barra “disponibile”: aggiungo micro-oscillazione luminosa
       setHudBar(foodBoostBar, pct);
@@ -3755,89 +3759,6 @@
     };
 
     // =========================================================
-    // ✅ 4) Sky realistico con nuvole in movimento + raggi sporadici
-    // =========================================================
-    const skyGroup = new THREE.Group();
-    scene.add(skyGroup);
-
-    function makeSkyGradientTexture(w=1024,h=512){
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
-      const g=c.getContext('2d');
-
-      const grad = g.createLinearGradient(0,0,0,h);
-      grad.addColorStop(0,'#6bb2ff');     // alto
-      grad.addColorStop(0.55,'#bfe7ff');  // medio
-      grad.addColorStop(1,'#e9fff6');     // vicino orizzonte
-      g.fillStyle = grad; g.fillRect(0,0,w,h);
-
-      // nuvolette piccole random
-      for(let i=0;i<120;i++){
-        const x=Math.random()*w, y=Math.random()*h*0.55;
-        const r=18+Math.random()*38;
-        const a=0.05+Math.random()*0.12;
-        const cg=g.createRadialGradient(x,y,0,x,y,r);
-        cg.addColorStop(0,`rgba(255,255,255,${a})`);
-        cg.addColorStop(1,'rgba(255,255,255,0)');
-        g.fillStyle=cg;
-        g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
-      }
-
-      // raggi leggerissimi
-      for(let i=0;i<18;i++){
-        const x=Math.random()*w;
-        const a=0.012+Math.random()*0.02;
-        g.fillStyle=`rgba(255,255,255,${a})`;
-        g.fillRect(x, 0, 10+Math.random()*22, h);
-      }
-
-      const tex=new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(1.0, 1.0);
-      return tex;
-    }
-
-    const skyTex = makeSkyGradientTexture(IS_IOS ? 768 : 1024, IS_IOS ? 384 : 512);
-    const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide });
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 20), skyMat);
-    sky.position.set(0, 24, -40);
-    skyGroup.add(sky);
-
-    // nuvole “vicine” (planes) con texture soft
-    function makeCloudTex(size=512){
-      const c=document.createElement('canvas'); c.width=c.height=size;
-      const g=c.getContext('2d');
-      g.clearRect(0,0,size,size);
-      for(let i=0;i<80;i++){
-        const x=Math.random()*size, y=Math.random()*size;
-        const r=22+Math.random()*70;
-        const a=0.05+Math.random()*0.18;
-        const cg=g.createRadialGradient(x,y,0,x,y,r);
-        cg.addColorStop(0,`rgba(255,255,255,${a})`);
-        cg.addColorStop(1,'rgba(255,255,255,0)');
-        g.fillStyle=cg;
-        g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
-      }
-      const tex=new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(1.2, 1.2);
-      return tex;
-    }
-    const cloudTex = makeCloudTex(IS_IOS ? 384 : 512);
-    const cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent:true, opacity:0.55, depthWrite:false });
-
-    const clouds = [];
-    for(let i=0;i<6;i++){
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(70, 32), cloudMat.clone());
-      p.rotation.x = -Math.PI/2.6;
-      p.position.set(rnd(-20,20), 28 + rnd(-2,3), -30 - i*18);
-      p.rotation.z = rnd(-0.4,0.4);
-      skyGroup.add(p);
-      clouds.push(p);
-    }
-
-    // =========================================================
     // ✅ 5) Fix “camera capovolta” (robusto): nessuna transform CSS sul canvas
     // =========================================================
     if(renderer?.domElement){
@@ -3849,20 +3770,6 @@
     // ✅ 6) Slider Altezza FPS in impostazioni + salvataggio
     // =========================================================
 
-      // patch saveCam per includere fpsEyeY
-      const _saveCam = saveCam;
-      saveCam = function(){
-        localStorage.setItem(CAM_KEY, JSON.stringify({
-          baseFov, baseCamZ, baseCamY, framing,
-          shake: !!shakeEnabled,
-          motionBlur: !!motionBlurEnabled,
-          view: viewMode,
-          debug: !!debugOn,
-          fpsRealistic: !!fpsRealistic,
-          fpsDynFov: !!fpsDynFov,
-          fpsEyeY: fpsEyeY
-        }));
-      };
       // refresh UI quando entri
       const _syncCamUI = syncCamUI;
       syncCamUI = function(){
@@ -3872,7 +3779,6 @@
         if(s) s.value = fpsEyeY.toFixed(2);
         if(v) v.textContent = fpsEyeY.toFixed(2);
       };
-    })();
 
     // =========================================================
     // ✅ 7) “Focus slider”: quando tocchi uno slider, spariscono impostazioni (vedi bene player)
