@@ -2517,7 +2517,18 @@ function refreshFoodUI(){
           t.position.set(lanesX[lane], 0, tz);
           t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
           scene.add(t);
-          game.entities.push({ type:'turtle', lane, z:tz, obj:t });
+          game.entities.push({
+  type:'turtle',
+  lane,
+  z:tz,
+  obj:t,
+
+  // ✅ nuove proprietà per “scivolata”
+  hit:false,
+  slideV:0,     // velocità extra in avanti (z)
+  slideT:0,     // tempo scivolata
+  spinV:0       // rotazione durante scivolata
+});
           game.lastTurtleZ[lane] = tz;
         }
       }
@@ -2932,19 +2943,46 @@ runnerPivot.position.y = (-game.y);
       const magnetOn = game.magnetT > 0;
 
       for(const e of game.entities){
-        e.z += scroll;
-        e.obj.position.z = e.z;
+  // base scroll (tutto il mondo viene verso la camera)
+  e.z += scroll;
 
-        if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
-          const dx = runnerPivot.position.x - e.obj.position.x;
-          const dz = (0 - e.z);
-          const dist = Math.hypot(dx*2.2, dz);
-          if(dist < 12.0){
-            e.obj.position.x += dx * dt * (5.6*(1-dist/12.0));
-            if(e.obj.position.y < 1.1) e.obj.position.y += dt*0.6;
-          }
-        }
-      }
+  // ✅ tartaruga: se “hit” aggiungi scivolata extra in avanti
+  if(e.type === 'turtle' && e.hit){
+    // slideV decresce lentamente, slideT conta la durata
+    e.slideT = Math.max(0, e.slideT - dt);
+
+    // attrito (smorza la spinta)
+    e.slideV = damp(e.slideV, 0, 6.5, dt);
+
+    // extra in avanti
+    e.z += e.slideV * dt;
+
+    // un po’ di rotazione mentre scivola (carino)
+    if(e.obj){
+      e.obj.rotation.y += e.spinV * dt;
+      e.obj.rotation.z = damp(e.obj.rotation.z, 0, 6, dt);
+    }
+
+    // quando finisce il tempo, lascia quasi ferma
+    if(e.slideT <= 0){
+      e.spinV = 0;
+    }
+  }
+
+  // applica z
+  e.obj.position.z = e.z;
+
+  // magnete (solo pickup)
+  if(magnetOn && (e.type==='coin'||e.type==='food'||e.type==='heart'||e.type==='magnet')){
+    const dx = runnerPivot.position.x - e.obj.position.x;
+    const dz = (0 - e.z);
+    const dist = Math.hypot(dx*2.2, dz);
+    if(dist < 12.0){
+      e.obj.position.x += dx * dt * (5.6*(1-dist/12.0));
+      if(e.obj.position.y < 1.1) e.obj.position.y += dt*0.6;
+    }
+  }
+}
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
@@ -3026,11 +3064,30 @@ runnerPivot.position.y = (-game.y);
         }
 
         if(e.type==='turtle'){
-        if(!collideEntity(e)) continue; // ✅ usa la nuova
-          sfx.boost();
-          scene.remove(e.obj); game.entities.splice(i,1);
-          continue;
-        }
+  // se già colpita, non ricolpire
+  if(e.hit) continue;
+
+  if(!collideEntity(e)) continue;
+
+  // ✅ attiva scivolata
+  e.hit = true;
+
+  // spinta extra in avanti (verso camera)
+  // valore “bello” → prova 16..26
+  e.slideV = 22.0;
+
+  // durata scivolata
+  e.slideT = 0.65;
+
+  // un po’ di spin casuale
+  e.spinV = (Math.random() < 0.5 ? -1 : 1) * (3.5 + Math.random()*2.0);
+
+  // abbassala un filo a terra per sembrare che “scivola”
+  if(e.obj) e.obj.position.y = 0.01;
+
+  sfx.boost();
+  continue;
+}
 
         if(!collideEntity(e)) continue; // ✅ usa la nuova
 
