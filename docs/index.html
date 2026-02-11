@@ -1036,6 +1036,11 @@ canvas.blurBoost{
   <button class="bigBtn pillFx" id="btnMain" type="button">
     <span class="centerLbl" id="mainLbl">AVVIA</span>
   </button>
+  
+  <!-- ✅ Boost -->
+  <button class="bigBtn pillFx" id="btnFoodBoost" type="button" style="display:none;">
+    <span class="centerLbl" id="foodBoostLbl">0 BOOST</span>
+  </button>
 
   <button class="bigBtn pillFx" id="btnDance" type="button">
     <span class="centerLbl">DANCE</span>
@@ -1214,6 +1219,8 @@ canvas.blurBoost{
     // ===== UI: Buttons =====
     const btnHome = $('btnHome');
     const btnSettings = $('btnSettings');
+    const btnFoodBoost = $('btnFoodBoost');
+    const foodBoostLbl = $('foodBoostLbl');
 
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
@@ -2321,6 +2328,7 @@ safeOn(dynFovToggle,'click', ()=>{
       ringCount:0,
       foodCount:0,
       foodHistory:[],
+      foodBoostCharges: 0,
 
       invincibleT:0,
       foodBoostT:0,
@@ -2355,6 +2363,18 @@ safeOn(dynFovToggle,'click', ()=>{
     }
 
     function refreshFoodUI(){
+    function updateFoodBoostButton(){
+  if(!btnFoodBoost || !foodBoostLbl) return;
+
+  // ✅ visibile solo se hai almeno 1 carica
+  if(game.foodBoostCharges > 0){
+    btnFoodBoost.style.display = 'flex';
+    foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
+  }else{
+    btnFoodBoost.style.display = 'none';
+    foodBoostLbl.textContent = `0 BOOST`;
+  }
+}
       if(!foodStack || !foodCountEl) return;
       foodStack.innerHTML = "";
       const show = game.foodHistory.slice(-6).reverse();
@@ -2632,6 +2652,7 @@ hookCamBtn(btnCamFront,'front');
       game.score=0; game.coins=0;
       game.ringCount=0;
       game.foodCount=0; game.foodHistory=[];
+      game.foodBoostCharges = 0;
       refreshFoodUI();
 
       game.invincibleT=0;
@@ -2663,7 +2684,8 @@ hookCamBtn(btnCamFront,'front');
       if(hpTxt) hpTxt.textContent = hpString();
       if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
-
+      
+      updateFoodBoostButton();
       updateMainButton();
       startIdleRandom();
     }
@@ -2717,6 +2739,28 @@ hookCamBtn(btnCamFront,'front');
       initAudio();
       resetRun();
     });
+    
+    safeOn(btnFoodBoost,'click', ()=>{
+  initAudio();
+
+  // non farlo usare se non stai giocando davvero
+  if(game.over || game.paused) return;
+  if(!game.started) return;
+  if(game.stopped) return;
+
+  if(game.foodBoostCharges <= 0) return;
+
+  // consuma 1 carica
+  game.foodBoostCharges -= 1;
+
+  // attiva boost cibo
+  game.foodBoostT = 10.0;
+  game.invincibleT = Math.max(game.invincibleT, 10.0);
+  bubble.visible = true;
+
+  updateFoodBoostButton();
+  sfx.boost();
+});
 
     // ===== Life / pickups =====
     function loseLife(){
@@ -3001,14 +3045,19 @@ runnerPivot.position.y = (-game.y);
           sfx.food();
 
           if(game.foodCount >= 10){
-            game.foodBoostT = 10.0;
-            game.invincibleT = Math.max(game.invincibleT, 10.0);
-            bubble.visible=true;
-            game.foodCount = 0;
-            game.foodHistory = [];
-            refreshFoodUI();
-            sfx.boost();
-          }
+  // ✅ guadagni 1 carica (NON si attiva il boost da solo)
+  game.foodBoostCharges += 1;
+
+  // reset contatore 0/10
+  game.foodCount = 0;
+  game.foodHistory = [];
+  refreshFoodUI();
+
+  // aggiorna il pulsante BOOST
+  updateFoodBoostButton();
+
+  sfx.boost();
+}
           continue;
         }
 
@@ -3249,6 +3298,7 @@ else { // FRONT
     // ===== Boot =====
     (async ()=>{
       refreshFoodUI();
+      updateFoodBoostButton();
       if(hpTxt) hpTxt.textContent = hpString();
       syncCamUI();
 
