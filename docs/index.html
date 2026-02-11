@@ -2986,10 +2986,11 @@ runnerPivot.position.y = (-game.y);
 
       for(let i=game.entities.length-1;i>=0;i--){
         const e = game.entities[i];
-        if(e.z > 6.0){
-          scene.remove(e.obj);
-          game.entities.splice(i,1);
-        }
+        const killZ = (e.type === 'turtle' && e.hit) ? 14.0 : 6.0;
+if(e.z > killZ){
+  scene.remove(e.obj);
+  game.entities.splice(i,1);
+}
       }
 
             const px = runnerPivot.position.x;
@@ -3036,9 +3037,17 @@ runnerPivot.position.y = (-game.y);
 
         // turtle: non deve colpirti se sei chiaramente in aria
         if(e.type === 'turtle'){
-          if(game.jumping || runnerPivot.position.y > 0.35) return false;
-          return (dx < th.x && dy < th.y && dz < th.z);
-        }
+  // se sei in aria, non puoi prenderla
+  if(game.jumping || runnerPivot.position.y > 0.35) return false;
+
+  // collisione "a terra": confronto coi piedi, non col centro
+  const playerFootY = runnerPivot.position.y + (game.sliding ? 0.18 : 0.30);
+  const turtleCenterY = (e.obj.position.y ?? 0) + 0.35; // guscio ~0.35
+
+  const dyFoot = Math.abs(turtleCenterY - playerFootY);
+
+  return (dx < 0.70 && dyFoot < 0.55 && dz < 0.95);
+}
 
         return (dx < th.x && dy < th.y && dz < th.z);
       }
