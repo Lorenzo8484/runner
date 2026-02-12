@@ -1932,6 +1932,27 @@ function makeDustTex(size=256){
 
 const _dustTex = makeDustTex(256);
 
+function makeShockTex(size=256){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const g=c.getContext('2d');
+  g.clearRect(0,0,size,size);
+
+  // anello morbido
+  const grd=g.createRadialGradient(size/2,size/2,size*0.20, size/2,size/2,size*0.48);
+  grd.addColorStop(0.00,'rgba(255,255,255,0)');
+  grd.addColorStop(0.35,'rgba(255,255,255,0.00)');
+  grd.addColorStop(0.55,'rgba(255,255,255,0.55)');
+  grd.addColorStop(0.70,'rgba(255,255,255,0.18)');
+  grd.addColorStop(1.00,'rgba(255,255,255,0)');
+  g.fillStyle=grd;
+  g.fillRect(0,0,size,size);
+
+  const t=new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const _shockTex = makeShockTex(256);
+
 function spawnDust(x, z){
   // sprite a terra, leggerissimo
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -1979,18 +2000,17 @@ function spawnTurtleExplosion(x, z){
   flash.position.y = 0.65;
   g.add(flash);
 
-  // SHOCKWAVE (anello sul terreno)
-  const wave = new THREE.Mesh(
-    new THREE.RingGeometry(0.15, 0.22, 64),
-    new THREE.MeshBasicMaterial({
-      color:0xffffff,
-      transparent:true,
-      opacity:0.75,
-      depthWrite:false
-    })
-  );
-  wave.rotation.x = -Math.PI/2;
-  wave.position.y = 0.01;
+  // SHOCKWAVE (sprite sul terreno, super stabile)
+  const wave = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_shockTex,
+    transparent:true,
+    opacity:0.85,
+    depthWrite:false
+  }));
+  wave.position.y = 0.03;
+  wave.scale.set(0.35, 0.35, 1);
+  // ruota "piatta" a terra: Sprite guarda la camera, quindi lo simuliamo “quasi terra”
+  // (risulta comunque perfetto come onda d'urto visiva)
   g.add(wave);
 
   // PARTICELLE (piccoli sprite)
@@ -2053,14 +2073,15 @@ function updateEffects(dt){
       fx.flash.scale.set(fS, fS, 1);
 
       // SHOCKWAVE (anello)
+            // SHOCKWAVE (sprite)
       const wLife = 0.55;
       const wP = clamp(t / wLife, 0, 1);
-      const inner = 0.18 + wP * 2.6;
-      const outer = inner + (0.12 + wP * 0.65);
 
-      fx.wave.geometry.dispose();
-      fx.wave.geometry = new THREE.RingGeometry(inner, outer, 64);
-      fx.wave.material.opacity = (1 - wP) * 0.75;
+      const wS = 0.35 + wP * 4.2;           // cresce molto
+      fx.wave.scale.set(wS, wS, 1);
+
+      // fade + leggero “soft pulse”
+      fx.wave.material.opacity = (1 - wP) * 0.85;
 
       // PARTICELLE
       for(const p of fx.parts){
