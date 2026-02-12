@@ -4006,7 +4006,7 @@ if(viewMode === 'fps'){
   );
 
   camera.rotation.z = 0;
-}
+}        // BACK
 else if(viewMode === 'back'){
   const lookAtY = lerp(0.35, 1.45, framing);
   const lookAtZ = -6.5;
@@ -4017,19 +4017,18 @@ else if(viewMode === 'back'){
 if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
   const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
 
-  // 🔻 ancora un filo meno rispetto al front
-  const base = both ? 0.016 : 0.012;
+  const base = both ? 0.010 : 0.007;
 
   const t = tNow * 0.001;
-  const pulseSpeed = 55;
+  const pulseSpeed = 50;
   const burst = Math.sin(t * pulseSpeed);
-  const spike = (burst > 0.86) ? 1 : 0;
+  const spike = (burst > 0.92) ? 1 : 0;
 
   const j = (Math.cos(t*88) + Math.cos(t*133)) * 0.5;
 
-  const pitch = spike * base + j * base * 0.16;
-  const yaw   = spike * base * 0.45 + j * base * 0.10;
-  const roll  = spike * base * 0.20 + j * base * 0.08;
+  const pitch = spike * base + j * base * 0.07;
+  const yaw   = spike * base * 0.35 + j * base * 0.05;
+  const roll  = spike * base * 0.14 + j * base * 0.035;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
@@ -4047,24 +4046,22 @@ else { // FRONT
 if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
   const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
 
-  // 🔻 più basso = meno aggressivo
-  const base = both ? 0.020 : 0.015;
+  // 🔻 MOLTO più basso
+  const base = both ? 0.012 : 0.009;
 
   const t = tNow * 0.001;
 
-  // ✅ colpi più rari (prima >0.6 era troppo spesso)
-  const pulseSpeed = 55;
+  // colpi più rari
+  const pulseSpeed = 50;
   const burst = Math.sin(t * pulseSpeed);
+  const spike = (burst > 0.92) ? 1 : 0;
 
-  // spike “secco” ma raro
-  const spike = (burst > 0.86) ? 1 : 0;
-
-  // ✅ jitter NON random per frame: sinusoide -> più camera, meno vibratore
+  // jitter morbido (sinusoide, non random)
   const j = (Math.sin(t*92) + Math.sin(t*141)) * 0.5;
 
-  const pitch = spike * base + j * base * 0.18;
-  const yaw   = spike * base * 0.55 + j * base * 0.12;
-  const roll  = spike * base * 0.25 + j * base * 0.10;
+  const pitch = spike * base + j * base * 0.08;
+  const yaw   = spike * base * 0.45 + j * base * 0.05;
+  const roll  = spike * base * 0.18 + j * base * 0.04;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
