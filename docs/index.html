@@ -399,6 +399,75 @@
       line-height:1;
       text-transform:uppercase;
     }
+    
+    /* =========================================================
+   BOOST ROW (conteggio + pulsante)
+   ========================================================= */
+.boostRow{
+  display:flex;
+  align-items:center;
+  gap:calc(5px * var(--menuScale));
+  pointer-events:auto;
+}
+
+/* pillolina stretta (stessa altezza del bigBtn) */
+.miniBtn{
+  pointer-events:auto;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  user-select:none;
+
+  height:calc(20px * var(--menuScale) * 1.50);
+  width:calc(28px * var(--menuScale));         /* più stretta */
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:0;
+  line-height:1;
+}
+
+.miniLbl{
+  font-weight:950;
+  font-size:calc(7px * var(--menuScale) * 1.10);
+  line-height:1;
+}
+
+/* stato disabilitato (quando boost attivo) */
+.isDisabled{
+  opacity:.55;
+  filter:saturate(.85);
+  pointer-events:none;
+}
+
+/* animazione conteggio boost */
+@keyframes boostPulse{
+  0%   { transform:scale(1);   }
+  35%  { transform:scale(1.12);}
+  100% { transform:scale(1);   }
+}
+.boostPulse{
+  animation: boostPulse .28s ease;
+}
+
+/* animazione pulsante DANCE */
+@keyframes danceWiggle{
+  0%{ transform:translateX(0) rotate(0deg) scale(1); }
+  18%{ transform:translateX(-1.5px) rotate(-1.6deg) scale(1.01); }
+  45%{ transform:translateX(1.8px) rotate(1.8deg) scale(1.02); }
+  70%{ transform:translateX(-1.2px) rotate(-1.2deg) scale(1.01); }
+  100%{ transform:translateX(0) rotate(0deg) scale(1); }
+}
+.danceActive{
+  animation: danceWiggle .32s ease;
+  box-shadow:
+    0 0 0 1px rgba(145,205,255,.25),
+    0 0 18px rgba(110,175,255,.22),
+    0 10px 26px rgba(0,0,0,.55);
+}
 
     /* =========================================================
        Colonna cibo
@@ -1032,21 +1101,34 @@ canvas.blurBoost{
   </button>
 
 
-<!-- Start / Dance -->
+<!-- Start / Dance / Boost -->
 <div class="rightStack">
+
+  <!-- ✅ BOOST (sopra Avvia) -->
+  <div class="boostRow" id="boostRow" style="display:none;">
+    <!-- pillolina più stretta col conteggio -->
+    <button class="miniBtn pillFx" id="btnBoostCount" type="button" aria-label="Boost disponibili">
+      <span class="miniLbl" id="boostCountLbl">0</span>
+    </button>
+
+    <!-- pulsante boost senza conteggio -->
+    <button class="bigBtn pillFx" id="btnFoodBoost" type="button">
+      <span class="centerLbl" id="foodBoostLbl">BOOST</span>
+    </button>
+  </div>
+
+  <!-- START -->
   <button class="bigBtn pillFx" id="btnMain" type="button">
     <span class="centerLbl" id="mainLbl">AVVIA</span>
   </button>
-  
-  <!-- ✅ Boost -->
-  <button class="bigBtn pillFx" id="btnFoodBoost" type="button" style="display:none;">
-    <span class="centerLbl" id="foodBoostLbl">0 BOOST</span>
-  </button>
 
+  <!-- DANCE (in basso) -->
   <button class="bigBtn pillFx" id="btnDance" type="button">
     <span class="centerLbl">DANCE</span>
   </button>
 </div>
+
+
 
   <!-- Colonna cibo -->
   <div class="rightCol">
@@ -1221,7 +1303,11 @@ canvas.blurBoost{
     const btnHome = $('btnHome');
     const btnSettings = $('btnSettings');
     const btnFoodBoost = $('btnFoodBoost');
-    const foodBoostLbl = $('foodBoostLbl');
+const foodBoostLbl = $('foodBoostLbl');
+
+const boostRow = $('boostRow');
+const btnBoostCount = $('btnBoostCount');
+const boostCountLbl = $('boostCountLbl');
 
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
@@ -2628,16 +2714,34 @@ function updateEffects(dt){
       return s;
     }
 
-    function updateFoodBoostButton(){
-  if(!btnFoodBoost || !foodBoostLbl) return;
+    function pulseBoostCount(){
+  if(!btnBoostCount) return;
+  btnBoostCount.classList.remove('boostPulse');
+  // reflow per riattivare l'animazione
+  void btnBoostCount.offsetWidth;
+  btnBoostCount.classList.add('boostPulse');
+}
 
-  if(game.foodBoostCharges > 0){
-    btnFoodBoost.style.display = 'flex';
-    foodBoostLbl.textContent = `${game.foodBoostCharges} BOOST`;
-  }else{
-    btnFoodBoost.style.display = 'none';
-    foodBoostLbl.textContent = `0 BOOST`;
-  }
+function setFoodBoostButtonsEnabled(on){
+  if(btnFoodBoost)   btnFoodBoost.classList.toggle('isDisabled', !on);
+  if(btnBoostCount)  btnBoostCount.classList.toggle('isDisabled', !on);
+}
+
+function updateFoodBoostButton(){
+  if(!boostRow || !btnFoodBoost || !foodBoostLbl || !boostCountLbl) return;
+
+  const hasCharges = game.foodBoostCharges > 0;
+  const active = game.foodBoostT > 0;
+
+  // ✅ mostra la riga se ho cariche O se il boost è attivo (così si vede “bloccato”)
+  boostRow.style.display = (hasCharges || active) ? 'flex' : 'none';
+
+  // ✅ etichette
+  foodBoostLbl.textContent = 'BOOST';
+  boostCountLbl.textContent = String(game.foodBoostCharges);
+
+  // ✅ blocco utilizzo finché boost attivo
+  setFoodBoostButtonsEnabled(!active);
 }
 
 function refreshFoodUI(){
@@ -3066,11 +3170,20 @@ hookCamBtn(btnCamFront,'front');
     });
 
     safeOn(btnDance,'click', ()=>{
-      initAudio();
-      if(game.over) return;
-      if(game.started && !game.paused && !game.stopped) setStop(true);
-      playDance();
-    });
+  initAudio();
+  if(game.over) return;
+
+  // ✅ animazione bottone
+  if(btnDance){
+    btnDance.classList.remove('danceActive');
+    void btnDance.offsetWidth;
+    btnDance.classList.add('danceActive');
+    setTimeout(()=>btnDance.classList.remove('danceActive'), 380);
+  }
+
+  if(game.started && !game.paused && !game.stopped) setStop(true);
+  playDance();
+});
 
     safeOn(btnHome,'click', ()=>{
       initAudio();
@@ -3085,6 +3198,9 @@ hookCamBtn(btnCamFront,'front');
   if(!game.started) return;
   if(game.stopped) return;
 
+  // ✅ se boost già attivo: niente spam
+  if(game.foodBoostT > 0) return;
+
   if(game.foodBoostCharges <= 0) return;
 
   // consuma 1 carica
@@ -3095,7 +3211,9 @@ hookCamBtn(btnCamFront,'front');
   game.invincibleT = Math.max(game.invincibleT, 10.0);
   bubble.visible = true;
 
-  updateFoodBoostButton();
+  // ✅ animazioni + lock
+  pulseBoostCount();
+  updateFoodBoostButton();     // disabilita i bottoni mentre è attivo
   sfx.boost();
 });
 
@@ -3138,6 +3256,7 @@ hookCamBtn(btnCamFront,'front');
     let fpsGroundPrev = true;
     let fpsVelYSm = 0;
     let fpsLaneKick = 0;
+    let _prevFoodBoostActive = false;
 
     function turtleSmashSweep(turtle, prevZ, newZ){
   const lane = turtle.lane;
@@ -3226,6 +3345,12 @@ hookCamBtn(btnCamFront,'front');
     if(game.invincibleT<=0) bubble.visible=false;
   }
   if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT - dt*trafficMul);
+  // ✅ quando finisce il food boost, riabilita i bottoni
+const _nowFoodBoostActive = (game.foodBoostT > 0);
+if(_prevFoodBoostActive && !_nowFoodBoostActive){
+  updateFoodBoostButton(); // torna cliccabile se ci sono cariche
+}
+_prevFoodBoostActive = _nowFoodBoostActive;
   if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
   if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
 
