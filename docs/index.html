@@ -3859,27 +3859,29 @@ camX = damp(camX, targetCamX, 5, dt);
       let shakeX = 0, shakeY = 0;
 
 if(camDynamic && shakeEnabled && viewMode!=='fps'){
+
   const foodOn = (game.foodBoostT > 0);
   const ringOn = (game.ringBoostT > 0);
   const bothOn = foodOn && ringOn;
 
   if(foodOn || ringOn){
-    // ✅ intensità: FOOD più intenso, RING più leggero, BOTH massimo
+
+    // ✅ intensità più ampia
     const intensity =
-      bothOn ? 0.030 :
-      foodOn ? 0.024 :
-      0.012;
+      bothOn ? 0.065 :
+      foodOn ? 0.050 :
+      0.020;
 
-    // ✅ shake "ricco": somma di onde (più nervoso e potente)
-    const t = tNow * 0.001; // secondi circa
+    // tempo lento = shake largo
+    const t = tNow * 0.001;
 
+    // onde lente, larghe
     shakeX =
-      (Math.sin(t * 48.0) * 0.70 +
-       Math.sin(t * 92.0) * 0.30) * intensity;
+      Math.sin(t * 6.5) * intensity +
+      Math.sin(t * 3.2) * (intensity * 0.6);
 
     shakeY =
-      (Math.sin(t * 61.0) * 0.65 +
-       Math.sin(t * 120.0) * 0.35) * (intensity * 0.75);
+      Math.cos(t * 5.2) * (intensity * 0.75);
   }
 }
 
