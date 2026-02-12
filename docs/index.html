@@ -2009,20 +2009,26 @@ flash.scale.set(2.6, 2.6, 1);
 flash.position.y = 0.85;                // leggermente più alto
 g.add(flash);
 
-  // SHOCKWAVE (sempre sopra la strada)
-const waveMat = new THREE.SpriteMaterial({
-  map:_shockTex,
-  transparent:true,
-  opacity:0.85,
-  depthWrite:false,
-  depthTest:false,                      // ✅ evita z-fighting
-  blending:THREE.AdditiveBlending
-});
-const wave = new THREE.Sprite(waveMat);
-wave.renderOrder = 998;
-wave.position.y = 0.10;                 // un po’ più alto della strada
-wave.scale.set(0.35, 0.35, 1);
-g.add(wave);
+    // SHOCKWAVE (ORIZZONTALE A TERRA)
+  const waveMat = new THREE.MeshBasicMaterial({
+    map: _shockTex,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+    depthTest: false,                 // ✅ sempre visibile sopra la strada
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide
+  });
+
+  const waveGeo = new THREE.PlaneGeometry(1, 1); // verrà scalata
+  const wave = new THREE.Mesh(waveGeo, waveMat);
+  wave.renderOrder = 998;
+
+  wave.rotation.x = -Math.PI / 2;     // ✅ orizzontale (a terra)
+  wave.position.y = 0.03;             // ✅ appena sopra il terreno/strada (evita z-fighting)
+  wave.scale.set(0.35, 0.35, 1);
+
+  g.add(wave);
 
   // PARTICELLE (piccoli sprite)
   const parts = [];
