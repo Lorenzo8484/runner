@@ -3857,11 +3857,31 @@ camX = damp(camX, targetCamX, 5, dt);
       camera.updateProjectionMatrix();
 
       let shakeX = 0, shakeY = 0;
-      if(camDynamic && anyBoost && shakeEnabled && viewMode!=='fps'){
-        const intensity = bothBoost ? 0.018 : 0.011;
-        shakeX = Math.sin(tNow*0.020) * intensity;
-        shakeY = Math.sin(tNow*0.027) * (intensity*0.55);
-      }
+
+if(camDynamic && shakeEnabled && viewMode!=='fps'){
+  const foodOn = (game.foodBoostT > 0);
+  const ringOn = (game.ringBoostT > 0);
+  const bothOn = foodOn && ringOn;
+
+  if(foodOn || ringOn){
+    // ✅ intensità: FOOD più intenso, RING più leggero, BOTH massimo
+    const intensity =
+      bothOn ? 0.030 :
+      foodOn ? 0.024 :
+      0.012;
+
+    // ✅ shake "ricco": somma di onde (più nervoso e potente)
+    const t = tNow * 0.001; // secondi circa
+
+    shakeX =
+      (Math.sin(t * 48.0) * 0.70 +
+       Math.sin(t * 92.0) * 0.30) * intensity;
+
+    shakeY =
+      (Math.sin(t * 61.0) * 0.65 +
+       Math.sin(t * 120.0) * 0.35) * (intensity * 0.75);
+  }
+}
 
       const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
 
