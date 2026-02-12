@@ -2809,33 +2809,41 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
 }
 
       if(Math.random() < 0.22){
-        const lane=rndi(0,2);
-        const tz = z0 - rnd(3,11);
-        if(canSpawnTurtle(lane, tz)){
-          const t = makeTurtle();
-          t.position.set(lanesX[lane], 0, tz);
-          t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
-          scene.add(t);
-          game.entities.push({
-  type:'turtle',
-  lane,
-  z:tz,
-  obj:t,
+  const lane = rndi(0,2);
+  const tz   = z0 - rnd(3,11);
 
-  hit:false,
-  slideV:0,
-  slideT:0,
-  spinV:0,
+  // ✅ evita che spawnino dentro ostacoli/ring/coin ecc nella stessa corsia
+  // (turtle è “grossa”, quindi un minDz più alto)
+  if(canSpawnTurtle(lane, tz) && canPlace(lane, tz, 2.6)){
+    const t = makeTurtle();
+    t.position.set(lanesX[lane], 0, tz);
+    t.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
+    scene.add(t);
 
-  destroyedAny:false,
-  hitAge:0,
-  exploding:false,
-  explodeT:0,
-  _initialSlideV:-200
-});
-          game.lastTurtleZ[lane] = tz;
-        }
-      }
+    game.entities.push({
+      type:'turtle',
+      lane,
+      z:tz,
+      obj:t,
+
+      hit:false,
+      slideV:0,
+      slideT:0,
+      spinV:0,
+
+      destroyedAny:false,
+      hitAge:0,
+      exploding:false,
+      explodeT:0,
+      _initialSlideV:-200
+    });
+
+    game.lastTurtleZ[lane] = tz;
+
+    // ✅ IMPORTANTISSIMO: “prenota” quella posizione nella corsia
+    markPlace(lane, tz);
+  }
+}
 
       if(Math.random() < 0.26){
   const lane = rndi(0,2);
