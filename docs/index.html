@@ -3355,7 +3355,11 @@ hookCamBtn(btnCamFront,'front');
     // ✅ Lane smoothing (posizione X del runner “morbida”)
     let runnerX = lanesX[game.lane];
     let runPhase = 0; // ✅ fase per bob corsa
-
+    // ===== HEAVY SHAKE STATE =====
+let hsX = 0, hsY = 0;
+let hsVX = 0, hsVY = 0;
+let hsTX = 0, hsTY = 0;
+let hsTimer = 0;
     // debug fps
     let fpsAcc=0, fpsN=0, fpsShow=0;
     let dbgTimer=0;
@@ -3864,25 +3868,44 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
   const ringOn = (game.ringBoostT > 0);
   const bothOn = foodOn && ringOn;
 
-  if(foodOn || ringOn){
+  const active = (foodOn || ringOn);
 
-    // ✅ intensità più ampia
-    const intensity =
-      bothOn ? 0.065 :
-      foodOn ? 0.050 :
-      0.020;
+  const intensity =
+    bothOn ? 0.055 :
+    foodOn ? 0.040 :
+    ringOn ? 0.028 :
+    0;
 
-    // tempo lento = shake largo
-    const t = tNow * 0.001;
+  if(active){
 
-    // onde lente, larghe
-    shakeX =
-      Math.sin(t * 6.5) * intensity +
-      Math.sin(t * 3.2) * (intensity * 0.6);
+    // cambia target lentamente (camera pesante)
+    hsTimer -= dt;
+    if(hsTimer <= 0){
+      hsTimer = 0.10 + Math.random()*0.12;
+      hsTX = rnd(-1,1) * intensity;
+      hsTY = rnd(-1,1) * intensity * 0.75;
+    }
 
-    shakeY =
-      Math.cos(t * 5.2) * (intensity * 0.75);
+  } else {
+    hsTX = 0;
+    hsTY = 0;
   }
+
+  // spring heavy
+  const stiffness = 50;
+  const damping   = 11;
+
+  hsVX += (hsTX - hsX) * stiffness * dt;
+  hsVY += (hsTY - hsY) * stiffness * dt;
+
+  hsVX *= Math.exp(-damping * dt);
+  hsVY *= Math.exp(-damping * dt);
+
+  hsX += hsVX * dt;
+  hsY += hsVY * dt;
+
+  shakeX = hsX;
+  shakeY = hsY;
 }
 
       const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
