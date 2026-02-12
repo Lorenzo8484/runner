@@ -1860,15 +1860,20 @@ safeOn(dynFovToggle,'click', ()=>{
       return spr;
     }
 
-    // ===== Entities visuals =====
-    function spawnObstacleVisual(){
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(rnd(0.65,0.95), rnd(0.75,1.25), rnd(0.65,0.95)),
-        new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
-      );
-      box.castShadow=true; box.receiveShadow=true;
-      return box;
-    }
+    // ✅ OSTACOLI: dimensioni fisse + appoggiati a terra
+const OBST_W = 0.85;
+const OBST_H = 0.95;
+const OBST_D = 0.85;
+
+function spawnObstacleVisual(){
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(OBST_W, OBST_H, OBST_D),
+    new THREE.MeshStandardMaterial({ color:0x6b4b2b, roughness:0.9, metalness:0.02 })
+  );
+  box.castShadow = true;
+  box.receiveShadow = true;
+  return box;
+}
     function makeTurtle(){
   const g = new THREE.Group();
   const shell = new THREE.Mesh(
@@ -2718,11 +2723,11 @@ const TURTLE_SMASH_FRONT = 0.45;   // leggermente più davanti         // quanto
       while(coinLanes.size<cCount) coinLanes.add(rndi(0,2));
 
       blocked.forEach(l=>{
-        const obj = spawnObstacleVisual();
-        obj.position.set(lanesX[l], 0.65, z0);
-        scene.add(obj);
-        game.entities.push({ type:'obst', lane:l, z:z0, obj });
-      });
+  const obj = spawnObstacleVisual();
+  obj.position.set(lanesX[l], (OBST_H * 0.5) + 0.01, z0);
+  scene.add(obj);
+  game.entities.push({ type:'obst', lane:l, z:z0, obj });
+});
 
       coinLanes.forEach(l=>{
         const spr = makeEmojiSprite(EMOJIS[rndi(0,EMOJIS.length-1)]);
