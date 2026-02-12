@@ -4034,8 +4034,8 @@ if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
     (Math.random()*2 - 1) * base * 0.6;
 
   const pitch = spike * base + jitter;
-  const yaw   = spike * base * 0.7;
-  const roll  = spike * base * 0.4;
+  const yaw   = spike * base * 0.5;
+  const roll  = spike * base * 0.25;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
@@ -4070,8 +4070,8 @@ if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
     (Math.random()*2 - 1) * base * 0.6;
 
   const pitch = spike * base + jitter;
-  const yaw   = spike * base * 0.7;
-  const roll  = spike * base * 0.4;
+  const yaw   = spike * base * 0.5;
+  const roll  = spike * base * 0.25;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
