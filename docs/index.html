@@ -3375,7 +3375,10 @@ let hsTimer = 0;
     let fpsLaneKick = 0;
     let _prevFoodBoostActive = false;
     let _prevDanceActive = false;
-
+    // ✅ SHAKE STATE (persistente)
+let shX = 0, shY = 0;
+let shTX = 0, shTY = 0;
+let shTimer = 0;
     function turtleSmashSweep(turtle, prevZ, newZ){
   const lane = turtle.lane;
 
@@ -3868,47 +3871,42 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
   const ringOn = (game.ringBoostT > 0);
   const bothOn = foodOn && ringOn;
 
-  const active = (foodOn || ringOn);
+  if(foodOn || ringOn){
 
-  // ✅ MOLTO più ampiezza (camera che “sposta”, non vibra)
-  const intensity =
-    bothOn ? 0.170 :
-    foodOn ? 0.140 :
-    ringOn ? 0.110 :
-    0;
+    // ✅ MOLTO più intenso
+    const amp =
+      bothOn ? 0.26 :
+      foodOn ? 0.22 :
+      0.16;
 
-  if(active){
+    // ✅ “saltelli” random frequenti (vero tremore schermo)
+    shTimer -= dt;
+    if(shTimer <= 0){
+      shTimer = 0.016 + Math.random()*0.020; // ~60-30 Hz
 
-    // ✅ target cambia un po’ più spesso (ma non troppo)
-    hsTimer -= dt;
-    if(hsTimer <= 0){
-      hsTimer = 0.07 + Math.random()*0.09;
-
-      // ✅ più spinta orizzontale, un po’ meno verticale
-      hsTX = rnd(-1,1) * intensity;
-      hsTY = rnd(-1,1) * intensity * 0.55;
+      shTX = (Math.random()*2 - 1) * amp;
+      shTY = (Math.random()*2 - 1) * amp * 0.85;
     }
 
+    // ✅ follow rapidissimo (niente camminata)
+    const follow = 38;  // più alto = più nervoso
+    shX = damp(shX, shTX, follow, dt);
+    shY = damp(shY, shTY, follow, dt);
+
+    // ✅ micro-jitter extra (tremore fine)
+    const t = tNow * 0.001;
+    const jitter = amp * 0.45;
+    const jx = (Math.sin(t*95) + Math.sin(t*141)) * 0.5 * jitter;
+    const jy = (Math.cos(t*88) + Math.cos(t*133)) * 0.5 * jitter;
+
+    shakeX = shX + jx;
+    shakeY = shY + jy;
+
   } else {
-    hsTX = 0;
-    hsTY = 0;
+    // reset quando finisce boost
+    shX = damp(shX, 0, 18, dt);
+    shY = damp(shY, 0, 18, dt);
   }
-
-  // ✅ più reattiva ma sempre “pesante”
-  const stiffness = 150;  // prima 50
-  const damping   = 8;   // prima 11 (meno smorzamento = più ampiezza)
-
-  hsVX += (hsTX - hsX) * stiffness * dt;
-  hsVY += (hsTY - hsY) * stiffness * dt;
-
-  hsVX *= Math.exp(-damping * dt);
-  hsVY *= Math.exp(-damping * dt);
-
-  hsX += hsVX * dt;
-  hsY += hsVY * dt;
-
-  shakeX = hsX;
-  shakeY = hsY;
 }
 
       const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
