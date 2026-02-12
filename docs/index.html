@@ -1989,29 +1989,35 @@ function spawnTurtleExplosion(x, z){
   const g = new THREE.Group();
   g.position.set(x, 0.02, z);
 
-  // FLASH (billboard)
-  const flash = new THREE.Sprite(new THREE.SpriteMaterial({
-    map:_explTex,
-    transparent:true,
-    opacity:0.95,
-    depthWrite:false
-  }));
-  flash.scale.set(2.6, 2.6, 1);
-  flash.position.y = 0.65;
-  g.add(flash);
+  // FLASH (sempre visibile sopra la strada)
+const flashMat = new THREE.SpriteMaterial({
+  map:_explTex,
+  transparent:true,
+  opacity:0.95,
+  depthWrite:false,
+  depthTest:false,                      // ✅ non viene nascosto dalla strada
+  blending:THREE.AdditiveBlending
+});
+const flash = new THREE.Sprite(flashMat);
+flash.renderOrder = 999;                // ✅ priorità render
+flash.scale.set(2.6, 2.6, 1);
+flash.position.y = 0.85;                // leggermente più alto
+g.add(flash);
 
-  // SHOCKWAVE (sprite sul terreno, super stabile)
-  const wave = new THREE.Sprite(new THREE.SpriteMaterial({
-    map:_shockTex,
-    transparent:true,
-    opacity:0.85,
-    depthWrite:false
-  }));
-  wave.position.y = 0.03;
-  wave.scale.set(0.35, 0.35, 1);
-  // ruota "piatta" a terra: Sprite guarda la camera, quindi lo simuliamo “quasi terra”
-  // (risulta comunque perfetto come onda d'urto visiva)
-  g.add(wave);
+  // SHOCKWAVE (sempre sopra la strada)
+const waveMat = new THREE.SpriteMaterial({
+  map:_shockTex,
+  transparent:true,
+  opacity:0.85,
+  depthWrite:false,
+  depthTest:false,                      // ✅ evita z-fighting
+  blending:THREE.AdditiveBlending
+});
+const wave = new THREE.Sprite(waveMat);
+wave.renderOrder = 998;
+wave.position.y = 0.10;                 // un po’ più alto della strada
+wave.scale.set(0.35, 0.35, 1);
+g.add(wave);
 
   // PARTICELLE (piccoli sprite)
   const parts = [];
@@ -2683,9 +2689,11 @@ function refreshFoodUI(){
 
     // ===== Spawn =====
     const TURTLE_VIS_Z = 70;
-    const TURTLE_MIN_GAP = TURTLE_VIS_Z * 1.0;
-    const TURTLE_SMASH_RANGE = TURTLE_VIS_Z; // “visibilità di corsia” = 70
-    const TURTLE_SMASH_FRONT = 0.35;         // quanto davanti alla tartaruga considerare “colpito”
+const TURTLE_MIN_GAP = TURTLE_VIS_Z * 1.0;
+
+// ✅ range realistico: distrugge SOLO ostacoli vicini davanti a lei
+const TURTLE_SMASH_RANGE = 18;     // prima 70 (troppo)
+const TURTLE_SMASH_FRONT = 0.45;   // leggermente più davanti         // quanto davanti alla tartaruga considerare “colpito”
 
     function canSpawnTurtle(lane, z){
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
