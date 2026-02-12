@@ -3088,7 +3088,7 @@ hookCamBtn(btnCamFront,'front');
     }
   }
 
-  // ✅ Effetti (esplosioni/polvere) UNA SOLA VOLTA per frame
+  // Effetti
   updateEffects(dt);
 
   const gameplayOn = game.started && !game.paused && !game.over;
@@ -3144,7 +3144,7 @@ hookCamBtn(btnCamFront,'front');
   const speedMul = foodMul * ringMul * crazyMul;
   const speed = game.baseSpeed * speedMul * trafficMul;
 
-  // ✅ Run bob
+  // bob corsa
   runPhase += dt * (9.5 + (speedMul-1.0)*2.0);
   const grounded = (game.y === 0 && !game.jumping);
   const bobOn = grounded ? 1.0 : 0.25;
@@ -3255,185 +3255,173 @@ hookCamBtn(btnCamFront,'front');
     }
   }
 
-  // ----- COLLISIONS (rimane la tua parte) -----
-  // Qui NON la riscrivo: lascia il tuo blocco collisioni così com’è
-  // (da "const px = runnerPivot.position.x;" fino all'update HUD)
-  // IMPORTANTISSIMO: assicurati che quel blocco sia ancora dentro update()!
-}
+  // =========================================================
+  // ✅ COLLISIONS (ORA È DENTRO update, quindi niente schermo nero)
+  // =========================================================
+  const px = runnerPivot.position.x;
+  const playerCenterY = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
 
-      // ===== COLLISIONS =====
-      const px = runnerPivot.position.x;
-      const playerCenterY = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
+  function collideEntity(ent) {
+    const ex = ent.obj.position.x;
+    const ey = (ent.obj.position.y ?? 0);
+    const ez = ent.z;
 
-      function collideEntity(ent) {
-        const ex = ent.obj.position.x;
-        const ey = (ent.obj.position.y ?? 0);
-        const ez = ent.z;
+    const dx = Math.abs(ex - px);
+    const dy = Math.abs(ey - playerCenterY);
+    const dz = Math.abs(ez - 0.25);
 
-        const dx = Math.abs(ex - px);
-        const dy = Math.abs(ey - playerCenterY);
-        const dz = Math.abs(ez - 0.25);
+    const T = {
+      coin:   { x: 0.55, y: 0.95, z: 0.80 },
+      food:   { x: 0.58, y: 0.98, z: 0.85 },
+      heart:  { x: 0.58, y: 0.98, z: 0.85 },
+      magnet: { x: 0.60, y: 1.05, z: 0.90 },
+      ring:   { x: 0.42, y: 0.75, z: 0.55 },
+      obst:   { x: 0.52, y: (game.sliding ? 0.60 : 0.85), z: 0.70 },
+      turtle: { x: 0.62, y: 0.55, z: 0.95 }
+    };
 
-        const T = {
-          coin:   { x: 0.55, y: 0.95, z: 0.80 },
-          food:   { x: 0.58, y: 0.98, z: 0.85 },
-          heart:  { x: 0.58, y: 0.98, z: 0.85 },
-          magnet: { x: 0.60, y: 1.05, z: 0.90 },
-          ring:   { x: 0.42, y: 0.75, z: 0.55 },
-          obst:   { x: 0.52, y: (game.sliding ? 0.60 : 0.85), z: 0.70 },
-          turtle: { x: 0.62, y: 0.55, z: 0.95 }
-        };
+    const th = T[ent.type] || { x: 0.60, y: 1.0, z: 0.85 };
 
-        const th = T[ent.type] || { x: 0.60, y: 1.0, z: 0.85 };
-
-        // ring: pickup normale (NON richiede slide)
-        if (ent.type === 'ring') {
-          const yTh = game.sliding ? 0.55 : th.y;
-          return (dx < th.x && dy < yTh && dz < th.z);
-        }
-
-        // turtle: non deve colpirti se sei in aria
-        if (ent.type === 'turtle') {
-          if (game.jumping || runnerPivot.position.y > 0.35) return false;
-
-          const playerFootY = runnerPivot.position.y + (game.sliding ? 0.18 : 0.30);
-          const turtleCenterY = (ent.obj.position.y ?? 0) + 0.35;
-
-          const dyFoot = Math.abs(turtleCenterY - playerFootY);
-
-          return (dx < 0.70 && dyFoot < 0.55 && dz < 0.95);
-        }
-
-        return (dx < th.x && dy < th.y && dz < th.z);
-      }
-
-      for (let i = game.entities.length - 1; i >= 0; i--) {
-        const e = game.entities[i];
-
-        // RINGS
-        if (e.type === 'ring') {
-          if (!collideEntity(e)) continue;
-
-          game.ringCount += 1;
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          sfx.ring();
-
-          if (game.ringCount >= 50) {
-            game.ringBoostT = 10.0;
-            game.invincibleT = Math.max(game.invincibleT, 10.0);
-            bubble.visible = true;
-            game.ringCount = 0;
-            sfx.boost();
-          }
-          continue;
-        }
-
-        // TURTLE
-        if (e.type === 'turtle') {
-          if (e.hit) continue;
-          if (!collideEntity(e)) continue;
-
-          e.hit = true;
-        
-
-e.destroyedAny = false;
-e.hitAge = 0;
-e.exploding = false;
-e.explodeT = 0;
-
-          // spinta in avanti (direzione corsa = Z negativo)
-          e.slideV = -200.0;
-          e.z -= 0.8;
-          e.obj.position.z = e.z;
-
-          e.slideT = 1.90;
-          e.spinV = (Math.random() < 0.5 ? -1 : 1) * (3.5 + Math.random() * 2.0);
-
-          e.obj.position.y = 0.01;
-
-          sfx.boost();
-          continue;
-        }
-
-        // altri
-        if (!collideEntity(e)) continue;
-
-        if (e.type === 'coin') {
-          game.coins += 1;
-          game.score += 28;
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          sfx.coin();
-          continue;
-        }
-
-        if (e.type === 'food') {
-          game.foodCount += 1;
-          game.foodHistory.push(e.emo);
-          refreshFoodUI();
-
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          sfx.food();
-
-          if (game.foodCount >= 10) {
-            game.foodBoostCharges += 1;
-            game.foodCount = 0;
-            game.foodHistory = [];
-            refreshFoodUI();
-            updateFoodBoostButton();
-            sfx.boost();
-          }
-          continue;
-        }
-
-        if (e.type === 'heart') {
-          if (game.lives < game.maxLives) addLife();
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          continue;
-        }
-
-        if (e.type === 'magnet') {
-          game.magnetT = 8.0;
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          sfx.magnet();
-          continue;
-        }
-
-        if (e.type === 'obst') {
-          const inv = (game.invincibleT > 0);
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          if (!inv) loseLife();
-          continue;
-        }
-      }
-
-      game.score += (18 * speedMul) * dt;
-
-      if(game.score > game.best){
-        game.best = Math.floor(game.score);
-        saveBest(game.best);
-      }
-
-      if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
-      if(coinsEl) coinsEl.textContent = String(game.coins);
-      if(bestEl)  bestEl.textContent  = String(game.best);
-      if(ringsEl) ringsEl.textContent = String(game.ringCount);
-      if(hpTxt)   hpTxt.textContent   = hpString();
-      if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
-      setBoostUI();
-
-      if(bubble.visible){
-        bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
-      }
-
-      tiltTarget *= 0.92;
-      camRoll = damp(camRoll, tiltTarget, 10, dt);
+    if (ent.type === 'ring') {
+      const yTh = game.sliding ? 0.55 : th.y;
+      return (dx < th.x && dy < yTh && dz < th.z);
     }
+
+    if (ent.type === 'turtle') {
+      if (game.jumping || runnerPivot.position.y > 0.35) return false;
+
+      const playerFootY = runnerPivot.position.y + (game.sliding ? 0.18 : 0.30);
+      const turtleCenterY = (ent.obj.position.y ?? 0) + 0.35;
+      const dyFoot = Math.abs(turtleCenterY - playerFootY);
+
+      return (dx < 0.70 && dyFoot < 0.55 && dz < 0.95);
+    }
+
+    return (dx < th.x && dy < th.y && dz < th.z);
+  }
+
+  for (let i = game.entities.length - 1; i >= 0; i--) {
+    const e = game.entities[i];
+
+    if (e.type === 'ring') {
+      if (!collideEntity(e)) continue;
+
+      game.ringCount += 1;
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.ring();
+
+      if (game.ringCount >= 50) {
+        game.ringBoostT = 10.0;
+        game.invincibleT = Math.max(game.invincibleT, 10.0);
+        bubble.visible = true;
+        game.ringCount = 0;
+        sfx.boost();
+      }
+      continue;
+    }
+
+    if (e.type === 'turtle') {
+      if (e.hit) continue;
+      if (!collideEntity(e)) continue;
+
+      e.hit = true;
+      e.destroyedAny = false;
+      e.hitAge = 0;
+      e.exploding = false;
+      e.explodeT = 0;
+
+      e.slideV = -200.0;
+      e.z -= 0.8;
+      e.obj.position.z = e.z;
+
+      e.slideT = 1.90;
+      e.spinV = (Math.random() < 0.5 ? -1 : 1) * (3.5 + Math.random() * 2.0);
+
+      e.obj.position.y = 0.01;
+
+      sfx.boost();
+      continue;
+    }
+
+    if (!collideEntity(e)) continue;
+
+    if (e.type === 'coin') {
+      game.coins += 1;
+      game.score += 28;
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.coin();
+      continue;
+    }
+
+    if (e.type === 'food') {
+      game.foodCount += 1;
+      game.foodHistory.push(e.emo);
+      refreshFoodUI();
+
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.food();
+
+      if (game.foodCount >= 10) {
+        game.foodBoostCharges += 1;
+        game.foodCount = 0;
+        game.foodHistory = [];
+        refreshFoodUI();
+        updateFoodBoostButton();
+        sfx.boost();
+      }
+      continue;
+    }
+
+    if (e.type === 'heart') {
+      if (game.lives < game.maxLives) addLife();
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      continue;
+    }
+
+    if (e.type === 'magnet') {
+      game.magnetT = 8.0;
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.magnet();
+      continue;
+    }
+
+    if (e.type === 'obst') {
+      const inv = (game.invincibleT > 0);
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      if (!inv) loseLife();
+      continue;
+    }
+  }
+
+  // score + HUD
+  game.score += (18 * speedMul) * dt;
+
+  if(game.score > game.best){
+    game.best = Math.floor(game.score);
+    saveBest(game.best);
+  }
+
+  if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
+  if(coinsEl) coinsEl.textContent = String(game.coins);
+  if(bestEl)  bestEl.textContent  = String(game.best);
+  if(ringsEl) ringsEl.textContent = String(game.ringCount);
+  if(hpTxt)   hpTxt.textContent   = hpString();
+  if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
+  setBoostUI();
+
+  if(bubble.visible){
+    bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
+  }
+
+  tiltTarget *= 0.92;
+  camRoll = damp(camRoll, tiltTarget, 10, dt);
+}
  
 
     function animate(tNow){
