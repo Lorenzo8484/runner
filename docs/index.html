@@ -3908,8 +3908,8 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
     const jx = (Math.sin(t*95) + Math.sin(t*141)) * 0.5 * jitter;
     const jy = (Math.cos(t*88) + Math.cos(t*133)) * 0.5 * jitter;
 
-    shakeX = shX + jx;
-    shakeY = shY + jy;
+    shakeX = 0;
+    shakeY = 0;
 
   } else {
     // reset quando finisce boost
