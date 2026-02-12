@@ -3073,219 +3073,193 @@ hookCamBtn(btnCamFront,'front');
 
 
         function update(dt, tNow){
-        if(runnerMixer){
+  // Animazioni
+  if(runnerMixer){
     runnerMixer.timeScale = 1.0;
     runnerMixer.update(dt);
-    ...
+
+    if(mixamoHips){
+      mixamoHips.position.x = hipsBaseX;
+      mixamoHips.position.z = hipsBaseZ;
+    }
+    if(mixamoRootNode){
+      mixamoRootNode.position.x = rootBaseX;
+      mixamoRootNode.position.z = rootBaseZ;
+    }
   }
 
-  updateEffects(dt); // ✅ QUI, una sola volta
+  // ✅ Effetti (esplosioni/polvere) UNA SOLA VOLTA per frame
+  updateEffects(dt);
 
-  ...
-}
-        runnerMixer.timeScale = 1.0;
-        runnerMixer.update(dt);
+  const gameplayOn = game.started && !game.paused && !game.over;
+  const stopTarget = game.stopped ? 1.0 : 0.0;
+  game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
 
-        if(mixamoHips){ mixamoHips.position.x = hipsBaseX; mixamoHips.position.z = hipsBaseZ; }
-        if(mixamoRootNode){ mixamoRootNode.position.x = rootBaseX; mixamoRootNode.position.z = rootBaseZ; }
+  if(!gameplayOn){
+    runnerPivot.position.x = lanesX[1];
+    runnerPivot.position.y = 0;
+
+    contact.position.x = runnerPivot.position.x;
+    contact.scale.set(1.10, 1.10, 1);
+    contact.material.opacity = 0.55;
+
+    const breathe = Math.sin(tNow*0.0022) * 0.015;
+    runnerCenter.position.y = 0.95 + breathe;
+    runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
+
+    game.camSpeed = 0;
+    game.grounded = true;
+    game.vyNow = 0;
+    return;
+  }
+
+  const trafficMul = (1.0 - game.stopBlend);
+  if(game.stopped){
+    game.camSpeed = 0;
+    game.grounded = true;
+    game.vyNow = 0;
+    return;
+  }
+
+  // timers
+  if(game.invincibleT>0){
+    game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
+    if(game.invincibleT<=0) bubble.visible=false;
+  }
+  if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT - dt*trafficMul);
+  if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
+  if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
+
+  const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+  if(anyBoost && game.invincibleT<0.05){
+    game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
+    bubble.visible=true;
+  }
+
+  const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
+  const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
+  const both = (game.foodBoostT>0 && game.ringBoostT>0);
+  const crazyMul = both ? 1.03 : 1.0;
+
+  const speedMul = foodMul * ringMul * crazyMul;
+  const speed = game.baseSpeed * speedMul * trafficMul;
+
+  // ✅ Run bob
+  runPhase += dt * (9.5 + (speedMul-1.0)*2.0);
+  const grounded = (game.y === 0 && !game.jumping);
+  const bobOn = grounded ? 1.0 : 0.25;
+  const slideOn = game.sliding ? 0.35 : 1.0;
+
+  const bobY = Math.abs(Math.sin(runPhase)) * 0.045 * bobOn * slideOn;
+  const sway = Math.sin(runPhase*0.5) * 0.035 * bobOn * slideOn;
+  const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;
+
+  runnerCenter.position.y = 0.95 + bobY;
+  runnerCenter.rotation.z = lean;
+  runnerCenter.rotation.x = -sway * 0.35;
+
+  // info camera FPS
+  game.camSpeed = speed;
+  game.grounded = (game.y === 0);
+  game.vyNow = game.vy;
+
+  // fisica salto
+  const g=22.0;
+  game.vy += g*dt;
+  game.y  += game.vy*dt;
+  if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
+
+  if(game.sliding){
+    game.slideT -= dt;
+    if(game.slideT<=0) game.sliding=false;
+  }
+
+  // smooth lane follow
+  const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
+  runnerX = damp(runnerX, laneTargetX, 14, dt);
+  runnerPivot.position.x = runnerX;
+  runnerPivot.position.y = (-game.y);
+
+  // contact shadow
+  const h = runnerPivot.position.y;
+  const s = 1.10 + clamp(h*0.65, 0, 0.85);
+  contact.position.x = runnerPivot.position.x;
+  contact.scale.set(s,s,1);
+  contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
+
+  // scroll
+  const scroll = speed*dt;
+  for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
+
+  highwayTex.offset.y -= scroll*0.085;
+  for(const t of patchTexPool) t.offset.y -= scroll*0.085;
+
+  for(const mesh of segments){
+    mesh.position.z += scroll;
+    if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
+  }
+  loopJungle(scroll);
+
+  // spawn
+  game.spawnT -= dt;
+  if(game.spawnT<=0){
+    spawnRow();
+    game.spawnT = rnd(0.40, 0.75);
+  }
+
+  // entities scroll + turtle slide
+  for(let i = game.entities.length-1; i >= 0; i--){
+    const e = game.entities[i];
+
+    e.z += scroll;
+    if(e.obj) e.obj.position.z = e.z;
+
+    if(e.type === 'turtle' && e.hit){
+      e.hitAge = (e.hitAge || 0) + dt;
+
+      const mats = e.obj?.userData?.mats || [];
+      if(mats.length){
+        if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
+        else                 mats.forEach(m => m.color.setHex(0xff2d2d));
       }
 
-      const gameplayOn = game.started && !game.paused && !game.over;
-      const stopTarget = game.stopped ? 1.0 : 0.0;
-      game.stopBlend = damp(game.stopBlend, stopTarget, 8, dt);
+      e.slideT = Math.max(0, e.slideT - dt);
+      e.slideV = damp(e.slideV, 0, 6.5, dt);
 
-      if(!gameplayOn){
-        runnerPivot.position.x = lanesX[1];
-        runnerPivot.position.y = 0;
+      e.z += e.slideV * dt;
+      if(e.obj) e.obj.position.z = e.z;
+      if(e.obj) e.obj.rotation.y += e.spinV * dt;
 
-        contact.position.x = runnerPivot.position.x;
-        contact.scale.set(1.10, 1.10, 1);
-        contact.material.opacity = 0.55;
-
-        const breathe = Math.sin(tNow*0.0022) * 0.015;
-        runnerCenter.position.y = 0.95 + breathe;
-        runnerCenter.rotation.z = Math.sin(tNow*0.0016) * 0.015;
-
-        // ✅ per FPS idle/menu
-        game.camSpeed = 0;
-        game.grounded = true;
-        game.vyNow = 0;
-
-        return;
+      if(e.slideT > 0 && Math.abs(e.slideV) > 15){
+        spawnDust(e.obj.position.x, e.z + 0.25);
       }
 
-      // runnerCenter.position.y e rotation vengono gestiti dal bob corsa (più sotto)
-      const trafficMul = (1.0 - game.stopBlend);
-      if(game.stopped){
-        // ✅ STOP: niente gameplay, ma lasciamo info camera per “breathing sway”
-        game.camSpeed = 0;
-        game.grounded = true;
-        game.vyNow = 0;
-        return;
-      }
+      const didDestroy = turtleSmashLane(e);
+      if(didDestroy) e.destroyedAny = true;
 
-      if(game.invincibleT>0){
-        game.invincibleT = Math.max(0, game.invincibleT - dt*trafficMul);
-        if(game.invincibleT<=0){
-          bubble.visible=false;
+      const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+      if(almostStopped){
+        if(!e.destroyedAny){
+          spawnTurtleExplosion(e.obj.position.x, e.z);
         }
+        scene.remove(e.obj);
+        game.entities.splice(i,1);
+        continue;
       }
-      if(game.foodBoostT>0) game.foodBoostT = Math.max(0, game.foodBoostT - dt*trafficMul);
-      if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
-      if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
-
-      const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
-      if(anyBoost && game.invincibleT<0.05){
-        game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
-        bubble.visible=true;
-      }
-
-      const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
-      const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
-      const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      const crazyMul = both ? 1.03 : 1.0;
-
-      const speedMul = foodMul * ringMul * crazyMul;
-      const speed = game.baseSpeed * speedMul * trafficMul;
-      // ✅ Run bob (solo quando corri)
-runPhase += dt * (9.5 + (speedMul-1.0)*2.0);  // accelera un po’ con i boost
-
-const grounded = (game.y === 0 && !game.jumping);
-const bobOn = grounded ? 1.0 : 0.25;          // in aria quasi zero
-const slideOn = game.sliding ? 0.35 : 1.0;    // in slide riduci
-
-const bobY = Math.abs(Math.sin(runPhase)) * 0.045 * bobOn * slideOn;      // su/giù
-const sway = Math.sin(runPhase*0.5) * 0.035 * bobOn * slideOn;            // sway laterale
-const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;                // roll lieve
-
-runnerCenter.position.y = 0.95 + bobY;
-runnerCenter.rotation.z = lean;
-runnerCenter.rotation.x = -sway * 0.35; // micro “nodding”
-
-      // ✅ info per camera FPS (step/bob)
-      game.camSpeed = speed;
-      game.grounded = (game.y === 0);
-      game.vyNow = game.vy;
-
-      const g=22.0;
-      game.vy += g*dt;
-      game.y  += game.vy*dt;
-      if(game.y>0){ game.y=0; game.vy=0; game.jumping=false; }
-
-      if(game.sliding){ game.slideT -= dt; if(game.slideT<=0) game.sliding=false; }
-
-      // ✅ Smooth lane follow
-const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
-runnerX = damp(runnerX, laneTargetX, 14, dt);   // 14 = velocità “naturale”
-runnerPivot.position.x = runnerX;
-
-runnerPivot.position.y = (-game.y);
-
-      const h = runnerPivot.position.y;
-      const s = 1.10 + clamp(h*0.65, 0, 0.85);
-      contact.position.x = runnerPivot.position.x;
-      contact.scale.set(s,s,1);
-      contact.material.opacity = clamp(0.55 - h*0.24, 0.10, 0.55);
-
-      const scroll = speed*dt;
-      // ✅ fai scorrere anche il “last spawn z” delle tartarughe, così dopo un po’ possono respawnare
-      for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
-      highwayTex.offset.y -= scroll*0.085;
-      for(const t of patchTexPool) t.offset.y -= scroll*0.085;
-
-      for(const mesh of segments){
-        mesh.position.z += scroll;
-        if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
-      }
-      loopJungle(scroll);
-
-      game.spawnT -= dt;
-      if(game.spawnT<=0){
-        spawnRow();
-        game.spawnT = rnd(0.40, 0.75);
-      }
-
-        // ===== ENTITIES SCROLL + MAGNET + TURTLE SLIDE =====
-      const magnetOn = game.magnetT > 0;
-
-      for(let i = game.entities.length-1; i >= 0; i--){
-  const e = game.entities[i];
-
-  // base scroll
-  e.z += scroll;
-
-  // ✅ sync posizione mesh SEMPRE
-  if(e.obj) e.obj.position.z = e.z;
-
-  // ===== TURTLE SLIDE / HIT =====
-  if(e.type === 'turtle' && e.hit){
-    e.hitAge = (e.hitAge || 0) + dt;
-
-    const mats = e.obj?.userData?.mats || [];
-    if(mats.length){
-      if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400)); // giallo
-      else                 mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
     }
 
-    e.slideT = Math.max(0, e.slideT - dt);
-    e.slideV = damp(e.slideV, 0, 6.5, dt);
-
-    // movimento extra (scivola via)
-    e.z += e.slideV * dt;
-    if(e.obj) e.obj.position.z = e.z; // ✅ risincronizza dopo la scivolata
-
-    if(e.obj) e.obj.rotation.y += e.spinV * dt;
-
-    // ✅ POLVERE durante scivolata (nuovo)
-    if(e.slideT > 0 && Math.abs(e.slideV) > 15){
-      spawnDust(e.obj.position.x, e.z + 0.25);
-    }
-
-    const didDestroy = turtleSmashLane(e);
-    if(didDestroy) e.destroyedAny = true;
-
-    const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-
-    if(almostStopped){
-      if(!e.destroyedAny){
-        spawnTurtleExplosion(e.obj.position.x, e.z);
-      }
+    if(e.z > 6){
       scene.remove(e.obj);
       game.entities.splice(i,1);
       continue;
     }
   }
 
-  // cleanup dietro camera
-  if(e.z > 6){
-    scene.remove(e.obj);
-    game.entities.splice(i,1);
-    continue;
-  }
+  // ----- COLLISIONS (rimane la tua parte) -----
+  // Qui NON la riscrivo: lascia il tuo blocco collisioni così com’è
+  // (da "const px = runnerPivot.position.x;" fino all'update HUD)
+  // IMPORTANTISSIMO: assicurati che quel blocco sia ancora dentro update()!
 }
-          
-          // ✅ colore veloce: verde -> giallo -> rosso
-e.hitAge = (e.hitAge || 0) + dt;
-const mats = e.obj?.userData?.mats || [];
-if (mats.length) {
-  if (e.hitAge < 0.10) {        // ~100ms
-    mats.forEach(m => m.color.setHex(0xffd400)); // giallo
-  } else {                       // dopo ~100ms
-    mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso
-  }
-}
-          // se scivola lontano, eliminala
-          if (e.z < -120 || e.z > 6) {
-            scene.remove(e.obj);
-            game.entities.splice(i, 1);
-          }
-        } else {
-          if (e.z > 6) {
-            scene.remove(e.obj);
-            game.entities.splice(i, 1);
-          }
-        }
-      }
 
       // ===== COLLISIONS =====
       const px = runnerPivot.position.x;
