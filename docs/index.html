@@ -4109,6 +4109,8 @@ if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
     // ===== Boot =====
     (async ()=>{
       refreshFoodUI();
+      // 🔥 DEBUG: 5 boost disponibili
+      game.foodBoostCharges = 5;
       updateFoodBoostButton();
       if(hpTxt) hpTxt.textContent = hpString();
       syncCamUI();
