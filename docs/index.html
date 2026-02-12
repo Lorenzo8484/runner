@@ -3375,6 +3375,9 @@ let hsTimer = 0;
     let fpsLaneKick = 0;
     let _prevFoodBoostActive = false;
     let _prevDanceActive = false;
+    // ✅ HEAVY CAMERA SHAKE (rotazionale tipo FPS shot)
+let boostShakeKick = 0;         // kick iniziale
+let _prevAnyBoost = false;      // per rilevare start boost
     // ✅ SHAKE STATE (persistente)
 let shX = 0, shY = 0;
 let shTX = 0, shTY = 0;
@@ -3831,6 +3834,12 @@ if(_nowDanceActive !== _prevDanceActive){
 
       const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
       const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
+      // ✅ kick quando parte un boost
+if(anyBoost && !_prevAnyBoost) boostShakeKick = 1.0;
+_prevAnyBoost = anyBoost;
+
+// decay kick
+boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
 
       const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
       const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
@@ -4004,6 +4013,32 @@ else if(viewMode === 'back'){
   camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
   camera.lookAt(camX*0.35, lookAtY, lookAtZ);
   camera.rotation.z = camRoll * 0.55;
+  // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
+if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
+  const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
+
+  // intensità base (aumentala se vuoi più forte)
+  const base = both ? 0.030 : 0.024;     // radianti (~1.7° / ~1.4°)
+
+  // kick iniziale (tipo "sparata") breve
+  const kick = boostShakeKick * (both ? 0.020 : 0.016);
+
+  // rumore “handheld” (mix di sinusoidi: sembra camera vera, non vibrazione)
+  const t = tNow * 0.001;
+  const n1 = Math.sin(t * 38.0) * 0.60 + Math.sin(t * 71.0) * 0.40;
+  const n2 = Math.cos(t * 44.0) * 0.55 + Math.cos(t * 83.0) * 0.45;
+  const n3 = Math.sin(t * 52.0) * 0.50 + Math.cos(t * 97.0) * 0.50;
+
+  // pitch/yaw/roll (camera handheld)
+  const pitch = (n2 * base) + kick;          // su/giù
+  const yaw   = (n1 * base) * 0.85;          // dx/sx
+  const roll  = (n3 * base) * 0.55;          // roll leggero
+
+  // applica come rotazione locale (dopo lookAt)
+  camera.rotateY(yaw);
+  camera.rotateX(pitch);
+  camera.rotateZ(roll);
+}
   camera.up.set(0,1,0);
 }
 else { // FRONT
@@ -4012,6 +4047,32 @@ else { // FRONT
   camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
   camera.lookAt(camX*0.35, lookAtY, lookAtZ);
   camera.rotation.z = camRoll * 0.55;
+  // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
+if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
+  const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
+
+  // intensità base (aumentala se vuoi più forte)
+  const base = both ? 0.030 : 0.024;     // radianti (~1.7° / ~1.4°)
+
+  // kick iniziale (tipo "sparata") breve
+  const kick = boostShakeKick * (both ? 0.020 : 0.016);
+
+  // rumore “handheld” (mix di sinusoidi: sembra camera vera, non vibrazione)
+  const t = tNow * 0.001;
+  const n1 = Math.sin(t * 38.0) * 0.60 + Math.sin(t * 71.0) * 0.40;
+  const n2 = Math.cos(t * 44.0) * 0.55 + Math.cos(t * 83.0) * 0.45;
+  const n3 = Math.sin(t * 52.0) * 0.50 + Math.cos(t * 97.0) * 0.50;
+
+  // pitch/yaw/roll (camera handheld)
+  const pitch = (n2 * base) + kick;          // su/giù
+  const yaw   = (n1 * base) * 0.85;          // dx/sx
+  const roll  = (n3 * base) * 0.55;          // roll leggero
+
+  // applica come rotazione locale (dopo lookAt)
+  camera.rotateY(yaw);
+  camera.rotateX(pitch);
+  camera.rotateZ(roll);
+}
   camera.up.set(0,1,0);
 }
 
