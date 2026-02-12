@@ -4015,27 +4015,21 @@ else if(viewMode === 'back'){
   camera.rotation.z = camRoll * 0.55;
   // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
 if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
-
   const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
 
-  // 🎯 intensità più alta ma burst corta
-  const base = both ? 0.030 : 0.022;
+  // 🔻 ancora un filo meno rispetto al front
+  const base = both ? 0.016 : 0.012;
+
   const t = tNow * 0.001;
-
-  // 👊 burst rapido tipo colpi
-  const pulseSpeed = 65;       // velocissimo
+  const pulseSpeed = 55;
   const burst = Math.sin(t * pulseSpeed);
+  const spike = (burst > 0.86) ? 1 : 0;
 
-  // taglia solo i picchi (colpi secchi)
-  const spike = burst > 0.6 ? 1 : 0;
+  const j = (Math.cos(t*88) + Math.cos(t*133)) * 0.5;
 
-  // micro jitter nervoso
-  const jitter =
-    (Math.random()*2 - 1) * base * 0.6;
-
-  const pitch = spike * base + jitter;
-  const yaw   = spike * base * 0.5;
-  const roll  = spike * base * 0.25;
+  const pitch = spike * base + j * base * 0.16;
+  const yaw   = spike * base * 0.45 + j * base * 0.10;
+  const roll  = spike * base * 0.20 + j * base * 0.08;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
@@ -4051,27 +4045,26 @@ else { // FRONT
   camera.rotation.z = camRoll * 0.55;
   // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
 if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
-
   const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
 
-  // 🎯 intensità più alta ma burst corta
-  const base = both ? 0.045 : 0.035;   // più forte
+  // 🔻 più basso = meno aggressivo
+  const base = both ? 0.020 : 0.015;
+
   const t = tNow * 0.001;
 
-  // 👊 burst rapido tipo colpi
-  const pulseSpeed = 65;       // velocissimo
+  // ✅ colpi più rari (prima >0.6 era troppo spesso)
+  const pulseSpeed = 55;
   const burst = Math.sin(t * pulseSpeed);
 
-  // taglia solo i picchi (colpi secchi)
-  const spike = burst > 0.6 ? 1 : 0;
+  // spike “secco” ma raro
+  const spike = (burst > 0.86) ? 1 : 0;
 
-  // micro jitter nervoso
-  const jitter =
-    (Math.random()*2 - 1) * base * 0.6;
+  // ✅ jitter NON random per frame: sinusoide -> più camera, meno vibratore
+  const j = (Math.sin(t*92) + Math.sin(t*141)) * 0.5;
 
-  const pitch = spike * base + jitter;
-  const yaw   = spike * base * 0.5;
-  const roll  = spike * base * 0.25;
+  const pitch = spike * base + j * base * 0.18;
+  const yaw   = spike * base * 0.55 + j * base * 0.12;
+  const roll  = spike * base * 0.25 + j * base * 0.10;
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
