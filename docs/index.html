@@ -3904,7 +3904,7 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
 
     // ✅ micro-jitter extra (tremore fine)
     const t = tNow * 0.001;
-    const jitter = amp * 0.45;
+    const jitter = amp * 0.18;
     const jx = (Math.sin(t*95) + Math.sin(t*141)) * 0.5 * jitter;
     const jy = (Math.cos(t*88) + Math.cos(t*133)) * 0.5 * jitter;
 
