@@ -3908,8 +3908,9 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
     const jx = (Math.sin(t*95) + Math.sin(t*141)) * 0.5 * jitter;
     const jy = (Math.cos(t*88) + Math.cos(t*133)) * 0.5 * jitter;
 
-    shakeX = 0;
-    shakeY = 0;
+    // micro spostamento laterale (posizione), NON su/giù
+shakeX = shX * 0.35;   // ✅ laterale
+shakeY = 0;            // niente su/giù
 
   } else {
     // reset quando finisce boost
@@ -4027,8 +4028,13 @@ if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
   const j = (Math.cos(t*88) + Math.cos(t*133)) * 0.5;
 
   const pitch = spike * base + j * base * 0.07;
-  const yaw   = spike * base * 0.35 + j * base * 0.05;
-  const roll  = spike * base * 0.14 + j * base * 0.035;
+  // prima
+// const yaw   = spike * base * 0.45 + j * base * 0.05;
+// const roll  = spike * base * 0.18 + j * base * 0.04;
+
+// dopo (più laterale)
+const yaw   = spike * base * 0.95 + j * base * 0.18;  // ✅ dx/sx più evidente
+const roll  = spike * base * 0.55 + j * base * 0.12;  // ✅ tilt laterale
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
@@ -4060,8 +4066,13 @@ if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
   const j = (Math.sin(t*92) + Math.sin(t*141)) * 0.5;
 
   const pitch = spike * base + j * base * 0.08;
-  const yaw   = spike * base * 0.45 + j * base * 0.05;
-  const roll  = spike * base * 0.18 + j * base * 0.04;
+  // prima
+// const yaw   = spike * base * 0.45 + j * base * 0.05;
+// const roll  = spike * base * 0.18 + j * base * 0.04;
+
+// dopo (più laterale)
+const yaw   = spike * base * 0.95 + j * base * 0.18;  // ✅ dx/sx più evidente
+const roll  = spike * base * 0.55 + j * base * 0.12;  // ✅ tilt laterale
 
   camera.rotateX(pitch);
   camera.rotateY(yaw);
