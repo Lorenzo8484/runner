@@ -2697,8 +2697,10 @@ function refreshFoodUI(){
 const TURTLE_MIN_GAP = TURTLE_VIS_Z * 1.0;
 
 // ✅ range realistico: distrugge SOLO ostacoli vicini davanti a lei
-const TURTLE_SMASH_RANGE = 18;     // prima 70 (troppo)
-const TURTLE_SMASH_FRONT = 0.45;   // leggermente più davanti         // quanto davanti alla tartaruga considerare “colpito”
+// ✅ più stretto: smasha solo DAVVERO vicino
+const TURTLE_SMASH_RANGE = 6.5;     // era 18
+const TURTLE_SMASH_FRONT = 0.30;    // era 0.45
+const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
 
     function canSpawnTurtle(lane, z){
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
@@ -3083,11 +3085,19 @@ hookCamBtn(btnCamFront,'front');
     let fpsVelYSm = 0;
     let fpsLaneKick = 0;
 
-    function turtleSmashLane(turtle){
+    function turtleSmashSweep(turtle, prevZ, newZ){
   const lane = turtle.lane;
 
-  const zFront = turtle.z - TURTLE_SMASH_FRONT;
-  const zMin   = zFront - TURTLE_SMASH_RANGE;
+  // z "front" in entrambi gli istanti
+  const prevFront = prevZ - TURTLE_SMASH_FRONT;
+  const newFront  = newZ  - TURTLE_SMASH_FRONT;
+
+  // intervallo attraversato dal front in questo frame (+ margine)
+  const zA = Math.min(prevFront, newFront) - TURTLE_SMASH_MARGIN;
+  const zB = Math.max(prevFront, newFront) + TURTLE_SMASH_MARGIN;
+
+  // ✅ ulteriore limite: non oltre TURTLE_SMASH_RANGE davanti al front attuale
+  const zMinAllowed = newFront - TURTLE_SMASH_RANGE;
 
   let destroyed = false;
 
@@ -3096,7 +3106,8 @@ hookCamBtn(btnCamFront,'front');
     if(e.type !== 'obst') continue;
     if(e.lane !== lane) continue;
 
-    if(e.z <= zFront && e.z >= zMin){
+    // deve essere nel tratto attraversato + non troppo oltre
+    if(e.z >= zA && e.z <= zB && e.z >= zMinAllowed){
       scene.remove(e.obj);
       game.entities.splice(i, 1);
       destroyed = true;
@@ -3249,38 +3260,39 @@ hookCamBtn(btnCamFront,'front');
     if(e.obj) e.obj.position.z = e.z;
 
     if(e.type === 'turtle' && e.hit){
-      e.hitAge = (e.hitAge || 0) + dt;
+  e.hitAge = (e.hitAge || 0) + dt;
 
-      const mats = e.obj?.userData?.mats || [];
-      if(mats.length){
-        if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
-        else                 mats.forEach(m => m.color.setHex(0xff2d2d));
-      }
+  const mats = e.obj?.userData?.mats || [];
+  if(mats.length){
+    if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
+    else                 mats.forEach(m => m.color.setHex(0xff2d2d));
+  }
 
-      e.slideT = Math.max(0, e.slideT - dt);
-      e.slideV = damp(e.slideV, 0, 6.5, dt);
+  e.slideT = Math.max(0, e.slideT - dt);
+  e.slideV = damp(e.slideV, 0, 6.5, dt);
 
-      e.z += e.slideV * dt;
-      if(e.obj) e.obj.position.z = e.z;
-      if(e.obj) e.obj.rotation.y += e.spinV * dt;
+  const prevZ = e.z;                // ✅ salva prima
+  e.z += e.slideV * dt;
+  if(e.obj) e.obj.position.z = e.z;
+  if(e.obj) e.obj.rotation.y += e.spinV * dt;
 
-      if(e.slideT > 0 && Math.abs(e.slideV) > 15){
-        spawnDust(e.obj.position.x, e.z + 0.25);
-      }
+  if(e.slideT > 0 && Math.abs(e.slideV) > 15){
+    spawnDust(e.obj.position.x, e.z + 0.25);
+  }
 
-      const didDestroy = turtleSmashLane(e);
-      if(didDestroy) e.destroyedAny = true;
+  const didDestroy = turtleSmashSweep(e, prevZ, e.z);  // ✅ sweep reale
+  if(didDestroy) e.destroyedAny = true;
 
-      const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-      if(almostStopped){
-        if(!e.destroyedAny){
-          spawnTurtleExplosion(e.obj.position.x, e.z);
-        }
-        scene.remove(e.obj);
-        game.entities.splice(i,1);
-        continue;
-      }
+  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+  if(almostStopped){
+    if(!e.destroyedAny){
+      spawnTurtleExplosion(e.obj.position.x, e.z);
     }
+    scene.remove(e.obj);
+    game.entities.splice(i,1);
+    continue;
+  }
+}
 
     if(e.z > 6){
       scene.remove(e.obj);
@@ -3302,7 +3314,8 @@ hookCamBtn(btnCamFront,'front');
 
     const dx = Math.abs(ex - px);
     const dy = Math.abs(ey - playerCenterY);
-    const dz = Math.abs(ez - 0.25);
+    const PLAYER_Z = 0.0;               // player sta a z=0
+    const dz = Math.abs(ez - PLAYER_Z);
 
     const T = {
       coin:   { x: 0.55, y: 0.95, z: 0.80 },
@@ -3310,8 +3323,8 @@ hookCamBtn(btnCamFront,'front');
       heart:  { x: 0.58, y: 0.98, z: 0.85 },
       magnet: { x: 0.60, y: 1.05, z: 0.90 },
       ring:   { x: 0.42, y: 0.75, z: 0.55 },
-      obst:   { x: 0.52, y: (game.sliding ? 0.60 : 0.85), z: 0.70 },
-      turtle: { x: 0.62, y: 0.55, z: 0.95 }
+      obst:   { x: 0.46, y: (game.sliding ? 0.58 : 0.82), z: 0.55 }, // era x0.52 z0.70
+      turtle: { x: 0.60, y: 0.55, z: 0.75 }                          // era z0.95
     };
 
     const th = T[ent.type] || { x: 0.60, y: 1.0, z: 0.85 };
@@ -3328,7 +3341,7 @@ hookCamBtn(btnCamFront,'front');
       const turtleCenterY = (ent.obj.position.y ?? 0) + 0.35;
       const dyFoot = Math.abs(turtleCenterY - playerFootY);
 
-      return (dx < 0.70 && dyFoot < 0.55 && dz < 0.95);
+      return (dx < 0.66 && dyFoot < 0.50 && dz < 0.75);
     }
 
     return (dx < th.x && dy < th.y && dz < th.z);
