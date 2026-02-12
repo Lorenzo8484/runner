@@ -3872,9 +3872,9 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
 
   // ✅ MOLTO più ampiezza (camera che “sposta”, non vibra)
   const intensity =
-    bothOn ? 0.140 :
-    foodOn ? 0.110 :
-    ringOn ? 0.080 :
+    bothOn ? 0.170 :
+    foodOn ? 0.140 :
+    ringOn ? 0.110 :
     0;
 
   if(active){
@@ -3895,7 +3895,7 @@ if(camDynamic && shakeEnabled && viewMode!=='fps'){
   }
 
   // ✅ più reattiva ma sempre “pesante”
-  const stiffness = 85;  // prima 50
+  const stiffness = 150;  // prima 50
   const damping   = 8;   // prima 11 (meno smorzamento = più ampiezza)
 
   hsVX += (hsTX - hsX) * stiffness * dt;
