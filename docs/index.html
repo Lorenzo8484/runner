@@ -453,6 +453,63 @@
   animation: boostPulse .28s ease;
 }
 
+/* =========================================================
+   ✨ MAGIC GLOW (bordo animato)
+   ========================================================= */
+.hasMagic{ position:relative; overflow:visible; }
+.hasMagic > *{ position:relative; z-index:2; } /* testo sopra */
+
+.magicFx{
+  position:absolute;
+  inset:-7px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:1;
+
+  /* anello “magico” */
+  background:
+    radial-gradient(60% 80% at 30% 20%, rgba(180,240,255,.55), rgba(0,0,0,0) 60%),
+    conic-gradient(
+      rgba(120,210,255,0),
+      rgba(160,245,255,.55),
+      rgba(120,210,255,0),
+      rgba(145,205,255,.45),
+      rgba(120,210,255,0)
+    );
+
+  filter: blur(var(--mgBlur, 2.6px));
+  opacity: 0;
+  transform: scale(0.98);
+  mix-blend-mode: screen;
+
+  animation:
+    magicSpin var(--mgSpin, 1.9s) linear infinite,
+    magicPulse var(--mgPulse, 1.1s) ease-in-out infinite;
+}
+
+/* ON/OFF */
+.magicOn .magicFx{
+  opacity: var(--mgOp, .35);
+}
+
+/* livelli intensità */
+.mg1{  --mgOp:.22; --mgBlur:2.1px; --mgSpin:2.2s; --mgPulse:1.35s; }
+.mg2{  --mgOp:.40; --mgBlur:2.8px; --mgSpin:1.9s; --mgPulse:1.15s; }
+.mg5{  --mgOp:.78; --mgBlur:3.9px; --mgSpin:1.45s;--mgPulse:.95s; }
+
+/* intensità media per boost attivo e dance attivo */
+.mgMed{--mgOp:.55; --mgBlur:3.1px; --mgSpin:1.7s; --mgPulse:1.05s; }
+
+@keyframes magicSpin{
+  0%{ transform:scale(0.98) rotate(0deg); }
+  100%{ transform:scale(0.98) rotate(360deg); }
+}
+@keyframes magicPulse{
+  0%{   filter: blur(var(--mgBlur,2.6px)); }
+  50%{  filter: blur(calc(var(--mgBlur,2.6px) + 1.2px)); }
+  100%{ filter: blur(var(--mgBlur,2.6px)); }
+}
+
 /* animazione pulsante DANCE */
 @keyframes danceWiggle{
   0%{ transform:translateX(0) rotate(0deg) scale(1); }
@@ -1312,6 +1369,44 @@ const boostCountLbl = $('boostCountLbl');
     const btnMain = $('btnMain');
     const mainLbl = $('mainLbl');
     const btnDance = $('btnDance');
+    
+    // =========================================================
+// ✨ MAGIC HELPERS
+// =========================================================
+function ensureMagic(el){
+  if(!el) return;
+  if(el.classList.contains('hasMagic')) return;
+  el.classList.add('hasMagic');
+  const fx = document.createElement('span');
+  fx.className = 'magicFx';
+  fx.setAttribute('aria-hidden','true');
+  el.appendChild(fx);
+}
+
+function setMagicLevel(el, level){ 
+  if(!el) return;
+
+  // pulizia classi
+  el.classList.remove('magicOn','mg1','mg2','mg5','mgMed');
+
+  if(!level){ 
+    return; 
+  }
+
+  ensureMagic(el);
+  el.classList.add('magicOn');
+
+  // level può essere: "1" "2" "5" "med"
+  if(level === 'med') el.classList.add('mgMed');
+  else if(level >= 5) el.classList.add('mg5');
+  else if(level >= 2) el.classList.add('mg2');
+  else el.classList.add('mg1');
+}
+
+// crea overlay subito (così non “salta” al primo toggle)
+ensureMagic(btnBoostCount);
+ensureMagic(btnFoodBoost);
+ensureMagic(btnDance);
 
     // Camera buttons
     const btnCamBack  = $('btnCamBack');
@@ -2739,6 +2834,24 @@ function updateFoodBoostButton(){
   // ✅ etichette
   foodBoostLbl.textContent = 'BOOST';
   boostCountLbl.textContent = String(game.foodBoostCharges);
+    // ✨ MAGIA: conteggio cariche
+  const c = game.foodBoostCharges;
+
+  if(c <= 0){
+    setMagicLevel(btnBoostCount, 0);
+  }else if(c === 1){
+    setMagicLevel(btnBoostCount, 1);      // magia poca
+  }else if(c === 2){
+    setMagicLevel(btnBoostCount, 2);      // aumenta
+  }else if(c >= 5){
+    setMagicLevel(btnBoostCount, 5);      // fortissima (anche >5)
+  }else{
+    // 3-4: mettiamo intensità “come 2” (aumentata ma non max)
+    setMagicLevel(btnBoostCount, 2);
+  }
+  
+    // ✨ MAGIA: pulsante BOOST mentre attivo (intensità media)
+  setMagicLevel(btnFoodBoost, (game.foodBoostT > 0) ? 'med' : 0);
 
   // ✅ blocco utilizzo finché boost attivo
   setFoodBoostButtonsEnabled(!active);
@@ -3257,6 +3370,7 @@ hookCamBtn(btnCamFront,'front');
     let fpsVelYSm = 0;
     let fpsLaneKick = 0;
     let _prevFoodBoostActive = false;
+    let _prevDanceActive = false;
 
     function turtleSmashSweep(turtle, prevZ, newZ){
   const lane = turtle.lane;
@@ -3351,6 +3465,12 @@ if(_prevFoodBoostActive && !_nowFoodBoostActive){
   updateFoodBoostButton(); // torna cliccabile se ci sono cariche
 }
 _prevFoodBoostActive = _nowFoodBoostActive;
+// ✨ MAGIA sul pulsante DANCE mentre stai ballando
+const _nowDanceActive = (animState.mode === 'dance');
+if(_nowDanceActive !== _prevDanceActive){
+  setMagicLevel(btnDance, _nowDanceActive ? 'med' : 0);
+  _prevDanceActive = _nowDanceActive;
+}
   if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
   if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
 
