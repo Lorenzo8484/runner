@@ -1966,7 +1966,8 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
       patch.position.y = 0.003;
       mesh.add(patch);
 
-      mesh.position.set(0, 0, -i*segLen);
+      const roadHalf = (segLen * segCount) * 0.5;
+mesh.position.set(0, 0, (i * segLen) - roadHalf);
       mesh.receiveShadow=true;
 
       scene.add(mesh);
@@ -1978,7 +1979,7 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
     sideGeo.rotateX(-Math.PI/2);
     const sideMat = new THREE.MeshStandardMaterial({ color:0x0d2416, roughness:1, metalness:0 });
     const side = new THREE.Mesh(sideGeo, sideMat);
-    side.position.set(0, -0.02, -segLen*segCount/2 + segLen/2);
+    side.position.set(0, -0.02, 0); // ✅ centrato
     side.receiveShadow = true;
     scene.add(side);
 
@@ -2009,7 +2010,8 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
     const treeSideX = (totalRoadWidth/2) + 1.9;
     const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
     for(let i=0;i<jungleCount;i++){
-      const z = -i*treeSpacing;
+      const wrapZ = segLen * segCount;
+const z = (i*treeSpacing) - (wrapZ*0.5);  // ✅ centrati come la strada
       for(const sideSign of [-1,1]){
         const t = treeProto.clone(true);
         t.position.set(sideSign*(treeSideX + rnd(0,1.8)), 0, z);
@@ -2020,12 +2022,17 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
       }
     }
     function loopJungle(scroll){
-      const wrapZ = segLen*segCount;
-      for(const obj of treePool){
-        obj.position.z += scroll;
-        if(obj.position.z > 10) obj.position.z -= wrapZ;
-      }
-    }
+  const wrapZ = segLen*segCount;
+  const halfZ = wrapZ * 0.5;
+
+  for(const obj of treePool){
+    obj.position.z += scroll;
+
+    // ✅ wrap bidirezionale come la strada
+    if(obj.position.z >  halfZ) obj.position.z -= wrapZ;
+    if(obj.position.z < -halfZ) obj.position.z += wrapZ;
+  }
+}
 
     // ===== Sprites =====
     function makeEmojiSprite(emoji, size=256){
@@ -3554,10 +3561,16 @@ if(_nowDanceActive !== _prevDanceActive){
   highwayTex.offset.y -= scroll*0.085;
   for(const t of patchTexPool) t.offset.y -= scroll*0.085;
 
-  for(const mesh of segments){
-    mesh.position.z += scroll;
-    if(mesh.position.z > segLen) mesh.position.z -= segLen*segCount;
-  }
+  const roadSpan = segLen * segCount;
+const roadHalf = roadSpan * 0.5;
+
+for(const mesh of segments){
+  mesh.position.z += scroll;
+
+  // ✅ wrap bidirezionale
+  if(mesh.position.z > roadHalf)  mesh.position.z -= roadSpan;
+  if(mesh.position.z < -roadHalf) mesh.position.z += roadSpan;
+}
   loopJungle(scroll);
 
   // spawn
