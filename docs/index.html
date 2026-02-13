@@ -3934,33 +3934,28 @@ if(viewMode === 'fps'){
 
   const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
 
-  // motion blur fake solo in boost
   const anyBoostFPS = (game.foodBoostT>0 || game.ringBoostT>0);
   if(renderer?.domElement){
     renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoostFPS && !stoppedOrMenu));
   }
 
-  // breathe in menu/stop
   const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
   const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
 
   const grounded = (game.y === 0 && !game.jumping);
 
-  // landing kick
   if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
   fpsGroundPrev = grounded;
 
-  fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
+  fpsVelYSm   = damp(fpsVelYSm, game.vy, 10, dt);
   fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
 
-  // elastic lane lag (spring)
   if(!fpsRealistic){
     fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
   }else{
     fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
   }
 
-  // non-linear bob based on speed
   const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
   const nonLinear = Math.pow(sNorm, 1.65);
 
@@ -4009,8 +4004,8 @@ if(viewMode === 'fps'){
   const lookAtZ = 0.10;
 
   camera.position.set(
-    camX + shakeX,
-    camY + bob + shakeY,
+    camX,                 // ✅ se vuoi, qui puoi aggiungere + shakeX
+    camY + bob,           // ✅ se vuoi, qui puoi aggiungere + shakeY
     camZ
   );
 
@@ -4029,8 +4024,8 @@ if(viewMode === 'fps'){
   const lookAtZ = 0.10;
 
   camera.position.set(
-    camX + shakeX,
-    camY + bob + shakeY,
+    camX,                 // ✅ se vuoi, qui puoi aggiungere + shakeX
+    camY + bob,           // ✅ se vuoi, qui puoi aggiungere + shakeY
     -camZ
   );
 
