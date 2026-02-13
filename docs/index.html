@@ -1733,6 +1733,12 @@ safeOn(dynFovToggle,'click', ()=>{
 
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
     camera.up.set(0,1,0);
+    
+    // ✅ evita flip strani quando tocchi rotation dopo lookAt
+camera.rotation.order = 'YXZ';
+
+// ✅ helper per FPS: azzera roll senza rompere quaternion
+const _camEuler = new THREE.Euler(0,0,0,'YXZ');
 
     // lights
     const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
@@ -4001,28 +4007,35 @@ if(viewMode === 'fps'){
   );
 
   camera.lookAt(
-    runnerPivot.position.x + xOff,
-    yFollow + yOff,
-    -10
-  );
+  runnerPivot.position.x + xOff,
+  yFollow + yOff,
+  -10
+);
 
-  camera.rotation.z = 0;
+// ✅ azzera roll in modo stabile (niente flip)
+_camEuler.setFromQuaternion(camera.quaternion);
+_camEuler.z = 0;
+camera.quaternion.setFromEuler(_camEuler);
 }
 else if(viewMode === 'back'){
   const lookAtY = lerp(0.35, 1.45, framing);
   const lookAtZ = -6.5;
   camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = camRoll * 0.55;
   camera.up.set(0,1,0);
+camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+// ✅ roll senza rompere lookAt (no capovolgimenti)
+camera.rotateZ(camRoll * 0.55);
 }
 else { // FRONT
   const lookAtY = lerp(0.30, 1.55, framing);
   const lookAtZ = 0.10;
   camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
-  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = camRoll * 0.55;
   camera.up.set(0,1,0);
+camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+// ✅ roll stabile
+camera.rotateZ(camRoll * 0.55);
 }
 
       // ===== Debug panel update (timer) =====
