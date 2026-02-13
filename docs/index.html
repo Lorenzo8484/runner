@@ -4008,78 +4008,46 @@ if(viewMode === 'fps'){
 
   camera.rotation.z = 0;
 }        // BACK
-else if(viewMode === 'back'){
-  const lookAtY = lerp(0.35, 1.45, framing);
-  const lookAtZ = -6.5;
-  camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = camRoll * 0.55;
-  // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
-if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
-  const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
+const lookAtY = lerp(0.25, 1.45, framing);
+const lookAtZ = 0.10;
 
-  const base = both ? 0.010 : 0.007;
+camera.position.set(
+  camX,
+  camY + bob,
+  camZ
+);
 
-  const t = tNow * 0.001;
-  const pulseSpeed = 50;
-  const burst = Math.sin(t * pulseSpeed);
-  const spike = (burst > 0.92) ? 1 : 0;
+camera.lookAt(
+  camX * 0.25,
+  lookAtY,
+  lookAtZ
+);
 
-  const j = (Math.cos(t*88) + Math.cos(t*133)) * 0.5;
-
-  const pitch = spike * base + j * base * 0.07;
-  // prima
-// const yaw   = spike * base * 0.45 + j * base * 0.05;
-// const roll  = spike * base * 0.18 + j * base * 0.04;
-
-// dopo (più laterale)
-const yaw   = spike * base * 0.95 + j * base * 0.18;  // ✅ dx/sx più evidente
-const roll  = spike * base * 0.55 + j * base * 0.12;  // ✅ tilt laterale
-
-  camera.rotateX(pitch);
-  camera.rotateY(yaw);
-  camera.rotateZ(roll);
-}
-  camera.up.set(0,1,0);
-}
+camera.rotation.z = camRoll * 0.35;
+camera.up.set(0, 1, 0);
 else { // FRONT
-  const lookAtY = lerp(0.30, 1.55, framing);
-  const lookAtZ = 0.10;
-  camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
-  camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-  camera.rotation.z = camRoll * 0.55;
-  // ✅ heavy camera shake (rotazione tipo FPS shot) - SOLO boost, non in FPS
-if(camDynamic && anyBoost && shakeEnabled && viewMode !== 'fps'){
-  const both = (game.foodBoostT > 0 && game.ringBoostT > 0);
+const lookAtY = lerp(0.30, 1.55, framing);
+const lookAtZ = 0.10;
 
-  // 🔻 MOLTO più basso
-  const base = both ? 0.012 : 0.009;
+// posizione pulita (solo bob naturale)
+camera.position.set(
+  camX,
+  camY + bob,
+  -camZ
+);
 
-  const t = tNow * 0.001;
+// guarda avanti
+camera.lookAt(
+  camX * 0.35,
+  lookAtY,
+  lookAtZ
+);
 
-  // colpi più rari
-  const pulseSpeed = 50;
-  const burst = Math.sin(t * pulseSpeed);
-  const spike = (burst > 0.92) ? 1 : 0;
+// leggero roll base (se lo usi già)
+camera.rotation.z = camRoll * 0.55;
 
-  // jitter morbido (sinusoide, non random)
-  const j = (Math.sin(t*92) + Math.sin(t*141)) * 0.5;
-
-  const pitch = spike * base + j * base * 0.08;
-  // prima
-// const yaw   = spike * base * 0.45 + j * base * 0.05;
-// const roll  = spike * base * 0.18 + j * base * 0.04;
-
-// dopo (più laterale)
-const yaw   = spike * base * 0.95 + j * base * 0.18;  // ✅ dx/sx più evidente
-const roll  = spike * base * 0.55 + j * base * 0.12;  // ✅ tilt laterale
-
-  camera.rotateX(pitch);
-  camera.rotateY(yaw);
-  camera.rotateZ(roll);
-}
-  camera.up.set(0,1,0);
-}
+// up vector standard
+camera.up.set(0, 1, 0);
 
       // ===== Debug panel update (timer) =====
       if(debugOn){
