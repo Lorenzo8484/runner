@@ -3934,13 +3934,13 @@ if(viewMode === 'fps'){
 
   const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
 
-  // ===== motion blur fake solo in boost =====
-  const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+  // motion blur fake solo in boost
+  const anyBoostFPS = (game.foodBoostT>0 || game.ringBoostT>0);
   if(renderer?.domElement){
-    renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
+    renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoostFPS && !stoppedOrMenu));
   }
 
-  // ===== breathe in menu/stop =====
+  // breathe in menu/stop
   const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
   const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
 
@@ -3953,22 +3953,19 @@ if(viewMode === 'fps'){
   fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
   fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
 
-  // ===== elastic lane lag (spring) =====
-  // "fpsLaneKick" lo usi già quando cambi corsia: qui lo trasformiamo in elasticità vera
-  // (più realistico) oppure lo spengo in stabile
+  // elastic lane lag (spring)
   if(!fpsRealistic){
     fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
   }else{
     fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
   }
 
-  // ===== non-linear bob based on speed =====
-  // speedNormalized 0..1 circa
+  // non-linear bob based on speed
   const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
-  const nonLinear = Math.pow(sNorm, 1.65); // non lineare (cresce più forte a velocità alte)
+  const nonLinear = Math.pow(sNorm, 1.65);
 
   if(!stoppedOrMenu && fpsRealistic){
-    fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
+    fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoostFPS?1.0:0.0));
   } else {
     fpsPhase += dt * 2.0;
   }
@@ -3986,9 +3983,7 @@ if(viewMode === 'fps'){
   const slideChin = (game.sliding ? 0.10 : 0.0);
   const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
 
-  // micro lag corsia (elasticità)
   const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
-
   const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
 
   const xOff = breatheX + (1-air)*runX + laneKickX;
@@ -4007,47 +4002,47 @@ if(viewMode === 'fps'){
   );
 
   camera.rotation.z = 0;
-}        // BACK
-const lookAtY = lerp(0.25, 1.45, framing);
-const lookAtZ = 0.10;
 
-camera.position.set(
-  camX,
-  camY + bob,
-  camZ
-);
+} else if(viewMode === 'back') {
 
-camera.lookAt(
-  camX * 0.25,
-  lookAtY,
-  lookAtZ
-);
+  const lookAtY = lerp(0.25, 1.45, framing);
+  const lookAtZ = 0.10;
 
-camera.rotation.z = camRoll * 0.35;
-camera.up.set(0, 1, 0);
-else { // FRONT
-const lookAtY = lerp(0.30, 1.55, framing);
-const lookAtZ = 0.10;
+  camera.position.set(
+    camX + shakeX,
+    camY + bob + shakeY,
+    camZ
+  );
 
-// posizione pulita (solo bob naturale)
-camera.position.set(
-  camX,
-  camY + bob,
-  -camZ
-);
+  camera.lookAt(
+    camX * 0.25,
+    lookAtY,
+    lookAtZ
+  );
 
-// guarda avanti
-camera.lookAt(
-  camX * 0.35,
-  lookAtY,
-  lookAtZ
-);
+  camera.rotation.z = camRoll * 0.35;
+  camera.up.set(0, 1, 0);
 
-// leggero roll base (se lo usi già)
-camera.rotation.z = camRoll * 0.55;
+} else { // FRONT
 
-// up vector standard
-camera.up.set(0, 1, 0);
+  const lookAtY = lerp(0.30, 1.55, framing);
+  const lookAtZ = 0.10;
+
+  camera.position.set(
+    camX + shakeX,
+    camY + bob + shakeY,
+    -camZ
+  );
+
+  camera.lookAt(
+    camX * 0.35,
+    lookAtY,
+    lookAtZ
+  );
+
+  camera.rotation.z = camRoll * 0.55;
+  camera.up.set(0, 1, 0);
+}
 
       // ===== Debug panel update (timer) =====
       if(debugOn){
