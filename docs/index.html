@@ -1591,7 +1591,7 @@ const dynFovSwitch = $('dynFovSwitch');
     const camYSlider = $('camYSlider');
     const frameSlider = $('frameSlider');
     // =========================================================
-// ✅ Focus slider: mentre trascini, nasconde impostazioni e mostra mini barra
+// ✅ Focus slider: mentre trascini, mostra mini barra e NON rompe il drag
 // =========================================================
 const panelEl = settingsOverlay ? settingsOverlay.querySelector('.panel') : null;
 const focusOverlay = $('focusOverlay');
@@ -1602,72 +1602,136 @@ const focusValEl = $('focusVal');
 let focusActive = false;
 let focusReleaseTimer = null;
 
+// riferimenti correnti (slider “vero” + suoi elementi UI)
+let _activeSlider = null;
+let _activeRow = null;
+let _activeCard = null;
+let _fmtActive = (v)=>String(v);
+
 function setFocus(on){
   focusActive = !!on;
 
-  // ✅ toglie lo schermo scuro mentre trascini
+  // toglie lo schermo scuro mentre trascini
   if(settingsOverlay) settingsOverlay.classList.toggle('focusClear', focusActive);
 
-  // mantiene il tuo hide interno
+  // attiva modalità focus del panel
   if(panelEl) panelEl.classList.toggle('sliderFocus', focusActive);
 
-  // mini slider visibile
+  // mostra mini barra
   if(focusOverlay) focusOverlay.style.display = focusActive ? 'flex' : 'none';
 }
 
+function attachFocusMarks(sliderEl){
+  // row = la .settingsRow subito prima dello slider
+  const row = sliderEl?.previousElementSibling;
+  const card = sliderEl?.closest?.('.card');
+
+  _activeRow = (row && row.classList?.contains('settingsRow')) ? row : null;
+  _activeCard = card || null;
+
+  if(_activeRow) _activeRow.classList.add('focusRow');
+  if(_activeCard) _activeCard.classList.add('focusCard');
+}
+
+function detachFocusMarks(){
+  if(_activeRow) _activeRow.classList.remove('focusRow');
+  if(_activeCard) _activeCard.classList.remove('focusCard');
+  _activeRow = null;
+  _activeCard = null;
+}
+
+function syncMiniFrom(sliderEl, label){
+  if(!focusRange || !sliderEl) return;
+
+  focusRange.min   = sliderEl.min;
+  focusRange.max   = sliderEl.max;
+  focusRange.step  = sliderEl.step;
+  focusRange.value = sliderEl.value;
+
+  if(focusName) focusName.textContent = label;
+  if(focusValEl) focusValEl.textContent = _fmtActive(sliderEl.value);
+}
+
 function bindFocusToSlider(sliderEl, label, formatFn){
-  if(!sliderEl) return;
+  if(!sliderEl || !focusRange) return;
 
   const fmt = formatFn || ((v)=>String(v));
 
-  // copia range attributes al mini slider
-  function syncMini(){
-    if(!focusRange) return;
-    focusRange.min = sliderEl.min;
-    focusRange.max = sliderEl.max;
-    focusRange.step = sliderEl.step;
-    focusRange.value = sliderEl.value;
-    if(focusName) focusName.textContent = label;
-    if(focusValEl) focusValEl.textContent = fmt(sliderEl.value);
-  }
-
-  function start(){
-    // solo se settings aperte
+  function start(e){
     if(!settingsOverlay || settingsOverlay.style.display !== 'flex') return;
 
     clearTimeout(focusReleaseTimer);
-    syncMini();
-    setFocus(true);
-  }
 
-  function move(){
-    if(!focusActive) return;
-    syncMini();
+    _activeSlider = sliderEl;
+    _fmtActive = fmt;
+
+    attachFocusMarks(sliderEl);
+    syncMiniFrom(sliderEl, label);
+
+    // ✅ mini slider ora è TRASCINABILE
+    focusRange.disabled = false;
+
+    setFocus(true);
+
+    // evita scroll / gesture iOS mentre trascini
+    try{ e.preventDefault(); }catch{}
   }
 
   function end(){
     clearTimeout(focusReleaseTimer);
-    // piccolo delay così non “lampeggia”
-    focusReleaseTimer = setTimeout(()=>setFocus(false), 140);
+    focusReleaseTimer = setTimeout(()=>{
+      setFocus(false);
+      focusRange.disabled = true;
+      _activeSlider = null;
+      detachFocusMarks();
+    }, 140);
   }
 
   // start drag
   safeOn(sliderEl, 'pointerdown', start);
   safeOn(sliderEl, 'touchstart', start);
 
-  // while dragging
-  safeOn(sliderEl, 'input', move);
+  // se muovi lo slider originale, aggiorna mini
+  safeOn(sliderEl, 'input', ()=>{
+    if(!focusActive) return;
+    syncMiniFrom(sliderEl, label);
+  });
 
-  // end drag
+  // end drag (originale)
   safeOn(sliderEl, 'pointerup', end);
   safeOn(sliderEl, 'pointercancel', end);
   safeOn(sliderEl, 'touchend', end);
   safeOn(sliderEl, 'change', end);
+}
 
-  // mini slider NON modifica valori (solo display)
-  if(focusRange){
-    focusRange.disabled = true;
-  }
+// ✅ quando trascini il mini slider, aggiorna lo slider vero
+if(focusRange){
+  focusRange.disabled = true;
+
+  focusRange.addEventListener('input', ()=>{
+    if(!_activeSlider) return;
+
+    _activeSlider.value = focusRange.value;
+
+    // aggiorna valore numerico e scatena la tua logica (fovVal/camVal ecc)
+    _activeSlider.dispatchEvent(new Event('input', { bubbles:true }));
+
+    if(focusValEl) focusValEl.textContent = _fmtActive(focusRange.value);
+  });
+
+  // quando molli il mini slider
+  focusRange.addEventListener('pointerup', ()=>{ if(focusActive) { /* end gestito dal change */ }});
+  focusRange.addEventListener('change', ()=>{
+    if(!focusActive) return;
+    // chiude con delay come sopra
+    clearTimeout(focusReleaseTimer);
+    focusReleaseTimer = setTimeout(()=>{
+      setFocus(false);
+      focusRange.disabled = true;
+      _activeSlider = null;
+      detachFocusMarks();
+    }, 140);
+  });
 }
 
 // formati valori
@@ -1675,17 +1739,6 @@ bindFocusToSlider(fovSlider,  'FOV',      (v)=>String(Math.round(Number(v))));
 bindFocusToSlider(camSlider,  'Distanza', (v)=>Number(v).toFixed(1));
 bindFocusToSlider(camYSlider, 'Altezza',  (v)=>Number(v).toFixed(1));
 bindFocusToSlider(frameSlider,'Frame',    (v)=>Number(v).toFixed(2));
-
-    const fovVal = $('fovVal');
-    const camVal = $('camVal');
-    const camYVal = $('camYVal');
-    const frameVal = $('frameVal');
-
-    const rnd=(a,b)=>a+Math.random()*(b-a);
-    const rndi=(a,b)=>Math.floor(rnd(a,b+1));
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    const lerp=(a,b,t)=>a+(b-a)*t;
-    const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // ===== SETTINGS =====
 const CAM_KEY = 'jr_cam_settings_v11';
