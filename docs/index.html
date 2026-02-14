@@ -1411,7 +1411,15 @@ canvas.blurBoost{
        ========================================================= */
     const $ = (id)=>document.getElementById(id);
     function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
+    // ===============================
+// ✅ UTILITIES MANCANTI (FIX CRASH)
+// ===============================
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp  = (a, b, t) => a + (b - a) * t;
+const damp  = (x, y, lambda, dt) => lerp(x, y, 1 - Math.exp(-lambda * dt));
 
+const rnd  = (a, b) => a + Math.random() * (b - a);
+const rndi = (a, b) => Math.floor(rnd(a, b + 1));
     window.addEventListener('error', (e)=>{
       console.warn('JS error caught:', e?.message || e);
     });
@@ -1590,6 +1598,11 @@ const dynFovSwitch = $('dynFovSwitch');
     const camSlider = $('camSlider');
     const camYSlider = $('camYSlider');
     const frameSlider = $('frameSlider');
+    // ✅ valori a destra degli slider (mancavano -> crash)
+const fovVal   = $('fovVal');
+const camVal   = $('camVal');
+const camYVal  = $('camYVal');
+const frameVal = $('frameVal');
     // =========================================================
 // ✅ Focus slider: mentre trascini, mostra mini barra e NON rompe il drag
 // =========================================================
