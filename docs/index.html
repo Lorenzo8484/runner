@@ -526,70 +526,98 @@
     0 10px 26px rgba(0,0,0,.55);
 }
 /* =========================================================
-   ✨ MAGIC FLY (pickup → HUD)
+   ✨ MAGIC FLY (pickup → HUD) — FILO DI MAGIA + BRILLANTINI
    ========================================================= */
 .magicFly{
   position:fixed;
   left:0; top:0;
-  width:16px; height:16px;
+  width:10px; height:10px;
   border-radius:999px;
   pointer-events:none;
   z-index:9999;
   transform:translate(-50%,-50%);
-  background: radial-gradient(circle at 30% 30%,
-    rgba(255,255,255,.95),
-    rgba(170,240,255,.75) 35%,
-    rgba(110,210,255,.35) 60%,
-    rgba(0,0,0,0) 75%
+  background: radial-gradient(circle at 35% 35%,
+    rgba(255,255,255,.98),
+    rgba(185,245,255,.78) 40%,
+    rgba(120,215,255,.35) 68%,
+    rgba(0,0,0,0) 78%
   );
   box-shadow:
-    0 0 18px rgba(120,220,255,.55),
-    0 0 34px rgba(120,220,255,.28);
-  filter: blur(.1px);
+    0 0 14px rgba(140,235,255,.55),
+    0 0 26px rgba(120,220,255,.28);
   mix-blend-mode: screen;
+  filter: blur(.05px);
 }
 
+/* “filo” morbido attorno al punto magia */
 .magicFly::after{
   content:"";
   position:absolute;
-  inset:-14px;
+  inset:-16px;
   border-radius:999px;
-  background: radial-gradient(circle,
-    rgba(160,245,255,.22),
-    rgba(0,0,0,0) 70%
-  );
-  opacity:.85;
-  filter: blur(2.6px);
+  background:
+    radial-gradient(circle,
+      rgba(175,250,255,.18),
+      rgba(0,0,0,0) 70%
+    );
+  opacity:.9;
+  filter: blur(3px);
+  mix-blend-mode: screen;
 }
 
+/* brillantini della scia */
 .magicSpark{
   position:fixed;
-  width:6px; height:6px;
+  width:5px; height:5px;
   border-radius:999px;
   pointer-events:none;
   z-index:9998;
   transform:translate(-50%,-50%);
   background: radial-gradient(circle,
-    rgba(255,255,255,.9),
-    rgba(170,240,255,.55) 45%,
-    rgba(0,0,0,0) 70%
+    rgba(255,255,255,.95),
+    rgba(180,245,255,.60) 45%,
+    rgba(0,0,0,0) 72%
   );
+  box-shadow:
+    0 0 10px rgba(150,235,255,.35);
   mix-blend-mode: screen;
+  opacity:0;
+  filter: blur(.05px);
 }
 
-@keyframes hudPulse {
-  0%{ transform:scale(1); }
-  35%{ transform:scale(1.08); }
-  100%{ transform:scale(1); }
+/* micro scintille “taglienti” (puntini piccolissimi) */
+.magicDust{
+  position:fixed;
+  width:2px; height:2px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:9997;
+  transform:translate(-50%,-50%);
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 0 10px rgba(170,245,255,.45);
+  mix-blend-mode: screen;
+  opacity:0;
 }
-.hudPulse{ animation:hudPulse .26s ease; }
 
-@keyframes foodPop {
-  0%{ transform:scale(.88); filter:brightness(1); }
-  40%{ transform:scale(1.10); filter:brightness(1.25); }
-  100%{ transform:scale(1); filter:brightness(1); }
+/* burst finale */
+.magicBurst{
+  position:fixed;
+  width:6px; height:6px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+  background: radial-gradient(circle,
+    rgba(255,255,255,.95),
+    rgba(190,250,255,.55) 55%,
+    rgba(0,0,0,0) 75%
+  );
+  box-shadow:
+    0 0 16px rgba(160,245,255,.55),
+    0 0 32px rgba(120,220,255,.25);
+  mix-blend-mode: screen;
+  opacity:0;
 }
-.foodPop{ animation:foodPop .28s ease; }
 
     /* =========================================================
        Colonna cibo
@@ -1520,7 +1548,13 @@ function pulseHUD(el, cls='hudPulse'){
 
 function magicFly(fromWorld, toEl, opts={}){
   if(!toEl) return;
-  const { dur=520, sparks=12 } = opts;
+
+  const {
+    dur = 620,
+    sparks = 14,          // densità scia “brillantini”
+    dust = 18,            // micro puntini extra per effetto “magia”
+    burst = 16            // “artificio” finale
+  } = opts;
 
   // start (screen)
   const s0 = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
@@ -1529,77 +1563,200 @@ function magicFly(fromWorld, toEl, opts={}){
   const tr = toEl.getBoundingClientRect();
   const s1 = { x: tr.left + tr.width/2, y: tr.top + tr.height/2 };
 
-  // curva (bezier)
-  const mid = {
-    x: (s0.x + s1.x)/2 + rnd(-40, 40),
-    y: Math.min(s0.y, s1.y) - rnd(40, 85)
+  // curva più “naturale” (doppio controllo)
+  const c1 = {
+    x: s0.x + rnd(-50, 50),
+    y: s0.y - rnd(40, 95)
+  };
+  const c2 = {
+    x: s1.x + rnd(-35, 35),
+    y: s1.y - rnd(35, 85)
   };
 
+  // orb
   const orb = document.createElement('div');
   orb.className = 'magicFly';
   document.body.appendChild(orb);
 
-  const startT = performance.now();
-
-  // spark pool
+  // trail pool (spark)
   const sparkEls = [];
   for(let i=0;i<sparks;i++){
     const sp = document.createElement('div');
     sp.className = 'magicSpark';
-    sp.style.opacity = '0';
     document.body.appendChild(sp);
-    sparkEls.push(sp);
+    sparkEls.push({
+      el: sp,
+      t: -i * (0.55 / sparks),   // scia già “dietro”
+      life: rnd(0.22, 0.32),
+      sway: rnd(0.6, 1.25),
+      driftX: rnd(-22, 22),
+      driftY: rnd(-16, 16)
+    });
   }
 
-  function bezier(t,a,b,c){
+  // micro dust (puntini piccoli)
+  const dustEls = [];
+  for(let i=0;i<dust;i++){
+    const d = document.createElement('div');
+    d.className = 'magicDust';
+    document.body.appendChild(d);
+    dustEls.push({
+      el: d,
+      t: -i * (0.60 / dust),
+      life: rnd(0.16, 0.26),
+      driftX: rnd(-28, 28),
+      driftY: rnd(-24, 24)
+    });
+  }
+
+  function cubicBezier(t,a,b,c,d){
     const u = 1-t;
+    const tt = t*t, uu = u*u;
+    const uuu = uu*u;
+    const ttt = tt*t;
     return {
-      x: u*u*a.x + 2*u*t*b.x + t*t*c.x,
-      y: u*u*a.y + 2*u*t*b.y + t*t*c.y
+      x: uuu*a.x + 3*uu*t*b.x + 3*u*tt*c.x + ttt*d.x,
+      y: uuu*a.y + 3*uu*t*b.y + 3*u*tt*c.y + ttt*d.y
     };
+  }
+
+  // easing super “morbido”
+  const ease = (t)=> (t<0.5) ? (4*t*t*t) : (1 - Math.pow(-2*t+2,3)/2);
+
+  const startT = performance.now();
+
+  function spawnBurst(x,y){
+    // scintille che si “spargono” al punto finale
+    const parts = [];
+    const n = burst;
+
+    for(let i=0;i<n;i++){
+      const p = document.createElement('div');
+      p.className = 'magicBurst';
+      p.style.left = x+'px';
+      p.style.top  = y+'px';
+      document.body.appendChild(p);
+
+      const ang = rnd(0, Math.PI*2);
+      const spd = rnd(90, 220); // px/sec
+      parts.push({
+        el: p,
+        vx: Math.cos(ang)*spd + rnd(-40,40),
+        vy: Math.sin(ang)*spd - rnd(40,120),
+        t: 0,
+        life: rnd(0.26, 0.42),
+        s0: rnd(0.55, 1.15)
+      });
+    }
+
+    const t0 = performance.now();
+    function tickBurst(now){
+      const dt = Math.min(0.030, (now - t0)/1000); // micro stabilità
+      let alive = 0;
+
+      for(const p of parts){
+        p.t += dt;
+        const k = clamp(p.t / p.life, 0, 1);
+
+        // gravità leggera
+        p.vy += 520 * dt;
+
+        const dx = p.vx * dt;
+        const dy = p.vy * dt;
+
+        const r = p.el.getBoundingClientRect();
+        const cx = (r.left + r.width/2) + dx;
+        const cy = (r.top  + r.height/2) + dy;
+
+        p.el.style.left = cx + 'px';
+        p.el.style.top  = cy + 'px';
+
+        const op = (1-k) * 0.95;
+        const sc = p.s0 * (1 + k*0.55);
+
+        p.el.style.opacity = op.toFixed(3);
+        p.el.style.transform = `translate(-50%,-50%) scale(${sc.toFixed(3)})`;
+
+        if(k < 1) alive++;
+        else p.el.remove();
+      }
+
+      if(alive > 0) requestAnimationFrame(tickBurst);
+    }
+    requestAnimationFrame(tickBurst);
   }
 
   function tick(now){
     const t = clamp((now - startT)/dur, 0, 1);
-    // easing super fluido
-    const e = 1 - Math.pow(1 - t, 3);
+    const e = ease(t);
 
-    const p = bezier(e, s0, mid, s1);
+    const p = cubicBezier(e, s0, c1, c2, s1);
 
-    const scl = lerp(1.15, 0.55, e);
-    const op  = (t < 0.85) ? 1 : lerp(1, 0, (t-0.85)/0.15);
+    // orb principale
+    const scl = lerp(1.12, 0.55, e);
+    const op  = (t < 0.88) ? 1 : lerp(1, 0, (t-0.88)/0.12);
 
     orb.style.left = p.x + 'px';
     orb.style.top  = p.y + 'px';
     orb.style.opacity = op.toFixed(3);
     orb.style.transform = `translate(-50%,-50%) scale(${scl.toFixed(3)})`;
 
-    // sparkles trailing
-    for(let i=0;i<sparkEls.length;i++){
-      const sp = sparkEls[i];
-      const tt = (t + i*0.018) % 1;
-      const ee = 1 - Math.pow(1 - tt, 3);
-      const pp = bezier(ee, s0, mid, s1);
+    // scia: ogni particella insegue un punto “dietro” la curva
+    // + lieve swirl (filo di magia)
+    const time = now * 0.001;
 
-      const jx = rnd(-10,10);
-      const jy = rnd(-10,10);
-      sp.style.left = (pp.x + jx) + 'px';
-      sp.style.top  = (pp.y + jy) + 'px';
+    for(const s of sparkEls){
+      s.t += (1/dur) * 16;                 // scorre dietro
+      const tt = clamp(e - Math.max(0, s.t)*0.08, 0, 1);
 
-      // comparsa/scomparsa
-      const local = Math.abs(0.5 - tt) * 2; // 0..1
-      const a = clamp(0.55 - local*0.55, 0, 0.55);
-      sp.style.opacity = a.toFixed(3);
+      const pp = cubicBezier(tt, s0, c1, c2, s1);
 
-      const ss = lerp(0.55, 1.0, a/0.55);
-      sp.style.transform = `translate(-50%,-50%) scale(${ss.toFixed(3)})`;
+      const swirl = Math.sin((time*6.5) + s.driftX*0.02) * (6.0 * s.sway);
+      const spreadX = (e * 14) + swirl;
+      const spreadY = (e * 10) - swirl*0.35;
+
+      const jx = (Math.random()*2-1) * (3 + spreadX*0.35) + (s.driftX * (0.08 + e*0.12));
+      const jy = (Math.random()*2-1) * (3 + spreadY*0.28) + (s.driftY * (0.06 + e*0.10));
+
+      // fade (vive attorno al punto dietro)
+      const local = clamp(1 - Math.abs(tt - (e-0.10)) * (1/0.18), 0, 1);
+      const a = local * 0.65;
+
+      s.el.style.left = (pp.x + jx) + 'px';
+      s.el.style.top  = (pp.y + jy) + 'px';
+      s.el.style.opacity = a.toFixed(3);
+
+      const ss = lerp(0.45, 1.05, a/0.65);
+      s.el.style.transform = `translate(-50%,-50%) scale(${ss.toFixed(3)})`;
+    }
+
+    // micro dust: più fine, più “magico”
+    for(const d of dustEls){
+      d.t += (1/dur) * 18;
+      const tt = clamp(e - Math.max(0, d.t)*0.10, 0, 1);
+      const pp = cubicBezier(tt, s0, c1, c2, s1);
+
+      const jx = rnd(-1,1) * (6 + e*14) + d.driftX*(0.06 + e*0.10);
+      const jy = rnd(-1,1) * (6 + e*12) + d.driftY*(0.06 + e*0.10);
+
+      const local = clamp(1 - Math.abs(tt - (e-0.12)) * (1/0.22), 0, 1);
+      const a = local * 0.55;
+
+      d.el.style.left = (pp.x + jx) + 'px';
+      d.el.style.top  = (pp.y + jy) + 'px';
+      d.el.style.opacity = a.toFixed(3);
     }
 
     if(t < 1){
       requestAnimationFrame(tick);
     }else{
+      // burst finale “artificio”
+      spawnBurst(s1.x, s1.y);
+
       orb.remove();
-      for(const sp of sparkEls) sp.remove();
+      for(const s of sparkEls) s.el.remove();
+      for(const d of dustEls) d.el.remove();
+
       pulseHUD(toEl);
     }
   }
