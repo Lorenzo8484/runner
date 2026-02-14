@@ -591,6 +591,67 @@
 }
 
 /* =========================================================
+   ✅ SLIDER FOCUS MODE (mostra solo una riga piccola)
+   ========================================================= */
+
+.panel.sliderFocus .settingsTop,
+.panel.sliderFocus .settingsFooter,
+.panel.sliderFocus .tabs,
+.panel.sliderFocus .title,
+.panel.sliderFocus .card h3,
+.panel.sliderFocus .toggle,
+.panel.sliderFocus .seg,
+.panel.sliderFocus .settingsRow:not(.focusRow),
+.panel.sliderFocus .card:not(.focusCard){
+  display:none !important;
+}
+
+/* la card resta ma super “leggera” */
+.panel.sliderFocus{
+  background:rgba(10,14,22,.22);
+  border-color:rgba(255,255,255,.08);
+  box-shadow:0 10px 40px rgba(0,0,0,.40);
+  backdrop-filter: blur(8px);
+}
+
+/* mostra SOLO la riga del singolo slider (piccola e quasi trasparente) */
+.focusOverlay{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom, 0px) + 10px);
+  z-index:999;
+  width:min(560px, calc(100vw - 22px));
+  padding:8px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(10px);
+  pointer-events:auto;
+  opacity:.85;
+}
+
+.focusOverlay .focusName{
+  font-size:11px;
+  font-weight:950;
+  opacity:.85;
+  margin-right:10px;
+  white-space:nowrap;
+}
+
+.focusOverlay .focusVal{
+  font-size:11px;
+  font-weight:950;
+  opacity:.9;
+  white-space:nowrap;
+  margin-left:10px;
+}
+
+.focusOverlay input[type="range"]{
+  flex:1;
+  height:16px;
+}
+/* =========================================================
    CAMERA: BACK / FPS / FRONT → SORELLA HUD
    ========================================================= */
 
@@ -1220,6 +1281,13 @@ canvas.blurBoost{
   <!-- SETTINGS -->
 <div class="settingsOverlay" id="settingsOverlay">
   <div class="panel pillFx">
+    
+    <!-- ✅ MINI SLIDER OVERLAY (visibile solo mentre trascini) -->
+<div class="focusOverlay pillFx" id="focusOverlay" style="display:none;">
+  <span class="focusName" id="focusName">FOV</span>
+  <input type="range" id="focusRange" min="0" max="1" step="0.01" value="0">
+  <span class="focusVal" id="focusVal">0</span>
+</div>
 
     <!-- ❌ X CHIUSURA (PUNTO 1) -->
     <button class="settingsClose pillFx" id="btnCloseSettings" aria-label="Chiudi impostazioni">
@@ -1517,6 +1585,85 @@ const dynFovSwitch = $('dynFovSwitch');
     const camSlider = $('camSlider');
     const camYSlider = $('camYSlider');
     const frameSlider = $('frameSlider');
+    // =========================================================
+// ✅ Focus slider: mentre trascini, nasconde impostazioni e mostra mini barra
+// =========================================================
+const panelEl = settingsOverlay ? settingsOverlay.querySelector('.panel') : null;
+const focusOverlay = $('focusOverlay');
+const focusName = $('focusName');
+const focusRange = $('focusRange');
+const focusValEl = $('focusVal');
+
+let focusActive = false;
+let focusReleaseTimer = null;
+
+function setFocus(on){
+  focusActive = !!on;
+
+  if(panelEl) panelEl.classList.toggle('sliderFocus', focusActive);
+  if(focusOverlay) focusOverlay.style.display = focusActive ? 'flex' : 'none';
+}
+
+function bindFocusToSlider(sliderEl, label, formatFn){
+  if(!sliderEl) return;
+
+  const fmt = formatFn || ((v)=>String(v));
+
+  // copia range attributes al mini slider
+  function syncMini(){
+    if(!focusRange) return;
+    focusRange.min = sliderEl.min;
+    focusRange.max = sliderEl.max;
+    focusRange.step = sliderEl.step;
+    focusRange.value = sliderEl.value;
+    if(focusName) focusName.textContent = label;
+    if(focusValEl) focusValEl.textContent = fmt(sliderEl.value);
+  }
+
+  function start(){
+    // solo se settings aperte
+    if(!settingsOverlay || settingsOverlay.style.display !== 'flex') return;
+
+    clearTimeout(focusReleaseTimer);
+    syncMini();
+    setFocus(true);
+  }
+
+  function move(){
+    if(!focusActive) return;
+    syncMini();
+  }
+
+  function end(){
+    clearTimeout(focusReleaseTimer);
+    // piccolo delay così non “lampeggia”
+    focusReleaseTimer = setTimeout(()=>setFocus(false), 140);
+  }
+
+  // start drag
+  safeOn(sliderEl, 'pointerdown', start);
+  safeOn(sliderEl, 'touchstart', start);
+
+  // while dragging
+  safeOn(sliderEl, 'input', move);
+
+  // end drag
+  safeOn(sliderEl, 'pointerup', end);
+  safeOn(sliderEl, 'pointercancel', end);
+  safeOn(sliderEl, 'touchend', end);
+  safeOn(sliderEl, 'change', end);
+
+  // mini slider NON modifica valori (solo display)
+  if(focusRange){
+    focusRange.disabled = true;
+  }
+}
+
+// formati valori
+bindFocusToSlider(fovSlider,  'FOV',      (v)=>String(Math.round(Number(v))));
+bindFocusToSlider(camSlider,  'Distanza', (v)=>Number(v).toFixed(1));
+bindFocusToSlider(camYSlider, 'Altezza',  (v)=>Number(v).toFixed(1));
+bindFocusToSlider(frameSlider,'Frame',    (v)=>Number(v).toFixed(2));
 
     const fovVal = $('fovVal');
     const camVal = $('camVal');
