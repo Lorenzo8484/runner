@@ -1671,24 +1671,22 @@ function bindFocusToSlider(sliderEl, label, formatFn){
   const fmt = formatFn || ((v)=>String(v));
 
   function start(e){
-    if(!settingsOverlay || settingsOverlay.style.display !== 'flex') return;
+  if(!settingsOverlay || settingsOverlay.style.display !== 'flex') return;
 
-    clearTimeout(focusReleaseTimer);
+  clearTimeout(focusReleaseTimer);
 
-    _activeSlider = sliderEl;
-    _fmtActive = fmt;
+  _activeSlider = sliderEl;
+  _fmtActive = fmt;
 
-    attachFocusMarks(sliderEl);
-    syncMiniFrom(sliderEl, label);
+  attachFocusMarks(sliderEl);
+  syncMiniFrom(sliderEl, label);
 
-    // ✅ mini slider ora è TRASCINABILE
-    focusRange.disabled = false;
+  focusRange.disabled = false;
+  setFocus(true);
 
-    setFocus(true);
-
-    // evita scroll / gesture iOS mentre trascini
-    try{ e.preventDefault(); }catch{}
-  }
+  // ✅ NON bloccare l’evento: su iPhone rompe il range
+  // try{ e.preventDefault(); }catch{}
+}
 
   function end(){
     clearTimeout(focusReleaseTimer);
