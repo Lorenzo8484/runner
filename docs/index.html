@@ -1613,25 +1613,6 @@ function profForView(){
   return cam.front; // front e fps usano il profilo FRONT
 }
 
-    let viewMode = (saved.view ?? DEFAULTS.view);
-    if(!['front','back','fps'].includes(viewMode)) viewMode = 'front';
-
-    let debugOn = !!(saved.debug ?? DEFAULTS.debug);
-
-    let fpsRealistic = (saved.fpsRealistic ?? DEFAULTS.fpsRealistic) !== false;
-    let fpsDynFov    = (saved.fpsDynFov ?? DEFAULTS.fpsDynFov) !== false;
-
-    function saveCam(){
-      localStorage.setItem(CAM_KEY, JSON.stringify({
-        baseFov, baseCamZ, baseCamY, framing,
-        shake: !!shakeEnabled,
-        motionBlur: !!motionBlurEnabled,
-        view: viewMode,
-        debug: !!debugOn,
-        fpsRealistic: !!fpsRealistic,
-        fpsDynFov: !!fpsDynFov
-      }));
-    }
 
     const camThumb = $('camThumb');
 
@@ -1659,25 +1640,19 @@ function setActiveCamBtns(){
     }
 
     function syncCamUI(){
+  const p = prof(); // usa camProfile (front/back)
 
-  // ✅ profilo attivo (FRONT/BACK) → copia nei valori usati dal gioco
-  const prof = (camProfile === 'back') ? CAM_BACK : CAM_FRONT;
-  baseFov  = prof.baseFov;
-  baseCamZ = prof.baseCamZ;
-  baseCamY = prof.baseCamY;
-  framing  = prof.framing;
+  if(fovSlider){ fovSlider.value = String(Math.round(p.fov)); }
+  if(fovVal){ fovVal.textContent = String(Math.round(p.fov)); }
 
-  if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
-  if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
+  if(camSlider){ camSlider.value = String(p.dist.toFixed(1)); }
+  if(camVal){ camVal.textContent = p.dist.toFixed(1); }
 
-  if(camSlider){ camSlider.value = String(baseCamZ.toFixed(1)); }
-  if(camVal){ camVal.textContent = baseCamZ.toFixed(1); }
+  if(camYSlider){ camYSlider.value = String(p.y.toFixed(1)); }
+  if(camYVal){ camYVal.textContent = p.y.toFixed(1); }
 
-  if(camYSlider){ camYSlider.value = String(baseCamY.toFixed(1)); }
-  if(camYVal){ camYVal.textContent = baseCamY.toFixed(1); }
-
-  if(frameSlider){ frameSlider.value = String(framing.toFixed(2)); }
-  if(frameVal){ frameVal.textContent = framing.toFixed(2); }
+  if(frameSlider){ frameSlider.value = String(p.framing.toFixed(2)); }
+  if(frameVal){ frameVal.textContent = p.framing.toFixed(2); }
 
   if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
   if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
@@ -1688,9 +1663,11 @@ function setActiveCamBtns(){
   if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
   if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
 
-  if(btnFpsLive){
-    btnFpsLive.style.display = 'none';
-  }
+  if(btnFpsLive) btnFpsLive.style.display = 'none';
+
+  // profilo FRONT/BACK UI
+  if(btnCamProfFront) btnCamProfFront.classList.toggle('active', camProfile==='front');
+  if(btnCamProfBack)  btnCamProfBack.classList.toggle('active', camProfile==='back');
 
   setActiveCamBtns();
   setDebugUI();
@@ -1719,53 +1696,36 @@ safeOn(btnCamProfBack, 'click', ()=>{
   setCamProfile('back');
 });
 
-  setActiveCamBtns();
-  setDebugUI();
-}
-
     // ✅ helper: profilo attivo (FRONT o BACK)
 function activeCamProfile(){
   return (camProfile === 'back') ? CAM_BACK : CAM_FRONT;
 }
 
 safeOn(fovSlider, 'input', ()=>{
-  const p = activeCamProfile();
-  p.baseFov = clamp(Number(fovSlider.value), 30, 110);
-
-  // aggiorna anche i valori “live” usati dal gioco
-  baseFov = p.baseFov;
-
-  if(fovVal) fovVal.textContent = String(Math.round(baseFov));
+  const p = prof();
+  p.fov = clamp(Number(fovSlider.value), 30, 110);
+  if(fovVal) fovVal.textContent = String(Math.round(p.fov));
   saveCam();
 });
 
 safeOn(camSlider, 'input', ()=>{
-  const p = activeCamProfile();
-  p.baseCamZ = clamp(Number(camSlider.value), 2, 15);
-
-  baseCamZ = p.baseCamZ;
-
-  if(camVal) camVal.textContent = baseCamZ.toFixed(1);
+  const p = prof();
+  p.dist = clamp(Number(camSlider.value), 2, 15);
+  if(camVal) camVal.textContent = p.dist.toFixed(1);
   saveCam();
 });
 
 safeOn(camYSlider,'input', ()=>{
-  const p = activeCamProfile();
-  p.baseCamY = clamp(Number(camYSlider.value), 0, 8);
-
-  baseCamY = p.baseCamY;
-
-  if(camYVal) camYVal.textContent = baseCamY.toFixed(1);
+  const p = prof();
+  p.y = clamp(Number(camYSlider.value), 0, 8);
+  if(camYVal) camYVal.textContent = p.y.toFixed(1);
   saveCam();
 });
 
 safeOn(frameSlider,'input', ()=>{
-  const p = activeCamProfile();
+  const p = prof();
   p.framing = clamp(Number(frameSlider.value), 0, 1);
-
-  framing = p.framing;
-
-  if(frameVal) frameVal.textContent = framing.toFixed(2);
+  if(frameVal) frameVal.textContent = p.framing.toFixed(2);
   saveCam();
 });
   
@@ -1805,35 +1765,16 @@ safeOn(dynFovToggle,'click', ()=>{
   saveCam();
 });
     safeOn(resetCamBtn,'click', ()=>{
-  // ✅ reset SOLO camera del TAB (FRONT/BACK) allo "STANDARD"
-  // (std.front / std.back devono esistere e contenere: baseFov, baseCamZ, baseCamY, framing)
-
   if(camProfile === 'back'){
-    CAM_BACK.baseFov  = std.back.baseFov;
-    CAM_BACK.baseCamZ = std.back.baseCamZ;
-    CAM_BACK.baseCamY = std.back.baseCamY;
-    CAM_BACK.framing  = std.back.framing;
-
-    // aggiorna i valori live
-    baseFov  = CAM_BACK.baseFov;
-    baseCamZ = CAM_BACK.baseCamZ;
-    baseCamY = CAM_BACK.baseCamY;
-    framing  = CAM_BACK.framing;
+    cam.back = { ...std.back };
   }else{
-    CAM_FRONT.baseFov  = std.front.baseFov;
-    CAM_FRONT.baseCamZ = std.front.baseCamZ;
-    CAM_FRONT.baseCamY = std.front.baseCamY;
-    CAM_FRONT.framing  = std.front.framing;
-
-    // aggiorna i valori live
-    baseFov  = CAM_FRONT.baseFov;
-    baseCamZ = CAM_FRONT.baseCamZ;
-    baseCamY = CAM_FRONT.baseCamY;
-    framing  = CAM_FRONT.framing;
+    cam.front = { ...std.front };
   }
 
   saveCam();
   syncCamUI();
+
+  // aggiorna subito se stai usando quella view
   applyViewMode(viewMode);
 });
 
@@ -4190,7 +4131,7 @@ _camEuler.z = 0;
 camera.quaternion.setFromEuler(_camEuler);
 }
 else if(viewMode === 'back'){
-  const lookAtY = lerp(0.35, 1.45, framing);
+  const lookAtY = lerp(0.35, 1.45, profForView().framing);
   const lookAtZ = -6.5;
   camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
   camera.up.set(0,1,0);
@@ -4200,7 +4141,7 @@ camera.lookAt(camX*0.35, lookAtY, lookAtZ);
 camera.rotateZ(camRoll * 0.55);
 }
 else { // FRONT
-  const lookAtY = lerp(0.30, 1.55, framing);
+  const lookAtY = lerp(0.30, 1.55, profForView().framing);
   const lookAtZ = 0.10;
   camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
   camera.up.set(0,1,0);
