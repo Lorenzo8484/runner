@@ -595,6 +595,18 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+/* ✅ quando stai usando uno slider: pannello invisibile (player visibile) */
+.settingsOverlay.focusClear .panel{
+  opacity: 0 !important;
+  pointer-events: none !important; /* così non blocca il gioco dietro */
+  transform: translateY(-6px);
+}
+
+/* ✅ mini slider: IN ALTO (non più in basso) */
+.focusOverlay{
+  top: calc(env(safe-area-inset-top, 0px) + 10px) !important;
+  bottom: auto !important;
+}
 /* =========================================================
    ✅ SLIDER FOCUS MODE (mostra solo una riga piccola)
    ========================================================= */
@@ -1624,14 +1636,20 @@ let _fmtActive = (v)=>String(v);
 function setFocus(on){
   focusActive = !!on;
 
-  // toglie lo schermo scuro mentre trascini
-  if(settingsOverlay) settingsOverlay.classList.toggle('focusClear', focusActive);
+  // ✅ rende invisibile il pannello mentre usi lo slider
+  if(settingsOverlay){
+    settingsOverlay.classList.toggle('focusClear', focusActive);
+  }
 
-  // attiva modalità focus del panel
-  if(panelEl) panelEl.classList.toggle('sliderFocus', focusActive);
+  // mostra / nasconde mini slider overlay
+  if(focusOverlay){
+    focusOverlay.style.display = focusActive ? 'flex' : 'none';
+  }
 
-  // mostra mini barra
-  if(focusOverlay) focusOverlay.style.display = focusActive ? 'flex' : 'none';
+  // sicurezza: disabilita click sul pannello mentre regoli
+  if(panelEl){
+    panelEl.style.pointerEvents = focusActive ? 'none' : '';
+  }
 }
 
 function attachFocusMarks(sliderEl){
@@ -1682,7 +1700,12 @@ function bindFocusToSlider(sliderEl, label, formatFn){
   syncMiniFrom(sliderEl, label);
 
   focusRange.disabled = false;
-  setFocus(true);
+setFocus(true);
+
+// ✅ porta subito focus al mini slider
+setTimeout(()=>{
+  try{ focusRange.focus({preventScroll:true}); }catch{}
+},0);
 
   // ✅ NON bloccare l’evento: su iPhone rompe il range
   // try{ e.preventDefault(); }catch{}
