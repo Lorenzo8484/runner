@@ -525,6 +525,71 @@
     0 0 18px rgba(110,175,255,.22),
     0 10px 26px rgba(0,0,0,.55);
 }
+/* =========================================================
+   ✨ MAGIC FLY (pickup → HUD)
+   ========================================================= */
+.magicFly{
+  position:fixed;
+  left:0; top:0;
+  width:16px; height:16px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+  background: radial-gradient(circle at 30% 30%,
+    rgba(255,255,255,.95),
+    rgba(170,240,255,.75) 35%,
+    rgba(110,210,255,.35) 60%,
+    rgba(0,0,0,0) 75%
+  );
+  box-shadow:
+    0 0 18px rgba(120,220,255,.55),
+    0 0 34px rgba(120,220,255,.28);
+  filter: blur(.1px);
+  mix-blend-mode: screen;
+}
+
+.magicFly::after{
+  content:"";
+  position:absolute;
+  inset:-14px;
+  border-radius:999px;
+  background: radial-gradient(circle,
+    rgba(160,245,255,.22),
+    rgba(0,0,0,0) 70%
+  );
+  opacity:.85;
+  filter: blur(2.6px);
+}
+
+.magicSpark{
+  position:fixed;
+  width:6px; height:6px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:9998;
+  transform:translate(-50%,-50%);
+  background: radial-gradient(circle,
+    rgba(255,255,255,.9),
+    rgba(170,240,255,.55) 45%,
+    rgba(0,0,0,0) 70%
+  );
+  mix-blend-mode: screen;
+}
+
+@keyframes hudPulse {
+  0%{ transform:scale(1); }
+  35%{ transform:scale(1.08); }
+  100%{ transform:scale(1); }
+}
+.hudPulse{ animation:hudPulse .26s ease; }
+
+@keyframes foodPop {
+  0%{ transform:scale(.88); filter:brightness(1); }
+  40%{ transform:scale(1.10); filter:brightness(1.25); }
+  100%{ transform:scale(1); filter:brightness(1); }
+}
+.foodPop{ animation:foodPop .28s ease; }
 
     /* =========================================================
        Colonna cibo
@@ -1432,6 +1497,115 @@ const damp  = (x, y, lambda, dt) => lerp(x, y, 1 - Math.exp(-lambda * dt));
 
 const rnd  = (a, b) => a + Math.random() * (b - a);
 const rndi = (a, b) => Math.floor(rnd(a, b + 1));
+// =========================================================
+// ✨ MAGIC FLY (world → HUD)
+// =========================================================
+function worldToScreen(x,y,z){
+  const v = new THREE.Vector3(x,y,z);
+  v.project(camera);
+  const r = renderer.domElement.getBoundingClientRect();
+  return {
+    x: r.left + (v.x * 0.5 + 0.5) * r.width,
+    y: r.top  + (-v.y * 0.5 + 0.5) * r.height
+  };
+}
+
+function pulseHUD(el, cls='hudPulse'){
+  if(!el) return;
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), 320);
+}
+
+function magicFly(fromWorld, toEl, opts={}){
+  if(!toEl) return;
+  const { dur=520, sparks=12 } = opts;
+
+  // start (screen)
+  const s0 = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
+
+  // end (HUD element center)
+  const tr = toEl.getBoundingClientRect();
+  const s1 = { x: tr.left + tr.width/2, y: tr.top + tr.height/2 };
+
+  // curva (bezier)
+  const mid = {
+    x: (s0.x + s1.x)/2 + rnd(-40, 40),
+    y: Math.min(s0.y, s1.y) - rnd(40, 85)
+  };
+
+  const orb = document.createElement('div');
+  orb.className = 'magicFly';
+  document.body.appendChild(orb);
+
+  const startT = performance.now();
+
+  // spark pool
+  const sparkEls = [];
+  for(let i=0;i<sparks;i++){
+    const sp = document.createElement('div');
+    sp.className = 'magicSpark';
+    sp.style.opacity = '0';
+    document.body.appendChild(sp);
+    sparkEls.push(sp);
+  }
+
+  function bezier(t,a,b,c){
+    const u = 1-t;
+    return {
+      x: u*u*a.x + 2*u*t*b.x + t*t*c.x,
+      y: u*u*a.y + 2*u*t*b.y + t*t*c.y
+    };
+  }
+
+  function tick(now){
+    const t = clamp((now - startT)/dur, 0, 1);
+    // easing super fluido
+    const e = 1 - Math.pow(1 - t, 3);
+
+    const p = bezier(e, s0, mid, s1);
+
+    const scl = lerp(1.15, 0.55, e);
+    const op  = (t < 0.85) ? 1 : lerp(1, 0, (t-0.85)/0.15);
+
+    orb.style.left = p.x + 'px';
+    orb.style.top  = p.y + 'px';
+    orb.style.opacity = op.toFixed(3);
+    orb.style.transform = `translate(-50%,-50%) scale(${scl.toFixed(3)})`;
+
+    // sparkles trailing
+    for(let i=0;i<sparkEls.length;i++){
+      const sp = sparkEls[i];
+      const tt = (t + i*0.018) % 1;
+      const ee = 1 - Math.pow(1 - tt, 3);
+      const pp = bezier(ee, s0, mid, s1);
+
+      const jx = rnd(-10,10);
+      const jy = rnd(-10,10);
+      sp.style.left = (pp.x + jx) + 'px';
+      sp.style.top  = (pp.y + jy) + 'px';
+
+      // comparsa/scomparsa
+      const local = Math.abs(0.5 - tt) * 2; // 0..1
+      const a = clamp(0.55 - local*0.55, 0, 0.55);
+      sp.style.opacity = a.toFixed(3);
+
+      const ss = lerp(0.55, 1.0, a/0.55);
+      sp.style.transform = `translate(-50%,-50%) scale(${ss.toFixed(3)})`;
+    }
+
+    if(t < 1){
+      requestAnimationFrame(tick);
+    }else{
+      orb.remove();
+      for(const sp of sparkEls) sp.remove();
+      pulseHUD(toEl);
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
     window.addEventListener('error', (e)=>{
       console.warn('JS error caught:', e?.message || e);
     });
@@ -3143,6 +3317,11 @@ function updateEffects(dt){
       entities:[],
       effects: [],
       spawnT:0.30,
+      // distanza percorsa (per blocchi spawn)
+runDist: 0,
+
+// dopo aver raccolto MAGNETE o VITA, blocca entrambi per un po'
+noMagHeartUntil: 0,
 
       paused:false,
       started:false,
@@ -3226,6 +3405,16 @@ function refreshFoodUI(){
     d.textContent=emo;
     foodStack.appendChild(d);
   }
+  // ✅ pop sull’ultima pillola creata (quando raccogli)
+if(game._foodPop){
+  const first = foodStack.firstElementChild; // perché reverse()
+  if(first) {
+    first.classList.remove('foodPop');
+    void first.offsetWidth;
+    first.classList.add('foodPop');
+  }
+  game._foodPop = false;
+}
   foodCountEl.textContent = String(game.foodCount);
 
   // ✅ così rimane sempre coerente anche il bottone
@@ -3278,6 +3467,9 @@ function refreshFoodUI(){
 
     // ===== Spawn =====
     const TURTLE_VIS_Z = 70;
+    // “distanza visibile” usata per blocco spawn (2x)
+const VISIBLE_ROAD_DIST = TURTLE_VIS_Z;        // 70 (coerente col tuo tuning)
+const MAGHEART_BLOCK_DIST = VISIBLE_ROAD_DIST * 2; // ✅ 2xd
 const TURTLE_MIN_GAP = TURTLE_VIS_Z * 1.0;
 
 // ✅ range realistico: distrugge SOLO ostacoli vicini davanti a lei
@@ -3346,7 +3538,7 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
   }
 }
 
-      if(Math.random() < 0.10){
+      if(game.runDist >= game.noMagHeartUntil && Math.random() < 0.08){
   const lane = rndi(0,2);
   const zm = z0 - rnd(1, 7.0);
 
@@ -3362,6 +3554,13 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
 }
 
       if(game.lives < game.maxLives){
+          // ✅ blocco spawn cuore dopo magnete/vita
+  if(game.runDist < game.noMagHeartUntil) {
+    // niente vita durante il cooldown
+  }
+    } // ✅ fine else blocco cooldown
+  
+  else {
   let spawnHeart = false;
 
   if(game.coins > 0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
@@ -3901,6 +4100,7 @@ if(_nowDanceActive !== _prevDanceActive){
 
   // scroll
   const scroll = speed*dt;
+  game.runDist += scroll;
   for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
 
   highwayTex.offset.y -= scroll*0.085;
@@ -4112,13 +4312,36 @@ for(const mesh of segments){
     }
 
     if (e.type === 'food') {
-      game.foodCount += 1;
-      game.foodHistory.push(e.emo);
-      refreshFoodUI();
+  // ✨ magia: dal pickup alla barra cibo
+  const toEl = document.querySelector('.foodCount'); // target HUD
+  magicFly(
+    { x: e.obj.position.x, y: e.obj.position.y ?? 1.15, z: e.z },
+    toEl,
+    { dur: 560, sparks: IS_IOS ? 10 : 14 }
+  );
 
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      sfx.food();
+  game.foodCount += 1;
+  game.foodHistory.push(e.emo);
+
+  // flag per pop sulla prima pillola (ultima raccolta)
+  game._foodPop = true;
+
+  refreshFoodUI();
+
+  scene.remove(e.obj);
+  game.entities.splice(i, 1);
+  sfx.food();
+
+  if (game.foodCount >= 10) {
+    game.foodBoostCharges += 1;
+    game.foodCount = 0;
+    game.foodHistory = [];
+    refreshFoodUI();
+    updateFoodBoostButton();
+    sfx.boost();
+  }
+  continue;
+}
 
       if (game.foodCount >= 10) {
         game.foodBoostCharges += 1;
@@ -4132,19 +4355,35 @@ for(const mesh of segments){
     }
 
     if (e.type === 'heart') {
-      if (game.lives < game.maxLives) addLife();
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      continue;
-    }
+  if (game.lives < game.maxLives) addLife();
+
+  // ✅ dopo vita: blocca spawn magneti + vita per 2x visibile
+  game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
+
+  scene.remove(e.obj);
+  game.entities.splice(i, 1);
+  continue;
+}
 
     if (e.type === 'magnet') {
-      game.magnetT = 8.0;
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      sfx.magnet();
-      continue;
-    }
+  // ✨ magia: dal pickup al magnete HUD
+  const toEl = document.getElementById('magTxt') || document.querySelector('.hudBarRow');
+  magicFly(
+    { x: e.obj.position.x, y: e.obj.position.y ?? 1.15, z: e.z },
+    toEl,
+    { dur: 560, sparks: IS_IOS ? 10 : 14 }
+  );
+
+  game.magnetT = 8.0;
+
+  // ✅ dopo magnete: blocca spawn magneti + vita per 2x visibile
+  game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
+
+  scene.remove(e.obj);
+  game.entities.splice(i, 1);
+  sfx.magnet();
+  continue;
+}
 
     if (e.type === 'obst') {
       const inv = (game.invincibleT > 0);
