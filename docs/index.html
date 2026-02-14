@@ -1827,7 +1827,10 @@ safeOn(dynFovToggle,'click', ()=>{
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08120b);
     scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
-
+    // ✅ FIX: valori base camera (prima erano in v10, ora li ricaviamo dai profili)
+const baseFov  = cam.front.fov;
+const baseCamZ = cam.front.dist;
+const baseCamY = cam.front.y;
     const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
     camera.up.set(0,1,0);
     
