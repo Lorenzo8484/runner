@@ -1241,6 +1241,11 @@ canvas.blurBoost{
       <div class="card" data-tab="cam">
         <h3>Camera</h3>
 
+         <!-- ✅ Sotto-tabs: FRONT / BACK -->
+<div class="seg pillFx" id="camProfileSeg" style="margin-bottom:10px;">
+  <button class="segBtn active" id="btnCamProfFront" type="button">FRONT</button>
+  <button class="segBtn" id="btnCamProfBack" type="button">BACK</button>
+</div>
         <div class="settingsRow">
           <div><label>FOV</label><br><small>30–110 (base 60)</small></div>
           <div class="settingsVal" id="fovVal">60</div>
@@ -1507,6 +1512,8 @@ const dynFovToggle = $('dynFovToggle');
 const dynFovSwitch = $('dynFovSwitch');
 
     const fovSlider = $('fovSlider');
+    const btnCamProfFront = $('btnCamProfFront');
+    const btnCamProfBack  = $('btnCamProfBack');
     const camSlider = $('camSlider');
     const camYSlider = $('camYSlider');
     const frameSlider = $('frameSlider');
@@ -1523,29 +1530,88 @@ const dynFovSwitch = $('dynFovSwitch');
     const damp = (current, target, lambda, dt) => current + (target-current) * (1 - Math.exp(-lambda*dt));
 
     // ===== SETTINGS =====
-    const CAM_KEY = 'jr_cam_settings_v10';
-    const DEFAULTS = {
-      baseFov: 60,
-      baseCamZ: 5.0,
-      baseCamY: 4.6,
-      framing: 0.06,
-      shake: true,
-      view: 'front',
-      debug: false,
-      motionBlur: true,
+const CAM_KEY = 'jr_cam_settings_v11';
 
-      // ✅ opzioni FPS (salvate)
-      fpsRealistic: true,   // true = bob + micro movimento, false = stabile
-      fpsDynFov: true       // true = FOV dinamico SOLO in FPS
-    };
-    const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
+/* ✅ Default “di fabbrica” (usati solo se non esiste nulla) */
+const FACTORY = {
+  front: { fov: 60, dist: 5.0, y: 4.6, framing: 0.06 },
+  back:  { fov: 60, dist: 5.0, y: 4.6, framing: 0.06 }
+};
 
-    let baseFov  = clamp(Number(saved.baseFov ?? DEFAULTS.baseFov), 30, 110);
-    let baseCamZ = clamp(Number(saved.baseCamZ ?? DEFAULTS.baseCamZ), 2, 15);
-    let baseCamY = clamp(Number(saved.baseCamY ?? DEFAULTS.baseCamY), 0, 8);
-    let framing  = clamp(Number(saved.framing ?? DEFAULTS.framing), 0, 1);
-    let shakeEnabled = (saved.shake ?? DEFAULTS.shake) !== false;
-    let motionBlurEnabled = (saved.motionBlur ?? DEFAULTS.motionBlur) !== false;
+const saved = (()=>{ try{return JSON.parse(localStorage.getItem(CAM_KEY)||'{}')}catch{return {}} })();
+
+/* ✅ MIGRAZIONE: se vieni dalla v10 (baseFov/baseCamZ/baseCamY/framing)
+   allora salviamo quelle impostazioni come STANDARD FRONT (una sola volta). */
+const hasStd = saved.std && saved.std.front && saved.std.back;
+const oldV10 = (saved.baseFov != null || saved.baseCamZ != null || saved.baseCamY != null || saved.framing != null);
+
+function clampNum(v,a,b){ v=Number(v); return Math.max(a, Math.min(b, v)); }
+
+let std = hasStd ? saved.std : null;
+let cam = saved.cam ? saved.cam : null;
+
+/* Se non ho standard, lo creo.
+   - Se esiste vecchia v10: STANDARD FRONT = valori attuali (quelli che hai ora)
+   - BACK lo metto uguale al FRONT per partire */
+if(!std){
+  const frontFromOld = {
+    fov: clampNum(saved.baseFov ?? FACTORY.front.fov, 30,110),
+    dist: clampNum(saved.baseCamZ ?? FACTORY.front.dist, 2,15),
+    y: clampNum(saved.baseCamY ?? FACTORY.front.y, 0,8),
+    framing: clampNum(saved.framing ?? FACTORY.front.framing, 0,1),
+  };
+  std = {
+    front: { ...frontFromOld },
+    back:  { ...frontFromOld }
+  };
+}
+
+/* Valori correnti (modificabili dagli slider) */
+if(!cam){
+  cam = {
+    front: { ...std.front },
+    back:  { ...std.back }
+  };
+}
+
+/* Flag extra (come prima) */
+let shakeEnabled = (saved.shake ?? true) !== false;
+let motionBlurEnabled = (saved.motionBlur ?? true) !== false;
+
+let viewMode = (saved.view ?? 'front');
+if(!['front','back','fps'].includes(viewMode)) viewMode = 'front';
+
+let debugOn = !!(saved.debug ?? false);
+
+let fpsRealistic = (saved.fpsRealistic ?? true) !== false;
+let fpsDynFov    = (saved.fpsDynFov ?? true) !== false;
+
+/* ✅ tab attivo nel menu camera (quale profilo stai modificando) */
+let camProfile = 'front'; // 'front' | 'back'
+
+function saveCam(){
+  localStorage.setItem(CAM_KEY, JSON.stringify({
+    std,
+    cam,
+    shake: !!shakeEnabled,
+    motionBlur: !!motionBlurEnabled,
+    view: viewMode,
+    debug: !!debugOn,
+    fpsRealistic: !!fpsRealistic,
+    fpsDynFov: !!fpsDynFov
+  }));
+}
+
+/* helper: profilo corrente in base a FRONT/BACK selezionato */
+function prof(){
+  return (camProfile === 'back') ? cam.back : cam.front;
+}
+
+/* helper: profilo da usare per la view attuale (front/back/fps) */
+function profForView(){
+  if(viewMode === 'back') return cam.back;
+  return cam.front; // front e fps usano il profilo FRONT
+}
 
     let viewMode = (saved.view ?? DEFAULTS.view);
     if(!['front','back','fps'].includes(viewMode)) viewMode = 'front';
@@ -1593,6 +1659,14 @@ function setActiveCamBtns(){
     }
 
     function syncCamUI(){
+
+  // ✅ profilo attivo (FRONT/BACK) → copia nei valori usati dal gioco
+  const prof = (camProfile === 'back') ? CAM_BACK : CAM_FRONT;
+  baseFov  = prof.baseFov;
+  baseCamZ = prof.baseCamZ;
+  baseCamY = prof.baseCamY;
+  framing  = prof.framing;
+
   if(fovSlider){ fovSlider.value = String(Math.round(baseFov)); }
   if(fovVal){ fovVal.textContent = String(Math.round(baseFov)); }
 
@@ -1608,17 +1682,12 @@ function setActiveCamBtns(){
   if(shakeSwitch){ shakeSwitch.classList.toggle('on', !!shakeEnabled); }
   if(audioSwitch){ audioSwitch.classList.toggle('on', !!audioEnabled); }
 
-  // segmented FPS
   if(btnFpsReal)   btnFpsReal.classList.toggle('active', !!fpsRealistic);
   if(btnFpsStable) btnFpsStable.classList.toggle('active', !fpsRealistic);
 
-  // motion blur
   if(motionSwitch) motionSwitch.classList.toggle('on', !!motionBlurEnabled);
-
-  // dyn fov
   if(dynFovSwitch) dynFovSwitch.classList.toggle('on', !!fpsDynFov);
 
-  // live button label (mai visibile in HUD)
   if(btnFpsLive){
     btnFpsLive.style.display = 'none';
   }
@@ -1627,10 +1696,78 @@ function setActiveCamBtns(){
   setDebugUI();
 }
 
-    safeOn(fovSlider, 'input', ()=>{ baseFov = clamp(Number(fovSlider.value), 30, 110); if(fovVal) fovVal.textContent = String(Math.round(baseFov)); saveCam(); });
-    safeOn(camSlider, 'input', ()=>{ baseCamZ = clamp(Number(camSlider.value), 2, 15); if(camVal) camVal.textContent = baseCamZ.toFixed(1); saveCam(); });
-    safeOn(camYSlider,'input', ()=>{ baseCamY = clamp(Number(camYSlider.value), 0, 8); if(camYVal) camYVal.textContent = baseCamY.toFixed(1); saveCam(); });
-    safeOn(frameSlider,'input', ()=>{ framing = clamp(Number(frameSlider.value), 0, 1); if(frameVal) frameVal.textContent = framing.toFixed(2); saveCam(); });
+// ===== CAMERA PROFILE (FRONT / BACK) =====
+function setCamProfile(p){
+  camProfile = (p === 'back') ? 'back' : 'front';
+
+  if(btnCamProfFront)
+    btnCamProfFront.classList.toggle('active', camProfile === 'front');
+
+  if(btnCamProfBack)
+    btnCamProfBack.classList.toggle('active', camProfile === 'back');
+
+  syncCamUI();
+}
+
+safeOn(btnCamProfFront, 'click', ()=>{
+  initAudio();
+  setCamProfile('front');
+});
+
+safeOn(btnCamProfBack, 'click', ()=>{
+  initAudio();
+  setCamProfile('back');
+});
+
+  setActiveCamBtns();
+  setDebugUI();
+}
+
+    // ✅ helper: profilo attivo (FRONT o BACK)
+function activeCamProfile(){
+  return (camProfile === 'back') ? CAM_BACK : CAM_FRONT;
+}
+
+safeOn(fovSlider, 'input', ()=>{
+  const p = activeCamProfile();
+  p.baseFov = clamp(Number(fovSlider.value), 30, 110);
+
+  // aggiorna anche i valori “live” usati dal gioco
+  baseFov = p.baseFov;
+
+  if(fovVal) fovVal.textContent = String(Math.round(baseFov));
+  saveCam();
+});
+
+safeOn(camSlider, 'input', ()=>{
+  const p = activeCamProfile();
+  p.baseCamZ = clamp(Number(camSlider.value), 2, 15);
+
+  baseCamZ = p.baseCamZ;
+
+  if(camVal) camVal.textContent = baseCamZ.toFixed(1);
+  saveCam();
+});
+
+safeOn(camYSlider,'input', ()=>{
+  const p = activeCamProfile();
+  p.baseCamY = clamp(Number(camYSlider.value), 0, 8);
+
+  baseCamY = p.baseCamY;
+
+  if(camYVal) camYVal.textContent = baseCamY.toFixed(1);
+  saveCam();
+});
+
+safeOn(frameSlider,'input', ()=>{
+  const p = activeCamProfile();
+  p.framing = clamp(Number(frameSlider.value), 0, 1);
+
+  framing = p.framing;
+
+  if(frameVal) frameVal.textContent = framing.toFixed(2);
+  saveCam();
+});
   
     
 
@@ -1668,18 +1805,37 @@ safeOn(dynFovToggle,'click', ()=>{
   saveCam();
 });
     safeOn(resetCamBtn,'click', ()=>{
-      baseFov = DEFAULTS.baseFov;
-      baseCamZ = DEFAULTS.baseCamZ;
-      baseCamY = DEFAULTS.baseCamY;
-      framing = DEFAULTS.framing;
-      shakeEnabled = DEFAULTS.shake;
-      viewMode = DEFAULTS.view;
-      debugOn = DEFAULTS.debug;
-      fpsRealistic = DEFAULTS.fpsRealistic;
-      fpsDynFov = DEFAULTS.fpsDynFov;
-      saveCam(); syncCamUI();
-      applyViewMode(viewMode);
-    });
+  // ✅ reset SOLO camera del TAB (FRONT/BACK) allo "STANDARD"
+  // (std.front / std.back devono esistere e contenere: baseFov, baseCamZ, baseCamY, framing)
+
+  if(camProfile === 'back'){
+    CAM_BACK.baseFov  = std.back.baseFov;
+    CAM_BACK.baseCamZ = std.back.baseCamZ;
+    CAM_BACK.baseCamY = std.back.baseCamY;
+    CAM_BACK.framing  = std.back.framing;
+
+    // aggiorna i valori live
+    baseFov  = CAM_BACK.baseFov;
+    baseCamZ = CAM_BACK.baseCamZ;
+    baseCamY = CAM_BACK.baseCamY;
+    framing  = CAM_BACK.framing;
+  }else{
+    CAM_FRONT.baseFov  = std.front.baseFov;
+    CAM_FRONT.baseCamZ = std.front.baseCamZ;
+    CAM_FRONT.baseCamY = std.front.baseCamY;
+    CAM_FRONT.framing  = std.front.framing;
+
+    // aggiorna i valori live
+    baseFov  = CAM_FRONT.baseFov;
+    baseCamZ = CAM_FRONT.baseCamZ;
+    baseCamY = CAM_FRONT.baseCamY;
+    framing  = CAM_FRONT.framing;
+  }
+
+  saveCam();
+  syncCamUI();
+  applyViewMode(viewMode);
+});
 
     // ===== Audio minimal =====
     let audioEnabled=true, audioReady=false, actx=null, master=null;
@@ -3866,17 +4022,20 @@ boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
       // ✅ FOV dinamico SOLO in FPS se fpsDynFov=true
       const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
 
-      const targetFov = clamp(baseFov + (useFovBoost ? fovBoost : 0), 30, 110);
-      const targetZ   = clamp(baseCamZ + zBoost, 2, 15);
-      const targetY   = clamp(baseCamY + (bothBoost ? 0.10 : 0), 0.0, 12.0);
+      const active = profForView();
+
+const targetFov = clamp(active.fov + (useFovBoost ? fovBoost : 0), 30, 110);
+const targetZ   = clamp(active.dist + zBoost, 2, 15);
+const targetY   = clamp(active.y + (bothBoost ? 0.10 : 0), 0.0, 12.0);
 
       if(!camDynamic){
-        camFov  = baseFov;
-        camZ    = baseCamZ;
-        camY    = baseCamY;
-        camX    = 0;
-        camRoll = 0;
-      } else {
+  const a = profForView();
+  camFov  = a.fov;
+  camZ    = a.dist;
+  camY    = a.y;
+  camX    = 0;
+  camRoll = 0;
+} else {
         camFov = damp(camFov, targetFov, 8, dt);
         camZ   = damp(camZ,   targetZ,   8, dt);
         camY   = damp(camY,   targetY,   8, dt);
@@ -4085,6 +4244,8 @@ camera.rotateZ(camRoll * 0.55);
       updateFoodBoostButton();
       if(hpTxt) hpTxt.textContent = hpString();
       syncCamUI();
+      // ✅ imposta tab FRONT attivo all'avvio
+       setCamProfile('front');
 
       await loadRunnerModel();
 
