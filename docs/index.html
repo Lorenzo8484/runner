@@ -27,16 +27,6 @@
     }
     canvas{display:block;touch-action:none;}
 
-
-/* ✅ CANVAS per magicFly (overlay leggero) */
-#magicCanvas{
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9996;
-}
     /* =========================================================
        PILL FX
        ========================================================= */
@@ -533,99 +523,6 @@
     0 0 0 1px rgba(145,205,255,.25),
     0 0 18px rgba(110,175,255,.22),
     0 10px 26px rgba(0,0,0,.55);
-}
-/* =========================================================
-   ✨ MAGIC FLY (pickup → HUD) — FILO DI MAGIA + BRILLANTINI
-   ========================================================= */
-.magicFly{
-  position:fixed;
-  left:0; top:0;
-  width:10px; height:10px;
-  border-radius:999px;
-  pointer-events:none;
-  z-index:9999;
-  transform:translate(-50%,-50%);
-  background: radial-gradient(circle at 35% 35%,
-    rgba(255,255,255,.98),
-    rgba(185,245,255,.78) 40%,
-    rgba(120,215,255,.35) 68%,
-    rgba(0,0,0,0) 78%
-  );
-  box-shadow:
-    0 0 14px rgba(140,235,255,.55),
-    0 0 26px rgba(120,220,255,.28);
-  mix-blend-mode: screen;
-  filter: blur(.05px);
-}
-
-/* “filo” morbido attorno al punto magia */
-.magicFly::after{
-  content:"";
-  position:absolute;
-  inset:-16px;
-  border-radius:999px;
-  background:
-    radial-gradient(circle,
-      rgba(175,250,255,.18),
-      rgba(0,0,0,0) 70%
-    );
-  opacity:.9;
-  filter: blur(3px);
-  mix-blend-mode: screen;
-}
-
-/* brillantini della scia */
-.magicSpark{
-  position:fixed;
-  width:5px; height:5px;
-  border-radius:999px;
-  pointer-events:none;
-  z-index:9998;
-  transform:translate(-50%,-50%);
-  background: radial-gradient(circle,
-    rgba(255,255,255,.95),
-    rgba(180,245,255,.60) 45%,
-    rgba(0,0,0,0) 72%
-  );
-  box-shadow:
-    0 0 10px rgba(150,235,255,.35);
-  mix-blend-mode: screen;
-  opacity:0;
-  filter: blur(.05px);
-}
-
-/* micro scintille “taglienti” (puntini piccolissimi) */
-.magicDust{
-  position:fixed;
-  width:2px; height:2px;
-  border-radius:999px;
-  pointer-events:none;
-  z-index:9997;
-  transform:translate(-50%,-50%);
-  background: rgba(255,255,255,.95);
-  box-shadow: 0 0 10px rgba(170,245,255,.45);
-  mix-blend-mode: screen;
-  opacity:0;
-}
-
-/* burst finale */
-.magicBurst{
-  position:fixed;
-  width:6px; height:6px;
-  border-radius:999px;
-  pointer-events:none;
-  z-index:9999;
-  transform:translate(-50%,-50%);
-  background: radial-gradient(circle,
-    rgba(255,255,255,.95),
-    rgba(190,250,255,.55) 55%,
-    rgba(0,0,0,0) 75%
-  );
-  box-shadow:
-    0 0 16px rgba(160,245,255,.55),
-    0 0 32px rgba(120,220,255,.25);
-  mix-blend-mode: screen;
-  opacity:0;
 }
 
     /* =========================================================
@@ -1144,7 +1041,6 @@ canvas.blurBoost{
   </script>
 </head>
 <body>
-  <canvas id="magicCanvas"></canvas>
 
   <!-- ✅ HUD SINISTRA -->
 <div class="hudWrap">
@@ -1535,87 +1431,6 @@ const damp  = (x, y, lambda, dt) => lerp(x, y, 1 - Math.exp(-lambda * dt));
 
 const rnd  = (a, b) => a + Math.random() * (b - a);
 const rndi = (a, b) => Math.floor(rnd(a, b + 1));
-// =========================================================
-// ✨ MAGIC FLY (world → HUD)
-// =========================================================
-function worldToScreen(x,y,z){
-  const v = new THREE.Vector3(x,y,z);
-  v.project(camera);
-  const r = renderer.domElement.getBoundingClientRect();
-  return {
-    x: r.left + (v.x * 0.5 + 0.5) * r.width,
-    y: r.top  + (-v.y * 0.5 + 0.5) * r.height
-  };
-}
-
-function pulseHUD(el, cls='hudPulse'){
-  if(!el) return;
-  el.classList.remove(cls);
-  void el.offsetWidth;
-  el.classList.add(cls);
-  setTimeout(()=>el.classList.remove(cls), 320);
-}
-
-// =========================================================
-// ✨ MAGIC FLY (Canvas ultra leggero - NO LAG) ✅ FIX
-// =========================================================
-function magicFly(fromWorld, toEl, opt = {}){
-  if(!toEl) return;
-
-  const canvas = document.getElementById('magicCanvas');
-  if(!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-  if(!ctx) return;
-
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width  = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width  = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
-
-  const start = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
-  const r = toEl.getBoundingClientRect();
-  const end = { x: r.left + r.width/2, y: r.top + r.height/2 };
-
-  const duration = opt.dur ?? 450;
-  const startTime = performance.now();
-
-  function animate(now){
-    const t = Math.min((now - startTime)/duration, 1);
-
-    const x = start.x + (end.x - start.x) * t;
-    const y = start.y + (end.y - start.y) * t;
-
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // pallina
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = 'rgba(120,220,255,0.95)';
-    ctx.beginPath();
-    ctx.arc(x*dpr, y*dpr, 4.2*dpr, 0, Math.PI*2);
-    ctx.fill();
-
-    // alone
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = 'rgba(120,220,255,0.25)';
-    ctx.beginPath();
-    ctx.arc(x*dpr, y*dpr, 12*dpr, 0, Math.PI*2);
-    ctx.fill();
-
-    if(t < 1){
-      requestAnimationFrame(animate);
-    }else{
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      pulseHUD(toEl);
-    }
-  }
-
-  requestAnimationFrame(animate);
-}
-
     window.addEventListener('error', (e)=>{
       console.warn('JS error caught:', e?.message || e);
     });
@@ -2125,6 +1940,10 @@ safeOn(btnCamProfBack, 'click', ()=>{
   setCamProfile('back');
 });
 
+    // ✅ helper: profilo attivo (FRONT o BACK)
+function activeCamProfile(){
+  return (camProfile === 'back') ? CAM_BACK : CAM_FRONT;
+}
 
 safeOn(fovSlider, 'input', ()=>{
   const p = prof();
@@ -3323,11 +3142,6 @@ function updateEffects(dt){
       entities:[],
       effects: [],
       spawnT:0.30,
-      // distanza percorsa (per blocchi spawn)
-runDist: 0,
-
-// dopo aver raccolto MAGNETE o VITA, blocca entrambi per un po'
-noMagHeartUntil: 0,
 
       paused:false,
       started:false,
@@ -3411,16 +3225,6 @@ function refreshFoodUI(){
     d.textContent=emo;
     foodStack.appendChild(d);
   }
-  // ✅ pop sull’ultima pillola creata (quando raccogli)
-if(game._foodPop){
-  const first = foodStack.firstElementChild; // perché reverse()
-  if(first) {
-    first.classList.remove('foodPop');
-    void first.offsetWidth;
-    first.classList.add('foodPop');
-  }
-  game._foodPop = false;
-}
   foodCountEl.textContent = String(game.foodCount);
 
   // ✅ così rimane sempre coerente anche il bottone
@@ -3473,9 +3277,6 @@ if(game._foodPop){
 
     // ===== Spawn =====
     const TURTLE_VIS_Z = 70;
-    // “distanza visibile” usata per blocco spawn (2x)
-const VISIBLE_ROAD_DIST = TURTLE_VIS_Z;        // 70 (coerente col tuo tuning)
-const MAGHEART_BLOCK_DIST = VISIBLE_ROAD_DIST * 2; // ✅ 2xd
 const TURTLE_MIN_GAP = TURTLE_VIS_Z * 1.0;
 
 // ✅ range realistico: distrugge SOLO ostacoli vicini davanti a lei
@@ -3544,7 +3345,7 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
   }
 }
 
-      if(game.runDist >= game.noMagHeartUntil && Math.random() < 0.08){
+      if(Math.random() < 0.10){
   const lane = rndi(0,2);
   const zm = z0 - rnd(1, 7.0);
 
@@ -3559,30 +3360,25 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
   }
 }
 
-      // ===== HEART (solo se ti manca vita) + cooldown dopo magnete/vita =====
-if (game.lives < game.maxLives) {
+      if(game.lives < game.maxLives){
+  let spawnHeart = false;
 
-  // se siamo nel cooldown, non spawnare cuore
-  if (game.runDist >= game.noMagHeartUntil) {
+  if(game.coins > 0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
+  if(!spawnHeart && Math.random() < 0.03) spawnHeart = true;
 
-    let spawnHeart = false;
-    if (game.coins > 0 && game.coins % 30 === 0 && Math.random() < 0.45) spawnHeart = true;
-    if (!spawnHeart && Math.random() < 0.03) spawnHeart = true;
+  if(spawnHeart){
+    const lane = rndi(0,2);
+    const zh  = z0 - rnd(1, 6.0);
 
-    if (spawnHeart) {
-      const lane = rndi(0, 2);
-      const zh = z0 - rnd(1, 6.0);
+    if(canPlace(lane, zh, 1.4)){
+      const spr = makeEmojiSprite(HEART);
+      spr.position.set(lanesX[lane], 1.15, zh);
+      spr.scale.set(0.92,0.92,1);
+      scene.add(spr);
+      game.entities.push({ type:'heart', lane, z: zh, obj:spr });
 
-      if (canPlace(lane, zh, 1.4)) {
-        const spr = makeEmojiSprite(HEART);
-        spr.position.set(lanesX[lane], 1.15, zh);
-        spr.scale.set(0.92, 0.92, 1);
-        scene.add(spr);
-        game.entities.push({ type: 'heart', lane, z: zh, obj: spr });
-        markPlace(lane, zh);
-      }
+      markPlace(lane, zh);
     }
-
   }
 }
 
@@ -4104,7 +3900,6 @@ if(_nowDanceActive !== _prevDanceActive){
 
   // scroll
   const scroll = speed*dt;
-  game.runDist += scroll;
   for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
 
   highwayTex.offset.y -= scroll*0.085;
@@ -4316,68 +4111,39 @@ for(const mesh of segments){
     }
 
     if (e.type === 'food') {
-  // ✨ magia: dal pickup alla barra cibo
-  const toEl = document.querySelector('.foodCount'); // target HUD
-  magicFly(
-    { x: e.obj.position.x, y: e.obj.position.y ?? 1.15, z: e.z },
-    toEl,
-    { dur: 560, sparks: IS_IOS ? 10 : 14 }
-  );
+      game.foodCount += 1;
+      game.foodHistory.push(e.emo);
+      refreshFoodUI();
 
-  game.foodCount += 1;
-  game.foodHistory.push(e.emo);
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.food();
 
-  // flag per pop sulla prima pillola (ultima raccolta)
-  game._foodPop = true;
-
-  refreshFoodUI();
-
-  scene.remove(e.obj);
-  game.entities.splice(i, 1);
-  sfx.food();
-
-  if (game.foodCount >= 10) {
-    game.foodBoostCharges += 1;
-    game.foodCount = 0;
-    game.foodHistory = [];
-    refreshFoodUI();
-    updateFoodBoostButton();
-    sfx.boost();
-  }
-  continue;
-}
-
+      if (game.foodCount >= 10) {
+        game.foodBoostCharges += 1;
+        game.foodCount = 0;
+        game.foodHistory = [];
+        refreshFoodUI();
+        updateFoodBoostButton();
+        sfx.boost();
+      }
+      continue;
+    }
 
     if (e.type === 'heart') {
-  if (game.lives < game.maxLives) addLife();
-
-  // ✅ dopo vita: blocca spawn magneti + vita per 2x visibile
-  game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
-
-  scene.remove(e.obj);
-  game.entities.splice(i, 1);
-  continue;
-}
+      if (game.lives < game.maxLives) addLife();
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      continue;
+    }
 
     if (e.type === 'magnet') {
-  // ✨ magia: dal pickup al magnete HUD
-  const toEl = document.getElementById('magTxt') || document.querySelector('.hudBarRow');
-  magicFly(
-    { x: e.obj.position.x, y: e.obj.position.y ?? 1.15, z: e.z },
-    toEl,
-    { dur: 560, sparks: IS_IOS ? 10 : 14 }
-  );
-
-  game.magnetT = 8.0;
-
-  // ✅ dopo magnete: blocca spawn magneti + vita per 2x visibile
-  game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
-
-  scene.remove(e.obj);
-  game.entities.splice(i, 1);
-  sfx.magnet();
-  continue;
-}
+      game.magnetT = 8.0;
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      sfx.magnet();
+      continue;
+    }
 
     if (e.type === 'obst') {
       const inv = (game.invincibleT > 0);
@@ -4693,10 +4459,5 @@ camera.rotateZ(camRoll * 0.55);
       requestAnimationFrame(animate);
     })();
   </script>
-  <canvas id="magicCanvas" style="
-position:fixed;
-inset:0;
-pointer-events:none;
-z-index:9999;"></canvas>
 </body>
 </html>
