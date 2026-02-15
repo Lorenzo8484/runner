@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="it">
 <head>
@@ -641,20 +640,12 @@
       pointer-events:none; z-index:20;
     }
     .foodStack{
-  width:calc(32px * var(--menuScale));
-  max-height:calc(100px * var(--menuScale));
-  overflow:hidden;
-
-  display:flex;
-  flex-direction:column;          /* ✅ normale */
-  align-items:center;
-  gap:calc(5px * var(--menuScale));
-  justify-content:flex-start;     /* ✅ parte dall’alto */
-
-  background:transparent;
-  border:none;
-  padding:0;
-}
+      width:calc(32px * var(--menuScale));
+      max-height:calc(100px * var(--menuScale));
+      overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--menuScale));
+      background:transparent; border:none; padding:0;
+    }
     .foodItem{
       width:calc(27px * var(--menuScale));
       height:calc(15px * var(--menuScale));
@@ -1253,28 +1244,6 @@ canvas.blurBoost{
         </div>
       </div>
       
-      <!-- Food Boost -->
-      <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
-        <div class="hudBarRow">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
-              <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
-            </svg>
-            <div class="hudT">Cibo</div>
-          </div>
-          <div class="hudBar"><i id="foodBoostBar"></i></div>
-          <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
-        </div>
-      </div>
-      
       <!-- Debug button -->
 <div class="debugRow">
   <button class="dbgBtn pillFx" id="btnDebug" title="Debug" type="button">
@@ -1304,7 +1273,27 @@ canvas.blurBoost{
         </div>
       </div>
 
-      
+      <!-- Food Boost -->
+      <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
+        <div class="hudBarRow">
+          <div class="hudL">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                  <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
+              <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
+            </svg>
+            <div class="hudT">Cibo</div>
+          </div>
+          <div class="hudBar"><i id="foodBoostBar"></i></div>
+          <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
+        </div>
+      </div>
 
     </div>
 
@@ -1381,23 +1370,21 @@ canvas.blurBoost{
 
   <!-- Colonna cibo -->
   <div class="rightCol">
-  <div class="foodCount pillFx">
-    <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <linearGradient id="gBag" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-          <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
-          <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-        </linearGradient>
-      </defs>
-      <path fill="url(#gBag)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7z"/>
-    </svg>
-    <span><span id="foodCount">0</span>/10</span>
+    <div class="foodStack" id="foodStack"></div>
+    <div class="foodCount pillFx">
+      <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
+        <defs>
+          <linearGradient id="gBag" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+            <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#gBag)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7z"/>
+      </svg>
+      <span><span id="foodCount">0</span>/10</span>
+    </div>
   </div>
-
-  <!-- ✅ sotto: i cibi -->
-  <div class="foodStack" id="foodStack"></div>
-</div>
 
   <!-- DEBUG PANEL -->
   <div class="debugPanel pillFx" id="debugPanel">
@@ -1552,18 +1539,9 @@ const rndi = (a, b) => Math.floor(rnd(a, b + 1));
 // ✨ MAGIC FLY (world → HUD)
 // =========================================================
 function worldToScreen(x,y,z){
-  // ✅ SAFE: se camera/renderer non sono pronti, evita crash
-  if(typeof camera === 'undefined' || !camera || typeof renderer === 'undefined' || !renderer){
-    return { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
-  }
-
   const v = new THREE.Vector3(x,y,z);
   v.project(camera);
-
-  const dom = renderer.domElement;
-  if(!dom) return { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
-
-  const r = dom.getBoundingClientRect();
+  const r = renderer.domElement.getBoundingClientRect();
   return {
     x: r.left + (v.x * 0.5 + 0.5) * r.width,
     y: r.top  + (-v.y * 0.5 + 0.5) * r.height
@@ -1579,73 +1557,39 @@ function pulseHUD(el, cls='hudPulse'){
 }
 
 // =========================================================
-// ✨ MAGIC FLY (Canvas ultra leggero - NO resize per pickup)
+// ✨ MAGIC FLY (Canvas ultra leggero - NO LAG) ✅ FIX
 // =========================================================
-const _magic = {
-  canvas: null,
-  ctx: null,
-  dpr: 1,
-  w: 0,
-  h: 0,
-  running: false
-};
-
-function _magicResize(){
-  const c = _magic.canvas;
-  if(!c) return;
-  _magic.dpr = Math.min(2, window.devicePixelRatio || 1);
-  const w = window.innerWidth|0;
-  const h = window.innerHeight|0;
-  if(w === _magic.w && h === _magic.h) return;
-
-  _magic.w = w; _magic.h = h;
-  c.width  = (w * _magic.dpr)|0;
-  c.height = (h * _magic.dpr)|0;
-  c.style.width  = w + 'px';
-  c.style.height = h + 'px';
-}
-
-function _magicInit(){
-  if(_magic.canvas) return;
-  _magic.canvas = document.getElementById('magicCanvas');
-  if(!_magic.canvas) return;
-  _magic.ctx = _magic.canvas.getContext('2d', { alpha:true, desynchronized:true });
-  _magicResize();
-  window.addEventListener('resize', _magicResize, { passive:true });
-  window.addEventListener('orientationchange', _magicResize, { passive:true });
-}
-
 function magicFly(fromWorld, toEl, opt = {}){
   if(!toEl) return;
-  _magicInit();
-  if(!_magic.canvas || !_magic.ctx) return;
 
-  // se sta già andando una fly, la lasciamo finire senza “stressare”
-  // (evita spam quando magnete attira tanti pickup)
-  if(_magic.running) return;
+  const canvas = document.getElementById('magicCanvas');
+  if(!canvas) return;
 
-  const ctx = _magic.ctx;
-  _magicResize();
+  const ctx = canvas.getContext('2d');
+  if(!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width  = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width  = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
 
   const start = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
   const r = toEl.getBoundingClientRect();
   const end = { x: r.left + r.width/2, y: r.top + r.height/2 };
 
-  const dur = opt.dur ?? 420;
-  const t0 = performance.now();
-  _magic.running = true;
+  const duration = opt.dur ?? 450;
+  const startTime = performance.now();
 
-  function frame(now){
-    const t = Math.min((now - t0) / dur, 1);
-    const tt = 1 - Math.pow(1 - t, 3); // easeOutCubic
+  function animate(now){
+    const t = Math.min((now - startTime)/duration, 1);
 
-    const x = start.x + (end.x - start.x) * tt;
-    const y = start.y + (end.y - start.y) * tt;
+    const x = start.x + (end.x - start.x) * t;
+    const y = start.y + (end.y - start.y) * t;
 
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,_magic.canvas.width,_magic.canvas.height);
-
-    const dpr = _magic.dpr;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // pallina
     ctx.globalAlpha = 0.9;
@@ -1662,15 +1606,14 @@ function magicFly(fromWorld, toEl, opt = {}){
     ctx.fill();
 
     if(t < 1){
-      requestAnimationFrame(frame);
+      requestAnimationFrame(animate);
     }else{
-      ctx.clearRect(0,0,_magic.canvas.width,_magic.canvas.height);
-      _magic.running = false;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
       pulseHUD(toEl);
     }
   }
 
-  requestAnimationFrame(frame);
+  requestAnimationFrame(animate);
 }
 
     window.addEventListener('error', (e)=>{
@@ -1678,7 +1621,6 @@ function magicFly(fromWorld, toEl, opt = {}){
     });
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const IS_LOW_GPU = IS_IOS || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 
     // ===== UI: HUD =====
     const scoreEl = $('score');
@@ -1692,12 +1634,7 @@ function magicFly(fromWorld, toEl, opt = {}){
     const boostIcon = $('boostIcon');
     const boostName = $('boostName');
     const boostBar  = $('boostBar');
-    const foodBoostTimeEl = $('foodBoostTime');
-    // ✅ BAR elements (mancavano)
-const magBarEl = $('magBar');
 
-const foodBoostPillEl = $('foodBoostPill');
-const foodBoostBarEl  = $('foodBoostBar');
     const foodStack = $('foodStack');
     const foodCountEl = $('foodCount');
 
@@ -2304,54 +2241,23 @@ safeOn(dynFovToggle,'click', ()=>{
     safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // ===== Renderer / Scene =====
+    const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
 
-// device “debole” → taglio su risoluzione / ombre
-const _dprCap = IS_LOW_GPU ? 1.0 : 1.6; // prima 1.35 / 2
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x08120b);
-scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
-
-// ✅ valori base camera dai profili
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x08120b);
+    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
+    // ✅ FIX: valori base camera (prima erano in v10, ora li ricaviamo dai profili)
 const baseFov  = cam.front.fov;
 const baseCamZ = cam.front.dist;
 const baseCamY = cam.front.y;
-
-const camera = new THREE.PerspectiveCamera(
-  baseFov,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  IS_LOW_GPU ? 180 : 260 // prima 320 → meno distanza = meno pixel da disegnare
-);
-camera.up.set(0,1,0);
-camera.rotation.order = 'YXZ';
-
-const renderer = new THREE.WebGLRenderer({
-  antialias: !IS_LOW_GPU, // niente antialias su device deboli
-  powerPreference: 'high-performance',
-  alpha: false,
-  stencil: false,
-  depth: true
-});
-
-renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.sortObjects = false;
-
-// Ombre: pesanti → solo desktop / device forti
-if (IS_LOW_GPU) {
-  renderer.shadowMap.enabled = false;
-} else {
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-}
-
-document.body.appendChild(renderer.domElement);
-
-// ✅ compile SOLO dopo che hai scene+camera (opzionale)
-// renderer.compile(scene, camera);
+    const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
+    camera.up.set(0,1,0);
     
     // ✅ evita flip strani quando tocchi rotation dopo lookAt
 camera.rotation.order = 'YXZ';
@@ -2359,31 +2265,24 @@ camera.rotation.order = 'YXZ';
 // ✅ helper per FPS: azzera roll senza rompere quaternion
 const _camEuler = new THREE.Euler(0,0,0,'YXZ');
 
-    // luci (più leggere su telefoni)
-const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.4 : 2.1);
-sun.position.set(6, 10, 6);
-
-// ombre solo su device forti
-sun.castShadow = !IS_LOW_GPU;
-if (!IS_LOW_GPU) {
-  sun.shadow.mapSize.set(1536, 1536); // prima 2048 → un po' più leggero
-  sun.shadow.camera.near = 0.5;
-  sun.shadow.camera.far  = 80;
-  sun.shadow.camera.left   = -12;
-  sun.shadow.camera.right  =  12;
-  sun.shadow.camera.top    =  12;
-  sun.shadow.camera.bottom = -12;
-  sun.shadow.bias = -0.00023;
-}
-scene.add(sun);
-
-scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
-scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.55 : 0.24));
-
-const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.10 : 0.55);
-front.position.set(0, 4, 9);
-front.castShadow = false; // niente ombre da questa
-scene.add(front);
+    // lights
+    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
+    sun.position.set(6, 10, 6);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 80;
+    sun.shadow.camera.left = -12;
+    sun.shadow.camera.right=  12;
+    sun.shadow.camera.top  =  12;
+    sun.shadow.camera.bottom=-12;
+    sun.shadow.bias = -0.00023;
+    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
+    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.24));
+    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.25 : 0.55);
+    front.position.set(0, 4, 9);
+    scene.add(front);
 
     // Contact shadow
     function makeContactShadowTexture(size=512){
@@ -2529,31 +2428,19 @@ scene.add(front);
       return t;
     }
 
-    // texture strada (più leggere su mobile)
-const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
-highwayTex.generateMipmaps = false;
-highwayTex.minFilter = THREE.NearestFilter;
-highwayTex.magFilter = THREE.NearestFilter;
+    const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+    highwayTex.generateMipmaps = false;
+    highwayTex.minFilter = THREE.NearestFilter;
+    highwayTex.magFilter = THREE.NearestFilter;
+    highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    highwayTex.needsUpdate = true;
+    highwayTex.repeat.set(1.0, 4.0);
 
-const MAX_ANISO = renderer.capabilities.getMaxAnisotropy() || 1;
-// su device deboli max 2, su altri max 4 (prima arrivava anche a 16)
-const ANISO = IS_LOW_GPU ? Math.min(2, MAX_ANISO) : Math.min(4, MAX_ANISO);
-highwayTex.anisotropy = ANISO;
-highwayTex.needsUpdate = true;
-highwayTex.repeat.set(1.0, 4.0);
-
-const patchTexPool = [
-  makePatchTexture(IS_IOS ? 384 : 512),
-  makePatchTexture(IS_IOS ? 384 : 512),
-  makePatchTexture(IS_IOS ? 384 : 512),
-];
-patchTexPool.forEach(t=>{
-  t.generateMipmaps = false;
-  t.minFilter = THREE.NearestFilter;
-  t.magFilter = THREE.NearestFilter;
-  t.anisotropy = ANISO;
-  t.needsUpdate = true;
-});
+    const patchTexPool = [
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+      makePatchTexture(IS_IOS ? 384 : 512),
+    ];
 
     const roadMat = new THREE.MeshStandardMaterial({
       map: highwayTex,
@@ -2644,7 +2531,7 @@ mesh.position.set(0, 0, (i * segLen) - roadHalf);
     }
     const treeProto = makeTree();
     const treePool=[];
-    const treeSpacing = IS_LOW_GPU ? 3.6 : 2.8;
+    const treeSpacing=2.8;
     const treeSideX = (totalRoadWidth/2) + 1.9;
     const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
     for(let i=0;i<jungleCount;i++){
@@ -3517,101 +3404,50 @@ function refreshFoodUI(){
   if(!foodStack || !foodCountEl) return;
 
   foodStack.innerHTML = "";
-
-  // ✅ ultimi 6, mostrati dall’alto verso il basso
-  const show = game.foodHistory.slice(-6);
+  const show = game.foodHistory.slice(-6).reverse();
   for(const emo of show){
-    const d = document.createElement('div');
+    const d=document.createElement('div');
     d.className = 'foodItem pillFx';
-    d.textContent = emo;
+    d.textContent=emo;
     foodStack.appendChild(d);
   }
-
-  // ✅ pop sull’ULTIMO inserito (quello più in basso)
-  if(game._foodPop){
-    const last = foodStack.lastElementChild;
-    if(last){
-      last.classList.remove('foodPop');
-      void last.offsetWidth;
-      last.classList.add('foodPop');
-    }
-    game._foodPop = false;
+  // ✅ pop sull’ultima pillola creata (quando raccogli)
+if(game._foodPop){
+  const first = foodStack.firstElementChild; // perché reverse()
+  if(first) {
+    first.classList.remove('foodPop');
+    void first.offsetWidth;
+    first.classList.add('foodPop');
   }
-
+  game._foodPop = false;
+}
   foodCountEl.textContent = String(game.foodCount);
+
+  // ✅ così rimane sempre coerente anche il bottone
   updateFoodBoostButton();
 }
 
     function setBoostUI(){
-  if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
+      if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
 
-  const tFood = Math.max(0, game.foodBoostT);
-  const tRing = Math.max(0, game.ringBoostT);
+      const t = Math.max(game.foodBoostT, game.ringBoostT);
+      if(t <= 0){
+        pillBoost.style.display='none';
+        boostBar.style.width='0%';
+        return;
+      }
+      pillBoost.style.display='flex';
 
-  // ✅ Non mostrare la pill "FOOD": se c'è SOLO food boost, nascondi pillBoost
-  if(tFood > 0 && tRing <= 0){
-    pillBoost.style.display = 'none';
-    boostBar.style.width = '0%';
-    return;
-  }
+      const both = (game.foodBoostT>0 && game.ringBoostT>0);
+      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
+      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
+      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
 
-  // Qui pillBoost si usa SOLO per RING o MEGA (ring+food)
-  const t = Math.max(tFood, tRing);
-  if(t <= 0){
-    pillBoost.style.display = 'none';
-    boostBar.style.width = '0%';
-    return;
-  }
+      const dur = 10.0;
+      const pct = clamp((t/dur)*100,0,100);
+      boostBar.style.width = pct.toFixed(1)+'%';
+    }
 
-  pillBoost.style.display = 'flex';
-
-  const both = (tFood > 0 && tRing > 0);
-  if(both){
-    boostIcon.textContent = '🔥';
-    boostName.textContent = 'MEGA';
-  }else{
-    boostIcon.textContent = '⭕️';
-    boostName.textContent = 'RING';
-  }
-
-  const dur = 10.0;
-  const pct = clamp((t / dur) * 100, 0, 100);
-  boostBar.style.width = pct.toFixed(1) + '%';
-}
-
-// ✅ Durate reali dei boost
-const MAGNET_DUR = 8.0;
-const FOOD_DUR   = 10.0;
-
-// ✅ UI Magnet (barra + testo)
-function setMagnetUI(){
-  if(!magTxt || !magBarEl) return;
-
-  const t = Math.max(0, game.magnetT);
-  const pct = clamp((t / MAGNET_DUR) * 100, 0, 100);
-
-  magBarEl.style.width = pct.toFixed(1) + '%';
-  magTxt.textContent = `🧲 ${t > 0 ? t.toFixed(1) + 's' : '0'}`;
-}
-
-// ✅ UI Food Boost (pill dedicata a sinistra: barra + secondi)
-function setFoodBoostUI(){
-  if(!foodBoostPillEl || !foodBoostBarEl || !foodBoostTimeEl) return;
-
-  const t = Math.max(0, game.foodBoostT);
-
-  if(t <= 0){
-    foodBoostPillEl.style.display = 'none';
-    foodBoostBarEl.style.width = '0%';
-    foodBoostTimeEl.textContent = '0.0s';
-    return;
-  }
-
-  foodBoostPillEl.style.display = 'flex';
-  const pct = clamp((t / FOOD_DUR) * 100, 0, 100);
-  foodBoostBarEl.style.width = pct.toFixed(1) + '%';
-  foodBoostTimeEl.textContent = t.toFixed(1) + 's';
-}
     function updateMainButton(){
       if(!mainLbl) return;
 
@@ -3963,11 +3799,6 @@ hookCamBtn(btnCamFront,'front');
       if(hpTxt) hpTxt.textContent = hpString();
       if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
-      if(magBarEl) magBarEl.style.width = '0%';
-  const fb = Math.max(0, game.foodBoostT);
-  if(foodBoostTimeEl) foodBoostTimeEl.textContent = `${fb.toFixed(3)}s`; // ✅ millisecondi
-  if(foodBoostBarEl)  foodBoostBarEl.style.width  = `${clamp((fb/10)*100,0,100).toFixed(1)}%`;
-if(foodBoostPillEl) foodBoostPillEl.style.display = 'none';
       
       updateFoodBoostButton();
       updateMainButton();
@@ -4051,7 +3882,6 @@ if(foodBoostPillEl) foodBoostPillEl.style.display = 'none';
 
   // attiva boost cibo
   game.foodBoostT = 10.0;
-  setFoodBoostUI();
   game.invincibleT = Math.max(game.invincibleT, 10.0);
   bubble.visible = true;
 
@@ -4539,7 +4369,6 @@ for(const mesh of segments){
   );
 
   game.magnetT = 8.0;
-  setMagnetUI();
 
   // ✅ dopo magnete: blocca spawn magneti + vita per 2x visibile
   game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
@@ -4559,284 +4388,315 @@ for(const mesh of segments){
     }
   }
 
-  // score (logica identica)
-game.score += (18 * speedMul) * dt;
+  // score + HUD
+  game.score += (18 * speedMul) * dt;
 
-if(game.score > game.best){
-  game.best = Math.floor(game.score);
-  saveBest(game.best);
-}
-
-// ✅ HUD: aggiorna a 12 fps (molto più leggero) + le barre boost a 20 fps
-game._uiT = (game._uiT || 0) + dt;
-game._barT = (game._barT || 0) + dt;
-
-if(game._uiT >= (1/12)){
-  game._uiT = 0;
+  if(game.score > game.best){
+    game.best = Math.floor(game.score);
+    saveBest(game.best);
+  }
 
   if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
   if(coinsEl) coinsEl.textContent = String(game.coins);
   if(bestEl)  bestEl.textContent  = String(game.best);
   if(ringsEl) ringsEl.textContent = String(game.ringCount);
   if(hpTxt)   hpTxt.textContent   = hpString();
-}
-
-// barre/secondi più fluidi ma non ogni frame
-if(game._barT >= (1/20)){
-  game._barT = 0;
+  if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
   setBoostUI();
-  setMagnetUI();
-  setFoodBoostUI();
-}
 
-// bubble resta smooth
-if(bubble.visible){
-  bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
-}
+  if(bubble.visible){
+    bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
+  }
 
-tiltTarget *= 0.92;
-camRoll = damp(camRoll, tiltTarget, 10, dt);
+  tiltTarget *= 0.92;
+  camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
  
-function updateCamera(dt, tNow){
-  const gameplayOn  = game.started && !game.paused && !game.over;
-  const camDynamic  = gameplayOn && !game.stopped;
-
-  const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
-  const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
-
-  // kick quando parte un boost
-  if(anyBoost && !_prevAnyBoost) boostShakeKick = 1.0;
-  _prevAnyBoost = anyBoost;
-  boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
-
-  const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
-  const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
-
-  // FOV dinamico SOLO in FPS se fpsDynFov=true
-  const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
-
-  const active = profForView();
-
-  const targetFov = clamp(active.fov + (useFovBoost ? fovBoost : 0), 30, 110);
-  const targetZ   = clamp(active.dist + zBoost, 2, 15);
-  const targetY   = clamp(active.y + (bothBoost ? 0.10 : 0), 0.0, 12.0);
-
-  if(!camDynamic){
-    const a = profForView();
-    camFov  = a.fov;
-    camZ    = a.dist;
-    camY    = a.y;
-    camX    = 0;
-    camRoll = 0;
-  } else {
-    camFov = damp(camFov, targetFov, 8, dt);
-    camZ   = damp(camZ,   targetZ,   8, dt);
-    camY   = damp(camY,   targetY,   8, dt);
-
-    const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
-    camX = damp(camX, targetCamX, 5, dt);
-  }
-
-  camera.fov = camFov;
-  camera.updateProjectionMatrix();
-
-  // shake (leggero laterale)
-  let shakeX = 0, shakeY = 0;
-
-  if(camDynamic && shakeEnabled && viewMode!=='fps' && anyBoost){
-    const amp = bothBoost ? 0.10 : 0.08;
-
-    shTimer -= dt;
-    if(shTimer <= 0){
-      shTimer = 0.018 + Math.random()*0.020;
-      shTX = (Math.random()*2 - 1) * amp;
-      shTY = (Math.random()*2 - 1) * amp * 0.75;
-    }
-
-    shX = damp(shX, shTX, 32, dt);
-    shY = damp(shY, shTY, 32, dt);
-
-    shakeX = shX * 0.35;
-    shakeY = 0;
-  }else{
-    shX = damp(shX, 0, 18, dt);
-    shY = damp(shY, 0, 18, dt);
-  }
-
-  const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
-
-  camera.up.set(0,1,0);
-
-  // ===== CAMERA MODES =====
-  if(viewMode === 'fps'){
-    const eyeBaseY = 1.58;
-    const eyeFwd   = 1.05;
-    const eyeZ     = 0.10;
-
-    const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
-
-    // motion blur fake solo in boost
-    if(renderer?.domElement){
-      renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
-    }
-
-    const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
-    const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
-
-    const grounded = (game.y === 0 && !game.jumping);
-
-    // landing kick
-    if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
-    fpsGroundPrev = grounded;
-
-    fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
-    fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
-
-    // elastic lane lag
-    if(!fpsRealistic) fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
-    else             fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
-
-    const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
-    const nonLinear = Math.pow(sNorm, 1.65);
-
-    if(!stoppedOrMenu && fpsRealistic){
-      fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
-    } else {
-      fpsPhase += dt * 2.0;
-    }
-
-    const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
-    const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
-
-    const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
-    const runX = Math.sin(fpsPhase*0.5) * runAmpX;
-
-    const air = grounded ? 0.0 : 1.0;
-    const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
-    const landY = -fpsLandKick * 0.020;
-
-    const slideChin = (game.sliding ? 0.10 : 0.0);
-    const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
-
-    const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
-    const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
-
-    const xOff = breatheX + (1-air)*runX + laneKickX;
-    const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
-
-    camera.position.set(
-      runnerPivot.position.x + xOff,
-      yFollow + yOff,
-      eyeZ - eyeFwd
-    );
-
-    camera.lookAt(
-      runnerPivot.position.x + xOff,
-      yFollow + yOff,
-      -10
-    );
-
-    _camEuler.setFromQuaternion(camera.quaternion);
-    _camEuler.z = 0;
-    camera.quaternion.setFromEuler(_camEuler);
-  }
-  else if(viewMode === 'back'){
-    const lookAtY = lerp(0.35, 1.45, profForView().framing);
-    const lookAtZ = -6.5;
-
-    camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
-    camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-    camera.rotateZ(camRoll * 0.55);
-  }
-  else { // FRONT
-    const lookAtY = lerp(0.30, 1.55, profForView().framing);
-    const lookAtZ = 0.10;
-
-    camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
-    camera.lookAt(camX*0.35, lookAtY, lookAtZ);
-    camera.rotateZ(camRoll * 0.55);
-  }
-
-  // ===== Debug update (FIXATO) =====
-  if(debugOn){
-    dbgTimer += dt;
-    if(dbgTimer > 0.12){
-      dbgTimer = 0;
-      if(dbgFps) dbgFps.textContent = `fps: ${fpsShow ? fpsShow.toFixed(0) : '--'}`;
-      if(dbgCam) dbgCam.textContent = `${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}`;
-      if(dbgMode) dbgMode.textContent = viewMode;
-      if(dbgState) dbgState.textContent = `started:${game.started} stopped:${game.stopped} paused:${game.paused} over:${game.over} anim:${animState.mode}`;
-      if(dbgEnt) dbgEnt.textContent = String(game.entities.length);
-      if(dbgLane) dbgLane.textContent = String(game.lane);
-      if(dbgBoosts) dbgBoosts.textContent = `food:${game.foodBoostT.toFixed(1)} ring:${game.ringBoostT.toFixed(1)} mag:${game.magnetT.toFixed(1)}`;
-    }
-  }
-}
-
-    /* ===============================
-       ✅ LOOP + INIT (loop unico corretto)
-       =============================== */
-
-    let _acc = 0;
-    let _last = performance.now();
 
     function animate(tNow){
-      const dtRaw = Math.min(0.05, (tNow - _last) / 1000);
-      _last = tNow;
-      _acc += dtRaw;
+      const dt=Math.min(0.030,(tNow-tPrev)/1000);
+      tPrev=tNow;
 
-      if(_acc > 0.12) _acc = 0.12;
-
-      // 1 update per frame (stabile)
-      const dt = Math.min(0.030, _acc);
-      _acc = 0;
-
-      // debug fps
+      // debug fps calc
       fpsAcc += dt; fpsN++;
       if(fpsAcc >= 0.5){
         fpsShow = fpsN / fpsAcc;
         fpsAcc = 0; fpsN = 0;
       }
 
-      update(dt, tNow);
-      updateCamera(dt, tNow);
+      update(dt,tNow);
+
+      const gameplayOn  = game.started && !game.paused && !game.over;
+      const camDynamic  = gameplayOn && !game.stopped;
+
+      const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
+      const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
+      // ✅ kick quando parte un boost
+if(anyBoost && !_prevAnyBoost) boostShakeKick = 1.0;
+_prevAnyBoost = anyBoost;
+
+// decay kick
+boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
+
+      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
+      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+
+      // ✅ FOV dinamico SOLO in FPS se fpsDynFov=true
+      const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
+
+      const active = profForView();
+
+const targetFov = clamp(active.fov + (useFovBoost ? fovBoost : 0), 30, 110);
+const targetZ   = clamp(active.dist + zBoost, 2, 15);
+const targetY   = clamp(active.y + (bothBoost ? 0.10 : 0), 0.0, 12.0);
+
+      if(!camDynamic){
+  const a = profForView();
+  camFov  = a.fov;
+  camZ    = a.dist;
+  camY    = a.y;
+  camX    = 0;
+  camRoll = 0;
+} else {
+        camFov = damp(camFov, targetFov, 8, dt);
+        camZ   = damp(camZ,   targetZ,   8, dt);
+        camY   = damp(camY,   targetY,   8, dt);
+
+        // segue di più la corsia (prima 0.35)
+const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
+
+// un filo più morbido (prima lambda 6)
+camX = damp(camX, targetCamX, 5, dt);
+      }
+
+      camera.fov = camFov;
+      camera.updateProjectionMatrix();
+
+      let shakeX = 0, shakeY = 0;
+
+if(camDynamic && shakeEnabled && viewMode!=='fps'){
+
+  const foodOn = (game.foodBoostT > 0);
+  const ringOn = (game.ringBoostT > 0);
+  const bothOn = foodOn && ringOn;
+
+  if(foodOn || ringOn){
+
+    // ✅ MOLTO più intenso
+    const amp =
+      bothOn ? 0.16 :
+      foodOn ? 0.13 :
+      0.16;
+
+    // ✅ “saltelli” random frequenti (vero tremore schermo)
+    shTimer -= dt;
+    if(shTimer <= 0){
+      shTimer = 0.016 + Math.random()*0.020; // ~60-30 Hz
+
+      shTX = (Math.random()*2 - 1) * amp;
+      shTY = (Math.random()*2 - 1) * amp * 0.85;
+    }
+
+    // ✅ follow rapidissimo (niente camminata)
+    const follow = 38;  // più alto = più nervoso
+    shX = damp(shX, shTX, follow, dt);
+    shY = damp(shY, shTY, follow, dt);
+
+    // ✅ micro-jitter extra (tremore fine)
+    const t = tNow * 0.001;
+    const jitter = amp * 0.18;
+    const jx = (Math.sin(t*95) + Math.sin(t*141)) * 0.5 * jitter;
+    const jy = (Math.cos(t*88) + Math.cos(t*133)) * 0.5 * jitter;
+
+    // micro spostamento laterale (posizione), NON su/giù
+shakeX = shX * 0.35;   // ✅ laterale
+shakeY = 0;            // niente su/giù
+
+  } else {
+    // reset quando finisce boost
+    shX = damp(shX, 0, 18, dt);
+    shY = damp(shY, 0, 18, dt);
+  }
+}
+
+      const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
+
+      camera.up.set(0,1,0);
+
+      
+      // ===== CAMERA MODES =====
+if(viewMode === 'fps'){
+  camera.up.set(0,1,0);
+
+  const eyeBaseY = 1.58;
+  const eyeFwd   = 1.05;
+  const eyeZ     = 0.10;
+
+  const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
+
+  // ===== motion blur fake solo in boost =====
+  const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
+  if(renderer?.domElement){
+    renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
+  }
+
+  // ===== breathe in menu/stop =====
+  const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
+  const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
+
+  const grounded = (game.y === 0 && !game.jumping);
+
+  // landing kick
+  if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
+  fpsGroundPrev = grounded;
+
+  fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
+  fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
+
+  // ===== elastic lane lag (spring) =====
+  // "fpsLaneKick" lo usi già quando cambi corsia: qui lo trasformiamo in elasticità vera
+  // (più realistico) oppure lo spengo in stabile
+  if(!fpsRealistic){
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
+  }else{
+    fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
+  }
+
+  // ===== non-linear bob based on speed =====
+  // speedNormalized 0..1 circa
+  const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
+  const nonLinear = Math.pow(sNorm, 1.65); // non lineare (cresce più forte a velocità alte)
+
+  if(!stoppedOrMenu && fpsRealistic){
+    fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
+  } else {
+    fpsPhase += dt * 2.0;
+  }
+
+  const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
+  const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
+
+  const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
+  const runX = Math.sin(fpsPhase*0.5) * runAmpX;
+
+  const air = grounded ? 0.0 : 1.0;
+  const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
+  const landY = -fpsLandKick * 0.020;
+
+  const slideChin = (game.sliding ? 0.10 : 0.0);
+  const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
+
+  // micro lag corsia (elasticità)
+  const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
+
+  const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
+
+  const xOff = breatheX + (1-air)*runX + laneKickX;
+  const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
+
+  camera.position.set(
+    runnerPivot.position.x + xOff,
+    yFollow + yOff,
+    eyeZ - eyeFwd
+  );
+
+  camera.lookAt(
+  runnerPivot.position.x + xOff,
+  yFollow + yOff,
+  -10
+);
+
+// ✅ azzera roll in modo stabile (niente flip)
+_camEuler.setFromQuaternion(camera.quaternion);
+_camEuler.z = 0;
+camera.quaternion.setFromEuler(_camEuler);
+}
+else if(viewMode === 'back'){
+  const lookAtY = lerp(0.35, 1.45, profForView().framing);
+  const lookAtZ = -6.5;
+  camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
+  camera.up.set(0,1,0);
+camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+// ✅ roll senza rompere lookAt (no capovolgimenti)
+camera.rotateZ(camRoll * 0.55);
+}
+else { // FRONT
+  const lookAtY = lerp(0.30, 1.55, profForView().framing);
+  const lookAtZ = 0.10;
+  camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
+  camera.up.set(0,1,0);
+camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+
+// ✅ roll stabile
+camera.rotateZ(camRoll * 0.55);
+}
+
+      // ===== Debug panel update (timer) =====
+      if(debugOn){
+        dbgTimer += dt;
+        if(dbgTimer > 0.12){
+          dbgTimer = 0;
+          if(dbgFps) dbgFps.textContent = `fps: ${fpsShow ? fpsShow.toFixed(0) : '--'}`;
+          if(dbgCam) dbgCam.textContent = `${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}`;
+          if(dbgMode) dbgMode.textContent = viewMode;
+          if(dbgState) dbgState.textContent = `started:${game.started} stopped:${game.stopped} paused:${game.paused} over:${game.over} anim:${animState.mode}`;
+          if(dbgEnt) dbgEnt.textContent = String(game.entities.length);
+          if(dbgLane) dbgLane.textContent = String(game.lane);
+          if(dbgBoosts) dbgBoosts.textContent = `food:${game.foodBoostT.toFixed(1)} ring:${game.ringBoostT.toFixed(1)} mag:${game.magnetT.toFixed(1)}`;
+        }
+      }
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 
-    // resize: camera + renderer
-    window.addEventListener('resize', ()=>{
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
-      camera.aspect = w / h;
+    function onResize(){
+      camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
-      try{ _magicResize(); }catch{}
-    }, { passive:true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', onResize);
 
-    // BOOT: sincronizza UI + carica modello + parte il loop
-    (async function boot(){
-      try{
-        // UI camera / HUD
-        syncCamUI();
-        applyViewMode(viewMode);
-        updateMainButton();
+    // ===== Boot =====
+    (async ()=>{
+      refreshFoodUI();
+      // 🔥 DEBUG: 5 boost disponibili
+      game.foodBoostCharges = 5;
+      updateFoodBoostButton();
+      if(hpTxt) hpTxt.textContent = hpString();
+      syncCamUI();
+      // ✅ imposta tab FRONT attivo all'avvio
+       setCamProfile('front');
 
-        refreshFoodUI();
-        setBoostUI();
-        setMagnetUI();
-        setFoodBoostUI();
-        setDebugUI();
+      await loadRunnerModel();
 
-        // carica modello runner
-        await loadRunnerModel();
-      }catch(e){
-        console.warn('boot error:', e);
-      }
+      game.started = false;
+      game.over = false;
+      game.paused = false;
+      game.stopped = true;
+      game.stopBlend = 1.0;
+      updateMainButton();
+      startIdleRandom();
+
+      if(scoreEl) scoreEl.textContent = '0';
+      if(coinsEl) coinsEl.textContent = '0';
+      if(bestEl)  bestEl.textContent = String(game.best);
+      if(ringsEl) ringsEl.textContent = '0';
+      if(magTxt)  magTxt.textContent = '🧲 0';
+      setBoostUI();
+
+      // applica modalità salvata
+      applyViewMode(viewMode);
+      setDebugUI();
+
       requestAnimationFrame(animate);
     })();
   </script>
+  <canvas id="magicCanvas" style="
+position:fixed;
+inset:0;
+pointer-events:none;
+z-index:9999;"></canvas>
 </body>
 </html>
