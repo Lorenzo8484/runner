@@ -1678,6 +1678,7 @@ function magicFly(fromWorld, toEl, opt = {}){
     });
 
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const IS_LOW_GPU = IS_IOS || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 
     // ===== UI: HUD =====
     const scoreEl = $('score');
@@ -2303,7 +2304,9 @@ safeOn(dynFovToggle,'click', ()=>{
     safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // ===== Renderer / Scene =====
-const _dprCap = IS_IOS ? 1.35 : 2; // ✅ su iPhone DPR più basso = molto più fluido
+
+// device “debole” → taglio su risoluzione / ombre
+const _dprCap = IS_LOW_GPU ? 1.0 : 1.6; // prima 1.35 / 2
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08120b);
@@ -2314,12 +2317,17 @@ const baseFov  = cam.front.fov;
 const baseCamZ = cam.front.dist;
 const baseCamY = cam.front.y;
 
-const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
+const camera = new THREE.PerspectiveCamera(
+  baseFov,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  IS_LOW_GPU ? 180 : 260 // prima 320 → meno distanza = meno pixel da disegnare
+);
 camera.up.set(0,1,0);
 camera.rotation.order = 'YXZ';
 
 const renderer = new THREE.WebGLRenderer({
-  antialias: !IS_IOS,
+  antialias: !IS_LOW_GPU, // niente antialias su device deboli
   powerPreference: 'high-performance',
   alpha: false,
   stencil: false,
@@ -2331,8 +2339,14 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.sortObjects = false;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// Ombre: pesanti → solo desktop / device forti
+if (IS_LOW_GPU) {
+  renderer.shadowMap.enabled = false;
+} else {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+}
 
 document.body.appendChild(renderer.domElement);
 
@@ -2345,24 +2359,31 @@ camera.rotation.order = 'YXZ';
 // ✅ helper per FPS: azzera roll senza rompere quaternion
 const _camEuler = new THREE.Euler(0,0,0,'YXZ');
 
-    // lights
-    const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.8 : 2.1);
-    sun.position.set(6, 10, 6);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048,2048);
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 80;
-    sun.shadow.camera.left = -12;
-    sun.shadow.camera.right=  12;
-    sun.shadow.camera.top  =  12;
-    sun.shadow.camera.bottom=-12;
-    sun.shadow.bias = -0.00023;
-    scene.add(sun);
-    scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
-    scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.6 : 0.24));
-    const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.25 : 0.55);
-    front.position.set(0, 4, 9);
-    scene.add(front);
+    // luci (più leggere su telefoni)
+const sun = new THREE.DirectionalLight(0xf3ffe6, IS_IOS ? 2.4 : 2.1);
+sun.position.set(6, 10, 6);
+
+// ombre solo su device forti
+sun.castShadow = !IS_LOW_GPU;
+if (!IS_LOW_GPU) {
+  sun.shadow.mapSize.set(1536, 1536); // prima 2048 → un po' più leggero
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far  = 80;
+  sun.shadow.camera.left   = -12;
+  sun.shadow.camera.right  =  12;
+  sun.shadow.camera.top    =  12;
+  sun.shadow.camera.bottom = -12;
+  sun.shadow.bias = -0.00023;
+}
+scene.add(sun);
+
+scene.add(new THREE.HemisphereLight(0xaaffdd, 0x081209, IS_IOS ? 1.05 : 0.78));
+scene.add(new THREE.AmbientLight(0xffffff, IS_IOS ? 0.55 : 0.24));
+
+const front = new THREE.DirectionalLight(0xffffff, IS_IOS ? 1.10 : 0.55);
+front.position.set(0, 4, 9);
+front.castShadow = false; // niente ombre da questa
+scene.add(front);
 
     // Contact shadow
     function makeContactShadowTexture(size=512){
@@ -2508,19 +2529,31 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
       return t;
     }
 
-    const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
-    highwayTex.generateMipmaps = false;
-    highwayTex.minFilter = THREE.NearestFilter;
-    highwayTex.magFilter = THREE.NearestFilter;
-    highwayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    highwayTex.needsUpdate = true;
-    highwayTex.repeat.set(1.0, 4.0);
+    // texture strada (più leggere su mobile)
+const highwayTex = makeHighwayTexture(IS_IOS ? 768 : 1024);
+highwayTex.generateMipmaps = false;
+highwayTex.minFilter = THREE.NearestFilter;
+highwayTex.magFilter = THREE.NearestFilter;
 
-    const patchTexPool = [
-      makePatchTexture(IS_IOS ? 384 : 512),
-      makePatchTexture(IS_IOS ? 384 : 512),
-      makePatchTexture(IS_IOS ? 384 : 512),
-    ];
+const MAX_ANISO = renderer.capabilities.getMaxAnisotropy() || 1;
+// su device deboli max 2, su altri max 4 (prima arrivava anche a 16)
+const ANISO = IS_LOW_GPU ? Math.min(2, MAX_ANISO) : Math.min(4, MAX_ANISO);
+highwayTex.anisotropy = ANISO;
+highwayTex.needsUpdate = true;
+highwayTex.repeat.set(1.0, 4.0);
+
+const patchTexPool = [
+  makePatchTexture(IS_IOS ? 384 : 512),
+  makePatchTexture(IS_IOS ? 384 : 512),
+  makePatchTexture(IS_IOS ? 384 : 512),
+];
+patchTexPool.forEach(t=>{
+  t.generateMipmaps = false;
+  t.minFilter = THREE.NearestFilter;
+  t.magFilter = THREE.NearestFilter;
+  t.anisotropy = ANISO;
+  t.needsUpdate = true;
+});
 
     const roadMat = new THREE.MeshStandardMaterial({
       map: highwayTex,
