@@ -4777,8 +4777,6 @@ camera.rotateZ(camRoll * 0.55);
 
         setBoostUI();
         
-        /* ✅ Rimuove SOLO la barra/pillola che ha scritto "FOOD" (quella a sinistra) */
-setTimeout(() => {
   // trova un elemento che è proprio la label "FOOD"
   const label = [...document.querySelectorAll('*')]
     .find(n => (n.textContent || '').trim() === 'FOOD');
