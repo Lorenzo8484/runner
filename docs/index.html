@@ -2304,6 +2304,7 @@ safeOn(dynFovToggle,'click', ()=>{
 
     // ===== Renderer / Scene =====
 const _dprCap = IS_IOS ? 1.35 : 2; // ✅ su iPhone DPR più basso = molto più fluido
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08120b);
 scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
@@ -2317,7 +2318,6 @@ const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.inn
 camera.up.set(0,1,0);
 camera.rotation.order = 'YXZ';
 
-const _dprCap = IS_IOS ? 1.35 : 2;
 const renderer = new THREE.WebGLRenderer({
   antialias: !IS_IOS,
   powerPreference: 'high-performance',
@@ -4565,6 +4565,181 @@ tiltTarget *= 0.92;
 camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
  
+function updateCamera(dt, tNow){
+  const gameplayOn  = game.started && !game.paused && !game.over;
+  const camDynamic  = gameplayOn && !game.stopped;
+
+  const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
+  const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
+
+  // kick quando parte un boost
+  if(anyBoost && !_prevAnyBoost) boostShakeKick = 1.0;
+  _prevAnyBoost = anyBoost;
+  boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
+
+  const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
+  const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+
+  // FOV dinamico SOLO in FPS se fpsDynFov=true
+  const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
+
+  const active = profForView();
+
+  const targetFov = clamp(active.fov + (useFovBoost ? fovBoost : 0), 30, 110);
+  const targetZ   = clamp(active.dist + zBoost, 2, 15);
+  const targetY   = clamp(active.y + (bothBoost ? 0.10 : 0), 0.0, 12.0);
+
+  if(!camDynamic){
+    const a = profForView();
+    camFov  = a.fov;
+    camZ    = a.dist;
+    camY    = a.y;
+    camX    = 0;
+    camRoll = 0;
+  } else {
+    camFov = damp(camFov, targetFov, 8, dt);
+    camZ   = damp(camZ,   targetZ,   8, dt);
+    camY   = damp(camY,   targetY,   8, dt);
+
+    const targetCamX = clamp(runnerPivot.position.x * 0.55, -1.6, 1.6);
+    camX = damp(camX, targetCamX, 5, dt);
+  }
+
+  camera.fov = camFov;
+  camera.updateProjectionMatrix();
+
+  // shake (leggero laterale)
+  let shakeX = 0, shakeY = 0;
+
+  if(camDynamic && shakeEnabled && viewMode!=='fps' && anyBoost){
+    const amp = bothBoost ? 0.10 : 0.08;
+
+    shTimer -= dt;
+    if(shTimer <= 0){
+      shTimer = 0.018 + Math.random()*0.020;
+      shTX = (Math.random()*2 - 1) * amp;
+      shTY = (Math.random()*2 - 1) * amp * 0.75;
+    }
+
+    shX = damp(shX, shTX, 32, dt);
+    shY = damp(shY, shTY, 32, dt);
+
+    shakeX = shX * 0.35;
+    shakeY = 0;
+  }else{
+    shX = damp(shX, 0, 18, dt);
+    shY = damp(shY, 0, 18, dt);
+  }
+
+  const bob = camDynamic ? (Math.sin(tNow*0.0020) * 0.005) : 0;
+
+  camera.up.set(0,1,0);
+
+  // ===== CAMERA MODES =====
+  if(viewMode === 'fps'){
+    const eyeBaseY = 1.58;
+    const eyeFwd   = 1.05;
+    const eyeZ     = 0.10;
+
+    const stoppedOrMenu = (!game.started || game.paused || game.over || game.stopped);
+
+    // motion blur fake solo in boost
+    if(renderer?.domElement){
+      renderer.domElement.classList.toggle('blurBoost', !!(motionBlurEnabled && anyBoost && !stoppedOrMenu));
+    }
+
+    const breatheY = stoppedOrMenu ? (Math.sin(tNow*0.0019) * 0.010) : 0.0;
+    const breatheX = stoppedOrMenu ? (Math.sin(tNow*0.0015) * 0.006) : 0.0;
+
+    const grounded = (game.y === 0 && !game.jumping);
+
+    // landing kick
+    if(fpsGroundPrev === false && grounded === true) fpsLandKick = 1.0;
+    fpsGroundPrev = grounded;
+
+    fpsVelYSm = damp(fpsVelYSm, game.vy, 10, dt);
+    fpsLandKick = damp(fpsLandKick, 0.0, 14, dt);
+
+    // elastic lane lag
+    if(!fpsRealistic) fpsLaneKick = damp(fpsLaneKick, 0.0, 20, dt);
+    else             fpsLaneKick = damp(fpsLaneKick, 0.0, 10, dt);
+
+    const sNorm = clamp((game.camSpeed - 8.0) / 18.0, 0, 1);
+    const nonLinear = Math.pow(sNorm, 1.65);
+
+    if(!stoppedOrMenu && fpsRealistic){
+      fpsPhase += dt * (8.6 + 6.2*nonLinear + (anyBoost?1.0:0.0));
+    } else {
+      fpsPhase += dt * 2.0;
+    }
+
+    const runAmpY = (!stoppedOrMenu && fpsRealistic) ? (0.020 + 0.060*nonLinear) : 0.0;
+    const runAmpX = (!stoppedOrMenu && fpsRealistic) ? (0.010 + 0.034*nonLinear) : 0.0;
+
+    const runY = Math.abs(Math.sin(fpsPhase)) * runAmpY;
+    const runX = Math.sin(fpsPhase*0.5) * runAmpX;
+
+    const air = grounded ? 0.0 : 1.0;
+    const airFloat = (fpsRealistic ? Math.sin(tNow*0.006) * 0.008 : 0.0);
+    const landY = -fpsLandKick * 0.020;
+
+    const slideChin = (game.sliding ? 0.10 : 0.0);
+    const yFollow = runnerPivot.position.y + eyeBaseY - slideChin;
+
+    const laneKickX = fpsRealistic ? (fpsLaneKick * 0.030) : 0.0;
+    const yVelFeel = (air * clamp(-fpsVelYSm*0.002, -0.02, 0.02));
+
+    const xOff = breatheX + (1-air)*runX + laneKickX;
+    const yOff = breatheY + (1-air)*runY + airFloat + landY + yVelFeel;
+
+    camera.position.set(
+      runnerPivot.position.x + xOff,
+      yFollow + yOff,
+      eyeZ - eyeFwd
+    );
+
+    camera.lookAt(
+      runnerPivot.position.x + xOff,
+      yFollow + yOff,
+      -10
+    );
+
+    _camEuler.setFromQuaternion(camera.quaternion);
+    _camEuler.z = 0;
+    camera.quaternion.setFromEuler(_camEuler);
+  }
+  else if(viewMode === 'back'){
+    const lookAtY = lerp(0.35, 1.45, profForView().framing);
+    const lookAtZ = -6.5;
+
+    camera.position.set(camX + shakeX, camY + bob + shakeY, camZ);
+    camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+    camera.rotateZ(camRoll * 0.55);
+  }
+  else { // FRONT
+    const lookAtY = lerp(0.30, 1.55, profForView().framing);
+    const lookAtZ = 0.10;
+
+    camera.position.set(camX + shakeX, camY + bob + shakeY, -camZ);
+    camera.lookAt(camX*0.35, lookAtY, lookAtZ);
+    camera.rotateZ(camRoll * 0.55);
+  }
+
+  // ===== Debug update (FIXATO) =====
+  if(debugOn){
+    dbgTimer += dt;
+    if(dbgTimer > 0.12){
+      dbgTimer = 0;
+      if(dbgFps) dbgFps.textContent = `fps: ${fpsShow ? fpsShow.toFixed(0) : '--'}`;
+      if(dbgCam) dbgCam.textContent = `${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}`;
+      if(dbgMode) dbgMode.textContent = viewMode;
+      if(dbgState) dbgState.textContent = `started:${game.started} stopped:${game.stopped} paused:${game.paused} over:${game.over} anim:${animState.mode}`;
+      if(dbgEnt) dbgEnt.textContent = String(game.entities.length);
+      if(dbgLane) dbgLane.textContent = String(game.lane);
+      if(dbgBoosts) dbgBoosts.textContent = `food:${game.foodBoostT.toFixed(1)} ring:${game.ringBoostT.toFixed(1)} mag:${game.magnetT.toFixed(1)}`;
+    }
+  }
+}
 
     let _acc = 0;
 let _last = performance.now();
@@ -4588,12 +4763,11 @@ function animate(tNow){
   }
 
   update(dt, tNow);
-
+  updateCamera(dt, tNow);
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
-requestAnimationFrame(animate);
 
       const gameplayOn  = game.started && !game.paused && !game.over;
       const camDynamic  = gameplayOn && !game.stopped;
