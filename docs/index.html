@@ -1570,39 +1570,73 @@ function pulseHUD(el, cls='hudPulse'){
 }
 
 // =========================================================
-// ✨ MAGIC FLY (Canvas ultra leggero - NO LAG) ✅ FIX
+// ✨ MAGIC FLY (Canvas ultra leggero - NO resize per pickup)
 // =========================================================
+const _magic = {
+  canvas: null,
+  ctx: null,
+  dpr: 1,
+  w: 0,
+  h: 0,
+  running: false
+};
+
+function _magicResize(){
+  const c = _magic.canvas;
+  if(!c) return;
+  _magic.dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = window.innerWidth|0;
+  const h = window.innerHeight|0;
+  if(w === _magic.w && h === _magic.h) return;
+
+  _magic.w = w; _magic.h = h;
+  c.width  = (w * _magic.dpr)|0;
+  c.height = (h * _magic.dpr)|0;
+  c.style.width  = w + 'px';
+  c.style.height = h + 'px';
+}
+
+function _magicInit(){
+  if(_magic.canvas) return;
+  _magic.canvas = document.getElementById('magicCanvas');
+  if(!_magic.canvas) return;
+  _magic.ctx = _magic.canvas.getContext('2d', { alpha:true, desynchronized:true });
+  _magicResize();
+  window.addEventListener('resize', _magicResize, { passive:true });
+  window.addEventListener('orientationchange', _magicResize, { passive:true });
+}
+
 function magicFly(fromWorld, toEl, opt = {}){
   if(!toEl) return;
+  _magicInit();
+  if(!_magic.canvas || !_magic.ctx) return;
 
-  const canvas = document.getElementById('magicCanvas');
-  if(!canvas) return;
+  // se sta già andando una fly, la lasciamo finire senza “stressare”
+  // (evita spam quando magnete attira tanti pickup)
+  if(_magic.running) return;
 
-  const ctx = canvas.getContext('2d');
-  if(!ctx) return;
-
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width  = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width  = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  const ctx = _magic.ctx;
+  _magicResize();
 
   const start = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
   const r = toEl.getBoundingClientRect();
   const end = { x: r.left + r.width/2, y: r.top + r.height/2 };
 
-  const duration = opt.dur ?? 450;
-  const startTime = performance.now();
+  const dur = opt.dur ?? 420;
+  const t0 = performance.now();
+  _magic.running = true;
 
-  function animate(now){
-    const t = Math.min((now - startTime)/duration, 1);
+  function frame(now){
+    const t = Math.min((now - t0) / dur, 1);
+    const tt = 1 - Math.pow(1 - t, 3); // easeOutCubic
 
-    const x = start.x + (end.x - start.x) * t;
-    const y = start.y + (end.y - start.y) * t;
+    const x = start.x + (end.x - start.x) * tt;
+    const y = start.y + (end.y - start.y) * tt;
 
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0,0,_magic.canvas.width,_magic.canvas.height);
+
+    const dpr = _magic.dpr;
 
     // pallina
     ctx.globalAlpha = 0.9;
@@ -1619,14 +1653,15 @@ function magicFly(fromWorld, toEl, opt = {}){
     ctx.fill();
 
     if(t < 1){
-      requestAnimationFrame(animate);
+      requestAnimationFrame(frame);
     }else{
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0,0,_magic.canvas.width,_magic.canvas.height);
+      _magic.running = false;
       pulseHUD(toEl);
     }
   }
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(frame);
 }
 
     window.addEventListener('error', (e)=>{
@@ -2259,13 +2294,29 @@ safeOn(dynFovToggle,'click', ()=>{
     safeOn(audioToggle,'click', ()=>{ initAudio(); audioEnabled=!audioEnabled; if(audioSwitch) audioSwitch.classList.toggle('on',!!audioEnabled); });
 
     // ===== Renderer / Scene =====
-    const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.body.appendChild(renderer.domElement);
+const _dprCap = IS_IOS ? 1.35 : 2; // ✅ su iPhone DPR più basso = molto più fluido
+const renderer = new THREE.WebGLRenderer({
+  antialias: !IS_IOS,                 // ✅ iPhone: anti-alias off (gain enorme)
+  powerPreference: 'high-performance',
+  alpha: false,
+  stencil: false,
+  depth: true
+});
+
+// ✅ DPR cap
+renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+// ✅ tre.js hints
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.sortObjects = false;         // ✅ meno lavoro CPU (scene “semplice”)
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// ✅ evita accumulo shader warmup durante gioco
+renderer.compile(scene, camera);
+
+document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x08120b);
@@ -4464,7 +4515,7 @@ for(const mesh of segments){
     }
   }
 
-  // score + HUD
+  // score (logica identica)
 game.score += (18 * speedMul) * dt;
 
 if(game.score > game.best){
@@ -4472,21 +4523,29 @@ if(game.score > game.best){
   saveBest(game.best);
 }
 
-if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
-if(coinsEl) coinsEl.textContent = String(game.coins);
-if(bestEl)  bestEl.textContent  = String(game.best);
-if(ringsEl) ringsEl.textContent = String(game.ringCount);
-if(hpTxt)   hpTxt.textContent   = hpString();
+// ✅ HUD: aggiorna a 12 fps (molto più leggero) + le barre boost a 20 fps
+game._uiT = (game._uiT || 0) + dt;
+game._barT = (game._barT || 0) + dt;
 
-// ✅ Boost UI (pill generale)
-setBoostUI();
+if(game._uiT >= (1/12)){
+  game._uiT = 0;
 
-// ✅ Magnet UI (barra + testo)
-setMagnetUI();
+  if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
+  if(coinsEl) coinsEl.textContent = String(game.coins);
+  if(bestEl)  bestEl.textContent  = String(game.best);
+  if(ringsEl) ringsEl.textContent = String(game.ringCount);
+  if(hpTxt)   hpTxt.textContent   = hpString();
+}
 
-// ✅ Food Boost UI (pill dedicata)
-setFoodBoostUI();
+// barre/secondi più fluidi ma non ogni frame
+if(game._barT >= (1/20)){
+  game._barT = 0;
+  setBoostUI();
+  setMagnetUI();
+  setFoodBoostUI();
+}
 
+// bubble resta smooth
 if(bubble.visible){
   bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
 }
@@ -4497,14 +4556,34 @@ camRoll = damp(camRoll, tiltTarget, 10, dt);
  
 
     function animate(tNow){
-      const dt=Math.min(0.030,(tNow-tPrev)/1000);
-      tPrev=tNow;
-      // debug fps calc
-      fpsAcc += dt; fpsN++;
-      if(fpsAcc >= 0.5){
-        fpsShow = fpsN / fpsAcc;
-        fpsAcc = 0; fpsN = 0;
-      }
+      let _acc = 0;
+let _last = performance.now();
+
+function animate(tNow){
+  // cap dinamico: iOS prova 60, se fatica si stabilizza
+  const targetStep = IS_IOS ? (1/60) : (1/60);
+
+  const dtRaw = Math.min(0.05, (tNow - _last) / 1000);
+  _last = tNow;
+  _acc += dtRaw;
+
+  // evita spirale della morte
+  if(_acc > 0.12) _acc = 0.12;
+
+  // fai 1 update per frame max (più stabile)
+  const dt = Math.min(0.030, _acc);
+  _acc = 0;
+
+  // debug fps calc (come avevi)
+  fpsAcc += dt; fpsN++;
+  if(fpsAcc >= 0.5){
+    fpsShow = fpsN / fpsAcc;
+    fpsAcc = 0; fpsN = 0;
+  }
+
+  update(dt, tNow);
+
+  // ... (il resto della tua animate resta uguale)
 
       update(dt,tNow);
 
@@ -4733,11 +4812,27 @@ camera.rotateZ(camRoll * 0.55);
       requestAnimationFrame(animate);
     }
 
-    function onResize(){
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    let _resizeTimer = 0;
+
+function onResize(){
+  // debounce leggero (evita 20 resize in 1 secondo su iOS)
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(()=>{
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+
+    renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
+    renderer.setSize(w, h, false);
+
+    // ✅ resize anche magic canvas (se presente)
+    try{ _magicResize && _magicResize(); }catch{}
+  }, 60);
+}
+window.addEventListener('resize', onResize, { passive:true });
+window.addEventListener('orientationchange', onResize, { passive:true });
     window.addEventListener('resize', onResize);
 
         // ===== Boot =====
