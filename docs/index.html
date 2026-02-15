@@ -4663,45 +4663,59 @@ camera.rotateZ(camRoll * 0.55);
     }
     window.addEventListener('resize', onResize);
 
-    // ===== Boot =====
+        // ===== Boot =====
     (async ()=>{
-      refreshFoodUI();
-      // 🔥 DEBUG: 5 boost disponibili
-      game.foodBoostCharges = 5;
-      updateFoodBoostButton();
-      if(hpTxt) hpTxt.textContent = hpString();
-      syncCamUI();
-      // ✅ imposta tab FRONT attivo all'avvio
-       setCamProfile('front');
+      try{
+        refreshFoodUI();
 
-      await loadRunnerModel();
+        // 🔥 DEBUG: se NON vuoi partire con 5 boost, commenta questa riga
+        game.foodBoostCharges = 5;
 
-      game.started = false;
-      game.over = false;
-      game.paused = false;
-      game.stopped = true;
-      game.stopBlend = 1.0;
-      updateMainButton();
-      startIdleRandom();
+        updateFoodBoostButton();
 
-      if(scoreEl) scoreEl.textContent = '0';
-      if(coinsEl) coinsEl.textContent = '0';
-      if(bestEl)  bestEl.textContent = String(game.best);
-      if(ringsEl) ringsEl.textContent = '0';
-      if(magTxt)  magTxt.textContent = '🧲 0';
-      setBoostUI();
+        if(hpTxt) hpTxt.textContent = hpString();
 
-      // applica modalità salvata
-      applyViewMode(viewMode);
-      setDebugUI();
+        // UI camera
+        syncCamUI();
+        setCamProfile('front');
 
-      requestAnimationFrame(animate);
+        // carica modello
+        await loadRunnerModel();
+
+        // stato iniziale coerente
+        game.started = false;
+        game.over = false;
+        game.paused = false;
+        game.stopped = true;
+        game.stopBlend = 1.0;
+
+        updateMainButton();
+        startIdleRandom();
+
+        // HUD reset
+        if(scoreEl) scoreEl.textContent = '0';
+        if(coinsEl) coinsEl.textContent = '0';
+        if(bestEl)  bestEl.textContent  = String(game.best);
+        if(ringsEl) ringsEl.textContent = '0';
+        if(hpTxt)   hpTxt.textContent   = hpString();
+        if(magTxt)  magTxt.textContent  = '🧲 0';
+
+        setBoostUI();
+
+        // applica view salvata
+        applyViewMode(viewMode);
+        setActiveCamBtns();
+        setDebugUI();
+
+        // avvia loop
+        requestAnimationFrame(animate);
+
+      }catch(err){
+        console.error('BOOT ERROR:', err);
+        // se vuoi vedere qualcosa anche in caso di crash:
+        // alert('Errore JS: ' + (err?.message || err));
+      }
     })();
   </script>
-  <canvas id="magicCanvas" style="
-position:fixed;
-inset:0;
-pointer-events:none;
-z-index:9999;"></canvas>
 </body>
 </html>
