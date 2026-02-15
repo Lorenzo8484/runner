@@ -3851,8 +3851,10 @@ hookCamBtn(btnCamFront,'front');
       if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
       if(magBarEl) magBarEl.style.width = '0%';
-if(foodBoostBarEl) foodBoostBarEl.style.width = '0%';
-if(foodBoostTimeEl) foodBoostTimeEl.textContent = '0.0s';
+  const fb = Math.max(0, game.foodBoostT);
+  if(!_foodBoostBound) bindFoodBoostHud();
+  if(foodBoostTimeEl) foodBoostTimeEl.textContent = `${fb.toFixed(3)}s`; // ✅ millisecondi
+  if(foodBoostBarEl)  foodBoostBarEl.style.width  = `${clamp((fb/10)*100,0,100).toFixed(1)}%`;
 if(foodBoostPillEl) foodBoostPillEl.style.display = 'none';
       
       updateFoodBoostButton();
@@ -4475,12 +4477,65 @@ if(bubble.visible){
 tiltTarget *= 0.92;
 camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
- 
+ /* =========================
+   FIX DOPPIA BARRA CIBO
+   - usa la PRIMA "FOOD"
+   - nasconde "Cibo"
+   - aggancia elementi tempo+barra
+   ========================= */
+let foodBoostBarEl = null;
+let _foodBoostBound = false;
+
+function bindFoodBoostHud(){
+  if(_foodBoostBound) return;
+
+  const hud = document.querySelector('.hud') || document.body;
+
+  function findRowByLabel(label){
+    const leaves = Array.from(hud.querySelectorAll('*')).filter(n =>
+      n.childElementCount === 0 &&
+      n.textContent &&
+      n.textContent.trim() === label
+    );
+    for(const n of leaves){
+      const row = n.closest('.pillFx, .card, .hudRow, .row, .boostRow, div') || n.parentElement;
+      if(row) return row;
+    }
+    return null;
+  }
+
+  const rowFood = findRowByLabel('FOOD');
+  const rowCibo = findRowByLabel('Cibo');
+
+  // nasconde la seconda riga "Cibo"
+  if(rowCibo && rowCibo !== rowFood) rowCibo.style.display = 'none';
+
+  // aggancia tempo e barra sulla riga "FOOD"
+  if(rowFood){
+    const timeNode = Array.from(rowFood.querySelectorAll('*')).find(el =>
+      el.childElementCount === 0 &&
+      el.textContent &&
+      /\d+(\.\d+)?s$/.test(el.textContent.trim())
+    );
+    if(timeNode) foodBoostTimeEl = timeNode;
+
+    const fill =
+      rowFood.querySelector('#foodBoostBar') ||
+      rowFood.querySelector('.barFill') ||
+      rowFood.querySelector('.fill') ||
+      rowFood.querySelector('.bar > div') ||
+      rowFood.querySelector('[class*="fill"]');
+
+    if(fill) foodBoostBarEl = fill;
+  }
+
+  _foodBoostBound = true;
+}
 
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
-
+      if(!_foodBoostBound) bindFoodBoostHud();
       // debug fps calc
       fpsAcc += dt; fpsN++;
       if(fpsAcc >= 0.5){
