@@ -1253,6 +1253,28 @@ canvas.blurBoost{
         </div>
       </div>
       
+      <!-- Food Boost -->
+      <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
+        <div class="hudBarRow">
+          <div class="hudL">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+              <defs>
+                <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+                  <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+                </linearGradient>
+              </defs>
+              <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
+              <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
+            </svg>
+            <div class="hudT">Cibo</div>
+          </div>
+          <div class="hudBar"><i id="foodBoostBar"></i></div>
+          <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
+        </div>
+      </div>
+      
       <!-- Debug button -->
 <div class="debugRow">
   <button class="dbgBtn pillFx" id="btnDebug" title="Debug" type="button">
@@ -1282,27 +1304,7 @@ canvas.blurBoost{
         </div>
       </div>
 
-      <!-- Food Boost -->
-      <div class="hudP pillFx hudFull" id="foodBoostPill" style="display:none;">
-        <div class="hudBarRow">
-          <div class="hudL">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-              <defs>
-                <linearGradient id="gFoodBoost" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-                  <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
-                  <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-                </linearGradient>
-              </defs>
-              <path fill="url(#gFoodBoost)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7Zm2 1h4V7c0-1.1-.9-2-2-2s-2 .9-2 2v1Z"/>
-              <path fill="rgba(0,0,0,.22)" d="M7 12h10v2H7v-2z"/>
-            </svg>
-            <div class="hudT">Cibo</div>
-          </div>
-          <div class="hudBar"><i id="foodBoostBar"></i></div>
-          <div class="hudV"><span id="foodBoostTime">0.0s</span></div>
-        </div>
-      </div>
+      
 
     </div>
 
