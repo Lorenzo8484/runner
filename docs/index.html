@@ -641,14 +641,20 @@
       pointer-events:none; z-index:20;
     }
     .foodStack{
-      width:calc(32px * var(--menuScale));
-      max-height:calc(100px * var(--menuScale));
-      overflow:hidden;
-      display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--menuScale));
-      justify-content:flex-end;
-      flex-direction:column-reverse;
-      background:transparent; border:none; padding:0;
-    }
+  width:calc(32px * var(--menuScale));
+  max-height:calc(100px * var(--menuScale));
+  overflow:hidden;
+
+  display:flex;
+  flex-direction:column;          /* ✅ normale */
+  align-items:center;
+  gap:calc(5px * var(--menuScale));
+  justify-content:flex-start;     /* ✅ parte dall’alto */
+
+  background:transparent;
+  border:none;
+  padding:0;
+}
     .foodItem{
       width:calc(27px * var(--menuScale));
       height:calc(15px * var(--menuScale));
@@ -1373,21 +1379,23 @@ canvas.blurBoost{
 
   <!-- Colonna cibo -->
   <div class="rightCol">
-    <div class="foodStack" id="foodStack"></div>
-    <div class="foodCount pillFx">
-      <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <linearGradient id="gBag" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-            <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
-            <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#gBag)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7z"/>
-      </svg>
-      <span><span id="foodCount">0</span>/10</span>
-    </div>
+  <div class="foodCount pillFx">
+    <svg class="icoSm" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="gBag" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+          <stop offset=".4" stop-color="#d6ffe9" stop-opacity=".95"/>
+          <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#gBag)" d="M8 7c0-2.2 1.8-4 4-4s4 1.8 4 4v1h1.2c1 0 1.8.8 1.8 1.8V19c0 1-.8 1.8-1.8 1.8H6.8C5.8 20.8 5 20 5 19V9.8C5 8.8 5.8 8 6.8 8H8V7z"/>
+    </svg>
+    <span><span id="foodCount">0</span>/10</span>
   </div>
+
+  <!-- ✅ sotto: i cibi -->
+  <div class="foodStack" id="foodStack"></div>
+</div>
 
   <!-- DEBUG PANEL -->
   <div class="debugPanel pillFx" id="debugPanel">
@@ -3407,26 +3415,28 @@ function refreshFoodUI(){
   if(!foodStack || !foodCountEl) return;
 
   foodStack.innerHTML = "";
-  const show = game.foodHistory.slice(-6); // niente reverse: ora la colonna è column-reverse
+
+  // ✅ ultimi 6, mostrati dall’alto verso il basso
+  const show = game.foodHistory.slice(-6);
   for(const emo of show){
-    const d=document.createElement('div');
+    const d = document.createElement('div');
     d.className = 'foodItem pillFx';
-    d.textContent=emo;
+    d.textContent = emo;
     foodStack.appendChild(d);
   }
-  // ✅ pop sull’ultima pillola creata (quando raccogli)
-if(game._foodPop){
-  const first = foodStack.firstElementChild; // perché reverse()
-  if(first) {
-    first.classList.remove('foodPop');
-    void first.offsetWidth;
-    first.classList.add('foodPop');
-  }
-  game._foodPop = false;
-}
-  foodCountEl.textContent = String(game.foodCount);
 
-  // ✅ così rimane sempre coerente anche il bottone
+  // ✅ pop sull’ULTIMO inserito (quello più in basso)
+  if(game._foodPop){
+    const last = foodStack.lastElementChild;
+    if(last){
+      last.classList.remove('foodPop');
+      void last.offsetWidth;
+      last.classList.add('foodPop');
+    }
+    game._foodPop = false;
+  }
+
+  foodCountEl.textContent = String(game.foodCount);
   updateFoodBoostButton();
 }
 
