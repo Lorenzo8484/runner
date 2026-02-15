@@ -4815,6 +4815,21 @@ camera.rotateZ(camRoll * 0.55);
         if(magTxt)  magTxt.textContent  = '🧲 0';
 
         setBoostUI();
+        
+        /* ✅ Rimuove SOLO la barra/pillola che ha scritto "FOOD" (quella a sinistra) */
+setTimeout(() => {
+  // trova un elemento che è proprio la label "FOOD"
+  const label = [...document.querySelectorAll('*')]
+    .find(n => (n.textContent || '').trim() === 'FOOD');
+
+  if (!label) return;
+
+  // risale al contenitore “pillola” e lo rimuove
+  const pill = label.closest('.hudP, .pillFx, .card, .pill, .row, .barRow') 
+            || label.parentElement;
+
+  if (pill) pill.remove();
+}, 0);
 
         // applica view salvata
         applyViewMode(viewMode);
