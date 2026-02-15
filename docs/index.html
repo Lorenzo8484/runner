@@ -2644,7 +2644,7 @@ mesh.position.set(0, 0, (i * segLen) - roadHalf);
     }
     const treeProto = makeTree();
     const treePool=[];
-    const treeSpacing=2.8;
+    const treeSpacing = IS_LOW_GPU ? 3.6 : 2.8;
     const treeSideX = (totalRoadWidth/2) + 1.9;
     const jungleCount = Math.floor((segLen*segCount)/treeSpacing);
     for(let i=0;i<jungleCount;i++){
