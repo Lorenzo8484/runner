@@ -1646,6 +1646,11 @@ function magicFly(fromWorld, toEl, opt = {}){
     const boostName = $('boostName');
     const boostBar  = $('boostBar');
     const foodBoostTimeEl = $('foodBoostTime');
+    // ✅ BAR elements (mancavano)
+const magBarEl = $('magBar');
+
+const foodBoostPillEl = $('foodBoostPill');
+const foodBoostBarEl  = $('foodBoostBar');
     const foodStack = $('foodStack');
     const foodCountEl = $('foodCount');
 
@@ -3461,6 +3466,39 @@ function refreshFoodUI(){
       boostBar.style.width = pct.toFixed(1)+'%';
     }
 
+// ✅ Durate reali dei boost
+const MAGNET_DUR = 8.0;
+const FOOD_DUR   = 10.0;
+
+// ✅ UI Magnet (barra + testo)
+function setMagnetUI(){
+  if(!magTxt || !magBarEl) return;
+
+  const t = Math.max(0, game.magnetT);
+  const pct = clamp((t / MAGNET_DUR) * 100, 0, 100);
+
+  magBarEl.style.width = pct.toFixed(1) + '%';
+  magTxt.textContent = `🧲 ${t > 0 ? t.toFixed(1) + 's' : '0'}`;
+}
+
+// ✅ UI Food Boost (pill dedicata a sinistra: barra + secondi)
+function setFoodBoostUI(){
+  if(!foodBoostPillEl || !foodBoostBarEl || !foodBoostTimeEl) return;
+
+  const t = Math.max(0, game.foodBoostT);
+
+  if(t <= 0){
+    foodBoostPillEl.style.display = 'none';
+    foodBoostBarEl.style.width = '0%';
+    foodBoostTimeEl.textContent = '0.0s';
+    return;
+  }
+
+  foodBoostPillEl.style.display = 'flex';
+  const pct = clamp((t / FOOD_DUR) * 100, 0, 100);
+  foodBoostBarEl.style.width = pct.toFixed(1) + '%';
+  foodBoostTimeEl.textContent = t.toFixed(1) + 's';
+}
     function updateMainButton(){
       if(!mainLbl) return;
 
@@ -3812,6 +3850,10 @@ hookCamBtn(btnCamFront,'front');
       if(hpTxt) hpTxt.textContent = hpString();
       if(magTxt) magTxt.textContent = '🧲 0';
       setBoostUI();
+      if(magBarEl) magBarEl.style.width = '0%';
+if(foodBoostBarEl) foodBoostBarEl.style.width = '0%';
+if(foodBoostTimeEl) foodBoostTimeEl.textContent = '0.0s';
+if(foodBoostPillEl) foodBoostPillEl.style.display = 'none';
       
       updateFoodBoostButton();
       updateMainButton();
@@ -3895,6 +3937,7 @@ hookCamBtn(btnCamFront,'front');
 
   // attiva boost cibo
   game.foodBoostT = 10.0;
+  setFoodBoostUI();
   game.invincibleT = Math.max(game.invincibleT, 10.0);
   bubble.visible = true;
 
@@ -4382,6 +4425,7 @@ for(const mesh of segments){
   );
 
   game.magnetT = 8.0;
+  setMagnetUI();
 
   // ✅ dopo magnete: blocca spawn magneti + vita per 2x visibile
   game.noMagHeartUntil = game.runDist + MAGHEART_BLOCK_DIST;
@@ -4402,29 +4446,34 @@ for(const mesh of segments){
   }
 
   // score + HUD
-  game.score += (18 * speedMul) * dt;
+game.score += (18 * speedMul) * dt;
 
-  if(game.score > game.best){
-    game.best = Math.floor(game.score);
-    saveBest(game.best);
-  }
+if(game.score > game.best){
+  game.best = Math.floor(game.score);
+  saveBest(game.best);
+}
 
-  if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
-  if(coinsEl) coinsEl.textContent = String(game.coins);
-  if(bestEl)  bestEl.textContent  = String(game.best);
-  if(ringsEl) ringsEl.textContent = String(game.ringCount);
-  if(hpTxt)   hpTxt.textContent   = hpString();
-  if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
-  setBoostUI();
-  if(foodBoostTimeEl) foodBoostTimeEl.textContent = `${Math.max(0, game.foodBoostT).toFixed(1)}s`;
-if($('foodBoostBar')) $('foodBoostBar').style.width = `${clamp((Math.max(0, game.foodBoostT)/10)*100,0,100).toFixed(1)}%`;
+if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
+if(coinsEl) coinsEl.textContent = String(game.coins);
+if(bestEl)  bestEl.textContent  = String(game.best);
+if(ringsEl) ringsEl.textContent = String(game.ringCount);
+if(hpTxt)   hpTxt.textContent   = hpString();
 
-  if(bubble.visible){
-    bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
-  }
+// ✅ Boost UI (pill generale)
+setBoostUI();
 
-  tiltTarget *= 0.92;
-  camRoll = damp(camRoll, tiltTarget, 10, dt);
+// ✅ Magnet UI (barra + testo)
+setMagnetUI();
+
+// ✅ Food Boost UI (pill dedicata)
+setFoodBoostUI();
+
+if(bubble.visible){
+  bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
+}
+
+tiltTarget *= 0.92;
+camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
  
 
