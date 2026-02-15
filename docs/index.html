@@ -4741,7 +4741,11 @@ function updateCamera(dt, tNow){
   }
 }
 
-    let _acc = 0;
+    /* ===============================
+   ✅ LOOP + INIT (FIX: codice doppio dopo animate)
+   =============================== */
+
+let _acc = 0;
 let _last = performance.now();
 
 function animate(tNow){
@@ -4768,21 +4772,36 @@ function animate(tNow){
   requestAnimationFrame(animate);
 }
 
+// resize: camera + renderer
+window.addEventListener('resize', ()=>{
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  try{ _magicResize(); }catch{}
+}, { passive:true });
 
-      const gameplayOn  = game.started && !game.paused && !game.over;
-      const camDynamic  = gameplayOn && !game.stopped;
+// BOOT: sincronizza UI + carica modello + parte il loop
+(async function boot(){
+  try{
+    syncCamUI();
+    applyViewMode(viewMode);
+    updateMainButton();
 
-      const bothBoost = (game.foodBoostT > 0 && game.ringBoostT > 0);
-      const anyBoost  = (game.foodBoostT > 0 || game.ringBoostT > 0);
-      // ✅ kick quando parte un boost
-if(anyBoost && !_prevAnyBoost) boostShakeKick = 1.0;
-_prevAnyBoost = anyBoost;
+    refreshFoodUI();
+    setBoostUI();
+    setMagnetUI();
+    setFoodBoostUI();
+    setDebugUI();
 
-// decay kick
-boostShakeKick = damp(boostShakeKick, 0.0, 16, dt);
-
-      const fovBoost = bothBoost ? 7 : (anyBoost ? 5 : 0);
-      const zBoost   = bothBoost ? 0.9 : (anyBoost ? 0.5 : 0.0);
+    await loadRunnerModel();
+  }catch(e){
+    console.warn('boot error:', e);
+  }
+  requestAnimationFrame(animate);
+})();
 
       // ✅ FOV dinamico SOLO in FPS se fpsDynFov=true
       const useFovBoost = (viewMode === 'fps') ? fpsDynFov : true;
