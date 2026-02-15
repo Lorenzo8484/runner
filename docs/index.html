@@ -1552,9 +1552,18 @@ const rndi = (a, b) => Math.floor(rnd(a, b + 1));
 // ✨ MAGIC FLY (world → HUD)
 // =========================================================
 function worldToScreen(x,y,z){
+  // ✅ SAFE: se camera/renderer non sono pronti, evita crash
+  if(typeof camera === 'undefined' || !camera || typeof renderer === 'undefined' || !renderer){
+    return { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
+  }
+
   const v = new THREE.Vector3(x,y,z);
   v.project(camera);
-  const r = renderer.domElement.getBoundingClientRect();
+
+  const dom = renderer.domElement;
+  if(!dom) return { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
+
+  const r = dom.getBoundingClientRect();
   return {
     x: r.left + (v.x * 0.5 + 0.5) * r.width,
     y: r.top  + (-v.y * 0.5 + 0.5) * r.height
@@ -2295,38 +2304,40 @@ safeOn(dynFovToggle,'click', ()=>{
 
     // ===== Renderer / Scene =====
 const _dprCap = IS_IOS ? 1.35 : 2; // ✅ su iPhone DPR più basso = molto più fluido
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x08120b);
+scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
+
+// ✅ valori base camera dai profili
+const baseFov  = cam.front.fov;
+const baseCamZ = cam.front.dist;
+const baseCamY = cam.front.y;
+
+const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
+camera.up.set(0,1,0);
+camera.rotation.order = 'YXZ';
+
+const _dprCap = IS_IOS ? 1.35 : 2;
 const renderer = new THREE.WebGLRenderer({
-  antialias: !IS_IOS,                 // ✅ iPhone: anti-alias off (gain enorme)
+  antialias: !IS_IOS,
   powerPreference: 'high-performance',
   alpha: false,
   stencil: false,
   depth: true
 });
 
-// ✅ DPR cap
 renderer.setPixelRatio(Math.min(_dprCap, window.devicePixelRatio || 1));
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// ✅ tre.js hints
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.sortObjects = false;         // ✅ meno lavoro CPU (scene “semplice”)
+renderer.sortObjects = false;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-// ✅ evita accumulo shader warmup durante gioco
-renderer.compile(scene, camera);
-
 document.body.appendChild(renderer.domElement);
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x08120b);
-    scene.fog = IS_IOS ? new THREE.Fog(0x08120b, 26, 110) : new THREE.FogExp2(0x06110a, 0.036);
-    // ✅ FIX: valori base camera (prima erano in v10, ora li ricaviamo dai profili)
-const baseFov  = cam.front.fov;
-const baseCamZ = cam.front.dist;
-const baseCamY = cam.front.y;
-    const camera = new THREE.PerspectiveCamera(baseFov, window.innerWidth/window.innerHeight, 0.1, 320);
-    camera.up.set(0,1,0);
+// ✅ compile SOLO dopo che hai scene+camera (opzionale)
+// renderer.compile(scene, camera);
     
     // ✅ evita flip strani quando tocchi rotation dopo lookAt
 camera.rotation.order = 'YXZ';
@@ -4555,26 +4566,21 @@ camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
  
 
-    function animate(tNow){
-      let _acc = 0;
+    let _acc = 0;
 let _last = performance.now();
 
 function animate(tNow){
-  // cap dinamico: iOS prova 60, se fatica si stabilizza
-  const targetStep = IS_IOS ? (1/60) : (1/60);
-
   const dtRaw = Math.min(0.05, (tNow - _last) / 1000);
   _last = tNow;
   _acc += dtRaw;
 
-  // evita spirale della morte
   if(_acc > 0.12) _acc = 0.12;
 
-  // fai 1 update per frame max (più stabile)
+  // 1 update per frame (stabile)
   const dt = Math.min(0.030, _acc);
   _acc = 0;
 
-  // debug fps calc (come avevi)
+  // debug fps
   fpsAcc += dt; fpsN++;
   if(fpsAcc >= 0.5){
     fpsShow = fpsN / fpsAcc;
@@ -4583,9 +4589,11 @@ function animate(tNow){
 
   update(dt, tNow);
 
-  // ... (il resto della tua animate resta uguale)
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
 
-      update(dt,tNow);
+requestAnimationFrame(animate);
 
       const gameplayOn  = game.started && !game.paused && !game.over;
       const camDynamic  = gameplayOn && !game.stopped;
