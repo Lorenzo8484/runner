@@ -3446,25 +3446,41 @@ function refreshFoodUI(){
 }
 
     function setBoostUI(){
-      if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
+  if(!pillBoost || !boostBar || !boostIcon || !boostName) return;
 
-      const t = Math.max(game.foodBoostT, game.ringBoostT);
-      if(t <= 0){
-        pillBoost.style.display='none';
-        boostBar.style.width='0%';
-        return;
-      }
-      pillBoost.style.display='flex';
+  const tFood = Math.max(0, game.foodBoostT);
+  const tRing = Math.max(0, game.ringBoostT);
 
-      const both = (game.foodBoostT>0 && game.ringBoostT>0);
-      if(both){ boostIcon.textContent='🔥'; boostName.textContent='MEGA'; }
-      else if(game.foodBoostT>0){ boostIcon.textContent='🍔'; boostName.textContent='FOOD'; }
-      else { boostIcon.textContent='⭕️'; boostName.textContent='RING'; }
+  // ✅ Non mostrare la pill "FOOD": se c'è SOLO food boost, nascondi pillBoost
+  if(tFood > 0 && tRing <= 0){
+    pillBoost.style.display = 'none';
+    boostBar.style.width = '0%';
+    return;
+  }
 
-      const dur = 10.0;
-      const pct = clamp((t/dur)*100,0,100);
-      boostBar.style.width = pct.toFixed(1)+'%';
-    }
+  // Qui pillBoost si usa SOLO per RING o MEGA (ring+food)
+  const t = Math.max(tFood, tRing);
+  if(t <= 0){
+    pillBoost.style.display = 'none';
+    boostBar.style.width = '0%';
+    return;
+  }
+
+  pillBoost.style.display = 'flex';
+
+  const both = (tFood > 0 && tRing > 0);
+  if(both){
+    boostIcon.textContent = '🔥';
+    boostName.textContent = 'MEGA';
+  }else{
+    boostIcon.textContent = '⭕️';
+    boostName.textContent = 'RING';
+  }
+
+  const dur = 10.0;
+  const pct = clamp((t / dur) * 100, 0, 100);
+  boostBar.style.width = pct.toFixed(1) + '%';
+}
 
 // ✅ Durate reali dei boost
 const MAGNET_DUR = 8.0;
@@ -3852,7 +3868,6 @@ hookCamBtn(btnCamFront,'front');
       setBoostUI();
       if(magBarEl) magBarEl.style.width = '0%';
   const fb = Math.max(0, game.foodBoostT);
-  if(!_foodBoostBound) bindFoodBoostHud();
   if(foodBoostTimeEl) foodBoostTimeEl.textContent = `${fb.toFixed(3)}s`; // ✅ millisecondi
   if(foodBoostBarEl)  foodBoostBarEl.style.width  = `${clamp((fb/10)*100,0,100).toFixed(1)}%`;
 if(foodBoostPillEl) foodBoostPillEl.style.display = 'none';
@@ -4477,65 +4492,11 @@ if(bubble.visible){
 tiltTarget *= 0.92;
 camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
- /* =========================
-   FIX DOPPIA BARRA CIBO
-   - usa la PRIMA "FOOD"
-   - nasconde "Cibo"
-   - aggancia elementi tempo+barra
-   ========================= */
-let foodBoostBarEl = null;
-let _foodBoostBound = false;
-
-function bindFoodBoostHud(){
-  if(_foodBoostBound) return;
-
-  const hud = document.querySelector('.hud') || document.body;
-
-  function findRowByLabel(label){
-    const leaves = Array.from(hud.querySelectorAll('*')).filter(n =>
-      n.childElementCount === 0 &&
-      n.textContent &&
-      n.textContent.trim() === label
-    );
-    for(const n of leaves){
-      const row = n.closest('.pillFx, .card, .hudRow, .row, .boostRow, div') || n.parentElement;
-      if(row) return row;
-    }
-    return null;
-  }
-
-  const rowFood = findRowByLabel('FOOD');
-  const rowCibo = findRowByLabel('Cibo');
-
-  // nasconde la seconda riga "Cibo"
-  if(rowCibo && rowCibo !== rowFood) rowCibo.style.display = 'none';
-
-  // aggancia tempo e barra sulla riga "FOOD"
-  if(rowFood){
-    const timeNode = Array.from(rowFood.querySelectorAll('*')).find(el =>
-      el.childElementCount === 0 &&
-      el.textContent &&
-      /\d+(\.\d+)?s$/.test(el.textContent.trim())
-    );
-    if(timeNode) foodBoostTimeEl = timeNode;
-
-    const fill =
-      rowFood.querySelector('#foodBoostBar') ||
-      rowFood.querySelector('.barFill') ||
-      rowFood.querySelector('.fill') ||
-      rowFood.querySelector('.bar > div') ||
-      rowFood.querySelector('[class*="fill"]');
-
-    if(fill) foodBoostBarEl = fill;
-  }
-
-  _foodBoostBound = true;
-}
+ 
 
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
       tPrev=tNow;
-      if(!_foodBoostBound) bindFoodBoostHud();
       // debug fps calc
       fpsAcc += dt; fpsN++;
       if(fpsAcc >= 0.5){
