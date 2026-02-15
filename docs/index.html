@@ -645,6 +645,8 @@
       max-height:calc(100px * var(--menuScale));
       overflow:hidden;
       display:flex; flex-direction:column; align-items:center; gap:calc(5px * var(--menuScale));
+      justify-content:flex-end;
+      flex-direction:column-reverse;
       background:transparent; border:none; padding:0;
     }
     .foodItem{
@@ -1635,7 +1637,7 @@ function magicFly(fromWorld, toEl, opt = {}){
     const boostIcon = $('boostIcon');
     const boostName = $('boostName');
     const boostBar  = $('boostBar');
-
+    const foodBoostTimeEl = $('foodBoostTime');
     const foodStack = $('foodStack');
     const foodCountEl = $('foodCount');
 
@@ -3405,7 +3407,7 @@ function refreshFoodUI(){
   if(!foodStack || !foodCountEl) return;
 
   foodStack.innerHTML = "";
-  const show = game.foodHistory.slice(-6).reverse();
+  const show = game.foodHistory.slice(-6); // niente reverse: ora la colonna è column-reverse
   for(const emo of show){
     const d=document.createElement('div');
     d.className = 'foodItem pillFx';
@@ -4404,6 +4406,8 @@ for(const mesh of segments){
   if(hpTxt)   hpTxt.textContent   = hpString();
   if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
   setBoostUI();
+  if(foodBoostTimeEl) foodBoostTimeEl.textContent = `${Math.max(0, game.foodBoostT).toFixed(1)}s`;
+if($('foodBoostBar')) $('foodBoostBar').style.width = `${clamp((Math.max(0, game.foodBoostT)/10)*100,0,100).toFixed(1)}%`;
 
   if(bubble.visible){
     bubble.material.opacity = 0.18 + 0.06*Math.sin(tNow*0.01);
