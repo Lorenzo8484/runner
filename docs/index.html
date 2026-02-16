@@ -3344,12 +3344,13 @@ noMagHeartUntil: 0,
       vyNow: 0
     };
     
-    // ===== HOME CAMERA / INTRO =====
-const homeCam = {
-  active: true,   // all'avvio siamo in "Home"
-  intro:  false,  // quando premi START parte la curva
-  t:      0,
-  duration: 1.6   // durata animazione camera (secondi)
+    // ✅ Stato orbita in HOME (rotazione / zoom / pan)
+const homeOrbit = {
+  angle: Math.PI,     // angolo intorno al player (π = davanti, 0 = dietro)
+  radius: 2.6,        // distanza camera
+  height: 1.9,        // altezza camera
+  targetOffsetX: 0,   // pan orizzontale del punto di lookAt
+  targetOffsetY: 0    // pan verticale del punto di lookAt
 };
 
     if(bestEl) bestEl.textContent = String(game.best);
@@ -3699,21 +3700,134 @@ sfx.lane();
       if(k==='p') togglePause();
     });
 
-    let touchStart=null;
+        // ===== Swipe gioco + Orbita in HOME =====
+    let touchStart = null;
+
+    const activePointers = new Map();
+    const homeDrag = { active:false, id:null, lastX:0, lastY:0 };
+    const homePinch = {
+      active:false,
+      startDist:0,
+      startRadius:0,
+      startOffsetX:0,
+      startOffsetY:0,
+      lastMidX:0,
+      lastMidY:0
+    };
+
+    function isInHomeOrbitMode(){
+      return homeCam.active && !homeCam.intro;
+    }
+
     renderer.domElement.addEventListener('pointerdown',(e)=>{
       initAudio();
       renderer.domElement.setPointerCapture(e.pointerId);
-      touchStart={x:e.clientX,y:e.clientY,t:performance.now()};
+      activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+      if(isInHomeOrbitMode()){
+        // 🟡 HOME: 1 dito = rotazione / 2 dita = pinch+pan
+        if(activePointers.size === 1){
+          homeDrag.active = true;
+          homeDrag.id = e.pointerId;
+          homeDrag.lastX = e.clientX;
+          homeDrag.lastY = e.clientY;
+          homePinch.active = false;
+        }else if(activePointers.size === 2){
+          const vals = [...activePointers.values()];
+          const dx = vals[1].x - vals[0].x;
+          const dy = vals[1].y - vals[0].y;
+          homePinch.active = true;
+          homePinch.startDist = Math.max(1, Math.hypot(dx,dy));
+          homePinch.startRadius = homeOrbit.radius;
+          homePinch.startOffsetX = homeOrbit.targetOffsetX;
+          homePinch.startOffsetY = homeOrbit.targetOffsetY;
+          homePinch.lastMidX = (vals[0].x + vals[1].x)/2;
+          homePinch.lastMidY = (vals[0].y + vals[1].y)/2;
+          homeDrag.active = false;
+          homeDrag.id = null;
+        }
+      }else{
+        // 🎮 gioco: swipe per lane / jump / slide
+        touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
+      }
     });
+
+    renderer.domElement.addEventListener('pointermove',(e)=>{
+      if(!activePointers.has(e.pointerId)) return;
+      const p = activePointers.get(e.pointerId);
+      p.x = e.clientX;
+      p.y = e.clientY;
+
+      if(!isInHomeOrbitMode()) return;
+
+      // 🟡 1 dito → rotazione orizzontale del player
+      if(activePointers.size === 1 && homeDrag.active && homeDrag.id === e.pointerId){
+        const dx = (e.movementX ?? (e.clientX - homeDrag.lastX));
+        const rotSpeed = 0.006; // sensibilità rotazione
+        homeOrbit.angle += dx * rotSpeed;
+        homeDrag.lastX = e.clientX;
+        homeDrag.lastY = e.clientY;
+      }
+      // 🟡 2 dita → pinch (zoom) + pan (spostamento punto di lookAt)
+      else if(activePointers.size >= 2 && homePinch.active){
+        const vals = [...activePointers.values()].slice(0,2);
+        const dx = vals[1].x - vals[0].x;
+        const dy = vals[1].y - vals[0].y;
+        const dist = Math.max(1, Math.hypot(dx,dy));
+        const scale = dist / homePinch.startDist;
+
+        // pinch: più allontani le dita → zoom in (camera più vicina)
+        const minR = 1.4, maxR = 5.6;
+        homeOrbit.radius = clamp(homePinch.startRadius / scale, minR, maxR);
+
+        // pan: sposti il centro con il movimento del centro delle 2 dita
+        const midX = (vals[0].x + vals[1].x)/2;
+        const midY = (vals[0].y + vals[1].y)/2;
+        const panScale = 0.004;
+        const mdx = midX - homePinch.lastMidX;
+        const mdy = midY - homePinch.lastMidY;
+
+        homeOrbit.targetOffsetX = clamp(homeOrbit.targetOffsetX - mdx * panScale, -1.2, 1.2);
+        homeOrbit.targetOffsetY = clamp(homeOrbit.targetOffsetY + mdy * panScale, -0.8, 0.8);
+
+        homePinch.lastMidX = midX;
+        homePinch.lastMidY = midY;
+      }
+    });
+
     renderer.domElement.addEventListener('pointerup',(e)=>{
-      if(!touchStart) return;
-      const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
-      const adx=Math.abs(dx), ady=Math.abs(dy);
-      touchStart=null;
-      const min=30;
-      if(adx<min && ady<min) return;
-      if(adx>ady) moveLane(dx>0?1:-1);
-      else { if(dy<0) jump(); else slide(); }
+      try{ renderer.domElement.releasePointerCapture(e.pointerId); }catch{}
+      activePointers.delete(e.pointerId);
+
+      if(isInHomeOrbitMode()){
+        if(activePointers.size < 2) homePinch.active = false;
+        if(activePointers.size === 0){
+          homeDrag.active = false;
+          homeDrag.id = null;
+        }
+      }else{
+        // swipe gioco
+        if(!touchStart) return;
+        const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+        const adx=Math.abs(dx), ady=Math.abs(dy);
+        touchStart=null;
+        const min=30;
+        if(adx<min && ady<min) return;
+        if(adx>ady) moveLane(dx>0?1:-1);
+        else { if(dy<0) jump(); else slide(); }
+      }
+    });
+
+    renderer.domElement.addEventListener('pointercancel',(e)=>{
+      activePointers.delete(e.pointerId);
+      if(isInHomeOrbitMode()){
+        if(activePointers.size < 2) homePinch.active = false;
+        if(activePointers.size === 0){
+          homeDrag.active = false;
+          homeDrag.id = null;
+        }
+      }
+      touchStart = null;
     });
 
     // ===== View mode handling =====
@@ -3770,6 +3884,12 @@ hookCamBtn(btnCamFront,'front');
       homeCam.active = true;
       homeCam.intro  = false;
       homeCam.t      = 0;
+            // reset orbita Home
+      homeOrbit.angle = Math.PI;
+      homeOrbit.radius = 2.6;
+      homeOrbit.height = 1.9;
+      homeOrbit.targetOffsetX = 0;
+      homeOrbit.targetOffsetY = 0;
       game.lane=1;
       runnerX = lanesX[1];
       game.y=0; game.vy=0; game.jumping=false;
@@ -4562,22 +4682,23 @@ shakeY = 0;            // niente su/giù
             // ===== HOME CAMERA (Home + Intro) + CAMERA MODES =====
       let camHandledByHome = false;
 
-      if(homeCam.active){
+            if(homeCam.active){
         camera.up.set(0,1,0);
 
-        // centro del personaggio
-        const centerX = runnerPivot.position.x;
-        const centerY = 1.25;
+        // centro del personaggio (con eventuale pan)
+        const baseRunnerX = runnerPivot.position.x;
+        const centerX = baseRunnerX + homeOrbit.targetOffsetX;
+        const centerY = 1.25 + homeOrbit.targetOffsetY;
         const centerZ = 0.0;
 
         if(!homeCam.intro){
-          // ✅ HOME STATIC: camera frontale vicina (si vede tutto il personaggio)
-          const radius    = 2.4;   // distanza dalla camera
-          const camHeight = 1.9;   // altezza camera
-          const angle     = Math.PI; // davanti al player (frontale)
+          // 🟡 HOME: camera orbitale attorno al player
+          const radius    = homeOrbit.radius;
+          const camHeight = homeOrbit.height;
+          const angle     = homeOrbit.angle;
 
-          const camXHome = centerX + radius * Math.sin(angle); // ≈ centerX
-          const camZHome = centerZ + radius * Math.cos(angle); // ≈ -radius
+          const camXHome = centerX + radius * Math.sin(angle);
+          const camZHome = centerZ + radius * Math.cos(angle);
 
           camera.fov = 50;
           camera.updateProjectionMatrix();
@@ -4585,7 +4706,7 @@ shakeY = 0;            // niente su/giù
           camera.position.set(camXHome, camHeight, camZHome);
           camera.lookAt(centerX, centerY, centerZ);
         }else{
-          // ✅ INTRO: curva tipo "drone" da davanti a dietro il giocatore
+          // 🟡 INTRO: piccola curva tipo "drone" verso la view BACK
           homeCam.t += dt / homeCam.duration;
           const raw = clamp(homeCam.t, 0, 1);
           const u   = easeInOut(raw);
@@ -4599,19 +4720,20 @@ shakeY = 0;            // niente su/giù
           const lookAtYEnd  = lerp(0.35, 1.45, endFraming);
           const lookAtZEnd  = -6.5;
 
-          // parametri di partenza (Home)
-          const startRadius   = 2.6;
-          const startHeight   = 1.9;
+          // parametri di partenza = posizione che hai in HOME
+          const startRadius   = homeOrbit.radius;
+          const startHeight   = homeOrbit.height;
           const startFov      = 50;
           const startLookAtZ  = 0.0;
+          const startAngle    = homeOrbit.angle; // parte da come hai ruotato tu il player
 
           const radius    = lerp(startRadius,  endDist, u);
           const camYNow   = lerp(startHeight,  endY,   u);
           const lookAtZNow= lerp(startLookAtZ, lookAtZEnd, u);
           const fovNow    = lerp(startFov,     endFov, u);
 
-          // angolo intorno al player: π (davanti) -> 0 (dietro)
-          const angle = Math.PI * (1 - u);
+          // curva orizzontale verso la view BACK (0 rad)
+          const angle = lerp(startAngle, 0, u);
 
           const camXNow = centerX + radius * Math.sin(angle);
           const camZNow = centerZ + radius * Math.cos(angle);
@@ -4621,14 +4743,14 @@ shakeY = 0;            // niente su/giù
 
           camera.position.set(camXNow, camYNow, camZNow);
           camera.lookAt(
-            centerX * 0.35,                // leggermente verso il centro corsia
-            lerp(centerY, lookAtYEnd, u),  // sale verso il framing del BACK
+            baseRunnerX * 0.35,          // leggermente verso il centro corsia
+            lerp(centerY, lookAtYEnd, u),
             lookAtZNow
           );
 
           // quando la curva è finita → avvia il gioco normale
           if(raw >= 1){
-            startGame(); // questo spegne homeCam e fa partire la corsa
+            startGame();
           }
         }
 
