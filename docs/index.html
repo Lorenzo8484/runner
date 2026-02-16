@@ -1144,7 +1144,7 @@ canvas.blurBoost{
   </script>
 </head>
 <body>
-  <canvas id="magicCanvas"></canvas>
+
 
   <!-- ✅ HUD SINISTRA -->
 <div class="hudWrap">
@@ -3352,6 +3352,14 @@ const homeOrbit = {
   targetOffsetX: 0,   // pan orizzontale del punto di lookAt
   targetOffsetY: 0    // pan verticale del punto di lookAt
 };
+// Stato camera "Home" (orbita iniziale + intro)
+const homeCam = {
+  active: true,    // all’avvio sei in modalità Home
+  intro:  false,   // nessuna intro in corso
+  t: 0,            // progresso animazione intro
+  duration: 2.0    // durata (secondi) della curva intro
+};
+
 
     if(bestEl) bestEl.textContent = String(game.best);
 
