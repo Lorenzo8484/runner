@@ -4331,7 +4331,7 @@ if(_nowDanceActive !== _prevDanceActive){
   const lean = Math.sin(runPhase) * 0.050 * bobOn * slideOn;
 
   // durante la slide abbasso un po' il corpo per farlo sfiorare l'asfalto
-  const slideYOffset = game.sliding ? -0.14 : 0;
+  const slideYOffset = game.sliding ? -0.10 : 0;
 
   runnerCenter.position.y = 0.95 + bobY + slideYOffset;
   runnerCenter.rotation.z = lean;
