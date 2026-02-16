@@ -4393,48 +4393,69 @@ for(const mesh of segments){
     game.spawnT = rnd(0.40, 0.75);
   }
 
-  // entities scroll + turtle slide
+    // entities scroll + turtle slide
   for(let i = game.entities.length-1; i >= 0; i--){
     const e = game.entities[i];
 
+    // avanzamento lungo Z
     e.z += scroll;
     if(e.obj) e.obj.position.z = e.z;
 
-    if(e.type === 'turtle' && e.hit){
-  e.hitAge = (e.hitAge || 0) + dt;
+    // 🔥 AUTO-SLIDE un attimo prima di entrare negli anelli
+    // (così l'animazione parte leggermente in anticipo)
+    if (gameplayOn && !game.stopped && e.type === 'ring' && !e.slideStarted){
+      // player sempre a z ≈ 0; gli anelli arrivano da z negativo verso 0
+      // -> quando il ring è tra -3 e -1 è "poco prima" del contatto
+      const dz = e.z; // e.z è relativo al mondo, player è a 0
+      const sameLane = (e.lane === game.lane);
 
-  const mats = e.obj?.userData?.mats || [];
-  if(mats.length){
-    if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
-    else                 mats.forEach(m => m.color.setHex(0xff2d2d));
-  }
-
-  e.slideT = Math.max(0, e.slideT - dt);
-  e.slideV = damp(e.slideV, 0, 6.5, dt);
-
-  const prevZ = e.z;                // ✅ salva prima
-  e.z += e.slideV * dt;
-  if(e.obj) e.obj.position.z = e.z;
-  if(e.obj) e.obj.rotation.y += e.spinV * dt;
-
-  if(e.slideT > 0 && Math.abs(e.slideV) > 15){
-    spawnDust(e.obj.position.x, e.z + 0.25);
-  }
-
-  const didDestroy = turtleSmashSweep(e, prevZ, e.z);  // ✅ sweep reale
-  if(didDestroy) e.destroyedAny = true;
-
-  const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-  if(almostStopped){
-    if(!e.destroyedAny){
-      spawnTurtleExplosion(e.obj.position.x, e.z);
+      if (sameLane &&
+          dz > -3.0 && dz < -1.0 &&   // distanza davanti al player
+          !game.jumping && !game.sliding){
+        game.sliding = true;
+        game.slideT  = 0.55;          // stessa durata della slide normale
+        e.slideStarted = true;        // così non riparte mille volte
+        playSlide();                  // anima subito lo slide
+      }
     }
-    scene.remove(e.obj);
-    game.entities.splice(i,1);
-    continue;
-  }
-}
 
+    // TURTLE già colpita → scivolata + spin
+    if(e.type === 'turtle' && e.hit){
+      e.hitAge = (e.hitAge || 0) + dt;
+
+      const mats = e.obj?.userData?.mats || [];
+      if(mats.length){
+        if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
+        else                mats.forEach(m => m.color.setHex(0xff2d2d));
+      }
+
+      e.slideT = Math.max(0, e.slideT - dt);
+      e.slideV = damp(e.slideV, 0, 6.5, dt);
+
+      const prevZ = e.z;                // posizione precedente
+      e.z += e.slideV * dt;
+      if(e.obj) e.obj.position.z = e.z;
+      if(e.obj) e.obj.rotation.y += e.spinV * dt;
+
+      if(e.slideT > 0 && Math.abs(e.slideV) > 15){
+        spawnDust(e.obj.position.x, e.z + 0.25);
+      }
+
+      const didDestroy = turtleSmashSweep(e, prevZ, e.z);
+      if(didDestroy) e.destroyedAny = true;
+
+      const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+      if(almostStopped){
+        if(!e.destroyedAny){
+          spawnTurtleExplosion(e.obj.position.x, e.z);
+        }
+        scene.remove(e.obj);
+        game.entities.splice(i,1);
+        continue;
+      }
+    }
+
+    // fuori dal mondo davanti alla camera
     if(e.z > 6){
       scene.remove(e.obj);
       game.entities.splice(i,1);
