@@ -2917,14 +2917,27 @@ function updateEffects(dt){
     // ===== GLB loader + Animations =====
     const gltfLoader = new GLTFLoader();
 
-    const RUNNER_GLB_URL = './running.glb';
+        const RUNNER_GLB_URL = './running.glb';
     const ANIM_FILES = {
-      idle: ['./DwarfIdle.glb', './WarriorIdle.glb', './HappyIdle.glb'],
-      jump: './JumpOver.glb',
+      idle: [
+        './DwarfIdle.glb',
+        './WarriorIdle.glb',
+        './HappyIdle.glb'
+      ],
+      jump: [
+        './jump.glb',
+        './jump1.glb',
+        './jump2.glb'
+      ],
+      dance: [
+        './spin dance.glb',
+        './Macarena.glb',
+        './tut dance.glb'
+      ],
+      slide: './slide.glb',
       flip: './RunningForwardFlip.glb',
       kick: './SoccerKick.glb',
-      die:  './SideHitDie.glb',
-      dance:'./HipHopDance.glb'
+      die:  './SideHitDie.glb'
     };
 
     function setShadows(root){
@@ -2977,8 +2990,17 @@ function updateEffects(dt){
       return c;
     }
 
-    let runnerMixer=null;
-    let actions = { run:null, idles:[], jump:null, flip:null, kick:null, die:null, dance:null };
+        let runnerMixer=null;
+    let actions = {
+      run:   null,
+      idles: [],
+      jumps: [],
+      dances:[],
+      slide: null,
+      flip:  null,
+      kick:  null,
+      die:   null
+    };
     let mixamoHips=null, mixamoRootNode=null, headBone=null;
     let hipsBaseX=0, hipsBaseZ=0, rootBaseX=0, rootBaseZ=0;
 
@@ -3061,15 +3083,18 @@ function updateEffects(dt){
     const animState = { mode:'idle' };
     let deadSnapPending = false;
 
-    function collectAllActions(){
+        function collectAllActions(){
       const all=[];
-      if(actions.run) all.push(actions.run);
-      if(actions.jump) all.push(actions.jump);
-      if(actions.flip) all.push(actions.flip);
-      if(actions.kick) all.push(actions.kick);
-      if(actions.die)  all.push(actions.die);
-      if(actions.dance)all.push(actions.dance);
-      for(const a of actions.idles) all.push(a);
+      if(actions.run)   all.push(actions.run);
+      if(actions.slide) all.push(actions.slide);
+      if(actions.flip)  all.push(actions.flip);
+      if(actions.kick)  all.push(actions.kick);
+      if(actions.die)   all.push(actions.die);
+
+      for(const a of actions.idles)  all.push(a);
+      for(const a of actions.jumps)  all.push(a);
+      for(const a of actions.dances) all.push(a);
+
       return all;
     }
     function fadeTo(next, fade=0.18){
@@ -3086,13 +3111,14 @@ function updateEffects(dt){
         next.play();
       }catch{}
     }
-    function playRun(){
+        function playRun(){
       if(!actions.run || animState.mode==='dead') return;
       animState.mode='run';
       actions.run.setLoop(THREE.LoopRepeat, Infinity);
       actions.run.clampWhenFinished = false;
       fadeTo(actions.run, 0.12);
     }
+
     function pickRandomIdle(){
       if(!actions.idles.length || animState.mode==='dead') return;
       const a = actions.idles[rndi(0, actions.idles.length-1)];
@@ -3102,10 +3128,12 @@ function updateEffects(dt){
       animState.mode='idle';
       fadeTo(a, 0.20);
     }
+
     function startIdleRandom(){
       if(animState.mode==='dead') return;
       pickRandomIdle();
     }
+
     function playOneShot(action, fade=0.08){
       if(!action || animState.mode==='dead') return;
       animState.mode='oneShot';
@@ -3116,12 +3144,29 @@ function updateEffects(dt){
       action.setEffectiveWeight(1.0);
       fadeTo(action, fade);
     }
+
+    // 🔹 JUMP: animazione casuale tra jump.glb / jump1.glb / jump2.glb
+    function playRandomJump(){
+      if(!actions.jumps.length || animState.mode==='dead') return;
+      const a = actions.jumps[rndi(0, actions.jumps.length-1)];
+      playOneShot(a, 0.08);
+    }
+
+    // 🔹 DANCE: ogni volta animazione casuale tra le 3 dance
     function playDance(){
-      if(!actions.dance || animState.mode==='dead') return;
+      if(!actions.dances.length || animState.mode==='dead') return;
       animState.mode='dance';
-      actions.dance.setLoop(THREE.LoopRepeat, Infinity);
-      actions.dance.clampWhenFinished = false;
-      fadeTo(actions.dance, 0.18);
+      const a = actions.dances[rndi(0, actions.dances.length-1)];
+      a.reset();
+      a.setLoop(THREE.LoopRepeat, Infinity);
+      a.clampWhenFinished = false;
+      fadeTo(a, 0.18);
+    }
+
+    // 🔹 SLIDE: animazione slide.glb (one-shot)
+    function playSlide(){
+      if(!actions.slide || animState.mode==='dead') return;
+      playOneShot(actions.slide, 0.10);
     }
 
     function snapRunnerToGround(){
@@ -3176,16 +3221,32 @@ function updateEffects(dt){
         });
       });
     }
-    async function loadAllAnimations(){
+        async function loadAllAnimations(){
+      // idle multipli
       for(const u of ANIM_FILES.idle){
         const c = await loadAnimClip(u);
         if(c) actions.idles.push(c);
       }
-      actions.jump  = await loadAnimClip(ANIM_FILES.jump);
+
+      // jump multipli
+      for(const u of ANIM_FILES.jump){
+        const c = await loadAnimClip(u);
+        if(c) actions.jumps.push(c);
+      }
+
+      // dance multiple
+      for(const u of ANIM_FILES.dance){
+        const c = await loadAnimClip(u);
+        if(c) actions.dances.push(c);
+      }
+
+      // slide singola
+      actions.slide = await loadAnimClip(ANIM_FILES.slide);
+
+      // altre
       actions.flip  = await loadAnimClip(ANIM_FILES.flip);
       actions.kick  = await loadAnimClip(ANIM_FILES.kick);
       actions.die   = await loadAnimClip(ANIM_FILES.die);
-      actions.dance = await loadAnimClip(ANIM_FILES.dance);
     }
 
     async function loadRunnerModel(){
@@ -3233,7 +3294,7 @@ function updateEffects(dt){
 
           await loadAllAnimations();
 
-          const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
+                    const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
           const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
           const fixedRun = runClip ? stripRootMotion(runClip) : null;
           if(fixedRun){
@@ -3243,15 +3304,32 @@ function updateEffects(dt){
             actions.run.setEffectiveTimeScale(1.0);
           }
 
+          // idle → array di AnimationAction
           const idleActions = [];
-          for(const clip of actions.idles) idleActions.push(runnerMixer.clipAction(clip));
+          for(const clip of actions.idles){
+            idleActions.push(runnerMixer.clipAction(clip));
+          }
           actions.idles = idleActions;
 
-          if(actions.jump)  actions.jump  = runnerMixer.clipAction(actions.jump);
+          // jump → array di AnimationAction
+          const jumpActions = [];
+          for(const clip of actions.jumps){
+            jumpActions.push(runnerMixer.clipAction(clip));
+          }
+          actions.jumps = jumpActions;
+
+          // dance → array di AnimationAction
+          const danceActions = [];
+          for(const clip of actions.dances){
+            danceActions.push(runnerMixer.clipAction(clip));
+          }
+          actions.dances = danceActions;
+
+          // slide singola
+          if(actions.slide) actions.slide = runnerMixer.clipAction(actions.slide);
           if(actions.flip)  actions.flip  = runnerMixer.clipAction(actions.flip);
           if(actions.kick)  actions.kick  = runnerMixer.clipAction(actions.kick);
           if(actions.die)   actions.die   = runnerMixer.clipAction(actions.die);
-          if(actions.dance) actions.dance = runnerMixer.clipAction(actions.dance);
 
           runnerMixer.addEventListener('finished', ()=>{
             if(animState.mode==='dead'){
@@ -3679,7 +3757,7 @@ fpsLaneKick = clamp(fpsLaneKick + dir * 0.55, -1.2, 1.2);
 sfx.lane();
     }
 
-    function jump(){
+        function jump(){
       if(game.over||game.paused) return;
       if(!game.started) return;
       if(game.stopped) return;
@@ -3687,16 +3765,20 @@ sfx.lane();
         game.jumping=true;
         game.vy = -7.8;
         sfx.jump();
+        // animazione jump casuale
+        playRandomJump();
       }
     }
 
-    function slide(){
+        function slide(){
       if(game.over||game.paused) return;
       if(!game.started) return;
       if(game.stopped) return;
       game.sliding=true;
       game.slideT=0.55;
       sfx.slide();
+      // usa la stessa animazione slide
+      playSlide();
     }
 
     window.addEventListener('keydown', (e)=>{
@@ -4426,13 +4508,16 @@ for(const mesh of segments){
   for (let i = game.entities.length - 1; i >= 0; i--) {
     const e = game.entities[i];
 
-    if (e.type === 'ring') {
+        if (e.type === 'ring') {
       if (!collideEntity(e)) continue;
 
       game.ringCount += 1;
       scene.remove(e.obj);
       game.entities.splice(i, 1);
       sfx.ring();
+
+      // 🔹 ogni volta che prendi un anello → animazione slide.glb
+      playSlide();
 
       if (game.ringCount >= 50) {
         game.ringBoostT = 10.0;
