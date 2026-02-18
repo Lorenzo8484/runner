@@ -4422,59 +4422,74 @@ for(const mesh of segments){
     game.spawnT = rnd(0.40, 0.75);
   }
 
-    // entities scroll + turtle slide
-  for(let i = game.entities.length-1; i >= 0; i--){
-    const e = game.entities[i];
+        // entities scroll + turtle slide
+    for (let i = game.entities.length - 1; i >= 0; i--) {
+      const e = game.entities[i];
 
-    // avanzamento lungo Z
-    e.z += scroll;
-    if(e.obj) e.obj.position.z = e.z;
+      // avanzamento lungo Z
+      e.z += scroll;
+      if (e.obj) e.obj.position.z = e.z;
 
-    }
+      // TURTLE già colpita → scivolata + spin
+      if (e.type === 'turtle' && e.hit) {
+        // tempo da quando è stata colpita
+        e.hitAge = (e.hitAge || 0) + dt;
 
-    // TURTLE già colpita → scivolata + spin
-    if(e.type === 'turtle' && e.hit){
-      e.hitAge = (e.hitAge || 0) + dt;
-
-      const mats = e.obj?.userData?.mats || [];
-      if(mats.length){
-        if(e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
-        else                mats.forEach(m => m.color.setHex(0xff2d2d));
-      }
-
-      e.slideT = Math.max(0, e.slideT - dt);
-      e.slideV = damp(e.slideV, 0, 6.5, dt);
-
-      const prevZ = e.z;                // posizione precedente
-      e.z += e.slideV * dt;
-      if(e.obj) e.obj.position.z = e.z;
-      if(e.obj) e.obj.rotation.y += e.spinV * dt;
-
-      if(e.slideT > 0 && Math.abs(e.slideV) > 15){
-        spawnDust(e.obj.position.x, e.z + 0.25);
-      }
-
-      const didDestroy = turtleSmashSweep(e, prevZ, e.z);
-      if(didDestroy) e.destroyedAny = true;
-
-      const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-      if(almostStopped){
-        if(!e.destroyedAny){
-          spawnTurtleExplosion(e.obj.position.x, e.z);
+        // cambio colore shell (giallo → rosso)
+        const mats = (e.obj && e.obj.userData && e.obj.userData.mats)
+          ? e.obj.userData.mats
+          : [];
+        if (mats.length) {
+          if (e.hitAge < 0.10) {
+            mats.forEach(m => m.color.setHex(0xffd400)); // lampo giallo
+          } else {
+            mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso finché scivola
+          }
         }
+
+        // countdown scivolata + frenata
+        e.slideT = Math.max(0, e.slideT - dt);
+        e.slideV = damp(e.slideV, 0, 6.5, dt);
+
+        // avanzamento extra dovuto alla scivolata
+        const prevZ = e.z;
+        e.z += e.slideV * dt;
+
+        if (e.obj) {
+          e.obj.position.z = e.z;
+          // piccolo spin sull'asse Y
+          e.obj.rotation.y += e.spinV * dt;
+        }
+
+        // polvere solo mentre scivola veloce
+        if (e.slideT > 0 && Math.abs(e.slideV) > 15) {
+          spawnDust(e.obj.position.x, e.z + 0.25);
+        }
+
+        // la shell che scivola rompe pickup/ostacoli
+        const didDestroy = turtleSmashSweep(e, prevZ, e.z);
+        if (didDestroy) e.destroyedAny = true;
+
+        // quando è quasi ferma → sparisce
+        const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+        if (almostStopped) {
+          if (!e.destroyedAny) {
+            // se non ha colpito niente, almeno un piccolo effetto
+            spawnTurtleExplosion(e.obj.position.x, e.z);
+          }
+          scene.remove(e.obj);
+          game.entities.splice(i, 1);
+          continue; // passa alla prossima entity
+        }
+      }
+
+      // fuori dal mondo davanti alla camera
+      if (e.z > 6) {
         scene.remove(e.obj);
-        game.entities.splice(i,1);
+        game.entities.splice(i, 1);
         continue;
       }
     }
-
-    // fuori dal mondo davanti alla camera
-    if(e.z > 6){
-      scene.remove(e.obj);
-      game.entities.splice(i,1);
-      continue;
-    }
-  }
   
   
   
