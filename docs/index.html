@@ -3332,10 +3332,14 @@ function updateEffects(dt){
           }
           actions.dances = danceActions;
 
-          // slide singola (velocizzata)
+          // 🔹 SLIDE: root-motion tolta + leggermente velocizzata
 if(actions.slide){
-  actions.slide = runnerMixer.clipAction(actions.slide);
-  actions.slide.timeScale = 1.6;   // 🔥 velocità 1.6x (puoi provare 1.4 / 1.8 / 2.0)
+  // togliamo il movimento in avanti dal clip (così scivola sul posto)
+  const slideInPlace = stripRootMotion(actions.slide);
+  actions.slide = runnerMixer.clipAction(slideInPlace);
+
+  // puoi cambiare 1.5 se la vuoi più lenta/veloce
+  actions.slide.timeScale = 1.5;
 }
 
 if(actions.flip)  actions.flip  = runnerMixer.clipAction(actions.flip);
@@ -4405,22 +4409,6 @@ for(const mesh of segments){
     e.z += scroll;
     if(e.obj) e.obj.position.z = e.z;
 
-    // 🔥 AUTO-SLIDE un attimo prima di entrare negli anelli
-    // (così l'animazione parte leggermente in anticipo)
-    if (gameplayOn && !game.stopped && e.type === 'ring' && !e.slideStarted){
-      // player sempre a z ≈ 0; gli anelli arrivano da z negativo verso 0
-      // -> quando il ring è tra -3 e -1 è "poco prima" del contatto
-      const dz = e.z; // e.z è relativo al mondo, player è a 0
-      const sameLane = (e.lane === game.lane);
-
-      if (sameLane &&
-          dz > -6.0 && dz < -2.0 &&   // distanza davanti al player
-          !game.jumping && !game.sliding){
-        game.sliding = true;
-        game.slideT  = 0.55;          // stessa durata della slide normale
-        e.slideStarted = true;        // così non riparte mille volte
-        playSlide();                  // anima subito lo slide
-      }
     }
 
     // TURTLE già colpita → scivolata + spin
