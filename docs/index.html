@@ -2969,33 +2969,43 @@ function updateEffects(dt){
       });
     }
     function stripRootMotion(clip){
-      const c = clip.clone();
-      const TH = 0.02;
-      try{
-        for(const t of c.tracks){
-          const name = (t.name || '').toLowerCase();
-          if(!name.endsWith('.position')) continue;
-          const v = t.values;
-          if(!v || v.length < 6) continue;
+  if(!clip || !clip.tracks) return clip;
 
-          let minX=Infinity, maxX=-Infinity, minZ=Infinity, maxZ=-Infinity;
-          for(let i=0;i<v.length;i+=3){
-            const x=v[i], z=v[i+2];
-            if(x<minX) minX=x; if(x>maxX) maxX=x;
-            if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
-          }
-          const rangeX=maxX-minX, rangeZ=maxZ-minZ;
-          if(rangeX>TH || rangeZ>TH){
-            const baseX=v[0], baseZ=v[2];
-            for(let i=0;i<v.length;i+=3){
-              v[i]=baseX;
-              v[i+2]=baseZ;
-            }
-          }
-        }
-      }catch(err){ console.warn('stripRootMotion fallback:', err); }
-      return c;
+  const c = clip.clone();
+
+  // consideriamo root / hips / armature come ossa "di root"
+  const ROOT_HINTS = ['hips', 'root', 'armature', 'mixamorig'];
+
+  try{
+    for(const t of c.tracks){
+      // ci interessano solo le tracce di posizione
+      if(!t.name || !t.name.endsWith('.position')) continue;
+
+      const nodeName = t.name.split('.')[0].toLowerCase();
+      const isRootish = ROOT_HINTS.some(h => nodeName.includes(h));
+      if(!isRootish) continue; // lasciamo stare mani, piedi, ecc.
+
+      const v = t.values;
+      if(!v || v.length < 6) continue;
+
+      // prendiamo la posizione di partenza del root
+      const baseX = v[0];
+      const baseZ = v[2];
+
+      // blocchiamo TUTTO il movimento in X e Z
+      // (lasciamo in pace la Y per salti / alzate)
+      for(let i = 0; i < v.length; i += 3){
+        v[i]   = baseX; // X
+        // v[i+1] = v[i+1]; // Y invariata
+        v[i+2] = baseZ; // Z
+      }
     }
+  }catch(err){
+    console.warn('stripRootMotion error:', err);
+  }
+
+  return c;
+}
 
         let runnerMixer=null;
     let actions = {
