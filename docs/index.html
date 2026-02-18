@@ -4179,13 +4179,28 @@ hookCamBtn(btnCamFront,'front');
       game.lives = Math.max(0, game.lives-1);
       sfx.hit();
       if(game.lives<=0){
-        game.over=true;
-        game.started=false;
-        game.paused=false;
-        setStop(true);
-        playDie();
-        updateMainButton();
-      }
+
+  // ✅ forza subito a terra (niente “morto sospeso”)
+  game.y = 0;
+  game.vy = 0;
+  game.jumping = false;
+  game.sliding = false;
+  game.slideT = 0;
+
+  runnerPivot.position.y = 0;
+  runnerCenter.position.y = 0.95;
+
+  // ✅ snap immediato del modello sulla strada
+  snapRunnerToGround();
+
+  game.over=true;
+  game.started=false;
+  game.paused=false;
+  setStop(true);
+
+  playDie();
+  updateMainButton();
+}
     }
     function addLife(){
       game.lives = Math.min(game.maxLives, game.lives+1);
@@ -4602,7 +4617,7 @@ for(const mesh of segments){
       sfx.ring();
 
       // 🔹 ogni volta che prendi un anello → animazione slide.glb
-      playSlide();
+      //playSlide();
 
       if (game.ringCount >= 50) {
         game.ringBoostT = 10.0;
