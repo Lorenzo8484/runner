@@ -2974,33 +2974,18 @@ function updateEffects(dt){
       });
     }
     function stripRootMotion(clip){
+  // ✅ HARD MODE: rimuove TUTTE le tracce di posizione
+  // così QUALSIASI clip (jump/slide ecc) non può mai "trascinare" avanti il modello
   const c = clip.clone();
-
-  // ✅ STRICT: qualunque movimento di posizione viene annullato (X/Y/Z)
-  // così jump/slide restano sul posto e l'altezza la gestisce la tua fisica (game.y)
   try{
-    for(const t of c.tracks){
+    c.tracks = (c.tracks || []).filter(t=>{
       const name = (t.name || '').toLowerCase();
-      if(!name.endsWith('.position')) continue;
-
-      const v = t.values;
-      if(!v || v.length < 3) continue;
-
-      // blocca la posizione al primo keyframe
-      const baseX = v[0];
-      const baseY = v[1];
-      const baseZ = v[2];
-
-      for(let i=0;i<v.length;i+=3){
-        v[i]   = baseX; // X
-        v[i+1] = baseY; // Y
-        v[i+2] = baseZ; // Z
-      }
-    }
+      // elimina ogni track di posizione (root motion e simili)
+      return !name.endsWith('.position');
+    });
   }catch(err){
-    console.warn('stripRootMotion strict error:', err);
+    console.warn('stripRootMotion HARD error:', err);
   }
-
   return c;
 }
 
