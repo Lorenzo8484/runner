@@ -3332,11 +3332,15 @@ function updateEffects(dt){
           }
           actions.dances = danceActions;
 
-          // slide singola
-          if(actions.slide) actions.slide = runnerMixer.clipAction(actions.slide);
-          if(actions.flip)  actions.flip  = runnerMixer.clipAction(actions.flip);
-          if(actions.kick)  actions.kick  = runnerMixer.clipAction(actions.kick);
-          if(actions.die)   actions.die   = runnerMixer.clipAction(actions.die);
+          // slide singola (velocizzata)
+if(actions.slide){
+  actions.slide = runnerMixer.clipAction(actions.slide);
+  actions.slide.timeScale = 1.6;   // 🔥 velocità 1.6x (puoi provare 1.4 / 1.8 / 2.0)
+}
+
+if(actions.flip)  actions.flip  = runnerMixer.clipAction(actions.flip);
+if(actions.kick)  actions.kick  = runnerMixer.clipAction(actions.kick);
+if(actions.die)   actions.die   = runnerMixer.clipAction(actions.die);
 
           runnerMixer.addEventListener('finished', ()=>{
             if(animState.mode==='dead'){
