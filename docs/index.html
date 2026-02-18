@@ -4341,13 +4341,25 @@ if(_nowDanceActive !== _prevDanceActive){
     bubble.visible=true;
   }
 
-  const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
+    const foodMul = (game.foodBoostT>0) ? 2.30 : 1.0;
   const ringMul = (game.ringBoostT>0) ? 3.00 : 1.0;
   const both = (game.foodBoostT>0 && game.ringBoostT>0);
   const crazyMul = both ? 1.03 : 1.0;
 
-  const speedMul = foodMul * ringMul * crazyMul;
-  const speed = game.baseSpeed * speedMul * trafficMul;
+  // 🔹 Fattore in base allo stato animazione:
+  //    - run / oneShot (salto, scivolata)  => 1 (continua ad andare avanti)
+  //    - dance / idle / dead               => 0 (rimane fermo)
+  let animForward = 1;
+  if (
+    animState.mode === 'dance' ||
+    animState.mode === 'idle'  ||
+    animState.mode === 'dead'
+  ){
+    animForward = 0;
+  }
+
+  const speedMul = foodMul * ringMul * crazyMul * animForward;
+  const speed    = game.baseSpeed * speedMul * trafficMul;
 
   // bob corsa
   runPhase += dt * (9.5 + (speedMul-1.0)*2.0);
