@@ -4276,6 +4276,12 @@ if (runnerPivot) {
       mixamoRootNode.position.x = rootBaseX;
       mixamoRootNode.position.z = rootBaseZ;
     }
+    // ✅ HARD: se qualche clip animasse il root del modello/armature, lo annulliamo qui
+const _rootObj = runnerModel.children[0];
+if(_rootObj){
+  _rootObj.position.x = 0;
+  _rootObj.position.z = 0;
+}
   }
 
   // Effetti
