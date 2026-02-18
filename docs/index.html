@@ -2974,39 +2974,31 @@ function updateEffects(dt){
       });
     }
     function stripRootMotion(clip){
-  if(!clip || !clip.tracks) return clip;
-
   const c = clip.clone();
 
-  // consideriamo root / hips / armature come ossa "di root"
-  const ROOT_HINTS = ['hips', 'root', 'armature', 'mixamorig'];
-
+  // ✅ STRICT: qualunque movimento di posizione viene annullato (X/Y/Z)
+  // così jump/slide restano sul posto e l'altezza la gestisce la tua fisica (game.y)
   try{
     for(const t of c.tracks){
-      // ci interessano solo le tracce di posizione
-      if(!t.name || !t.name.endsWith('.position')) continue;
-
-      const nodeName = t.name.split('.')[0].toLowerCase();
-      const isRootish = ROOT_HINTS.some(h => nodeName.includes(h));
-      if(!isRootish) continue; // lasciamo stare mani, piedi, ecc.
+      const name = (t.name || '').toLowerCase();
+      if(!name.endsWith('.position')) continue;
 
       const v = t.values;
-      if(!v || v.length < 6) continue;
+      if(!v || v.length < 3) continue;
 
-      // prendiamo la posizione di partenza del root
+      // blocca la posizione al primo keyframe
       const baseX = v[0];
+      const baseY = v[1];
       const baseZ = v[2];
 
-      // blocchiamo TUTTO il movimento in X e Z
-      // (lasciamo in pace la Y per salti / alzate)
-      for(let i = 0; i < v.length; i += 3){
+      for(let i=0;i<v.length;i+=3){
         v[i]   = baseX; // X
-        // v[i+1] = v[i+1]; // Y invariata
+        v[i+1] = baseY; // Y
         v[i+2] = baseZ; // Z
       }
     }
   }catch(err){
-    console.warn('stripRootMotion error:', err);
+    console.warn('stripRootMotion strict error:', err);
   }
 
   return c;
