@@ -3218,16 +3218,30 @@ function updateEffects(dt){
     }
 
     async function loadAnimClip(url){
-      return new Promise((resolve)=>{
-        gltfLoader.load(url, (gltf)=>{
-          const clips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
-          resolve(clips[0] || null);
-        }, undefined, ()=>{
-          console.warn('Anim load error:', url);
-          resolve(null);
-        });
-      });
-    }
+  return new Promise((resolve)=>{
+    gltfLoader.load(
+      url,
+      (gltf)=>{
+        const clips = (gltf.animations || []).filter(
+          c => c && c.tracks && c.tracks.length
+        );
+        let clip = clips[0] || null;
+
+        // ✅ qui togliamo SEMPRE il root-motion
+        if (clip) {
+          clip = stripRootMotion(clip);
+        }
+
+        resolve(clip);
+      },
+      undefined,
+      ()=>{
+        console.warn('Anim load error:', url);
+        resolve(null);
+      }
+    );
+  });
+}
         async function loadAllAnimations(){
       // idle multipli
       for(const u of ANIM_FILES.idle){
@@ -3301,50 +3315,57 @@ function updateEffects(dt){
 
           await loadAllAnimations();
 
-                    const baseClips = (gltf.animations||[]).filter(c=>c && c.tracks && c.tracks.length);
-          const runClip = baseClips.find(c => (c.name||'').toLowerCase().includes('run')) || baseClips[0];
+                              const baseClips = (gltf.animations || []).filter(
+            c => c && c.tracks && c.tracks.length
+          );
+          const runClip = baseClips.find(
+            c => (c.name || '').toLowerCase().includes('run')
+          ) || baseClips[0];
+
+          // ✅ anche la corsa viene forzata “sul posto”
           const fixedRun = runClip ? stripRootMotion(runClip) : null;
-          if(fixedRun){
+          if (fixedRun) {
             actions.run = runnerMixer.clipAction(fixedRun);
             actions.run.enabled = true;
             actions.run.setEffectiveWeight(1.0);
             actions.run.setEffectiveTimeScale(1.0);
           }
 
-          // idle → array di AnimationAction
+          // ✅ tutti i clip già passano da stripRootMotion in loadAnimClip,
+          // qui li trasformiamo solo in AnimationAction
           const idleActions = [];
-          for(const clip of actions.idles){
+          for (const clip of actions.idles) {
             idleActions.push(runnerMixer.clipAction(clip));
           }
           actions.idles = idleActions;
 
-          // jump → array di AnimationAction
           const jumpActions = [];
-          for(const clip of actions.jumps){
+          for (const clip of actions.jumps) {
             jumpActions.push(runnerMixer.clipAction(clip));
           }
           actions.jumps = jumpActions;
 
-          // dance → array di AnimationAction
           const danceActions = [];
-          for(const clip of actions.dances){
+          for (const clip of actions.dances) {
             danceActions.push(runnerMixer.clipAction(clip));
           }
           actions.dances = danceActions;
 
-          // 🔹 SLIDE: root-motion tolta + leggermente velocizzata
-if(actions.slide){
-  // togliamo il movimento in avanti dal clip (così scivola sul posto)
-  const slideInPlace = stripRootMotion(actions.slide);
-  actions.slide = runnerMixer.clipAction(slideInPlace);
+          // SLIDE (clip già "in place" grazie a loadAnimClip)
+          if (actions.slide) {
+            actions.slide = runnerMixer.clipAction(actions.slide);
+            actions.slide.timeScale = 1.5; // velocità slide
+          }
 
-  // puoi cambiare 1.5 se la vuoi più lenta/veloce
-  actions.slide.timeScale = 1.5;
-}
-
-if(actions.flip)  actions.flip  = runnerMixer.clipAction(actions.flip);
-if(actions.kick)  actions.kick  = runnerMixer.clipAction(actions.kick);
-if(actions.die)   actions.die   = runnerMixer.clipAction(actions.die);
+          if (actions.flip) {
+            actions.flip = runnerMixer.clipAction(actions.flip);
+          }
+          if (actions.kick) {
+            actions.kick = runnerMixer.clipAction(actions.kick);
+          }
+          if (actions.die) {
+            actions.die = runnerMixer.clipAction(actions.die);
+          }
 
           runnerMixer.addEventListener('finished', ()=>{
             if(animState.mode==='dead'){
