@@ -4197,7 +4197,7 @@ hookCamBtn(btnCamFront,'front');
   game.started=false;
   game.paused=false;
   setStop(true);
-
+  setTimeout(()=>snapRunnerToGround(), 0);
   playDie();
   updateMainButton();
 }
