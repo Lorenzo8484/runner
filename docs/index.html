@@ -1823,6 +1823,11 @@ let _activeSlider = null;
 let _activeRow = null;
 let _activeCard = null;
 let _fmtActive = (v)=>String(v);
+// === STATO TASTI PER MOVIMENTO MANUALE ===
+let keyForward = false;   // freccia SU o W
+let keyBackward = false;  // freccia GIÙ o S
+let keyLeft = false;      // freccia SINISTRA o A
+let keyRight = false;     // freccia DESTRA o D
 
 function setFocus(on){
   focusActive = !!on;
@@ -4280,6 +4285,11 @@ let shTimer = 0;
   if(runnerMixer){
     runnerMixer.timeScale = 1.0;
     runnerMixer.update(dt);
+    
+    // 🔥 BLOCCO ROOT MOTION FORZATO (definitivo)
+if (runnerPivot) {
+  runnerPivot.position.z = 0;
+}
 
     if(mixamoHips){
       mixamoHips.position.x = hipsBaseX;
@@ -4752,6 +4762,56 @@ for(const mesh of segments){
   camRoll = damp(camRoll, tiltTarget, 10, dt);
 }
  
+// === INPUT TASTIERA (stato continuo) ===
+window.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      keyForward = true;
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keyBackward = true;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      keyLeft = true;
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keyRight = true;
+      break;
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      keyForward = false;
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      keyBackward = false;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      keyLeft = false;
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      keyRight = false;
+      break;
+  }
+});
 
     function animate(tNow){
       const dt=Math.min(0.030,(tNow-tPrev)/1000);
