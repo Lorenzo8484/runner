@@ -4346,10 +4346,17 @@ if(_nowDanceActive !== _prevDanceActive){
   const both = (game.foodBoostT>0 && game.ringBoostT>0);
   const crazyMul = both ? 1.03 : 1.0;
 
-    // 🔹 Fattore in base allo stato animazione:
-  //    - run            => 1 (il gioco va avanti)
-  //    - jump / slide / die / dance / idle / flip / kick (oneShot) => 0 (resta fermo)
-  const animForward = (animState.mode === 'run') ? 1 : 0;
+      // 🔹 Fattore in base allo stato animazione:
+  //    - run / oneShot (salto, scivolata)  => 1 (continua ad andare avanti)
+  //    - dance / idle / dead               => 0 (rimane fermo)
+  let animForward = 1;
+  if (
+    animState.mode === 'dance' ||
+    animState.mode === 'idle'  ||
+    animState.mode === 'dead'
+  ){
+    animForward = 0;
+  }
 
   const speedMul = foodMul * ringMul * crazyMul * animForward;
   const speed    = game.baseSpeed * speedMul * trafficMul;
