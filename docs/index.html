@@ -2974,18 +2974,49 @@ function updateEffects(dt){
       });
     }
     function stripRootMotion(clip){
-  // ✅ HARD MODE: rimuove TUTTE le tracce di posizione
-  // così QUALSIASI clip (jump/slide ecc) non può mai "trascinare" avanti il modello
   const c = clip.clone();
+
+  // soglie: X/Z piccoli ok, Y lo teniamo ancora più stretto
+  const TH_XZ = 0.02;
+  const TH_Y  = 0.02;
+
   try{
-    c.tracks = (c.tracks || []).filter(t=>{
+    for(const t of c.tracks){
       const name = (t.name || '').toLowerCase();
-      // elimina ogni track di posizione (root motion e simili)
-      return !name.endsWith('.position');
-    });
+      if(!name.endsWith('.position')) continue;
+
+      const v = t.values;
+      if(!v || v.length < 6) continue;
+
+      let minX=Infinity, maxX=-Infinity;
+      let minY=Infinity, maxY=-Infinity;
+      let minZ=Infinity, maxZ=-Infinity;
+
+      for(let i=0;i<v.length;i+=3){
+        const x=v[i], y=v[i+1], z=v[i+2];
+        if(x<minX) minX=x; if(x>maxX) maxX=x;
+        if(y<minY) minY=y; if(y>maxY) maxY=y;
+        if(z<minZ) minZ=z; if(z>maxZ) maxZ=z;
+      }
+
+      const rangeX = maxX-minX;
+      const rangeY = maxY-minY;
+      const rangeZ = maxZ-minZ;
+
+      // ✅ se il track sposta la root (anche solo in Y), lo blocchiamo
+      if(rangeX>TH_XZ || rangeZ>TH_XZ || rangeY>TH_Y){
+        const baseX=v[0], baseY=v[1], baseZ=v[2];
+        for(let i=0;i<v.length;i+=3){
+          v[i]   = baseX;
+          v[i+1] = baseY;
+          v[i+2] = baseZ;
+        }
+      }
+    }
   }catch(err){
-    console.warn('stripRootMotion HARD error:', err);
+    console.warn('stripRootMotion fallback:', err);
   }
+
   return c;
 }
 
