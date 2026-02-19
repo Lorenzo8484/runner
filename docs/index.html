@@ -3395,9 +3395,9 @@ actions.jumps = jumpActions;
 
           // SLIDE (clip già "in place" grazie a loadAnimClip)
           if (actions.slide) {
-            actions.slide = runnerMixer.clipAction(actions.slide);
-            actions.slide.timeScale = 1.4; // velocità slide
-          }
+  actions.slide = runnerMixer.clipAction(actions.slide);
+  actions.slide.timeScale = 1.75; // +25% rispetto a 1.4 (1.4 * 1.25)
+}
 
           if (actions.flip) {
             actions.flip = runnerMixer.clipAction(actions.flip);
