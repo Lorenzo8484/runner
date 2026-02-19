@@ -4729,8 +4729,9 @@ function spawnMonkeyCar(){
 
   const obj = makeMonkeyCar();
 
-  // ✅ PARTE DA DIETRO (Z positivo) e poi “ti supera”
-  const z0 = 45 + rnd(0, 18);
+  // ✅ COERENTE col gioco: tutti gli oggetti “arrivano da davanti” (Z negativo)
+  // così la vedi e passa verso camera (Z cresce con scroll)
+  const z0 = -85 - rnd(0, 25);
 
   obj.position.set(lanesX[3], 0.02, z0);
   obj.castShadow = true;
@@ -4746,7 +4747,6 @@ function spawnMonkeyCar(){
     dead: false
   });
 
-  // ✅ sicurezza: se qualche bug la duplica, pulisci
   purgeDuplicateCars();
 }
 
@@ -4760,7 +4760,7 @@ function despawnMonkeyCar(){
   }
 }
 
-function updateMonkeyCar(e, dt, scroll, tNow){
+function updateMonkeyCar(e, dt, scroll){
   // se finisce il food boost -> sparisce
   if(game.foodBoostT <= 0 || e.dead){
     scene.remove(e.obj);
@@ -4769,41 +4769,31 @@ function updateMonkeyCar(e, dt, scroll, tNow){
     return;
   }
 
-  // +20% speed rispetto al boost scroll
   // evade => +20% extra per 1s
   const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
   e.evadeT = Math.max(0, e.evadeT - dt);
 
-  // ✅ VUOLE ANDARE “AVANTI” (verso Z negativo) per superarti.
-// Il loop generale fa già: e.z += scroll (spinge tutto verso camera).
-// Qui sottraiamo PIÙ di scroll così il risultato netto va verso -Z.
-e.z -= scroll * (1.25 + evadeExtra);   // 25% più veloce del player (supero)
-  // NB: il loop generale aggiunge già scroll; qui aggiungiamo SOLO l’extra
+  // ✅ si muove verso la camera come tutti gli entity (Z aumenta)
+  // 1.25 = 25% più veloce del mondo (effetto “ti supera”)
+  e.z += scroll * (1.25 + evadeExtra);
 
-  // animazioni comiche
+  // zigzag piccolo ma resta corsia emergenza
+  e.weave += dt * (2.8 + evadeExtra*2.0);
+  const wx = Math.sin(e.weave) * (0.14 + evadeExtra*0.10);
+
+  e.obj.position.x = lanesX[3] + wx;
+  e.obj.position.z = e.z;
+
+  // animazioni scimmia
   const ud = e.obj.userData;
   if(ud){
     ud.t += dt;
 
     // ruote
-    const wv = (scroll/dt) * 0.12;
+    const wv = (scroll / Math.max(dt, 0.0001)) * 0.12;
     for(const w of ud.wheels) w.rotation.x += wv * dt;
 
-    // weave (piccolo zigzag, resta corsia emergenza)
-    e.weave += dt * (2.8 + evadeExtra*2.0);
-    const wx = Math.sin(e.weave) * (0.14 + evadeExtra*0.10);
-    e.obj.position.x = lanesX[3] + wx;
-    e.obj.position.z = e.z;
-
-// ✅ quando è molto avanti (Z molto negativo), la rimuovi
-if(e.z < -95){
-  scene.remove(e.obj);
-  const idx = game.entities.indexOf(e);
-  if(idx>=0) game.entities.splice(idx,1);
-  return;
-}
-
-    // scimmia: linguaccia + orecchie
+    // linguaccia / orecchie
     const tongueF = 0.55 + 0.45*Math.sin(ud.t*10.0);
     ud.tongue.scale.y = tongueF;
 
@@ -4811,11 +4801,11 @@ if(e.z < -95){
     ud.earL.scale.y = earPull;
     ud.earR.scale.y = 1.0/earPull;
 
-    // campanella glow pulse
+    // glow
     ud.bell.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
   }
 
-  // se arriva troppo vicino al player -> via (non deve “rompere” la corsa)
+  // ✅ cleanup SOLO quando passa la camera (stesso criterio degli altri entity)
   if(e.z > 8){
     scene.remove(e.obj);
     const idx = game.entities.indexOf(e);
@@ -5334,6 +5324,12 @@ for(const mesh of segments){
         // entities scroll + turtle slide
     for (let i = game.entities.length - 1; i >= 0; i--) {
       const e = game.entities[i];
+      
+      // ✅ monkey car update dedicato
+if(e.type === 'monkeyCar'){
+  updateMonkeyCar(e, dt, scroll);
+  continue;
+}
 
       // avanzamento lungo Z
       e.z += scroll;
