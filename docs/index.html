@@ -2639,6 +2639,46 @@ function spawnObstacleVisual(){
   box.receiveShadow = true;
   return box;
 }
+
+// =========================================================
+// 🚗 CAR (semplice) - corsia emergenza (lane 3)
+// =========================================================
+function makeTrafficCar(){
+  const g = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.95, 0.28, 1.45),
+    new THREE.MeshStandardMaterial({ color:0x5aa0ff, roughness:0.45, metalness:0.05 })
+  );
+  body.position.y = 0.18;
+  body.castShadow = true; body.receiveShadow = true;
+  g.add(body);
+
+  const cab = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.24, 0.62),
+    new THREE.MeshStandardMaterial({ color:0x0b1830, roughness:0.25, metalness:0.05 })
+  );
+  cab.position.set(0, 0.34, -0.08);
+  cab.castShadow = true; cab.receiveShadow = true;
+  g.add(cab);
+
+  const wMat = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.85, metalness:0.05 });
+  function wheel(x,z){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.12,14), wMat);
+    w.rotation.z = Math.PI/2;
+    w.position.set(x, 0.12, z);
+    w.castShadow = true; w.receiveShadow = true;
+    g.add(w);
+    return w;
+  }
+  const w1 = wheel(-0.36,  0.48);
+  const w2 = wheel( 0.36,  0.48);
+  const w3 = wheel(-0.36, -0.48);
+  const w4 = wheel( 0.36, -0.48);
+
+  g.userData = { wheels:[w1,w2,w3,w4] };
+  return g;
+}
     function makeTurtle(){
   const g = new THREE.Group();
   const shell = new THREE.Mesh(
@@ -3701,6 +3741,52 @@ if(game._foodPop){
     }
 
     // ===== Spawn =====
+
+// =========================================================
+// 🚗 TRAFFIC CAR (dietro → avanza su corsia emergenza)
+// - arriva da dietro (z molto negativo) e "spinge" avanti
+// - velocità relativa: +20% rispetto al player
+// =========================================================
+function trafficCarAlive(){
+  for(const e of game.entities){
+    if(e && e.type === 'trafficCar') return e;
+  }
+  return null;
+}
+
+function spawnTrafficCar(){
+  if(trafficCarAlive()) return;              // 1 sola alla volta
+  if(!game.started || game.paused || game.over || game.stopped) return;
+
+  const obj = makeTrafficCar();
+
+  // parte MOLTO dietro e arriva in corsia emergenza (lane 3)
+  const z0 = -85 - rnd(0, 25);
+  obj.position.set(lanesX[3], 0.02, z0);
+  obj.castShadow = true;
+  scene.add(obj);
+
+  game.entities.push({
+    type:'trafficCar',
+    lane:3,
+    z:z0,
+    obj,
+    t:0
+  });
+}
+
+function despawnTrafficCar(){
+  for(let i=game.entities.length-1;i>=0;i--){
+    const e = game.entities[i];
+    if(e && e.type === 'trafficCar'){
+      scene.remove(e.obj);
+      game.entities.splice(i,1);
+    }
+  }
+}
+
+// chiamala ogni tanto (es: ogni 7–12 sec)
+let trafficCarTimer = 4.0;
     const TURTLE_VIS_Z = 70;
     // “distanza visibile” usata per blocco spawn (2x)
 const VISIBLE_ROAD_DIST = TURTLE_VIS_Z;        // 70 (coerente col tuo tuning)
@@ -5188,6 +5274,43 @@ for(const mesh of segments){
       // avanzamento lungo Z
       e.z += scroll;
       if (e.obj) e.obj.position.z = e.z;
+      
+      // =========================================================
+// 🚗 TRAFFIC CAR UPDATE
+// =========================================================
+trafficCarTimer -= dt;
+if(trafficCarTimer <= 0){
+  spawnTrafficCar();
+  trafficCarTimer = rnd(7.0, 12.0);
+}
+
+const traffic = trafficCarAlive();
+if(traffic){
+  // speed player (world units/s): è lo scroll/dt
+  const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
+
+  // la car deve essere +20% più veloce del player
+  const carSpeed = playerSpeed * 1.20;
+
+  // movimento avanti (verso z positivo) indipendente dallo scroll
+  traffic.z += carSpeed * dt;
+
+  // posizione X fissa in emergenza
+  traffic.obj.position.x = lanesX[3];
+  traffic.obj.position.z = traffic.z;
+
+  // ruote
+  const ud = traffic.obj.userData;
+  if(ud && ud.wheels){
+    const wv = carSpeed * 0.55;
+    for(const w of ud.wheels) w.rotation.x += wv * dt;
+  }
+
+  // se supera il player → la togli (passata)
+  if(traffic.z > 10){
+    despawnTrafficCar();
+  }
+}
       
             // ===== MONKEY CAR (extra speed + gestures) =====
       if(e.type === 'monkeyCar'){
