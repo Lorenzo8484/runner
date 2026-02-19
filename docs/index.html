@@ -3382,7 +3382,7 @@ const ONE_SHOT_RETURN_EARLY = 0.18; // prova 0.12–0.22
           const jumpActions = [];
 for (const clip of actions.jumps) {
   const a = runnerMixer.clipAction(clip);
-  a.timeScale = 1.4; // +40% jump
+  a.timeScale = 1.75; // +40% jump
   jumpActions.push(a);
 }
 actions.jumps = jumpActions;
