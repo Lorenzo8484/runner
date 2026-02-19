@@ -3113,7 +3113,8 @@ function updateEffects(dt){
     const animState = {
   mode: 'idle',
   oneShotAction: null,
-  oneShotEnd: 0
+  oneShotEnd: 0,
+  deadSnapPending: false
 };
 
 // torna a RUN un po' prima della fine del clip (secondi)
@@ -3230,7 +3231,7 @@ const ONE_SHOT_RETURN_EARLY = 0.18; // prova 0.12–0.22
     function playDie(){
       if(!actions.die) return;
       animState.mode='dead';
-      deadSnapPending = true;
+      animState.deadSnapPending = true;
       actions.die.reset();
       actions.die.setLoop(THREE.LoopOnce, 1);
       actions.die.clampWhenFinished = true;
@@ -3240,7 +3241,7 @@ const ONE_SHOT_RETURN_EARLY = 0.18; // prova 0.12–0.22
     /* ✅ FIX RESTART: reset totale delle animazioni (esce da "dead") */
     function resetAnimationsToIdle(){
       animState.mode = 'idle';
-      deadSnapPending = false;
+      animState.deadSnapPending = false;
       const all = collectAllActions();
       for(const a of all){
         if(!a) continue;
@@ -3410,12 +3411,12 @@ actions.jumps = jumpActions;
 
           runnerMixer.addEventListener('finished', ()=>{
             if(animState.mode==='dead'){
-              if(deadSnapPending){
-                deadSnapPending = false;
-                snapRunnerToGround();
-              }
-              return;
-            }
+  if(animState.deadSnapPending){
+    animState.deadSnapPending = false;
+    snapRunnerToGround();
+  }
+  return;
+}
             if(animState.mode==='oneShot'){
               if(game.started && !game.stopped && !game.paused && !game.over) playRun();
               else startIdleRandom();
