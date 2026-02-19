@@ -3110,8 +3110,14 @@ function updateEffects(dt){
       });
     }
 
-    const animState = { mode:'idle' };
-    let deadSnapPending = false;
+    const animState = {
+  mode: 'idle',
+  oneShotAction: null,
+  oneShotEnd: 0
+};
+
+// torna a RUN un po' prima della fine del clip (secondi)
+const ONE_SHOT_RETURN_EARLY = 0.18; // prova 0.12–0.22
 
         function collectAllActions(){
       const all=[];
@@ -3127,20 +3133,22 @@ function updateEffects(dt){
 
       return all;
     }
-    function fadeTo(next, fade=0.18){
-      if(!next) return;
-      const all = collectAllActions();
-      for(const a of all){
-        if(a && a !== next){ try{ a.fadeOut(fade); }catch{} }
-      }
-      try{
-        next.reset();
-        next.enabled = true;
-        next.setEffectiveWeight(1.0);
-        next.fadeIn(fade);
-        next.play();
-      }catch{}
+    function fadeTo(next, fade=0.08){
+  if(!next) return;
+  const all = collectAllActions();
+  for(const a of all){
+    if(a && a !== next){
+      try{ a.fadeOut(fade); }catch{}
     }
+  }
+  try{
+    next.reset();
+    next.enabled = true;
+    next.setEffectiveWeight(1.0);
+    next.fadeIn(fade);
+    next.play();
+  }catch{}
+}
         function playRun(){
       if(!actions.run || animState.mode==='dead') return;
       animState.mode='run';
@@ -3164,16 +3172,24 @@ function updateEffects(dt){
       pickRandomIdle();
     }
 
-    function playOneShot(action, fade=0.08){
-      if(!action || animState.mode==='dead') return;
-      animState.mode='oneShot';
-      action.reset();
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.enabled = true;
-      action.setEffectiveWeight(1.0);
-      fadeTo(action, fade);
-    }
+    function playOneShot(action, fade=0.05){
+  if(!action || animState.mode==='dead') return;
+
+  animState.mode = 'oneShot';
+  animState.oneShotAction = action;
+
+  action.reset();
+  action.setLoop(THREE.LoopOnce, 1);
+  action.clampWhenFinished = true;
+  action.enabled = true;
+  action.setEffectiveWeight(1.0);
+
+  // ✅ rientro anticipato
+  const dur = action.getClip ? (action.getClip()?.duration || 0) : 0;
+  animState.oneShotEnd = Math.max(0, dur - ONE_SHOT_RETURN_EARLY);
+
+  fadeTo(action, fade);
+}
 
     // 🔹 JUMP: animazione casuale tra jump.glb / jump1.glb / jump2.glb
     function playRandomJump(){
@@ -4310,6 +4326,17 @@ let shTimer = 0;
   if(runnerMixer){
     runnerMixer.timeScale = 1.0;
     runnerMixer.update(dt);
+    
+      // ✅ rientro anticipato da oneShot (jump/slide) per più reattività
+  if(animState.mode === 'oneShot' && animState.oneShotAction){
+    const a = animState.oneShotAction;
+    if(a.time >= animState.oneShotEnd){
+      animState.oneShotAction = null;
+
+      if(game.started && !game.stopped && !game.paused && !game.over) playRun();
+      else startIdleRandom();
+    }
+  }
     
     // 🔥 BLOCCO ROOT MOTION FORZATO (definitivo)
 if (runnerPivot) {
