@@ -3363,10 +3363,12 @@ function updateEffects(dt){
           actions.idles = idleActions;
 
           const jumpActions = [];
-          for (const clip of actions.jumps) {
-            jumpActions.push(runnerMixer.clipAction(clip));
-          }
-          actions.jumps = jumpActions;
+for (const clip of actions.jumps) {
+  const a = runnerMixer.clipAction(clip);
+  a.timeScale = 1.4; // +40% jump
+  jumpActions.push(a);
+}
+actions.jumps = jumpActions;
 
           const danceActions = [];
           for (const clip of actions.dances) {
@@ -3377,7 +3379,7 @@ function updateEffects(dt){
           // SLIDE (clip già "in place" grazie a loadAnimClip)
           if (actions.slide) {
             actions.slide = runnerMixer.clipAction(actions.slide);
-            actions.slide.timeScale = 1.5; // velocità slide
+            actions.slide.timeScale = 1.4; // velocità slide
           }
 
           if (actions.flip) {
