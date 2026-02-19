@@ -37,6 +37,16 @@
   pointer-events: none;
   z-index: 9996;
 }
+
+/* ✅ CANVAS per traiettoria bullets (overlay leggero) */
+#aimCanvas{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9995;
+}
     /* =========================================================
        PILL FX
        ========================================================= */
@@ -1145,6 +1155,11 @@ canvas.blurBoost{
 </head>
 <body>
 
+  <!-- overlay FX (già usato da magicFly) -->
+  <canvas id="magicCanvas"></canvas>
+
+  <!-- overlay traiettoria + mira bullets -->
+  <canvas id="aimCanvas"></canvas>
 
   <!-- ✅ HUD SINISTRA -->
 <div class="hudWrap">
@@ -1345,6 +1360,17 @@ canvas.blurBoost{
 
 <!-- Start / Dance / Boost -->
 <div class="rightStack">
+  
+    <!-- ✅ BULLETS (sopra BOOST) -->
+  <div class="boostRow" id="bulletsRow" style="display:none;">
+    <button class="miniBtn pillFx" id="btnBulletsCount" type="button" aria-label="Bullets disponibili">
+      <span class="miniLbl" id="bulletsCountLbl">5</span>
+    </button>
+
+    <button class="bigBtn pillFx" id="btnBullets" type="button">
+      <span class="centerLbl" id="bulletsLbl">BULLETS</span>
+    </button>
+  </div>
 
   <!-- ✅ BOOST (sopra Avvia) -->
   <div class="boostRow" id="boostRow" style="display:none;">
@@ -1650,6 +1676,12 @@ function magicFly(fromWorld, toEl, opt = {}){
     const btnSettings = $('btnSettings');
     const btnFoodBoost = $('btnFoodBoost');
 const foodBoostLbl = $('foodBoostLbl');
+// ===== UI: Bullets =====
+const bulletsRow       = $('bulletsRow');
+const btnBulletsCount  = $('btnBulletsCount');
+const bulletsCountLbl  = $('bulletsCountLbl');
+const btnBullets       = $('btnBullets');
+const bulletsLbl       = $('bulletsLbl');
 
 const boostRow = $('boostRow');
 const btnBoostCount = $('btnBoostCount');
@@ -1696,6 +1728,8 @@ function setMagicLevel(el, level){
 ensureMagic(btnBoostCount);
 ensureMagic(btnFoodBoost);
 ensureMagic(btnDance);
+ensureMagic(btnBulletsCount);
+ensureMagic(btnBullets);
 
     // Camera buttons
     const btnCamBack  = $('btnCamBack');
@@ -3469,6 +3503,11 @@ actions.jumps = jumpActions;
       foodCount:0,
       foodHistory:[],
       foodBoostCharges: 0,
+      
+      // ===== BULLETS / MONKEY CAR =====
+bullets: 5,              // ✅ per ora fisso 5
+projectiles: [],         // bullet attivi (mesh + vel)
+monkeyCarId: null,       // id (indice) logico: 1 car alla volta
 
       invincibleT:0,
       foodBoostT:0,
@@ -3609,6 +3648,23 @@ if(game._foodPop){
         boostBar.style.width='0%';
         return;
       }
+      
+        // ===== bullets UI (visibile durante boost) =====
+  updateBulletsUI();
+
+  // ===== monkey car (solo durante FOOD boost) =====
+  if(game.foodBoostT > 0){
+    spawnMonkeyCar();
+  }else{
+    // se finisce boost -> via car + mira
+    despawnMonkeyCar();
+    if(aimState.active || aimState.pending) {
+      aimState.active = false; aimState.pending = false; aimState.pointerId = null;
+      if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+      aimState.holdTimer = null;
+      clearAimOverlay();
+    }
+  }
       pillBoost.style.display='flex';
 
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -3923,9 +3979,29 @@ sfx.lane();
           homeDrag.active = false;
           homeDrag.id = null;
         }
-      }else{
+            }else{
         // 🎮 gioco: swipe per lane / jump / slide
         touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
+
+        // 🎯 bullets aim: HOLD (non rompe swipe: parte solo se non ti muovi troppo)
+        const canAim = canUseBulletsNow() && (game.foodBoostT > 0) && (game.bullets > 0) && !!monkeyCarAlive();
+        if(canAim){
+          aimState.pending = true;
+          aimState.active = false;
+          aimState.pointerId = e.pointerId;
+          aimState.startX = e.clientX; aimState.startY = e.clientY;
+          aimState.curX   = e.clientX; aimState.curY   = e.clientY;
+
+          if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+          aimState.holdTimer = setTimeout(()=>{
+            if(aimState.pending && aimState.pointerId === e.pointerId){
+              aimState.pending = false;
+              aimState.active = true;
+              // micro sfx di “aggancio”
+              try{ sfx.magnet(); }catch{}
+            }
+          }, 140);
+        }
       }
     });
 
@@ -3935,7 +4011,29 @@ sfx.lane();
       p.x = e.clientX;
       p.y = e.clientY;
 
-      if(!isInHomeOrbitMode()) return;
+            if(!isInHomeOrbitMode()){
+        // se stiamo facendo aim (pending o active), gestiamo qui
+        if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
+          aimState.curX = e.clientX;
+          aimState.curY = e.clientY;
+
+          // se stai ancora “pending” e ti muovi tanto -> annulla aim e lascia swipe
+          const dx = e.clientX - aimState.startX;
+          const dy = e.clientY - aimState.startY;
+          if(aimState.pending && (dx*dx + dy*dy) > (22*22)){
+            aimState.pending = false;
+            if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+            aimState.holdTimer = null;
+            clearAimOverlay();
+          }
+
+          // se aim attivo, disegna traiettoria
+          if(aimState.active){
+            drawAimOverlay(aimState.curX, aimState.curY);
+          }
+        }
+        return;
+      }
 
       // 🟡 1 dito → rotazione orizzontale del player
       if(activePointers.size === 1 && homeDrag.active && homeDrag.id === e.pointerId){
@@ -4290,6 +4388,576 @@ let _prevAnyBoost = false;      // per rilevare start boost
 let shX = 0, shY = 0;
 let shTX = 0, shTY = 0;
 let shTimer = 0;
+
+// =========================================================
+// 🚗🐵 MONKEY CAR + BULLETS (boost food)
+// - appare in corsia emergenza (lane 3) mentre food boost attivo
+// - car speed = +20% rispetto allo scroll; evade = +20% extra per 1s
+// - hold: traiettoria visibile; release: sparo bullet
+// - hit: esplosione + drop: 50 rings, 2 magnet, 10 food, 2 vite su 3 corsie
+// =========================================================
+
+// canvas overlay (aim)
+const aimCanvas = document.getElementById('aimCanvas');
+const aimCtx = aimCanvas ? aimCanvas.getContext('2d') : null;
+let aimDpr = window.devicePixelRatio || 1;
+
+function resizeAimCanvas(){
+  if(!aimCanvas || !aimCtx) return;
+  aimDpr = window.devicePixelRatio || 1;
+  aimCanvas.width  = Math.floor(window.innerWidth * aimDpr);
+  aimCanvas.height = Math.floor(window.innerHeight * aimDpr);
+  aimCanvas.style.width  = window.innerWidth + 'px';
+  aimCanvas.style.height = window.innerHeight + 'px';
+}
+window.addEventListener('resize', resizeAimCanvas);
+resizeAimCanvas();
+
+const aimState = {
+  pending:false,
+  active:false,
+  pointerId:null,
+  startX:0, startY:0,
+  curX:0, curY:0,
+  holdTimer: null
+};
+
+function clearAimOverlay(){
+  if(!aimCtx || !aimCanvas) return;
+  aimCtx.setTransform(1,0,0,1,0,0);
+  aimCtx.clearRect(0,0,aimCanvas.width, aimCanvas.height);
+}
+
+function canUseBulletsNow(){
+  // bullets UI si mostra su boost food o ring, ma la car appare solo su FOOD
+  const anyBoost = (game.foodBoostT > 0 || game.ringBoostT > 0);
+  return (anyBoost && game.started && !game.paused && !game.over && !game.stopped);
+}
+function monkeyCarAlive(){
+  // trova l’entity monkeyCar se esiste
+  for(const e of game.entities){
+    if(e && e.type === 'monkeyCar') return e;
+  }
+  return null;
+}
+
+function updateBulletsUI(){
+  if(!bulletsRow || !bulletsCountLbl || !btnBullets || !bulletsLbl) return;
+
+  const show = canUseBulletsNow();
+  bulletsRow.style.display = show ? 'flex' : 'none';
+
+  bulletsCountLbl.textContent = String(game.bullets);
+
+  const car = monkeyCarAlive();
+  const enabled = show && game.bullets > 0 && !!car;
+
+  // “BULLETS” è un indicatore figo: quando c’è la car diventa magico
+  bulletsLbl.textContent = 'BULLETS';
+
+  btnBullets.classList.toggle('isDisabled', !enabled);
+  btnBulletsCount.classList.toggle('isDisabled', !enabled);
+
+  // magia intensità
+  if(!show || game.bullets <= 0){
+    setMagicLevel(btnBulletsCount, 0);
+    setMagicLevel(btnBullets, 0);
+  }else{
+    // conteggio: più bullets => più glow
+    if(game.bullets >= 5) setMagicLevel(btnBulletsCount, 5);
+    else if(game.bullets >= 3) setMagicLevel(btnBulletsCount, 2);
+    else setMagicLevel(btnBulletsCount, 1);
+
+    // pulsante: glow “med” solo quando la car è presente
+    setMagicLevel(btnBullets, car ? 'med' : 0);
+  }
+}
+
+// texture glow (riusa _explTex se esiste, altrimenti fallback)
+function makeGlowTex(size=256){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const g=c.getContext('2d');
+  g.clearRect(0,0,size,size);
+  const grd=g.createRadialGradient(size/2,size/2,0, size/2,size/2,size*0.5);
+  grd.addColorStop(0,'rgba(255,255,255,0.95)');
+  grd.addColorStop(0.25,'rgba(160,240,255,0.55)');
+  grd.addColorStop(0.60,'rgba(80,180,255,0.20)');
+  grd.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=grd; g.fillRect(0,0,size,size);
+  const t=new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const _bulletGlowTex = (typeof _explTex !== 'undefined' && _explTex) ? _explTex : makeGlowTex(256);
+
+// ===== MONKEY CAR VISUAL =====
+function makeMonkeyCar(){
+  const g = new THREE.Group();
+
+  // body
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.95, 0.28, 1.30),
+    new THREE.MeshStandardMaterial({
+      color:0x2fd0ff, roughness:0.35, metalness:0.05,
+      emissive:0x003344, emissiveIntensity:0.25
+    })
+  );
+  body.position.y = 0.18;
+  body.castShadow = true; body.receiveShadow = true;
+  g.add(body);
+
+  // cabin
+  const cab = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.26, 0.55),
+    new THREE.MeshStandardMaterial({
+      color:0x0b1830, roughness:0.25, metalness:0.05,
+      emissive:0x071025, emissiveIntensity:0.35
+    })
+  );
+  cab.position.set(0, 0.34, -0.05);
+  cab.castShadow = true; cab.receiveShadow = true;
+  g.add(cab);
+
+  // wheels
+  const wMat = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.85, metalness:0.05 });
+  function wheel(x,z){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.12,14), wMat);
+    w.rotation.z = Math.PI/2;
+    w.position.set(x, 0.12, z);
+    w.castShadow = true; w.receiveShadow = true;
+    g.add(w);
+    return w;
+  }
+  const w1 = wheel(-0.36,  0.45);
+  const w2 = wheel( 0.36,  0.45);
+  const w3 = wheel(-0.36, -0.45);
+  const w4 = wheel( 0.36, -0.45);
+
+  // monkey (semplice ma “espressiva”)
+  const monkey = new THREE.Group();
+  monkey.position.set(0, 0.54, 0.25);
+
+  const face = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 18, 14),
+    new THREE.MeshStandardMaterial({
+      color:0x7a4d2a, roughness:0.85, metalness:0.02,
+      emissive:0x2a1206, emissiveIntensity:0.15
+    })
+  );
+  face.castShadow = true;
+  monkey.add(face);
+
+  const muzzle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 16, 12),
+    new THREE.MeshStandardMaterial({ color:0xb17b4a, roughness:0.9, metalness:0.0 })
+  );
+  muzzle.position.set(0, -0.03, 0.12);
+  monkey.add(muzzle);
+
+  // ears (tira orecchie)
+  const earMat = new THREE.MeshStandardMaterial({ color:0x7a4d2a, roughness:0.9, metalness:0.0 });
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10), earMat);
+  const earR = earL.clone();
+  earL.position.set(-0.20, 0.02, 0.02);
+  earR.position.set( 0.20, 0.02, 0.02);
+  monkey.add(earL, earR);
+
+  // tongue (linguaccia)
+  const tongue = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.10, 0.16),
+    new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.8, metalness:0.0, side:THREE.DoubleSide })
+  );
+  tongue.position.set(0, -0.11, 0.20);
+  tongue.rotation.x = -0.15;
+  monkey.add(tongue);
+
+  // bell “campane” (glow)
+  const bell = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_bulletGlowTex, transparent:true, opacity:0.55, depthWrite:false, blending:THREE.AdditiveBlending
+  }));
+  bell.scale.set(0.35,0.35,1);
+  bell.position.set(0.26, 0.14, 0.05);
+  monkey.add(bell);
+
+  g.add(monkey);
+
+  g.userData = {
+    wheels:[w1,w2,w3,w4],
+    monkey, tongue, earL, earR, bell,
+    t: 0
+  };
+
+  return g;
+}
+
+function spawnMonkeyCar(){
+  // appare solo durante FOOD boost
+  if(game.foodBoostT <= 0) return;
+  if(monkeyCarAlive()) return;
+
+  const obj = makeMonkeyCar();
+  const z0 = -55 - rnd(0, 10);
+  obj.position.set(lanesX[3], 0.02, z0);
+  obj.castShadow = true;
+  scene.add(obj);
+
+  game.entities.push({
+    type:'monkeyCar',
+    lane:3,
+    z:z0,
+    obj,
+    evadeT: 0,
+    weave: rnd(0, Math.PI*2),
+    dead: false
+  });
+}
+
+function despawnMonkeyCar(){
+  for(let i=game.entities.length-1;i>=0;i--){
+    const e = game.entities[i];
+    if(e.type==='monkeyCar'){
+      scene.remove(e.obj);
+      game.entities.splice(i,1);
+    }
+  }
+}
+
+function updateMonkeyCar(e, dt, scroll, tNow){
+  // se finisce il food boost -> sparisce
+  if(game.foodBoostT <= 0 || e.dead){
+    scene.remove(e.obj);
+    const idx = game.entities.indexOf(e);
+    if(idx>=0) game.entities.splice(idx,1);
+    return;
+  }
+
+  // +20% speed rispetto al boost scroll
+  // evade => +20% extra per 1s
+  const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
+  e.evadeT = Math.max(0, e.evadeT - dt);
+
+  e.z += scroll * (0.20 + evadeExtra); // aggiunta al normale scroll (che fai nel loop)
+  // NB: il loop generale aggiunge già scroll; qui aggiungiamo SOLO l’extra
+
+  // animazioni comiche
+  const ud = e.obj.userData;
+  if(ud){
+    ud.t += dt;
+
+    // ruote
+    const wv = (scroll/dt) * 0.12;
+    for(const w of ud.wheels) w.rotation.x += wv * dt;
+
+    // weave (piccolo zigzag, resta corsia emergenza)
+    e.weave += dt * (2.8 + evadeExtra*2.0);
+    const wx = Math.sin(e.weave) * (0.14 + evadeExtra*0.10);
+    e.obj.position.x = lanesX[3] + wx;
+
+    // scimmia: linguaccia + orecchie
+    const tongueF = 0.55 + 0.45*Math.sin(ud.t*10.0);
+    ud.tongue.scale.y = tongueF;
+
+    const earPull = 0.70 + 0.30*Math.sin(ud.t*7.5);
+    ud.earL.scale.y = earPull;
+    ud.earR.scale.y = 1.0/earPull;
+
+    // campanella glow pulse
+    ud.bell.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
+  }
+
+  // se arriva troppo vicino al player -> via (non deve “rompere” la corsa)
+  if(e.z > 8){
+    scene.remove(e.obj);
+    const idx = game.entities.indexOf(e);
+    if(idx>=0) game.entities.splice(idx,1);
+  }
+}
+
+// ===== BULLET VISUAL =====
+function makeBullet(){
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_bulletGlowTex,
+    transparent:true,
+    opacity:0.95,
+    depthWrite:false,
+    blending:THREE.AdditiveBlending
+  }));
+  spr.scale.set(0.22,0.22,1);
+  spr.renderOrder = 999;
+  return spr;
+}
+
+function tryEvadeOnShot(carEnt){
+  if(!carEnt) return;
+  if(carEnt.evadeT > 0.2) return;
+
+  // evade “furba”: quasi sempre prova
+  if(Math.random() < 0.85){
+    carEnt.evadeT = 1.0;
+    // mini sfx campanella
+    try{ sfx.lane(); }catch{}
+  }
+}
+
+function fireBullet(){
+  const car = monkeyCarAlive();
+  if(!car) return;
+  if(game.bullets <= 0) return;
+
+  // consuma bullet
+  game.bullets = Math.max(0, game.bullets - 1);
+  updateBulletsUI();
+
+  // evade possibile (subito quando spari)
+  tryEvadeOnShot(car);
+
+  // start posizione player
+  const px = runnerPivot.position.x;
+  const py = runnerPivot.position.y + (game.sliding ? 0.55 : 0.95);
+  const pz = 0.15;
+
+  // target = car (leggero offset verso “cabina”)
+  const tx = car.obj.position.x;
+  const ty = 0.55;
+  const tz = car.z;
+
+  const dir = new THREE.Vector3(tx-px, ty-py, tz-pz);
+  const len = Math.max(0.001, dir.length());
+  dir.multiplyScalar(1/len);
+
+  // velocità bullet
+  const BULLET_SPEED = 36.0;
+
+  const obj = makeBullet();
+  obj.position.set(px, py, pz);
+  scene.add(obj);
+
+  game.projectiles.push({
+    obj,
+    x:px, y:py, z:pz,
+    vx:dir.x * BULLET_SPEED,
+    vy:dir.y * BULLET_SPEED,
+    vz:dir.z * BULLET_SPEED,
+    life: 2.2
+  });
+
+  // sfx
+  try{ sfx.coin(); }catch{}
+}
+
+function spawnMonkeyExplosion(x, z){
+  // riuso un FX già tuo (flash+shock) se vuoi: qui facciamo un burst “più grosso”
+  try{ spawnTurtleExplosion(x, z); }catch{}
+
+  // extra sparkles (2 sprite)
+  for(let i=0;i<2;i++){
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map:_bulletGlowTex, transparent:true, opacity:0.75, depthWrite:false, blending:THREE.AdditiveBlending
+    }));
+    s.position.set(x + rnd(-0.25,0.25), 0.65 + rnd(0,0.25), z + rnd(-0.15,0.15));
+    const ss = 1.4 + i*0.8;
+    s.scale.set(ss, ss, 1);
+    s.renderOrder = 999;
+    scene.add(s);
+    game.effects.push({
+      type:'dust',
+      spr:s,
+      t:0,
+      life: 0.30 + i*0.10,
+      s0: ss,
+      sGrow: 2.2,
+      maxOp: 0.70,
+      vx: rnd(-0.2,0.2),
+      vy: rnd(0.9,1.4),
+      vz: rnd(-0.2,0.2)
+    });
+  }
+}
+
+function spawnLootFromMonkey(zBase){
+  // crea lista loot: 50 rings, 2 magnet, 10 food, 2 hearts
+  const loot = [];
+  for(let i=0;i<50;i++) loot.push({t:'ring'});
+  for(let i=0;i<2;i++)  loot.push({t:'magnet'});
+  for(let i=0;i<10;i++) loot.push({t:'food'});
+  for(let i=0;i<2;i++)  loot.push({t:'heart'});
+
+  // shuffle
+  for(let i=loot.length-1;i>0;i--){
+    const j = (Math.random()*(i+1))|0;
+    const tmp = loot[i]; loot[i]=loot[j]; loot[j]=tmp;
+  }
+
+  // distribuzione su 3 corsie, z “a ventaglio” davanti
+  let z = zBase - 6.0;
+  for(let i=0;i<loot.length;i++){
+    const lane = rndi(0,2);
+    z -= rnd(0.28, 0.55); // mix
+    const zz = z - rnd(0, 10.0); // più sparso
+    const x  = lanesX[lane];
+
+    if(loot[i].t === 'ring'){
+      const ring = makeVerticalRing();
+      ring.position.set(x, 0.55, zz);
+      scene.add(ring);
+      game.entities.push({ type:'ring', lane, z:zz, obj:ring, slideStarted:false });
+      continue;
+    }
+
+    if(loot[i].t === 'magnet'){
+      const spr = makeEmojiSprite(MAGNET);
+      spr.position.set(x, 1.15, zz);
+      spr.scale.set(0.92,0.92,1);
+      scene.add(spr);
+      game.entities.push({ type:'magnet', lane, z:zz, obj:spr });
+      continue;
+    }
+
+    if(loot[i].t === 'heart'){
+      const spr = makeEmojiSprite(HEART);
+      spr.position.set(x, 1.15, zz);
+      spr.scale.set(0.96,0.96,1);
+      scene.add(spr);
+      game.entities.push({ type:'heart', lane, z:zz, obj:spr });
+      continue;
+    }
+
+    if(loot[i].t === 'food'){
+      const emo = FOOD[rndi(0,FOOD.length-1)];
+      const spr = makeEmojiSprite(emo);
+      spr.position.set(x, 1.15, zz);
+      spr.scale.set(0.86,0.86,1);
+      scene.add(spr);
+      game.entities.push({ type:'food', lane, z:zz, obj:spr, emo });
+      continue;
+    }
+  }
+}
+
+function updateProjectiles(dt, scroll){
+  const car = monkeyCarAlive();
+
+  for(let i=game.projectiles.length-1;i>=0;i--){
+    const p = game.projectiles[i];
+    p.life -= dt;
+
+    // come le entity: subisce lo scroll + la propria velocità
+    p.z += scroll + (p.vz * dt);
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    if(p.obj){
+      p.obj.position.set(p.x, p.y, p.z);
+      p.obj.material.opacity = 0.85 + 0.15*Math.sin(performance.now()*0.02);
+    }
+
+    // collision con car
+    if(car && car.obj){
+      const dx = p.x - car.obj.position.x;
+      const dy = p.y - 0.55;
+      const dz = p.z - car.z;
+
+      // hitbox un po’ “generosa”
+      if((dx*dx + dy*dy + dz*dz) < (0.42*0.42)){
+        // HIT
+        scene.remove(p.obj);
+        game.projectiles.splice(i,1);
+
+        // kill car
+        car.dead = true;
+        spawnMonkeyExplosion(car.obj.position.x, car.z);
+
+        // rimuovi car dall’elenco
+        scene.remove(car.obj);
+        const idx = game.entities.indexOf(car);
+        if(idx>=0) game.entities.splice(idx,1);
+
+        // DROP loot
+        spawnLootFromMonkey(car.z);
+
+        // sfx
+        try{ sfx.boost(); }catch{}
+        updateBulletsUI();
+        continue;
+      }
+    }
+
+    // remove se scade o va troppo avanti/indietro
+    if(p.life <= 0 || p.z < -120 || p.z > 10 || p.y < -2 || p.y > 6){
+      if(p.obj) scene.remove(p.obj);
+      game.projectiles.splice(i,1);
+      continue;
+    }
+  }
+}
+
+// ===== AIM OVERLAY DRAW =====
+function drawAimOverlay(controlX, controlY){
+  if(!aimCtx || !aimCanvas) return;
+  const car = monkeyCarAlive();
+  if(!car || !car.obj) { clearAimOverlay(); return; }
+
+  resizeAimCanvas();
+
+  const playerW = { x: runnerPivot.position.x, y: runnerPivot.position.y + (game.sliding?0.55:0.95), z: 0.05 };
+  const carW    = { x: car.obj.position.x, y: 0.55, z: car.z };
+
+  const s = worldToScreen(playerW.x, playerW.y, playerW.z);
+  const e = worldToScreen(carW.x,    carW.y,    carW.z);
+
+  const cx = controlX ?? ((s.x + e.x)*0.5);
+  const cy = controlY ?? (s.y - 120);
+
+  const g = aimCtx;
+  g.setTransform(aimDpr,0,0,aimDpr,0,0);
+  g.clearRect(0,0,aimCanvas.width/aimDpr, aimCanvas.height/aimDpr);
+
+  // glow line
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+
+  // base
+  g.globalAlpha = 0.55;
+  g.strokeStyle = 'rgba(120,220,255,0.55)';
+  g.lineWidth = 5.0;
+  g.beginPath();
+  g.moveTo(s.x, s.y);
+  g.quadraticCurveTo(cx, cy, e.x, e.y);
+  g.stroke();
+
+  // core
+  g.globalAlpha = 0.90;
+  g.strokeStyle = 'rgba(255,255,255,0.85)';
+  g.lineWidth = 2.0;
+  g.beginPath();
+  g.moveTo(s.x, s.y);
+  g.quadraticCurveTo(cx, cy, e.x, e.y);
+  g.stroke();
+
+  // dotted sparkles
+  g.globalAlpha = 0.9;
+  for(let i=0;i<18;i++){
+    const t = i/18;
+    const x = (1-t)*(1-t)*s.x + 2*(1-t)*t*cx + t*t*e.x;
+    const y = (1-t)*(1-t)*s.y + 2*(1-t)*t*cy + t*t*e.y;
+    const r = 1.2 + 1.4*Math.sin((performance.now()*0.01) + i);
+    g.fillStyle = (i%3===0) ? 'rgba(170,245,255,0.9)' : 'rgba(255,255,255,0.8)';
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI*2); g.fill();
+  }
+
+  // target reticle
+  g.globalAlpha = 0.95;
+  g.strokeStyle = 'rgba(170,245,255,0.9)';
+  g.lineWidth = 2.0;
+  g.beginPath();
+  g.arc(e.x, e.y, 14, 0, Math.PI*2);
+  g.stroke();
+
+  g.globalAlpha = 0.65;
+  g.beginPath();
+  g.arc(e.x, e.y, 22, 0, Math.PI*2);
+  g.stroke();
+}
     function turtleSmashSweep(turtle, prevZ, newZ){
   const lane = turtle.lane;
 
@@ -4520,6 +5188,13 @@ for(const mesh of segments){
       // avanzamento lungo Z
       e.z += scroll;
       if (e.obj) e.obj.position.z = e.z;
+      
+            // ===== MONKEY CAR (extra speed + gestures) =====
+      if(e.type === 'monkeyCar'){
+        // extra speed + anim (nota: qui e.z ha già preso lo scroll base)
+        updateMonkeyCar(e, dt, scroll, tNow);
+        continue;
+      }
 
       // TURTLE già colpita → scivolata + spin
       if (e.type === 'turtle' && e.hit) {
@@ -4797,6 +5472,14 @@ for(const mesh of segments){
     }
   }
 
+
+  // ===== bullets projectiles update =====
+  updateProjectiles(dt, scroll);
+
+  // se aim attivo ridisegno anche senza muovere (effetto vivo)
+  if(aimState.active){
+    drawAimOverlay(aimState.curX, aimState.curY);
+  }
   // score + HUD
   game.score += (18 * speedMul) * dt;
 
