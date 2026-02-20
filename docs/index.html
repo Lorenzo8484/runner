@@ -2641,42 +2641,117 @@ function spawnObstacleVisual(){
 }
 
 // =========================================================
-// 🚗 CAR (semplice) - corsia emergenza (lane 3)
+// 🚗 TRAFFIC CAR (più realistica) - corsia emergenza (lane 3)
 // =========================================================
 function makeTrafficCar(){
   const g = new THREE.Group();
 
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.95, 0.28, 1.45),
-    new THREE.MeshStandardMaterial({ color:0x5aa0ff, roughness:0.45, metalness:0.05 })
-  );
-  body.position.y = 0.18;
+  // Materiali
+  const paint = new THREE.MeshStandardMaterial({
+    color: 0x3fa2ff,
+    roughness: 0.32,
+    metalness: 0.20
+  });
+  const dark = new THREE.MeshStandardMaterial({
+    color: 0x0b1830,
+    roughness: 0.25,
+    metalness: 0.10
+  });
+  const glass = new THREE.MeshStandardMaterial({
+    color: 0x0a1a2a,
+    roughness: 0.12,
+    metalness: 0.15,
+    transparent: true,
+    opacity: 0.55
+  });
+  const tire = new THREE.MeshStandardMaterial({
+    color: 0x0c0f14,
+    roughness: 0.85,
+    metalness: 0.02
+  });
+  const rim = new THREE.MeshStandardMaterial({
+    color: 0x9aa6b2,
+    roughness: 0.35,
+    metalness: 0.55
+  });
+
+  // === Carrozzeria (più “auto”)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.26, 1.75), paint);
+  body.position.y = 0.22;
   body.castShadow = true; body.receiveShadow = true;
   g.add(body);
 
-  const cab = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.24, 0.62),
-    new THREE.MeshStandardMaterial({ color:0x0b1830, roughness:0.25, metalness:0.05 })
-  );
-  cab.position.set(0, 0.34, -0.08);
-  cab.castShadow = true; cab.receiveShadow = true;
-  g.add(cab);
+  // Cofano (piccolo rialzo anteriore)
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(1.00, 0.12, 0.55), paint);
+  hood.position.set(0, 0.33, 0.55);
+  hood.castShadow = true; hood.receiveShadow = true;
+  g.add(hood);
 
-  const wMat = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.85, metalness:0.05 });
-  function wheel(x,z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.12,14), wMat);
-    w.rotation.z = Math.PI/2;
-    w.position.set(x, 0.12, z);
+  // Tetto/cabina
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.26, 0.85), dark);
+  cabin.position.set(0, 0.44, -0.05);
+  cabin.castShadow = true; cabin.receiveShadow = true;
+  g.add(cabin);
+
+  // Vetri (semplici)
+  const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.18, 0.40), glass);
+  windshield.position.set(0, 0.50, 0.20);
+  g.add(windshield);
+
+  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.16, 0.32), glass);
+  rearGlass.position.set(0, 0.50, -0.33);
+  g.add(rearGlass);
+
+  // Paraurti (front/back)
+  const bumpF = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.10, 0.10), dark);
+  bumpF.position.set(0, 0.16, 0.88);
+  g.add(bumpF);
+
+  const bumpB = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.10, 0.10), dark);
+  bumpB.position.set(0, 0.16, -0.88);
+  g.add(bumpB);
+
+  // Fari (front)
+  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.06), new THREE.MeshStandardMaterial({
+    color: 0xffffff, roughness: 0.2, metalness: 0.05, emissive: 0x223366, emissiveIntensity: 0.4
+  }));
+  headL.position.set(-0.36, 0.23, 0.89);
+  const headR = headL.clone(); headR.position.x = 0.36;
+  g.add(headL, headR);
+
+  // Stop (rear)
+  const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.05), new THREE.MeshStandardMaterial({
+    color: 0xff3b30, roughness: 0.3, metalness: 0.05, emissive: 0x440000, emissiveIntensity: 0.6
+  }));
+  tailL.position.set(-0.36, 0.22, -0.89);
+  const tailR = tailL.clone(); tailR.position.x = 0.36;
+  g.add(tailL, tailR);
+
+  // === Ruote (cilindri + cerchi)
+  function wheel(x, z){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 18), tire);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(x, 0.15, z);
     w.castShadow = true; w.receiveShadow = true;
+
+    // cerchio (un disco)
+    const rimM = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.02, 18), rim);
+    rimM.rotation.z = Math.PI / 2;
+    rimM.position.set(0, 0, 0);
+    w.add(rimM);
+
     g.add(w);
     return w;
   }
-  const w1 = wheel(-0.36,  0.48);
-  const w2 = wheel( 0.36,  0.48);
-  const w3 = wheel(-0.36, -0.48);
-  const w4 = wheel( 0.36, -0.48);
 
-  g.userData = { wheels:[w1,w2,w3,w4] };
+  const wfL = wheel(-0.45,  0.62);
+  const wfR = wheel( 0.45,  0.62);
+  const wbL = wheel(-0.45, -0.62);
+  const wbR = wheel( 0.45, -0.62);
+
+  // === orientamento: “front” verso +Z (coerente con movimento)
+  // (se in futuro vuoi invertire: g.rotation.y = Math.PI)
+  g.userData = { wheels:[wfL, wfR, wbL, wbR] };
   return g;
 }
     function makeTurtle(){
@@ -3751,21 +3826,25 @@ function trafficCarAlive(){
   for(const e of game.entities){
     if(e && e.type === 'trafficCar') return e;
   }
+  if(e.type === 'trafficCar'){
+  updateTrafficCar(e, dt, scroll);
+  continue;
+}
   return null;
 }
 
 function spawnTrafficCar(){
   // ✅ mai insieme alla monkey car
   if(monkeyCarAlive()) return;
-
-  if(trafficCarAlive()) return;              // 1 sola alla volta
+  if(trafficCarAlive()) return;
   if(!game.started || game.paused || game.over || game.stopped) return;
 
   const obj = makeTrafficCar();
 
-  // ✅ anche lei parte da dietro (Z positivo) e poi supera
-  const z0 = 55 + rnd(0, 22);
+  // ✅ parte DA DIETRO: z POSITIVO (dietro il player) e poi ti supera andando avanti
+  const z0 = 38 + rnd(0, 16); // dietro abbastanza, ma la vedi arrivare
   obj.position.set(lanesX[3], 0.02, z0);
+
   obj.castShadow = true;
   scene.add(obj);
 
@@ -4768,6 +4847,42 @@ function updateMonkeyCar(e, dt, scroll){
     if(idx>=0) game.entities.splice(idx,1);
     return;
   }
+  function updateTrafficCar(e, dt, scroll){
+  // se il gioco non sta “correndo”, non muovere
+  if(!game.started || game.paused || game.over || game.stopped){
+    return;
+  }
+
+  // ✅ “ti supera”: la macchina avanza più veloce del player
+  // Se scroll è il movimento del mondo, qui facciamo: scroll * (1 + extra)
+  const extra = 0.35; // 35% più veloce del player (sorpasso chiaro)
+  e.z -= scroll * extra; 
+  // Spiegazione rapida:
+  // - gli oggetti normalmente fanno: z += scroll
+  // - per farla “andare avanti” rispetto a te, le togliamo z in più:
+  //   quindi cresce più lentamente -> sembra che scappi in avanti (supera)
+
+  e.obj.position.z = e.z;
+  e.obj.position.x = lanesX[3];
+
+  // ✅ ruote che girano: velocità proporzionale alla velocità “reale”
+  const ud = e.obj.userData;
+  if(ud && ud.wheels){
+    const vWorld = (scroll / Math.max(dt, 0.0001)); // “m/s” approx
+    const spin = vWorld * 0.16; // tuning
+    for(const w of ud.wheels){
+      w.rotation.x += spin * dt;
+    }
+  }
+
+  // ✅ cleanup: quando è MOLTO avanti (lontana), la rimuoviamo
+  // (ricorda: player è circa z ~ 0)
+  if(e.z < -90){
+    scene.remove(e.obj);
+    const idx = game.entities.indexOf(e);
+    if(idx >= 0) game.entities.splice(idx, 1);
+  }
+}
 
   // evade => +20% extra per 1s
   const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
