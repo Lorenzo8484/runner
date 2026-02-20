@@ -3825,11 +3825,12 @@ if(game._foodPop){
 function trafficCarAlive(){
   for(const e of game.entities){
     if(e && e.type === 'trafficCar') return e;
-  }
-  if(e.type === 'trafficCar'){
+    if(e.type === 'trafficCar'){
   updateTrafficCar(e, dt, scroll);
   continue;
 }
+  }
+  
   return null;
 }
 
