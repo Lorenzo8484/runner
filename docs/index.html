@@ -3838,8 +3838,8 @@ if(game._foodPop){
 // =========================================================
 function trafficCarAlive(){
   for(const e of game.entities){
+    if(e && e.type === 'trafficCar') return e;
   }
-  
   return null;
 }
 
@@ -5256,12 +5256,7 @@ function drawAimOverlay(controlX, controlY){
 
 
         function update(dt, tNow){
-          
-          
-          if(e.type === 'trafficCar'){
-  updateTrafficCar(e, dt, scroll);
-  continue;
-}
+
           
   // Animazioni
   if(runnerMixer){
