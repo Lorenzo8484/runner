@@ -4627,11 +4627,25 @@ function makeMonkeyCar(){
 
   // ===== SCIMMIA grande e comica (ben visibile)
   const monkey = new THREE.Group();
-  monkey.position.set(0, 0.62, 0.26); // più verso parabrezza
-  monkey.scale.setScalar(1.55);       // ✅ più grande
+  // ✅ più vicino al vetro + più grande + più luminoso
+monkey.position.set(0, 0.64, 0.36);  // più “attaccata” al parabrezza
+monkey.scale.setScalar(2.05);        // ✅ MOLTO più grande
 
-  const faceMat = new THREE.MeshStandardMaterial({ color:0x6b3f1f, roughness:0.88, metalness:0.02 });
-  const muzzleMat= new THREE.MeshStandardMaterial({ color:0xb8804f, roughness:0.90, metalness:0.00 });
+// ✅ materiali più chiari + un filo di emissive (si vede SEMPRE)
+const faceMat = new THREE.MeshStandardMaterial({
+  color:0x7a4a24,
+  roughness:0.78,
+  metalness:0.02,
+  emissive:0x2a1608,
+  emissiveIntensity:0.35
+});
+const muzzleMat = new THREE.MeshStandardMaterial({
+  color:0xc58b56,
+  roughness:0.82,
+  metalness:0.00,
+  emissive:0x2a1a0e,
+  emissiveIntensity:0.25
+});
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 14), faceMat);
   head.castShadow = true;
@@ -4741,89 +4755,144 @@ function updateMonkeyCar(e, dt, scroll){
     return;
   }
 
-  // ✅ velocità player (unità/s)
+  // init stato comportamento
+  if(!e.beh){
+    e.beh = {
+      phase: 'approach',  // approach -> taunt -> dash
+      t: 0,
+      stutT: 0,
+      stutMul: 1.0,
+      dashT: 0
+    };
+  }
+
+  const beh = e.beh;
+  beh.t += dt;
+
+  // velocità player (unità/s)
   const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
 
-  // ✅ car = +20% rispetto a te
-  const carSpeed = playerSpeed * 1.20;
-
-  // ✅ arriva da dietro e ti supera andando “avanti” (z verso negativo)
-  e.z -= carSpeed * dt;
-  e.obj.position.z = e.z;
-
-  // resta in corsia emergenza, con micro zigzag
+  // zigzag laterale (sempre, ma più nervoso durante taunt)
   const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
   e.evadeT = Math.max(0, e.evadeT - dt);
 
-  e.weave += dt * (2.6 + evadeExtra*2.0);
-  const wx = Math.sin(e.weave) * (0.12 + evadeExtra*0.10);
+  // ===== PHASE 1: ARRIVA VELOCE (approach)
+  if(beh.phase === 'approach'){
+    // arriva forte da dietro
+    const carSpeed = playerSpeed * 1.55;     // ✅ più veloce del player ma non esagerata
+    e.z -= carSpeed * dt;
 
+    // quando è “vicina” parte lo show comico a scatti
+    if(e.z <= 8.0){
+      beh.phase = 'taunt';
+      beh.t = 0;
+      beh.stutT = 0;
+      beh.stutMul = 1.0;
+    }
+  }
+
+  // ===== PHASE 2: 2 secondi a SCATTI (taunt)
+  else if(beh.phase === 'taunt'){
+    // ogni 0.08–0.13s cambia “marcia” (scatti)
+    beh.stutT -= dt;
+    if(beh.stutT <= 0){
+      beh.stutT = 0.08 + Math.random()*0.05;
+
+      // alterna veloce/lento in modo evidente
+      // (molto “cartoon”: a volte quasi ferma, a volte accelera)
+      const fast = 1.65 + Math.random()*0.55;   // 1.65–2.20
+      const slow = 0.20 + Math.random()*0.35;   // 0.20–0.55
+      beh.stutMul = (Math.random() < 0.55) ? fast : slow;
+    }
+
+    // oscillazione extra (tipo “va a scatti”)
+    const wob = 0.85 + 0.25*Math.sin(performance.now()*0.018);
+
+    // movimento in avanti/indietro microscopico (illusione “scatto”)
+    // (resta vicino a te, non deve sparire subito)
+    const carSpeed = playerSpeed * beh.stutMul * wob;
+
+    // durante taunt NON deve superarti troppo: clamp zona
+    e.z -= carSpeed * dt;
+
+    // limiti: resta tra 3 e 10 davanti/dietro
+    e.z = clamp(e.z, 3.2, 10.5);
+
+    // dopo 2 secondi -> DASH
+    if(beh.t >= 2.0){
+      beh.phase = 'dash';
+      beh.dashT = 0;
+    }
+  }
+
+  // ===== PHASE 3: SCATTA VIA e SPARISCE (dash)
+  else if(beh.phase === 'dash'){
+    beh.dashT += dt;
+
+    // accelera molto e scappa via davanti
+    const dashSpeed = playerSpeed * (3.0 + beh.dashT*1.8); // sempre più forte
+    e.z -= dashSpeed * dt;
+
+    // se è lontana -> delete
+    if(e.z < -120){
+      scene.remove(e.obj);
+      const idx = game.entities.indexOf(e);
+      if(idx>=0) game.entities.splice(idx,1);
+      return;
+    }
+  }
+
+  // ===== posizione Z applicata
+  e.obj.position.z = e.z;
+
+  // ===== posizione X (corsia emergenza con micro zigzag)
+  e.weave += dt * (2.6 + evadeExtra*2.0 + (beh.phase==='taunt' ? 2.4 : 0.0));
+  const wx = Math.sin(e.weave) * (beh.phase==='taunt' ? 0.20 : 0.12) + (evadeExtra*0.10);
   e.obj.position.x = lanesX[3] + wx;
 
-    const ud = e.obj.userData;
+  // ===== anim ruote + scimmia
+  const ud = e.obj.userData;
   if(ud){
     ud.t += dt;
 
-    // ruote: proporzionali alla carSpeed
-    const spin = carSpeed * 0.55;
+    // ruote: proporzionali a quanto “sta spingendo”
+    const phaseMul =
+      (beh.phase==='approach') ? 1.55 :
+      (beh.phase==='taunt')    ? (0.5 + beh.stutMul*0.55) :
+      3.0;
+
+    const spin = (playerSpeed * phaseMul) * 0.55;
     for(const w of ud.wheels) w.rotation.x += spin * dt;
 
-    // =========================
-    // 🐵 COSE COMICHE SCIMMIA
-    // =========================
-
-    // "eccitazione" (aumenta quando evade)
-    const evade = (e.evadeT > 0) ? 1.0 : 0.0;
-
-    // bounce cabina/scimmia (mini sobbalzi)
-    const bFast = Math.sin(ud.t * (8.0 + 8.0*evade));
+    // scimmia: comica e più “leggibile” quando taunt
+    const excite = (beh.phase==='taunt') ? 1.0 : 0.0;
+    const bFast = Math.sin(ud.t * (8.0 + 12.0*excite));
     const bSlow = Math.sin(ud.t * 3.2);
+
     if(ud.monkey){
-      // testa/corpo: vibra e “guida”
-      ud.monkey.position.y = 0.46 + 0.015*bFast + 0.010*bSlow;
-      ud.monkey.rotation.y = 0.10*Math.sin(ud.t*2.6) + 0.22*evade*Math.sin(ud.t*9.0);
-      ud.monkey.rotation.x = -0.06 + 0.05*Math.sin(ud.t*4.0);
+      ud.monkey.position.y = 0.62 + 0.020*bFast + 0.012*bSlow;
+      ud.monkey.rotation.y = 0.10*Math.sin(ud.t*2.6) + 0.35*excite*Math.sin(ud.t*10.0);
+      ud.monkey.rotation.x = -0.06 + 0.06*Math.sin(ud.t*4.0);
     }
-
-    // linguaccia: esce/entra + vibra
     if(ud.tongue){
-      ud.tongue.scale.y = 0.65 + 0.55*Math.abs(Math.sin(ud.t*10.5));
-      ud.tongue.scale.x = 0.90 + 0.25*Math.sin(ud.t*13.0);
-      ud.tongue.rotation.z = 0.12*Math.sin(ud.t*12.0) + 0.22*evade*Math.sin(ud.t*18.0);
+      ud.tongue.scale.y = 0.65 + 0.70*Math.abs(Math.sin(ud.t*11.0));
+      ud.tongue.rotation.z = 0.14*Math.sin(ud.t*12.0) + 0.28*excite*Math.sin(ud.t*18.0);
     }
-
-    // orecchie: "flap" alternato + tirata quando evade
-    const earBase = 0.75 + 0.25*Math.sin(ud.t*7.8);
-    const earEv   = 0.35 * evade * Math.abs(Math.sin(ud.t*16.0));
-    if(ud.earL){
-      ud.earL.scale.set(1.0, earBase + earEv, 1.0);
-      ud.earL.position.y = 0.02 + 0.02*Math.sin(ud.t*9.0);
+    if(ud.armL && ud.armR){
+      ud.armL.rotation.x = 0.9 + 0.9*Math.sin(ud.t*10.0);
+      ud.armR.rotation.x = 0.9 + 0.9*Math.sin(ud.t*10.0 + 1.7);
     }
-    if(ud.earR){
-      ud.earR.scale.set(1.0, (1.15 - (earBase-0.75)) + earEv*0.7, 1.0);
-      ud.earR.position.y = 0.02 + 0.02*Math.cos(ud.t*9.0);
-    }
-
-    // campanella glow: lampeggia più forte in evade
     if(ud.bell && ud.bell.material){
-      const glow = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
-      const evGlow = 0.25 * evade * (0.5 + 0.5*Math.abs(Math.sin(ud.t*20.0)));
+      const glow = 0.35 + 0.28*Math.abs(Math.sin(ud.t*12.0));
+      const evGlow = 0.28 * excite * (0.5 + 0.5*Math.abs(Math.sin(ud.t*20.0)));
       ud.bell.material.opacity = Math.min(0.95, glow + evGlow);
-      ud.bell.scale.setScalar(0.30 + 0.06*Math.abs(Math.sin(ud.t*14.0)) + 0.08*evade);
+      ud.bell.scale.setScalar(0.34 + 0.08*Math.abs(Math.sin(ud.t*14.0)) + 0.10*excite);
     }
 
-    // “scossone” macchina durante evade (leggero roll)
-    e.obj.rotation.z = 0.02*Math.sin(ud.t*6.0) + 0.08*evade*Math.sin(ud.t*16.0);
-  }
-
-  // ✅ quando è molto “avanti” (lontana), la togliamo
-  if(e.z < -95){
-    scene.remove(e.obj);
-    const idx = game.entities.indexOf(e);
-    if(idx>=0) game.entities.splice(idx,1);
+    // roll auto (più durante taunt)
+    e.obj.rotation.z = 0.02*Math.sin(ud.t*6.0) + (beh.phase==='taunt' ? 0.10*Math.sin(ud.t*16.0) : 0);
   }
 }
-  
 
 // ===== BULLET VISUAL =====
 function makeBullet(){
@@ -5049,7 +5118,12 @@ function drawAimOverlay(controlX, controlY){
   const car = monkeyCarAlive();
   if(!car || !car.obj) { clearAimOverlay(); return; }
 
-  resizeAimCanvas();
+  // ✅ NON ridimensionare sempre: solo se serve
+  const needW = Math.floor(window.innerWidth * aimDpr);
+  const needH = Math.floor(window.innerHeight * aimDpr);
+  if(aimCanvas.width !== needW || aimCanvas.height !== needH){
+    resizeAimCanvas();
+  }
 
   const playerW = { x: runnerPivot.position.x, y: runnerPivot.position.y + (game.sliding?0.55:0.95), z: 0.05 };
   const carW    = { x: car.obj.position.x, y: 0.55, z: car.z };
