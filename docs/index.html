@@ -2639,135 +2639,6 @@ function spawnObstacleVisual(){
   box.receiveShadow = true;
   return box;
 }
-
-// =========================================================
-// 🚗 TRAFFIC CAR (più realistica) - corsia emergenza (lane 3)
-// =========================================================
-function makeTrafficCar(){
-  const g = new THREE.Group();
-
-  // Materiali
-  const paint = new THREE.MeshStandardMaterial({
-    color: 0x3fa2ff,
-    roughness: 0.32,
-    metalness: 0.20
-  });
-  const dark = new THREE.MeshStandardMaterial({
-    color: 0x0b1830,
-    roughness: 0.25,
-    metalness: 0.10
-  });
-  const glass = new THREE.MeshStandardMaterial({
-    color: 0x0a1a2a,
-    roughness: 0.12,
-    metalness: 0.15,
-    transparent: true,
-    opacity: 0.55
-  });
-  const tire = new THREE.MeshStandardMaterial({
-    color: 0x0c0f14,
-    roughness: 0.85,
-    metalness: 0.02
-  });
-  const rim = new THREE.MeshStandardMaterial({
-    color: 0x9aa6b2,
-    roughness: 0.35,
-    metalness: 0.55
-  });
-
-  // === Carrozzeria
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.26, 1.75), paint);
-  body.position.y = 0.22;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  g.add(body);
-
-  // Cofano
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(1.00, 0.12, 0.55), paint);
-  hood.position.set(0, 0.33, 0.55);
-  hood.castShadow = true;
-  hood.receiveShadow = true;
-  g.add(hood);
-
-  // Cabina
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.26, 0.85), dark);
-  cabin.position.set(0, 0.44, -0.05);
-  cabin.castShadow = true;
-  cabin.receiveShadow = true;
-  g.add(cabin);
-
-  // Vetri
-  const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.18, 0.40), glass);
-  windshield.position.set(0, 0.50, 0.20);
-  g.add(windshield);
-
-  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.16, 0.32), glass);
-  rearGlass.position.set(0, 0.50, -0.33);
-  g.add(rearGlass);
-
-  // Paraurti
-  const bumpF = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.10, 0.10), dark);
-  bumpF.position.set(0, 0.16, 0.88);
-  g.add(bumpF);
-
-  const bumpB = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.10, 0.10), dark);
-  bumpB.position.set(0, 0.16, -0.88);
-  g.add(bumpB);
-
-  // Fari
-  const headMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.2,
-    metalness: 0.05,
-    emissive: 0x223366,
-    emissiveIntensity: 0.4
-  });
-  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.06), headMat);
-  headL.position.set(-0.36, 0.23, 0.89);
-  const headR = headL.clone();
-  headR.position.x = 0.36;
-  g.add(headL, headR);
-
-  // Stop
-  const tailMat = new THREE.MeshStandardMaterial({
-    color: 0xff3b30,
-    roughness: 0.3,
-    metalness: 0.05,
-    emissive: 0x440000,
-    emissiveIntensity: 0.6
-  });
-  const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.05), tailMat);
-  tailL.position.set(-0.36, 0.22, -0.89);
-  const tailR = tailL.clone();
-  tailR.position.x = 0.36;
-  g.add(tailL, tailR);
-
-  // Ruote
-  function wheel(x, z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 18), tire);
-    w.rotation.z = Math.PI / 2;
-    w.position.set(x, 0.15, z);
-    w.castShadow = true;
-    w.receiveShadow = true;
-
-    const rimM = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.02, 18), rim);
-    rimM.rotation.z = Math.PI / 2;
-    w.add(rimM);
-
-    g.add(w);
-    return w;
-  }
-
-  const wfL = wheel(-0.45,  0.62);
-  const wfR = wheel( 0.45,  0.62);
-  const wbL = wheel(-0.45, -0.62);
-  const wbR = wheel( 0.45, -0.62);
-
-  // ✅ mettiamo un “bbox friendly” e ruote in userData (utile per debug)
-  g.userData = { wheels:[wfL, wfR, wbL, wbR] };
-
-  return g;
-}
     function makeTurtle(){
   const g = new THREE.Group();
   const shell = new THREE.Mesh(
@@ -3916,7 +3787,6 @@ function purgeDuplicateCars(){
   }
 }
 // chiamala ogni tanto (es: ogni 7–12 sec)
-let trafficCarTimer = 4.0;
     const TURTLE_VIS_Z = 70;
     // “distanza visibile” usata per blocco spawn (2x)
 const VISIBLE_ROAD_DIST = TURTLE_VIS_Z;        // 70 (coerente col tuo tuning)
@@ -4706,93 +4576,102 @@ function makeGlowTex(size=256){
 }
 const _bulletGlowTex = (typeof _explTex !== 'undefined' && _explTex) ? _explTex : makeGlowTex(256);
 
-// ===== MONKEY CAR VISUAL =====
 function makeMonkeyCar(){
   const g = new THREE.Group();
 
-  // body
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.95, 0.28, 1.30),
-    new THREE.MeshStandardMaterial({
-      color:0x2fd0ff, roughness:0.35, metalness:0.05,
-      emissive:0x003344, emissiveIntensity:0.25
-    })
-  );
-  body.position.y = 0.18;
+  // materiali
+  const paint = new THREE.MeshStandardMaterial({
+    color:0xffcc00, roughness:0.45, metalness:0.08,
+    emissive:0x332200, emissiveIntensity:0.20
+  });
+  const dark = new THREE.MeshStandardMaterial({ color:0x121820, roughness:0.45, metalness:0.05 });
+  const glass = new THREE.MeshStandardMaterial({
+    color:0x0b1a2a, roughness:0.15, metalness:0.10,
+    transparent:true, opacity:0.55
+  });
+  const tire = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.88, metalness:0.03 });
+
+  // ===== taxi/van “più alta”
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.32, 1.55), paint);
+  body.position.y = 0.22;
   body.castShadow = true; body.receiveShadow = true;
   g.add(body);
 
-  // cabin
-  const cab = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.26, 0.55),
-    new THREE.MeshStandardMaterial({
-      color:0x0b1830, roughness:0.25, metalness:0.05,
-      emissive:0x071025, emissiveIntensity:0.35
-    })
-  );
-  cab.position.set(0, 0.34, -0.05);
-  cab.castShadow = true; cab.receiveShadow = true;
-  g.add(cab);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.42, 0.92), paint);
+  cabin.position.set(0, 0.48, -0.05);
+  cabin.castShadow = true; cabin.receiveShadow = true;
+  g.add(cabin);
 
-  // wheels
-  const wMat = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.85, metalness:0.05 });
+  // vetri (front + laterali)
+  const winF = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.28, 0.08), glass);
+  winF.position.set(0, 0.52, 0.38);
+  g.add(winF);
+
+  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.26, 0.62), glass);
+  winL.position.set(-0.45, 0.52, -0.05);
+  const winR = winL.clone();
+  winR.position.x = 0.45;
+  g.add(winL, winR);
+
+  // “taxi sign” sopra
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.10, 0.18), dark);
+  sign.position.set(0, 0.74, -0.02);
+  g.add(sign);
+
+  // ruote
   function wheel(x,z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.12,14), wMat);
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.14,18), tire);
     w.rotation.z = Math.PI/2;
-    w.position.set(x, 0.12, z);
+    w.position.set(x, 0.15, z);
     w.castShadow = true; w.receiveShadow = true;
     g.add(w);
     return w;
   }
-  const w1 = wheel(-0.36,  0.45);
-  const w2 = wheel( 0.36,  0.45);
-  const w3 = wheel(-0.36, -0.45);
-  const w4 = wheel( 0.36, -0.45);
+  const w1 = wheel(-0.44,  0.52);
+  const w2 = wheel( 0.44,  0.52);
+  const w3 = wheel(-0.44, -0.52);
+  const w4 = wheel( 0.44, -0.52);
 
-  // monkey (semplice ma “espressiva”)
+  // ===== scimmia DENTRO (dietro il parabrezza)
   const monkey = new THREE.Group();
-  monkey.position.set(0, 0.54, 0.25);
+  monkey.position.set(0, 0.46, 0.20); // dentro cabina
 
   const face = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 18, 14),
-    new THREE.MeshStandardMaterial({
-      color:0x7a4d2a, roughness:0.85, metalness:0.02,
-      emissive:0x2a1206, emissiveIntensity:0.15
-    })
+    new THREE.SphereGeometry(0.16, 18, 14),
+    new THREE.MeshStandardMaterial({ color:0x7a4d2a, roughness:0.85, metalness:0.02 })
   );
   face.castShadow = true;
   monkey.add(face);
 
   const muzzle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 16, 12),
+    new THREE.SphereGeometry(0.11, 16, 12),
     new THREE.MeshStandardMaterial({ color:0xb17b4a, roughness:0.9, metalness:0.0 })
   );
-  muzzle.position.set(0, -0.03, 0.12);
+  muzzle.position.set(0, -0.03, 0.11);
   monkey.add(muzzle);
 
-  // ears (tira orecchie)
   const earMat = new THREE.MeshStandardMaterial({ color:0x7a4d2a, roughness:0.9, metalness:0.0 });
-  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10), earMat);
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), earMat);
   const earR = earL.clone();
-  earL.position.set(-0.20, 0.02, 0.02);
-  earR.position.set( 0.20, 0.02, 0.02);
+  earL.position.set(-0.18, 0.02, 0.01);
+  earR.position.set( 0.18, 0.02, 0.01);
   monkey.add(earL, earR);
 
-  // tongue (linguaccia)
+  // linguaccia (davanti)
   const tongue = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.10, 0.16),
+    new THREE.PlaneGeometry(0.09, 0.14),
     new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.8, metalness:0.0, side:THREE.DoubleSide })
   );
-  tongue.position.set(0, -0.11, 0.20);
-  tongue.rotation.x = -0.15;
+  tongue.position.set(0, -0.10, 0.18);
+  tongue.rotation.x = -0.12;
   monkey.add(tongue);
 
-  // bell “campane” (glow)
+  // campanella glow (dentro)
   const bell = new THREE.Sprite(new THREE.SpriteMaterial({
     map:_bulletGlowTex, transparent:true, opacity:0.55, depthWrite:false, blending:THREE.AdditiveBlending
   }));
-  bell.scale.set(0.35,0.35,1);
-  bell.position.set(0.26, 0.14, 0.05);
+  bell.scale.set(0.30,0.30,1);
+  bell.position.set(0.22, 0.10, 0.02);
   monkey.add(bell);
 
   g.add(monkey);
@@ -4810,17 +4689,14 @@ function spawnMonkeyCar(){
   // appare solo durante FOOD boost
   if(game.foodBoostT <= 0) return;
 
-  // ✅ se per sbaglio c'è già traffic car, la togliamo
-  despawnTrafficCar();
-
   // ✅ 1 sola monkey car
   if(monkeyCarAlive()) return;
 
   const obj = makeMonkeyCar();
 
-  // ✅ COERENTE col gioco: tutti gli oggetti “arrivano da davanti” (Z negativo)
-  // così la vedi e passa verso camera (Z cresce con scroll)
-  const z0 = -85 - rnd(0, 25);
+  // ✅ nasce DIETRO il player (z positivo = dietro)
+  // mettiamola abbastanza dietro per vederla arrivare
+  const z0 = 18 + rnd(0, 8);
 
   obj.position.set(lanesX[3], 0.02, z0);
   obj.castShadow = true;
@@ -4835,8 +4711,6 @@ function spawnMonkeyCar(){
     weave: rnd(0, Math.PI*2),
     dead: false
   });
-
-  purgeDuplicateCars();
 }
 
 function despawnMonkeyCar(){
@@ -4857,6 +4731,50 @@ function updateMonkeyCar(e, dt, scroll){
     if(idx>=0) game.entities.splice(idx,1);
     return;
   }
+
+  // ✅ velocità player (unità/s)
+  const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
+
+  // ✅ car = +20% rispetto a te
+  const carSpeed = playerSpeed * 1.20;
+
+  // ✅ arriva da dietro e ti supera andando “avanti” (z verso negativo)
+  e.z -= carSpeed * dt;
+  e.obj.position.z = e.z;
+
+  // resta in corsia emergenza, con micro zigzag
+  const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
+  e.evadeT = Math.max(0, e.evadeT - dt);
+
+  e.weave += dt * (2.6 + evadeExtra*2.0);
+  const wx = Math.sin(e.weave) * (0.12 + evadeExtra*0.10);
+
+  e.obj.position.x = lanesX[3] + wx;
+
+  // ruote + faccia scimmia
+  const ud = e.obj.userData;
+  if(ud){
+    ud.t += dt;
+
+    // ruote: proporzionali alla carSpeed
+    const spin = carSpeed * 0.55;
+    for(const w of ud.wheels) w.rotation.x += spin * dt;
+
+    // linguaccia/orecchie/glow
+    ud.tongue.scale.y = 0.55 + 0.45*Math.sin(ud.t*10.0);
+    const earPull = 0.70 + 0.30*Math.sin(ud.t*7.5);
+    ud.earL.scale.y = earPull;
+    ud.earR.scale.y = 1.0/earPull;
+    ud.bell.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
+  }
+
+  // ✅ quando è molto “avanti” (lontana), la togliamo
+  if(e.z < -95){
+    scene.remove(e.obj);
+    const idx = game.entities.indexOf(e);
+    if(idx>=0) game.entities.splice(idx,1);
+  }
+}
   function updateTrafficCar(e, dt, scroll){
   // se il gioco non sta “correndo”, non muovere
   if(!game.started || game.paused || game.over || game.stopped){
@@ -5462,42 +5380,7 @@ if(e.type === 'monkeyCar'){
       e.z += scroll;
       if (e.obj) e.obj.position.z = e.z;
       
-      // =========================================================
-// 🚗 TRAFFIC CAR UPDATE
-// =========================================================
-trafficCarTimer -= dt;
-if(trafficCarTimer <= 0){
-  spawnTrafficCar();
-  trafficCarTimer = rnd(7.0, 12.0);
-}
-
-const traffic = trafficCarAlive();
-if(traffic){
-  // speed player (world units/s): è lo scroll/dt
-  const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
-
-  // la car deve essere +20% più veloce del player
-  const carSpeed = playerSpeed * 1.20;
-
-  // movimento avanti (verso z positivo) indipendente dallo scroll
-  traffic.z += carSpeed * dt;
-
-  // posizione X fissa in emergenza
-  traffic.obj.position.x = lanesX[3];
-  traffic.obj.position.z = traffic.z;
-
-  // ruote
-  const ud = traffic.obj.userData;
-  if(ud && ud.wheels){
-    const wv = carSpeed * 0.55;
-    for(const w of ud.wheels) w.rotation.x += wv * dt;
-  }
-
-  // se supera il player → la togli (passata)
-  if(traffic.z > 10){
-    despawnTrafficCar();
-  }
-}
+      
       
             // ===== MONKEY CAR (extra speed + gestures) =====
       if(e.type === 'monkeyCar'){
