@@ -1552,7 +1552,8 @@ canvas.blurBoost{
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { CapsuleGeometry } from 'three/addons/geometries/CapsuleGeometry.js';
 
     /* =========================================================
        ✅ MINI FIX “SAFE” (anti-schermo-nero)
@@ -2950,7 +2951,7 @@ function updateEffects(dt){
     // fallback dummy (se GLB manca)
     const fallbackRunner = new THREE.Group();
     const dummyBody = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.22, 0.55, 8, 16),
+      new CapsuleGeometry(0.22, 0.55, 8, 16),
       new THREE.MeshStandardMaterial({ color:0x9db79a, roughness:0.65, metalness:0.0 })
     );
     dummyBody.position.y=0.85; dummyBody.castShadow=true; fallbackRunner.add(dummyBody);
@@ -4704,7 +4705,7 @@ const eyeWhiteMat = new THREE.MeshStandardMaterial({ color:0xe9eef7, roughness:0
 const pupilMat = new THREE.MeshStandardMaterial({ color:0x080a0e, roughness:0.25, metalness:0.10 });
 
 // torso (capsule) + pancia
-const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.24, 6, 12), furMat);
+const torso = new THREE.Mesh(new CapsuleGeometry(0.16, 0.24, 6, 12), furMat);
 torso.position.set(0, 0.05, 0.00);
 torso.castShadow = true;
 monkey.add(torso);
@@ -4763,12 +4764,12 @@ const armMat = new THREE.MeshStandardMaterial({ color:0x5b341b, roughness:0.95, 
 function makeArm(side=1){
   const arm = new THREE.Group();
 
-  const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.16, 6, 10), armMat);
+  const upper = new THREE.Mesh(new CapsuleGeometry(0.045, 0.16, 6, 10), armMat);
   upper.rotation.z = side * 0.55;
   upper.position.set(side*0.12, 0.12, 0.08);
   arm.add(upper);
 
-  const fore = new THREE.Mesh(new THREE.CapsuleGeometry(0.040, 0.14, 6, 10), armMat);
+  const fore = new THREE.Mesh(new CapsuleGeometry(0.040, 0.14, 6, 10), armMat);
   fore.rotation.z = side * 0.95;
   fore.position.set(side*0.20, 0.02, 0.10);
   arm.add(fore);
