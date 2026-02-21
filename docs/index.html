@@ -4536,172 +4536,221 @@ const _bulletGlowTex = (typeof _explTex !== 'undefined' && _explTex) ? _explTex 
 function makeMonkeyCar(){
   const g = new THREE.Group();
 
-  // materiali più “real”
+  // ===== materiali più realistici =====
   const paint = new THREE.MeshStandardMaterial({
-    color:0xffcc00,
-    roughness:0.35,
-    metalness:0.18,
-    emissive:0x221500,
-    emissiveIntensity:0.10
+    color:0xffc400, roughness:0.28, metalness:0.22,
+    emissive:0x1a1206, emissiveIntensity:0.08
   });
-  const dark  = new THREE.MeshStandardMaterial({ color:0x0f141b, roughness:0.55, metalness:0.08 });
-  const chrome= new THREE.MeshStandardMaterial({ color:0xdfe6ef, roughness:0.20, metalness:0.85 });
+  const dark  = new THREE.MeshStandardMaterial({ color:0x0c1016, roughness:0.62, metalness:0.10 });
+  const chrome= new THREE.MeshStandardMaterial({ color:0xe7eef7, roughness:0.18, metalness:0.92 });
   const glass = new THREE.MeshStandardMaterial({
-    color:0x061321, roughness:0.08, metalness:0.12,
-    transparent:true, opacity:0.45
+    color:0x081522, roughness:0.10, metalness:0.10,
+    transparent:true, opacity:0.40
   });
-  const tire  = new THREE.MeshStandardMaterial({ color:0x0a0c10, roughness:0.90, metalness:0.03 });
-  const lamp  = new THREE.MeshStandardMaterial({ color:0xeaf6ff, roughness:0.08, metalness:0.15, emissive:0x9bd8ff, emissiveIntensity:0.35 });
+  const tire  = new THREE.MeshStandardMaterial({ color:0x070a0e, roughness:0.92, metalness:0.04 });
+  const lamp  = new THREE.MeshStandardMaterial({
+    color:0xeaf6ff, roughness:0.10, metalness:0.12,
+    emissive:0x8fd2ff, emissiveIntensity:0.40
+  });
+  const redLamp = new THREE.MeshStandardMaterial({
+    color:0xff554a, roughness:0.25, metalness:0.10,
+    emissive:0x5a0a06, emissiveIntensity:0.55
+  });
 
-  // ===== taxi più alto (van)
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.36, 1.70), paint);
-  body.position.y = 0.24;
-  body.castShadow = true; body.receiveShadow = true;
-  g.add(body);
+  // ===== proporzioni taxi (più “auto” e meno cubo) =====
+  const L = 1.85;   // lunghezza
+  const W = 1.05;   // larghezza
+  const H = 0.34;   // altezza base scocca
 
-  // paraurti
-  const bumperF = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.12, 0.10), dark);
-  bumperF.position.set(0, 0.16, 0.86);
-  g.add(bumperF);
+  // scocca base (chassis)
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(W, H, L), paint);
+  chassis.position.y = 0.22;
+  chassis.castShadow = true; chassis.receiveShadow = true;
+  g.add(chassis);
 
-  const bumperB = bumperF.clone();
-  bumperB.position.z = -0.86;
-  g.add(bumperB);
+  // cofano (hood) leggermente inclinato
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.18, 0.62), paint);
+  hood.position.set(0, 0.34, 0.46);
+  hood.rotation.x = -0.08;
+  hood.castShadow = true; hood.receiveShadow = true;
+  g.add(hood);
 
-  // griglia + cromature
-  const grill = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.12, 0.04), chrome);
-  grill.position.set(0, 0.24, 0.86);
-  g.add(grill);
+  // bagagliaio (trunk)
+  const trunk = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.20, 0.58), paint);
+  trunk.position.set(0, 0.33, -0.55);
+  trunk.rotation.x = 0.06;
+  trunk.castShadow = true; trunk.receiveShadow = true;
+  g.add(trunk);
 
-  // fari
-  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), lamp);
-  headL.position.set(-0.40, 0.25, 0.86);
-  const headR = headL.clone();
-  headR.position.x = 0.40;
-  g.add(headL, headR);
-
-  // ===== cabina più alta
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.52, 1.05), paint);
-  cabin.position.set(0, 0.55, -0.02);
+  // cabina (roof/cabin) più “vera”
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(W*0.92, 0.46, 0.92), paint);
+  cabin.position.set(0, 0.64, -0.05);
   cabin.castShadow = true; cabin.receiveShadow = true;
   g.add(cabin);
 
-  // tetto
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.00, 0.06, 0.98), dark);
-  roof.position.set(0, 0.84, -0.03);
+  // tetto nero sottile
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(W*0.94, 0.05, 0.92), dark);
+  roof.position.set(0, 0.89, -0.05);
   g.add(roof);
 
-  // vetri front/lato
-  const winF = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.34, 0.08), glass);
-  winF.position.set(0, 0.60, 0.46);
+  // paraurti front/back
+  const bumperF = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.10, 0.10), dark);
+  bumperF.position.set(0, 0.14, 0.93);
+  g.add(bumperF);
+  const bumperB = bumperF.clone();
+  bumperB.position.z = -0.93;
+  g.add(bumperB);
+
+  // griglia + targa
+  const grill = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 0.04), chrome);
+  grill.position.set(0, 0.24, 0.93);
+  g.add(grill);
+
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.10, 0.02), new THREE.MeshStandardMaterial({
+    color:0xf4f6f8, roughness:0.7, metalness:0.05
+  }));
+  plate.position.set(0, 0.16, 0.94);
+  g.add(plate);
+
+  // fari frontali + stop posteriori
+  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), lamp);
+  headL.position.set(-0.40, 0.24, 0.93);
+  const headR = headL.clone(); headR.position.x = 0.40;
+  g.add(headL, headR);
+
+  const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), redLamp);
+  tailL.position.set(-0.40, 0.24, -0.93);
+  const tailR = tailL.clone(); tailR.position.x = 0.40;
+  g.add(tailL, tailR);
+
+  // vetri (front + lato)
+  const winF = new THREE.Mesh(new THREE.BoxGeometry(W*0.78, 0.28, 0.06), glass);
+  winF.position.set(0, 0.66, 0.34);
+  winF.rotation.x = -0.05;
   g.add(winF);
 
-  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.30, 0.72), glass);
-  winL.position.set(-0.52, 0.60, -0.03);
-  const winR = winL.clone();
-  winR.position.x = 0.52;
+  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.62), glass);
+  winL.position.set(-W*0.46, 0.66, -0.06);
+  const winR = winL.clone(); winR.position.x = W*0.46;
   g.add(winL, winR);
 
+  // specchietti
+  const mirBase = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.08), dark);
+  const mirL = mirBase.clone(); mirL.position.set(-W*0.56, 0.56, 0.34);
+  const mirR = mirBase.clone(); mirR.position.set( W*0.56, 0.56, 0.34);
+  g.add(mirL, mirR);
+
+  // fascia “taxi” nera + scacchi (semplice ma credibile)
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(W*1.01, 0.10, 1.15), dark);
+  stripe.position.set(0, 0.24, -0.10);
+  stripe.material = stripe.material.clone();
+  stripe.material.roughness = 0.75;
+  g.add(stripe);
+
   // taxi sign sopra
-  const signBase = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.10, 0.22), dark);
-  signBase.position.set(0, 0.90, 0.04);
+  const signBase = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.09, 0.22), dark);
+  signBase.position.set(0, 0.93, 0.10);
   g.add(signBase);
 
-  const signTop = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.18), lamp);
-  signTop.position.set(0, 0.92, 0.04);
+  const signTop = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.18), lamp);
+  signTop.position.set(0, 0.95, 0.10);
   g.add(signTop);
 
-  // ruote
+  // ruote + passaruota (più realistiche)
   function wheel(x,z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.14,18), tire);
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.20,0.14,20), tire);
     w.rotation.z = Math.PI/2;
     w.position.set(x, 0.16, z);
     w.castShadow = true; w.receiveShadow = true;
     g.add(w);
+
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.15,16), chrome);
+    rim.rotation.z = Math.PI/2;
+    rim.position.copy(w.position);
+    g.add(rim);
+
     return w;
   }
-  const w1 = wheel(-0.48,  0.56);
-  const w2 = wheel( 0.48,  0.56);
-  const w3 = wheel(-0.48, -0.56);
-  const w4 = wheel( 0.48, -0.56);
 
-  // ===== SCIMMIA grande e comica (ben visibile)
+  const xW = W*0.46;
+  const zF = 0.58;
+  const zB = -0.58;
+
+  const w1 = wheel(-xW,  zF);
+  const w2 = wheel( xW,  zF);
+  const w3 = wheel(-xW,  zB);
+  const w4 = wheel( xW,  zB);
+
+  // ===== SCIMMIA ENORME, SUPER VISIBILE =====
   const monkey = new THREE.Group();
-  // ✅ più vicino al vetro + più grande + più luminoso
-monkey.position.set(0, 0.64, 0.36);  // più “attaccata” al parabrezza
-monkey.scale.setScalar(2.05);        // ✅ MOLTO più grande
+  monkey.position.set(0, 0.78, 0.42);  // attaccata al parabrezza
+  monkey.scale.setScalar(3.10);        // ✅ ENORME
 
-// ✅ materiali più chiari + un filo di emissive (si vede SEMPRE)
-const faceMat = new THREE.MeshStandardMaterial({
-  color:0x7a4a24,
-  roughness:0.78,
-  metalness:0.02,
-  emissive:0x2a1608,
-  emissiveIntensity:0.35
-});
-const muzzleMat = new THREE.MeshStandardMaterial({
-  color:0xc58b56,
-  roughness:0.82,
-  metalness:0.00,
-  emissive:0x2a1a0e,
-  emissiveIntensity:0.25
-});
+  const faceMat = new THREE.MeshStandardMaterial({
+    color:0x7f4b26, roughness:0.72, metalness:0.02,
+    emissive:0x2a180a, emissiveIntensity:0.45
+  });
+  const muzzleMat = new THREE.MeshStandardMaterial({
+    color:0xd09a63, roughness:0.78, metalness:0.00,
+    emissive:0x2a1a0e, emissiveIntensity:0.30
+  });
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 14), faceMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 18, 14), faceMat);
   head.castShadow = true;
   monkey.add(head);
 
-  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), muzzleMat);
-  muzzle.position.set(0, -0.04, 0.13);
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), muzzleMat);
+  muzzle.position.set(0, -0.05, 0.16);
   monkey.add(muzzle);
 
-  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10), faceMat);
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 10), faceMat);
   const earR = earL.clone();
-  earL.position.set(-0.22, 0.02, 0.02);
-  earR.position.set( 0.22, 0.02, 0.02);
+  earL.position.set(-0.28, 0.02, 0.02);
+  earR.position.set( 0.28, 0.02, 0.02);
   monkey.add(earL, earR);
 
-  // occhi (2 pallini)
-  const eyeMat = new THREE.MeshStandardMaterial({ color:0x101318, roughness:0.4, metalness:0.05 });
-  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), eyeMat);
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color:0x0b0e12, roughness:0.35, metalness:0.10,
+    emissive:0x000000, emissiveIntensity:0.0
+  });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), eyeMat);
   const eyeR = eyeL.clone();
-  eyeL.position.set(-0.06, 0.04, 0.16);
-  eyeR.position.set( 0.06, 0.04, 0.16);
+  eyeL.position.set(-0.07, 0.05, 0.20);
+  eyeR.position.set( 0.07, 0.05, 0.20);
   monkey.add(eyeL, eyeR);
 
-  // linguaccia
+  // linguaccia più grande
   const tongue = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.11, 0.18),
+    new THREE.PlaneGeometry(0.16, 0.24),
     new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.85, metalness:0.0, side:THREE.DoubleSide })
   );
-  tongue.position.set(0, -0.12, 0.23);
+  tongue.position.set(0, -0.14, 0.28);
   tongue.rotation.x = -0.10;
   monkey.add(tongue);
 
-  // braccia che “sventolano”
+  // braccia più grosse
   const armMat = new THREE.MeshStandardMaterial({ color:0x6b3f1f, roughness:0.9, metalness:0.0 });
-  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.32,10), armMat);
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.42,12), armMat);
   const armR = armL.clone();
-  armL.position.set(-0.20, -0.06, 0.02);
-  armR.position.set( 0.20, -0.06, 0.02);
+  armL.position.set(-0.26, -0.08, 0.04);
+  armR.position.set( 0.26, -0.08, 0.04);
   armL.rotation.z = 0.9;
   armR.rotation.z = -0.9;
   monkey.add(armL, armR);
 
-  // campanella glow
+  // campanella glow (già tua)
   const bell = new THREE.Sprite(new THREE.SpriteMaterial({
-    map:_bulletGlowTex, transparent:true, opacity:0.55, depthWrite:false, blending:THREE.AdditiveBlending
+    map:_bulletGlowTex, transparent:true, opacity:0.70, depthWrite:false, blending:THREE.AdditiveBlending
   }));
-  bell.scale.set(0.34,0.34,1);
-  bell.position.set(0.26, 0.10, 0.05);
+  bell.scale.set(0.44,0.44,1);
+  bell.position.set(0.34, 0.12, 0.08);
   monkey.add(bell);
 
   g.add(monkey);
 
   g.userData = {
     wheels:[w1,w2,w3,w4],
-    monkey, head, tongue, earL, earR, bell,
-    armL, armR,
+    monkey, head, tongue, earL, earR, bell, armL, armR,
     t: 0
   };
 
@@ -4719,7 +4768,7 @@ function spawnMonkeyCar(){
 
   // ✅ nasce DIETRO il player (z positivo = dietro)
   // mettiamola abbastanza dietro per vederla arrivare
-  const z0 = 18 + rnd(0, 8);
+  const z0 = 28 + rnd(0, 10);
 
   obj.position.set(lanesX[3], 0.02, z0);
   obj.castShadow = true;
@@ -4755,86 +4804,88 @@ function updateMonkeyCar(e, dt, scroll){
     return;
   }
 
+  // ✅ IMPORTANTISSIMO: la car deve subire lo "scroll mondo" come tutte le entity
+  // perché tu la togli dal loop entities (con continue).
+  // Quindi qui aggiungiamo lo scroll base:
+  e.z += scroll;
+
   // init stato comportamento
   if(!e.beh){
     e.beh = {
       phase: 'approach',  // approach -> taunt -> dash
-      t: 0,
+      phaseT: 0,
       stutT: 0,
-      stutMul: 1.0,
-      dashT: 0
+      stutMul: 1.0
     };
   }
 
   const beh = e.beh;
-  beh.t += dt;
+  beh.phaseT += dt;
 
   // velocità player (unità/s)
   const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
 
-  // zigzag laterale (sempre, ma più nervoso durante taunt)
-  const evadeExtra = (e.evadeT > 0) ? 0.20 : 0.0;
-  e.evadeT = Math.max(0, e.evadeT - dt);
+  // ===== target di “zona visuale” davanti al player
+  // (z vicino a 0 = vicino al player; negativo = più avanti; positivo = dietro)
+  const Z_NEAR   = 7.5;   // quando è intorno a 7-8 la vedi bene
+  const Z_TAUNT  = 6.2;   // dove “sta lì” a fare la scena
+  const Z_CLAMP_MIN = 4.4;
+  const Z_CLAMP_MAX = 9.6;
 
-  // ===== PHASE 1: ARRIVA VELOCE (approach)
+  // ===== PHASE 1: ARRIVA VELOCE DA DIETRO
   if(beh.phase === 'approach'){
-    // arriva forte da dietro
-    const carSpeed = playerSpeed * 1.55;     // ✅ più veloce del player ma non esagerata
-    e.z -= carSpeed * dt;
+    // muove in avanti rispetto al mondo (verso -z) più del player
+    const mul = 1.55; // forte ma non folle
+    e.z -= (playerSpeed * mul) * dt;
 
-    // quando è “vicina” parte lo show comico a scatti
-    if(e.z <= 8.0){
+    // quando entra in visuale -> passa a taunt
+    if(e.z <= Z_NEAR){
       beh.phase = 'taunt';
-      beh.t = 0;
+      beh.phaseT = 0;
       beh.stutT = 0;
       beh.stutMul = 1.0;
     }
   }
 
-  // ===== PHASE 2: 2 secondi a SCATTI (taunt)
+  // ===== PHASE 2: 2 secondi di "scatti" ma RESTA IN ZONA
   else if(beh.phase === 'taunt'){
-    // ogni 0.08–0.13s cambia “marcia” (scatti)
+    // cambia “marcia” ogni 0.09–0.14s
     beh.stutT -= dt;
     if(beh.stutT <= 0){
-      beh.stutT = 0.08 + Math.random()*0.05;
+      beh.stutT = 0.09 + Math.random()*0.05;
 
-      // alterna veloce/lento in modo evidente
-      // (molto “cartoon”: a volte quasi ferma, a volte accelera)
-      const fast = 1.65 + Math.random()*0.55;   // 1.65–2.20
-      const slow = 0.20 + Math.random()*0.35;   // 0.20–0.55
+      // alterna fast/slow in modo evidente
+      const fast = 1.55 + Math.random()*0.55;   // 1.55–2.10
+      const slow = 0.18 + Math.random()*0.35;   // 0.18–0.53
       beh.stutMul = (Math.random() < 0.55) ? fast : slow;
     }
 
-    // oscillazione extra (tipo “va a scatti”)
-    const wob = 0.85 + 0.25*Math.sin(performance.now()*0.018);
+    // “spinta” in avanti ma poi la riportiamo verso Z_TAUNT (così non scappa via)
+    const push = playerSpeed * beh.stutMul;
+    e.z -= push * dt;
 
-    // movimento in avanti/indietro microscopico (illusione “scatto”)
-    // (resta vicino a te, non deve sparire subito)
-    const carSpeed = playerSpeed * beh.stutMul * wob;
+    // forza di “molla” che la tiene in zona (stabile, niente sparizione)
+    const spring = 10.0;
+    const dz = (e.z - Z_TAUNT);
+    e.z -= dz * spring * dt;
 
-    // durante taunt NON deve superarti troppo: clamp zona
-    e.z -= carSpeed * dt;
+    // clamp finale sicurezza
+    e.z = clamp(e.z, Z_CLAMP_MIN, Z_CLAMP_MAX);
 
-    // limiti: resta tra 3 e 10 davanti/dietro
-    e.z = clamp(e.z, 3.2, 10.5);
-
-    // dopo 2 secondi -> DASH
-    if(beh.t >= 2.0){
+    // dopo 2s -> dash
+    if(beh.phaseT >= 2.0){
       beh.phase = 'dash';
-      beh.dashT = 0;
+      beh.phaseT = 0;
     }
   }
 
-  // ===== PHASE 3: SCATTA VIA e SPARISCE (dash)
+  // ===== PHASE 3: SCATTA VIA DAVANTI E POI SPARISCE
   else if(beh.phase === 'dash'){
-    beh.dashT += dt;
+    // accelera progressivamente
+    const mul = 2.6 + beh.phaseT*1.6; // cresce col tempo
+    e.z -= (playerSpeed * mul) * dt;
 
-    // accelera molto e scappa via davanti
-    const dashSpeed = playerSpeed * (3.0 + beh.dashT*1.8); // sempre più forte
-    e.z -= dashSpeed * dt;
-
-    // se è lontana -> delete
-    if(e.z < -120){
+    if(e.z < -130){
       scene.remove(e.obj);
       const idx = game.entities.indexOf(e);
       if(idx>=0) game.entities.splice(idx,1);
@@ -4842,12 +4893,14 @@ function updateMonkeyCar(e, dt, scroll){
     }
   }
 
-  // ===== posizione Z applicata
+  // ===== applica posizione Z
   e.obj.position.z = e.z;
 
-  // ===== posizione X (corsia emergenza con micro zigzag)
-  e.weave += dt * (2.6 + evadeExtra*2.0 + (beh.phase==='taunt' ? 2.4 : 0.0));
-  const wx = Math.sin(e.weave) * (beh.phase==='taunt' ? 0.20 : 0.12) + (evadeExtra*0.10);
+  // ===== X: corsia emergenza con micro zigzag (più nervoso durante taunt)
+  const phaseExtra = (beh.phase === 'taunt') ? 2.4 : 0.0;
+  e.weave = (e.weave ?? rnd(0, Math.PI*2));
+  e.weave += dt * (2.6 + phaseExtra);
+  const wx = Math.sin(e.weave) * ((beh.phase === 'taunt') ? 0.20 : 0.12);
   e.obj.position.x = lanesX[3] + wx;
 
   // ===== anim ruote + scimmia
@@ -4855,42 +4908,40 @@ function updateMonkeyCar(e, dt, scroll){
   if(ud){
     ud.t += dt;
 
-    // ruote: proporzionali a quanto “sta spingendo”
-    const phaseMul =
+    const spinMul =
       (beh.phase==='approach') ? 1.55 :
-      (beh.phase==='taunt')    ? (0.5 + beh.stutMul*0.55) :
-      3.0;
+      (beh.phase==='taunt')    ? (0.65 + beh.stutMul*0.50) :
+      (2.6 + beh.phaseT*1.2);
 
-    const spin = (playerSpeed * phaseMul) * 0.55;
+    const spin = (playerSpeed * spinMul) * 0.55;
     for(const w of ud.wheels) w.rotation.x += spin * dt;
 
-    // scimmia: comica e più “leggibile” quando taunt
     const excite = (beh.phase==='taunt') ? 1.0 : 0.0;
-    const bFast = Math.sin(ud.t * (8.0 + 12.0*excite));
+    const bFast = Math.sin(ud.t * (9.0 + 12.0*excite));
     const bSlow = Math.sin(ud.t * 3.2);
 
     if(ud.monkey){
-      ud.monkey.position.y = 0.62 + 0.020*bFast + 0.012*bSlow;
-      ud.monkey.rotation.y = 0.10*Math.sin(ud.t*2.6) + 0.35*excite*Math.sin(ud.t*10.0);
-      ud.monkey.rotation.x = -0.06 + 0.06*Math.sin(ud.t*4.0);
+      ud.monkey.position.y = 0.78 + 0.025*bFast + 0.015*bSlow;
+      ud.monkey.rotation.y = 0.12*Math.sin(ud.t*2.4) + 0.45*excite*Math.sin(ud.t*10.0);
+      ud.monkey.rotation.x = -0.06 + 0.07*Math.sin(ud.t*4.0);
     }
     if(ud.tongue){
-      ud.tongue.scale.y = 0.65 + 0.70*Math.abs(Math.sin(ud.t*11.0));
-      ud.tongue.rotation.z = 0.14*Math.sin(ud.t*12.0) + 0.28*excite*Math.sin(ud.t*18.0);
+      ud.tongue.scale.y = 0.70 + 0.80*Math.abs(Math.sin(ud.t*11.0));
+      ud.tongue.rotation.z = 0.15*Math.sin(ud.t*12.0) + 0.30*excite*Math.sin(ud.t*18.0);
     }
     if(ud.armL && ud.armR){
-      ud.armL.rotation.x = 0.9 + 0.9*Math.sin(ud.t*10.0);
-      ud.armR.rotation.x = 0.9 + 0.9*Math.sin(ud.t*10.0 + 1.7);
+      ud.armL.rotation.x = 1.0 + 1.0*Math.sin(ud.t*10.0);
+      ud.armR.rotation.x = 1.0 + 1.0*Math.sin(ud.t*10.0 + 1.7);
     }
     if(ud.bell && ud.bell.material){
-      const glow = 0.35 + 0.28*Math.abs(Math.sin(ud.t*12.0));
-      const evGlow = 0.28 * excite * (0.5 + 0.5*Math.abs(Math.sin(ud.t*20.0)));
-      ud.bell.material.opacity = Math.min(0.95, glow + evGlow);
-      ud.bell.scale.setScalar(0.34 + 0.08*Math.abs(Math.sin(ud.t*14.0)) + 0.10*excite);
+      const glow = 0.45 + 0.30*Math.abs(Math.sin(ud.t*12.0));
+      const evGlow = 0.30 * excite * (0.5 + 0.5*Math.abs(Math.sin(ud.t*20.0)));
+      ud.bell.material.opacity = Math.min(0.98, glow + evGlow);
+      ud.bell.scale.setScalar(0.44 + 0.10*Math.abs(Math.sin(ud.t*14.0)) + 0.14*excite);
     }
 
     // roll auto (più durante taunt)
-    e.obj.rotation.z = 0.02*Math.sin(ud.t*6.0) + (beh.phase==='taunt' ? 0.10*Math.sin(ud.t*16.0) : 0);
+    e.obj.rotation.z = 0.02*Math.sin(ud.t*6.0) + (beh.phase==='taunt' ? 0.12*Math.sin(ud.t*16.0) : 0);
   }
 }
 
