@@ -3505,13 +3505,10 @@ actions.jumps = jumpActions;
       foodBoostCharges: 0,
       
       // ===== BULLETS / MONKEY CAR =====
-bullets: 5,
-projectiles: [],
-monkeyCarId: null,
+bullets: 5,              // ✅ per ora fisso 5
+projectiles: [],         // bullet attivi (mesh + vel)
+monkeyCarId: null,       // id (indice) logico: 1 car alla volta
 
-// ✅ NEW: 3 passaggi per ogni boost
-      monkeyCarRunsLeft: 0,
-      monkeyCarNextSpawnT: 0,
       invincibleT:0,
       foodBoostT:0,
       ringBoostT:0,
@@ -3656,19 +3653,18 @@ if(game._foodPop){
   updateBulletsUI();
 
   // ===== monkey car (solo durante FOOD boost) =====
-if(game.foodBoostT <= 0){
-  // se finisce boost -> via car + mira + reset schedule
-  despawnMonkeyCar();
-  game.monkeyCarRunsLeft = 0;
-  game.monkeyCarNextSpawnT = 0;
-
-  if(aimState.active || aimState.pending) {
-    aimState.active = false; aimState.pending = false; aimState.pointerId = null;
-    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-    aimState.holdTimer = null;
-    clearAimOverlay();
+  if(game.foodBoostT > 0){
+    spawnMonkeyCar();
+  }else{
+    // se finisce boost -> via car + mira
+    despawnMonkeyCar();
+    if(aimState.active || aimState.pending) {
+      aimState.active = false; aimState.pending = false; aimState.pointerId = null;
+      if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+      aimState.holdTimer = null;
+      clearAimOverlay();
+    }
   }
-}
       pillBoost.style.display='flex';
 
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -4361,10 +4357,6 @@ hookCamBtn(btnCamFront,'front');
   game.foodBoostT = 10.0;
   game.invincibleT = Math.max(game.invincibleT, 10.0);
   bubble.visible = true;
-  // ✅ MONKEY CAR: deve arrivare 3 volte nello stesso boost
-game.monkeyCarRunsLeft = 3;
-game.monkeyCarNextSpawnT = 0.05; // quasi subito
-
 
   // ✅ animazioni + lock
   pulseBoostCount();
@@ -4689,130 +4681,81 @@ function makeMonkeyCar(){
   const w3 = wheel(-xW,  zB);
   const w4 = wheel( xW,  zB);
 
-  // ===== 🐵 SCIMMIA PIÙ REALISTICA =====
-const monkey = new THREE.Group();
-monkey.position.set(0, 0.62, 0.36);   // più “seduta” dietro il vetro
-monkey.scale.setScalar(1.65);         // meno “pallone”, ma ancora leggibile
+  // ===== SCIMMIA ENORME, SUPER VISIBILE =====
+  const monkey = new THREE.Group();
+  monkey.position.set(0, 0.78, 0.42);  // attaccata al parabrezza
+  monkey.scale.setScalar(3.10);        // ✅ ENORME
 
-const furMat = new THREE.MeshStandardMaterial({
-  color:0x6a3f22, roughness:0.92, metalness:0.02
-});
-const skinMat = new THREE.MeshStandardMaterial({
-  color:0xc7925e, roughness:0.78, metalness:0.00
-});
-const eyeWhiteMat = new THREE.MeshStandardMaterial({ color:0xe9eef7, roughness:0.35, metalness:0.05 });
-const pupilMat = new THREE.MeshStandardMaterial({ color:0x080a0e, roughness:0.25, metalness:0.10 });
+  const faceMat = new THREE.MeshStandardMaterial({
+    color:0x7f4b26, roughness:0.72, metalness:0.02,
+    emissive:0x2a180a, emissiveIntensity:0.45
+  });
+  const muzzleMat = new THREE.MeshStandardMaterial({
+    color:0xd09a63, roughness:0.78, metalness:0.00,
+    emissive:0x2a1a0e, emissiveIntensity:0.30
+  });
 
-// torso (capsule) + pancia
-const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.24, 6, 12), furMat);
-torso.position.set(0, 0.05, 0.00);
-torso.castShadow = true;
-monkey.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 18, 14), faceMat);
+  head.castShadow = true;
+  monkey.add(head);
 
-const belly = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 12), skinMat);
-belly.position.set(0, -0.02, 0.12);
-belly.scale.set(1.0, 0.85, 1.0);
-monkey.add(belly);
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), muzzleMat);
+  muzzle.position.set(0, -0.05, 0.16);
+  monkey.add(muzzle);
 
-// head + muzzle
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), furMat);
-head.position.set(0, 0.26, 0.08);
-head.castShadow = true;
-monkey.add(head);
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 10), faceMat);
+  const earR = earL.clone();
+  earL.position.set(-0.28, 0.02, 0.02);
+  earR.position.set( 0.28, 0.02, 0.02);
+  monkey.add(earL, earR);
 
-const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), skinMat);
-muzzle.position.set(0, 0.22, 0.20);
-muzzle.scale.set(1.0, 0.75, 0.85);
-monkey.add(muzzle);
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color:0x0b0e12, roughness:0.35, metalness:0.10,
+    emissive:0x000000, emissiveIntensity:0.0
+  });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), eyeMat);
+  const eyeR = eyeL.clone();
+  eyeL.position.set(-0.07, 0.05, 0.20);
+  eyeR.position.set( 0.07, 0.05, 0.20);
+  monkey.add(eyeL, eyeR);
 
-// ears (più piatte)
-const earGeo = new THREE.SphereGeometry(0.07, 14, 10);
-const earL = new THREE.Mesh(earGeo, furMat);
-const earR = new THREE.Mesh(earGeo, furMat);
-earL.position.set(-0.18, 0.28, 0.06);
-earR.position.set( 0.18, 0.28, 0.06);
-earL.scale.set(1.0, 0.70, 0.35);
-earR.scale.copy(earL.scale);
-monkey.add(earL, earR);
+  // linguaccia più grande
+  const tongue = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.16, 0.24),
+    new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.85, metalness:0.0, side:THREE.DoubleSide })
+  );
+  tongue.position.set(0, -0.14, 0.28);
+  tongue.rotation.x = -0.10;
+  monkey.add(tongue);
 
-// eyes (con blink via scaleY)
-const eyeWhiteL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), eyeWhiteMat);
-const eyeWhiteR = eyeWhiteL.clone();
-eyeWhiteL.position.set(-0.06, 0.28, 0.21);
-eyeWhiteR.position.set( 0.06, 0.28, 0.21);
-monkey.add(eyeWhiteL, eyeWhiteR);
+  // braccia più grosse
+  const armMat = new THREE.MeshStandardMaterial({ color:0x6b3f1f, roughness:0.9, metalness:0.0 });
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.42,12), armMat);
+  const armR = armL.clone();
+  armL.position.set(-0.26, -0.08, 0.04);
+  armR.position.set( 0.26, -0.08, 0.04);
+  armL.rotation.z = 0.9;
+  armR.rotation.z = -0.9;
+  monkey.add(armL, armR);
 
-const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 12), pupilMat);
-const pupilR = pupilL.clone();
-pupilL.position.set(-0.06, 0.275, 0.235);
-pupilR.position.set( 0.06, 0.275, 0.235);
-monkey.add(pupilL, pupilR);
+  // campanella glow (già tua)
+  const bell = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_bulletGlowTex, transparent:true, opacity:0.70, depthWrite:false, blending:THREE.AdditiveBlending
+  }));
+  bell.scale.set(0.44,0.44,1);
+  bell.position.set(0.34, 0.12, 0.08);
+  monkey.add(bell);
 
-// tongue (più sottile)
-const tongue = new THREE.Mesh(
-  new THREE.PlaneGeometry(0.08, 0.14),
-  new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.90, metalness:0.0, side:THREE.DoubleSide })
-);
-tongue.position.set(0, 0.16, 0.28);
-tongue.rotation.x = -0.10;
-monkey.add(tongue);
+  g.add(monkey);
 
-// arms (spalla -> avambraccio -> mano)
-const armMat = new THREE.MeshStandardMaterial({ color:0x5b341b, roughness:0.95, metalness:0.0 });
+  g.userData = {
+    wheels:[w1,w2,w3,w4],
+    monkey, head, tongue, earL, earR, bell, armL, armR,
+    t: 0
+  };
 
-function makeArm(side=1){
-  const arm = new THREE.Group();
-
-  const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.16, 6, 10), armMat);
-  upper.rotation.z = side * 0.55;
-  upper.position.set(side*0.12, 0.12, 0.08);
-  arm.add(upper);
-
-  const fore = new THREE.Mesh(new THREE.CapsuleGeometry(0.040, 0.14, 6, 10), armMat);
-  fore.rotation.z = side * 0.95;
-  fore.position.set(side*0.20, 0.02, 0.10);
-  arm.add(fore);
-
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), skinMat);
-  hand.position.set(side*0.26, -0.08, 0.12);
-  hand.scale.set(0.85, 0.60, 0.95);
-  arm.add(hand);
-
-  return { arm, upper, fore, hand };
+  return g;
 }
-
-const A_L = makeArm(-1);
-const A_R = makeArm( 1);
-monkey.add(A_L.arm, A_R.arm);
-
-// tail (curva semplice)
-const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.028,0.34,10), furMat);
-tail.position.set(0, -0.12, -0.10);
-tail.rotation.x = 0.8;
-tail.rotation.z = 0.15;
-monkey.add(tail);
-
-// campanella glow (come tua)
-const bell = new THREE.Sprite(new THREE.SpriteMaterial({
-  map:_bulletGlowTex, transparent:true, opacity:0.65, depthWrite:false, blending:THREE.AdditiveBlending
-}));
-bell.scale.set(0.30,0.30,1);
-bell.position.set(0.23, 0.09, 0.12);
-monkey.add(bell);
-
-g.add(monkey);
-
-g.userData = {
-  wheels:[w1,w2,w3,w4],
-  monkey, head, muzzle,
-  tongue, bell,
-  eyeWhiteL, eyeWhiteR,
-  pupilL, pupilR,
-  armL: A_L, armR: A_R,
-  tail,
-  t: 0,
-  blinkT: 0
-};
 
 function spawnMonkeyCar(){
   // appare solo durante FOOD boost
@@ -4878,8 +4821,8 @@ function updateMonkeyCar(e, dt, scroll){
   // Z RELATIVA AL PLAYER (player è a z=0)
   // z > 0 = dietro di te (verso camera)
   // z < 0 = davanti a te (più avanti nella strada)
-  const Z_AHEAD    = -6.0;   // supera il player
-const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più visibile)
+  const Z_AHEAD   = -6.0;   // “va un po’ più avanti di te”
+  const Z_PARALLEL=  0.8;   // “arriva parallela con te” (vicina a te ma leggibile)
   const Z_BEHIND_LIMIT = 40; // sicurezza: se resta troppo dietro la rimuoviamo
 
   // helper: aggiorna Z con controllo
@@ -4928,19 +4871,11 @@ const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più vi
     advanceWithForwardSpeed(v);
 
     if(e.z < -130){
-  scene.remove(e.obj);
-  const idx = game.entities.indexOf(e);
-  if(idx>=0) game.entities.splice(idx,1);
-
-  // ✅ conta un passaggio completato e prepara il prossimo
-  game.monkeyCarRunsLeft = Math.max(0, (game.monkeyCarRunsLeft||0) - 1);
-
-  // se ne restano altri e il boost è ancora attivo, respawn dopo un attimo
-  if(game.foodBoostT > 0 && game.monkeyCarRunsLeft > 0){
-    game.monkeyCarNextSpawnT = 0.85; // pausa tra una car e l’altra
-  }
-  return;
-}
+      scene.remove(e.obj);
+      const idx = game.entities.indexOf(e);
+      if(idx>=0) game.entities.splice(idx,1);
+      return;
+    }
   }
 
   // sicurezza: se per qualsiasi motivo resta troppo dietro e non arriva mai
@@ -4961,67 +4896,45 @@ const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più vi
   const wx = Math.sin(e.weave) * ((beh.phase === 'align') ? 0.18 : 0.12);
   e.obj.position.x = lanesX[3] + wx;
 
-  // ===== anim scimmia più naturale =====
-if(ud.monkey){
-  const t = ud.t;
+  // anim ruote + scimmia (come prima, ma più “pulita”)
+  const ud = e.obj.userData;
+  if(ud){
+    ud.t += dt;
 
-  // intensità “nervosa” quando è in align (parallela) -> fa cose comiche ma credibili
-  const excite = (beh.phase === 'align') ? 1.0 : 0.35;
+    // spin proporzionale alla velocità del momento
+    const spin = playerSpeed * (
+      beh.phase === 'approach' ? 1.55 :
+      beh.phase === 'align'    ? 0.95 :
+      2.8
+    ) * 0.55;
 
-  // micro respiro + piccoli sobbalzi
-  ud.monkey.position.y = 0.62 + 0.010*Math.sin(t*2.2) + 0.018*excite*Math.sin(t*9.0);
-  ud.monkey.rotation.y = 0.06*Math.sin(t*1.7) + 0.22*excite*Math.sin(t*7.5);
-  ud.monkey.rotation.x = -0.04 + 0.05*Math.sin(t*3.1);
+    for(const w of ud.wheels) w.rotation.x += spin * dt;
 
-  // braccia (spalla + gomito)
-  if(ud.armL && ud.armR){
-    const w = 7.5 + excite*6.0;
-    const a = 0.65 + excite*0.55;
+    const excite = (beh.phase === 'align') ? 1.0 : 0.0;
+    const bFast = Math.sin(ud.t * (8.0 + 10.0*excite));
+    const bSlow = Math.sin(ud.t * 3.0);
 
-    ud.armL.upper.rotation.x = 0.6 + a*Math.sin(t*w);
-    ud.armR.upper.rotation.x = 0.6 + a*Math.sin(t*w + 1.6);
-
-    ud.armL.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 0.5);
-    ud.armR.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 2.1);
-  }
-
-  // lingua più “morbida”
-  if(ud.tongue){
-    ud.tongue.scale.y = 0.75 + 0.55*Math.abs(Math.sin(t*(10.0 + excite*6.0)));
-    ud.tongue.rotation.z = 0.10*Math.sin(t*9.0) + 0.18*excite*Math.sin(t*15.0);
-  }
-
-  // blink occhi (schiaccia verticalmente ogni tanto)
-  ud.blinkT = (ud.blinkT ?? 0) - dt;
-  if(ud.blinkT <= 0){
-    ud.blinkT = 1.2 + Math.random()*1.6; // prossimo blink
-    ud._blinkPulse = 0.11;               // durata blink
-  }
-  if(ud._blinkPulse && ud._blinkPulse > 0){
-    ud._blinkPulse = Math.max(0, ud._blinkPulse - dt);
-    const k = (ud._blinkPulse > 0) ? 0.18 : 1.0;
-    if(ud.eyeWhiteL && ud.eyeWhiteR){
-      ud.eyeWhiteL.scale.y = k;
-      ud.eyeWhiteR.scale.y = k;
+    if(ud.monkey){
+      ud.monkey.position.y = 0.78 + 0.025*bFast + 0.015*bSlow;
+      ud.monkey.rotation.y = 0.10*Math.sin(ud.t*2.2) + 0.38*excite*Math.sin(ud.t*9.5);
+      ud.monkey.rotation.x = -0.06 + 0.07*Math.sin(ud.t*3.8);
     }
-  }else{
-    if(ud.eyeWhiteL && ud.eyeWhiteR){
-      ud.eyeWhiteL.scale.y = 1.0;
-      ud.eyeWhiteR.scale.y = 1.0;
+    if(ud.tongue){
+      ud.tongue.scale.y = 0.70 + 0.80*Math.abs(Math.sin(ud.t*10.5));
+      ud.tongue.rotation.z = 0.12*Math.sin(ud.t*11.0) + 0.26*excite*Math.sin(ud.t*16.0);
     }
-  }
+    if(ud.armL && ud.armR){
+      ud.armL.rotation.x = 1.0 + 1.0*Math.sin(ud.t*9.5);
+      ud.armR.rotation.x = 1.0 + 1.0*Math.sin(ud.t*9.5 + 1.7);
+    }
+    if(ud.bell && ud.bell.material){
+      const glow = 0.45 + 0.30*Math.abs(Math.sin(ud.t*11.5));
+      const evGlow = 0.30 * excite * (0.5 + 0.5*Math.abs(Math.sin(ud.t*18.0)));
+      ud.bell.material.opacity = Math.min(0.98, glow + evGlow);
+      ud.bell.scale.setScalar(0.44 + 0.10*Math.abs(Math.sin(ud.t*13.5)) + 0.14*excite);
+    }
 
-  // campanella più viva quando è parallela
-  if(ud.bell && ud.bell.material){
-    const glow = 0.38 + 0.28*Math.abs(Math.sin(t*10.5));
-    const evGlow = 0.25 * excite * (0.5 + 0.5*Math.abs(Math.sin(t*17.0)));
-    ud.bell.material.opacity = Math.min(0.98, glow + evGlow);
-    ud.bell.scale.setScalar(0.30 + 0.08*Math.abs(Math.sin(t*13.0)) + 0.10*excite);
-  }
-
-  // coda “whip” leggera
-  if(ud.tail){
-    ud.tail.rotation.y = 0.25*Math.sin(t*4.0) + 0.35*excite*Math.sin(t*9.5);
+    e.obj.rotation.z = 0.02*Math.sin(ud.t*5.8) + (beh.phase==='align' ? 0.10*Math.sin(ud.t*14.0) : 0);
   }
 }
 
@@ -5515,22 +5428,6 @@ if(_nowDanceActive !== _prevDanceActive){
 
   // scroll
   const scroll = speed*dt;
-  // =========================================================
-// ✅ MONKEY CAR SCHEDULER: 3 arrivi per boost FOOD
-// =========================================================
-if(game.foodBoostT > 0){
-  // conta giù il timer spawn
-  game.monkeyCarNextSpawnT = Math.max(0, game.monkeyCarNextSpawnT - dt);
-
-  // se non c’è car attiva e ho ancora “passaggi”, la spawno
-  if(game.monkeyCarRunsLeft > 0 && game.monkeyCarNextSpawnT <= 0 && !monkeyCarAlive()){
-    spawnMonkeyCar();
-  }
-}else{
-  // sicurezza
-  game.monkeyCarRunsLeft = 0;
-  game.monkeyCarNextSpawnT = 0;
-}
   game.runDist += scroll;
   for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
 
