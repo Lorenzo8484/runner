@@ -4864,11 +4864,7 @@ function updateMonkeyCar(e, dt, scroll){
 
   // init comportamento
   if(!e.beh){
-    e.beh = {
-      phase: 'approach',   // approach -> align -> dash
-      t: 0,
-      dashT: 0
-    };
+    e.beh = { phase:'approach', t:0, dashT:0 };
   }
   const beh = e.beh;
   beh.t += dt;
@@ -4876,22 +4872,19 @@ function updateMonkeyCar(e, dt, scroll){
   // velocità player (unità/s)
   const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
 
-  // Z RELATIVA AL PLAYER (player è a z=0)
-  // z > 0 = dietro di te (verso camera)
-  // z < 0 = davanti a te (più avanti nella strada)
-  const Z_AHEAD    = -6.0;   // supera il player
-const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più visibile)
-  const Z_BEHIND_LIMIT = 40; // sicurezza: se resta troppo dietro la rimuoviamo
+  // Z relativa al player (player è a z=0)
+  const Z_AHEAD        = -6.0;   // supera il player
+  const Z_PARALLEL     = -1.6;   // si “mette parallela” (visibile)
+  const Z_BEHIND_LIMIT = 40;     // se resta troppo dietro, la rimuoviamo
 
-  // helper: aggiorna Z con controllo
-  // e.z += scroll (mondo) - v*dt (auto che va "in avanti" verso -z)
   function advanceWithForwardSpeed(v){
+    // mondo scorre + auto avanza verso -z
     e.z += scroll - v * dt;
   }
 
-  // ===== PHASE 1: ARRIVA DA DIETRO E TI SUPERA UN PO'
+  // ===== PHASE 1: arriva da dietro e ti supera
   if(beh.phase === 'approach'){
-    const v = playerSpeed * 1.55;     // più veloce del player -> ti raggiunge e supera
+    const v = playerSpeed * 1.55;
     advanceWithForwardSpeed(v);
 
     if(e.z <= Z_AHEAD){
@@ -4900,51 +4893,44 @@ const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più vi
     }
   }
 
-  // ===== PHASE 2: RALLENTA / SI "AGGANCIA" PER DIVENTARE PARALLELA
+  // ===== PHASE 2: si aggancia al parallelo
   else if(beh.phase === 'align'){
-    // controller: se è troppo avanti (z molto negativo) => v più bassa del player (ti “aspetta”)
-    // se è troppo dietro (z positivo) => v più alta del player (ti raggiunge)
-    const err = (e.z - Z_PARALLEL);    // >0 = dietro, <0 = troppo avanti
-    const k = 2.2;                     // forza di aggancio (più alto = si allinea più in fretta)
-    const v = playerSpeed + err * k;   // v target
-
-    // limiti per evitare scatti assurdi
+    const err = (e.z - Z_PARALLEL);   // >0 = dietro, <0 = troppo avanti
+    const k = 2.2;
+    const v = playerSpeed + err * k;
     const vClamped = clamp(v, playerSpeed * 0.25, playerSpeed * 1.20);
     advanceWithForwardSpeed(vClamped);
 
-    // quando è abbastanza vicino al parallelo, resta un attimo e poi scatta
     if(Math.abs(err) < 0.25){
-      if(beh.t > 0.35){                // piccola pausa “parallela”
+      if(beh.t > 0.35){
         beh.phase = 'dash';
         beh.dashT = 0;
       }
     }
   }
 
-  // ===== PHASE 3: SCATTA VIA DAVANTI E SPARISCE
+  // ===== PHASE 3: scatta via e sparisce
   else if(beh.phase === 'dash'){
     beh.dashT += dt;
-    const mul = 2.8 + beh.dashT * 2.0; // accelera
+    const mul = 2.8 + beh.dashT * 2.0;
     const v = playerSpeed * mul;
     advanceWithForwardSpeed(v);
 
     if(e.z < -130){
-  scene.remove(e.obj);
-  const idx = game.entities.indexOf(e);
-  if(idx>=0) game.entities.splice(idx,1);
+      scene.remove(e.obj);
+      const idx = game.entities.indexOf(e);
+      if(idx>=0) game.entities.splice(idx,1);
 
-  // ✅ conta un passaggio completato e prepara il prossimo
-  game.monkeyCarRunsLeft = Math.max(0, (game.monkeyCarRunsLeft||0) - 1);
-
-  // se ne restano altri e il boost è ancora attivo, respawn dopo un attimo
-  if(game.foodBoostT > 0 && game.monkeyCarRunsLeft > 0){
-    game.monkeyCarNextSpawnT = 0.85; // pausa tra una car e l’altra
-  }
-  return;
-}
+      // ✅ conta un passaggio completato e prepara il prossimo
+      game.monkeyCarRunsLeft = Math.max(0, (game.monkeyCarRunsLeft||0) - 1);
+      if(game.foodBoostT > 0 && game.monkeyCarRunsLeft > 0){
+        game.monkeyCarNextSpawnT = 0.85;
+      }
+      return;
+    }
   }
 
-  // sicurezza: se per qualsiasi motivo resta troppo dietro e non arriva mai
+  // sicurezza: se resta troppo dietro
   if(e.z > Z_BEHIND_LIMIT){
     scene.remove(e.obj);
     const idx = game.entities.indexOf(e);
@@ -4955,78 +4941,75 @@ const Z_PARALLEL = -1.6;   // ✅ più avanti quando è “parallela” (più vi
   // applica posizione
   e.obj.position.z = e.z;
 
-  // X: corsia emergenza con micro zigzag (leggero)
+  // X: corsia emergenza con micro zigzag
   e.weave = (e.weave ?? rnd(0, Math.PI*2));
   const wSpd = (beh.phase === 'align') ? 4.0 : 2.8;
   e.weave += dt * wSpd;
   const wx = Math.sin(e.weave) * ((beh.phase === 'align') ? 0.18 : 0.12);
   e.obj.position.x = lanesX[3] + wx;
-  
- const ud = (e.obj && e.obj.userData) ? e.obj.userData : {};
 
-  // ===== anim scimmia più naturale =====
-if(ud.monkey){
-  const t = ud.t;
+  // ===== anim scimmia (usa userData, ma NON deve rompere il gioco)
+  const ud = (e.obj && e.obj.userData) ? e.obj.userData : null;
+  if(ud){
+    ud.t = (ud.t || 0) + dt;
 
-  // intensità “nervosa” quando è in align (parallela) -> fa cose comiche ma credibili
-  const excite = (beh.phase === 'align') ? 1.0 : 0.35;
+    if(ud.monkey){
+      const t = ud.t;
+      const excite = (beh.phase === 'align') ? 1.0 : 0.35;
 
-  // micro respiro + piccoli sobbalzi
-  ud.monkey.position.y = 0.62 + 0.010*Math.sin(t*2.2) + 0.018*excite*Math.sin(t*9.0);
-  ud.monkey.rotation.y = 0.06*Math.sin(t*1.7) + 0.22*excite*Math.sin(t*7.5);
-  ud.monkey.rotation.x = -0.04 + 0.05*Math.sin(t*3.1);
+      ud.monkey.position.y = 0.62 + 0.010*Math.sin(t*2.2) + 0.018*excite*Math.sin(t*9.0);
+      ud.monkey.rotation.y = 0.06*Math.sin(t*1.7) + 0.22*excite*Math.sin(t*7.5);
+      ud.monkey.rotation.x = -0.04 + 0.05*Math.sin(t*3.1);
 
-  // braccia (spalla + gomito)
-  if(ud.armL && ud.armR){
-    const w = 7.5 + excite*6.0;
-    const a = 0.65 + excite*0.55;
+      if(ud.armL && ud.armR){
+        const w = 7.5 + excite*6.0;
+        const a = 0.65 + excite*0.55;
 
-    ud.armL.upper.rotation.x = 0.6 + a*Math.sin(t*w);
-    ud.armR.upper.rotation.x = 0.6 + a*Math.sin(t*w + 1.6);
+        ud.armL.upper.rotation.x = 0.6 + a*Math.sin(t*w);
+        ud.armR.upper.rotation.x = 0.6 + a*Math.sin(t*w + 1.6);
 
-    ud.armL.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 0.5);
-    ud.armR.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 2.1);
-  }
+        ud.armL.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 0.5);
+        ud.armR.fore.rotation.x  = 1.0 + (a*0.8)*Math.sin(t*(w+2.2) + 2.1);
+      }
 
-  // lingua più “morbida”
-  if(ud.tongue){
-    ud.tongue.scale.y = 0.75 + 0.55*Math.abs(Math.sin(t*(10.0 + excite*6.0)));
-    ud.tongue.rotation.z = 0.10*Math.sin(t*9.0) + 0.18*excite*Math.sin(t*15.0);
-  }
+      if(ud.tongue){
+        ud.tongue.scale.y = 0.75 + 0.55*Math.abs(Math.sin(t*(10.0 + excite*6.0)));
+        ud.tongue.rotation.z = 0.10*Math.sin(t*9.0) + 0.18*excite*Math.sin(t*15.0);
+      }
 
-  // blink occhi (schiaccia verticalmente ogni tanto)
-  ud.blinkT = (ud.blinkT ?? 0) - dt;
-  if(ud.blinkT <= 0){
-    ud.blinkT = 1.2 + Math.random()*1.6; // prossimo blink
-    ud._blinkPulse = 0.11;               // durata blink
-  }
-  if(ud._blinkPulse && ud._blinkPulse > 0){
-    ud._blinkPulse = Math.max(0, ud._blinkPulse - dt);
-    const k = (ud._blinkPulse > 0) ? 0.18 : 1.0;
-    if(ud.eyeWhiteL && ud.eyeWhiteR){
-      ud.eyeWhiteL.scale.y = k;
-      ud.eyeWhiteR.scale.y = k;
+      // blink
+      ud.blinkT = (ud.blinkT ?? 0) - dt;
+      if(ud.blinkT <= 0){
+        ud.blinkT = 1.2 + Math.random()*1.6;
+        ud._blinkPulse = 0.11;
+      }
+      if(ud._blinkPulse && ud._blinkPulse > 0){
+        ud._blinkPulse = Math.max(0, ud._blinkPulse - dt);
+        const k = (ud._blinkPulse > 0) ? 0.18 : 1.0;
+        if(ud.eyeWhiteL && ud.eyeWhiteR){
+          ud.eyeWhiteL.scale.y = k;
+          ud.eyeWhiteR.scale.y = k;
+        }
+      }else{
+        if(ud.eyeWhiteL && ud.eyeWhiteR){
+          ud.eyeWhiteL.scale.y = 1.0;
+          ud.eyeWhiteR.scale.y = 1.0;
+        }
+      }
+
+      if(ud.bell && ud.bell.material){
+        const glow = 0.38 + 0.28*Math.abs(Math.sin(t*10.5));
+        const evGlow = 0.25 * excite * (0.5 + 0.5*Math.abs(Math.sin(t*17.0)));
+        ud.bell.material.opacity = Math.min(0.98, glow + evGlow);
+        ud.bell.scale.setScalar(0.30 + 0.08*Math.abs(Math.sin(t*13.0)) + 0.10*excite);
+      }
+
+      if(ud.tail){
+        ud.tail.rotation.y = 0.25*Math.sin(t*4.0) + 0.35*excite*Math.sin(t*9.5);
+      }
     }
-  }else{
-    if(ud.eyeWhiteL && ud.eyeWhiteR){
-      ud.eyeWhiteL.scale.y = 1.0;
-      ud.eyeWhiteR.scale.y = 1.0;
-    }
   }
-
-  // campanella più viva quando è parallela
-  if(ud.bell && ud.bell.material){
-    const glow = 0.38 + 0.28*Math.abs(Math.sin(t*10.5));
-    const evGlow = 0.25 * excite * (0.5 + 0.5*Math.abs(Math.sin(t*17.0)));
-    ud.bell.material.opacity = Math.min(0.98, glow + evGlow);
-    ud.bell.scale.setScalar(0.30 + 0.08*Math.abs(Math.sin(t*13.0)) + 0.10*excite);
-  }
-
-  // coda “whip” leggera
-  if(ud.tail){
-    ud.tail.rotation.y = 0.25*Math.sin(t*4.0) + 0.35*excite*Math.sin(t*9.5);
-  }
-}
+} // ✅ CHIUDE updateMonkeyCar
 
 // ===== BULLET VISUAL =====
 function makeBullet(){
