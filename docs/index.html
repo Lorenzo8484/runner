@@ -4070,39 +4070,83 @@ sfx.lane();
     });
 
     renderer.domElement.addEventListener('pointerup',(e)=>{
-      try{ renderer.domElement.releasePointerCapture(e.pointerId); }catch{}
-      activePointers.delete(e.pointerId);
+  try{ renderer.domElement.releasePointerCapture(e.pointerId); }catch{}
+  activePointers.delete(e.pointerId);
 
-      if(isInHomeOrbitMode()){
-        if(activePointers.size < 2) homePinch.active = false;
-        if(activePointers.size === 0){
-          homeDrag.active = false;
-          homeDrag.id = null;
-        }
-      }else{
-        // swipe gioco
-        if(!touchStart) return;
-        const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
-        const adx=Math.abs(dx), ady=Math.abs(dy);
-        touchStart=null;
-        const min=30;
-        if(adx<min && ady<min) return;
-        if(adx>ady) moveLane(dx>0?1:-1);
-        else { if(dy<0) jump(); else slide(); }
-      }
-    });
+  // ===== HOME orbit =====
+  if(isInHomeOrbitMode()){
+    if(activePointers.size < 2) homePinch.active = false;
+    if(activePointers.size === 0){
+      homeDrag.active = false;
+      homeDrag.id = null;
+    }
+    return;
+  }
+
+  // ===== GAME: prima gestiamo AIM/BULLETS =====
+  if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
+    // stop timer hold
+    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+    aimState.holdTimer = null;
+
+    // se era attivo -> SPARA
+    if(aimState.active){
+      fireBullet();
+    }
+
+    // reset aim sempre
+    aimState.pending = false;
+    aimState.active  = false;
+    aimState.pointerId = null;
+    clearAimOverlay();
+
+    // IMPORTANTISSIMO: cancella swipe start per non fare anche lane/jump/slide
+    touchStart = null;
+    return;
+  }
+
+  // ===== swipe normale =====
+  if(!touchStart) return;
+  const dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  touchStart=null;
+  const min=30;
+  if(adx<min && ady<min) return;
+  if(adx>ady) moveLane(dx>0?1:-1);
+  else { if(dy<0) jump(); else slide(); }
+});
 
     renderer.domElement.addEventListener('pointercancel',(e)=>{
-      activePointers.delete(e.pointerId);
-      if(isInHomeOrbitMode()){
-        if(activePointers.size < 2) homePinch.active = false;
-        if(activePointers.size === 0){
-          homeDrag.active = false;
-          homeDrag.id = null;
-        }
-      }
-      touchStart = null;
-    });
+  // rilascia capture se possibile (iOS a volte cancella senza up)
+  try{ renderer.domElement.releasePointerCapture(e.pointerId); }catch{}
+
+  activePointers.delete(e.pointerId);
+
+  // ✅ RESET AIM se viene cancellato (fondamentale per evitare freeze)
+  if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
+    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+    aimState.holdTimer = null;
+
+    aimState.pending = false;
+    aimState.active  = false;
+    aimState.pointerId = null;
+
+    clearAimOverlay();
+  }
+
+  // HOME orbit
+  if(isInHomeOrbitMode()){
+    if(activePointers.size < 2) homePinch.active = false;
+    if(activePointers.size === 0){
+      homeDrag.active = false;
+      homeDrag.id = null;
+    }
+    return;
+  }
+
+  // game swipe reset
+  touchStart = null;
+});
 
     // ===== View mode handling =====
     function applyViewMode(mode){
@@ -4492,106 +4536,158 @@ const _bulletGlowTex = (typeof _explTex !== 'undefined' && _explTex) ? _explTex 
 function makeMonkeyCar(){
   const g = new THREE.Group();
 
-  // materiali
+  // materiali più “real”
   const paint = new THREE.MeshStandardMaterial({
-    color:0xffcc00, roughness:0.45, metalness:0.08,
-    emissive:0x332200, emissiveIntensity:0.20
+    color:0xffcc00,
+    roughness:0.35,
+    metalness:0.18,
+    emissive:0x221500,
+    emissiveIntensity:0.10
   });
-  const dark = new THREE.MeshStandardMaterial({ color:0x121820, roughness:0.45, metalness:0.05 });
+  const dark  = new THREE.MeshStandardMaterial({ color:0x0f141b, roughness:0.55, metalness:0.08 });
+  const chrome= new THREE.MeshStandardMaterial({ color:0xdfe6ef, roughness:0.20, metalness:0.85 });
   const glass = new THREE.MeshStandardMaterial({
-    color:0x0b1a2a, roughness:0.15, metalness:0.10,
-    transparent:true, opacity:0.55
+    color:0x061321, roughness:0.08, metalness:0.12,
+    transparent:true, opacity:0.45
   });
-  const tire = new THREE.MeshStandardMaterial({ color:0x0e1016, roughness:0.88, metalness:0.03 });
+  const tire  = new THREE.MeshStandardMaterial({ color:0x0a0c10, roughness:0.90, metalness:0.03 });
+  const lamp  = new THREE.MeshStandardMaterial({ color:0xeaf6ff, roughness:0.08, metalness:0.15, emissive:0x9bd8ff, emissiveIntensity:0.35 });
 
-  // ===== taxi/van “più alta”
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.32, 1.55), paint);
-  body.position.y = 0.22;
+  // ===== taxi più alto (van)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.36, 1.70), paint);
+  body.position.y = 0.24;
   body.castShadow = true; body.receiveShadow = true;
   g.add(body);
 
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.42, 0.92), paint);
-  cabin.position.set(0, 0.48, -0.05);
+  // paraurti
+  const bumperF = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.12, 0.10), dark);
+  bumperF.position.set(0, 0.16, 0.86);
+  g.add(bumperF);
+
+  const bumperB = bumperF.clone();
+  bumperB.position.z = -0.86;
+  g.add(bumperB);
+
+  // griglia + cromature
+  const grill = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.12, 0.04), chrome);
+  grill.position.set(0, 0.24, 0.86);
+  g.add(grill);
+
+  // fari
+  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), lamp);
+  headL.position.set(-0.40, 0.25, 0.86);
+  const headR = headL.clone();
+  headR.position.x = 0.40;
+  g.add(headL, headR);
+
+  // ===== cabina più alta
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.52, 1.05), paint);
+  cabin.position.set(0, 0.55, -0.02);
   cabin.castShadow = true; cabin.receiveShadow = true;
   g.add(cabin);
 
-  // vetri (front + laterali)
-  const winF = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.28, 0.08), glass);
-  winF.position.set(0, 0.52, 0.38);
+  // tetto
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.00, 0.06, 0.98), dark);
+  roof.position.set(0, 0.84, -0.03);
+  g.add(roof);
+
+  // vetri front/lato
+  const winF = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.34, 0.08), glass);
+  winF.position.set(0, 0.60, 0.46);
   g.add(winF);
 
-  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.26, 0.62), glass);
-  winL.position.set(-0.45, 0.52, -0.05);
+  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.30, 0.72), glass);
+  winL.position.set(-0.52, 0.60, -0.03);
   const winR = winL.clone();
-  winR.position.x = 0.45;
+  winR.position.x = 0.52;
   g.add(winL, winR);
 
-  // “taxi sign” sopra
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.10, 0.18), dark);
-  sign.position.set(0, 0.74, -0.02);
-  g.add(sign);
+  // taxi sign sopra
+  const signBase = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.10, 0.22), dark);
+  signBase.position.set(0, 0.90, 0.04);
+  g.add(signBase);
+
+  const signTop = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.18), lamp);
+  signTop.position.set(0, 0.92, 0.04);
+  g.add(signTop);
 
   // ruote
   function wheel(x,z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.14,18), tire);
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.14,18), tire);
     w.rotation.z = Math.PI/2;
-    w.position.set(x, 0.15, z);
+    w.position.set(x, 0.16, z);
     w.castShadow = true; w.receiveShadow = true;
     g.add(w);
     return w;
   }
-  const w1 = wheel(-0.44,  0.52);
-  const w2 = wheel( 0.44,  0.52);
-  const w3 = wheel(-0.44, -0.52);
-  const w4 = wheel( 0.44, -0.52);
+  const w1 = wheel(-0.48,  0.56);
+  const w2 = wheel( 0.48,  0.56);
+  const w3 = wheel(-0.48, -0.56);
+  const w4 = wheel( 0.48, -0.56);
 
-  // ===== scimmia DENTRO (dietro il parabrezza)
+  // ===== SCIMMIA grande e comica (ben visibile)
   const monkey = new THREE.Group();
-  monkey.position.set(0, 0.46, 0.20); // dentro cabina
+  monkey.position.set(0, 0.62, 0.26); // più verso parabrezza
+  monkey.scale.setScalar(1.55);       // ✅ più grande
 
-  const face = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 18, 14),
-    new THREE.MeshStandardMaterial({ color:0x7a4d2a, roughness:0.85, metalness:0.02 })
-  );
-  face.castShadow = true;
-  monkey.add(face);
+  const faceMat = new THREE.MeshStandardMaterial({ color:0x6b3f1f, roughness:0.88, metalness:0.02 });
+  const muzzleMat= new THREE.MeshStandardMaterial({ color:0xb8804f, roughness:0.90, metalness:0.00 });
 
-  const muzzle = new THREE.Mesh(
-    new THREE.SphereGeometry(0.11, 16, 12),
-    new THREE.MeshStandardMaterial({ color:0xb17b4a, roughness:0.9, metalness:0.0 })
-  );
-  muzzle.position.set(0, -0.03, 0.11);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 14), faceMat);
+  head.castShadow = true;
+  monkey.add(head);
+
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), muzzleMat);
+  muzzle.position.set(0, -0.04, 0.13);
   monkey.add(muzzle);
 
-  const earMat = new THREE.MeshStandardMaterial({ color:0x7a4d2a, roughness:0.9, metalness:0.0 });
-  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), earMat);
+  const earL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10), faceMat);
   const earR = earL.clone();
-  earL.position.set(-0.18, 0.02, 0.01);
-  earR.position.set( 0.18, 0.02, 0.01);
+  earL.position.set(-0.22, 0.02, 0.02);
+  earR.position.set( 0.22, 0.02, 0.02);
   monkey.add(earL, earR);
 
-  // linguaccia (davanti)
+  // occhi (2 pallini)
+  const eyeMat = new THREE.MeshStandardMaterial({ color:0x101318, roughness:0.4, metalness:0.05 });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), eyeMat);
+  const eyeR = eyeL.clone();
+  eyeL.position.set(-0.06, 0.04, 0.16);
+  eyeR.position.set( 0.06, 0.04, 0.16);
+  monkey.add(eyeL, eyeR);
+
+  // linguaccia
   const tongue = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.09, 0.14),
-    new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.8, metalness:0.0, side:THREE.DoubleSide })
+    new THREE.PlaneGeometry(0.11, 0.18),
+    new THREE.MeshStandardMaterial({ color:0xff4aa0, roughness:0.85, metalness:0.0, side:THREE.DoubleSide })
   );
-  tongue.position.set(0, -0.10, 0.18);
-  tongue.rotation.x = -0.12;
+  tongue.position.set(0, -0.12, 0.23);
+  tongue.rotation.x = -0.10;
   monkey.add(tongue);
 
-  // campanella glow (dentro)
+  // braccia che “sventolano”
+  const armMat = new THREE.MeshStandardMaterial({ color:0x6b3f1f, roughness:0.9, metalness:0.0 });
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.32,10), armMat);
+  const armR = armL.clone();
+  armL.position.set(-0.20, -0.06, 0.02);
+  armR.position.set( 0.20, -0.06, 0.02);
+  armL.rotation.z = 0.9;
+  armR.rotation.z = -0.9;
+  monkey.add(armL, armR);
+
+  // campanella glow
   const bell = new THREE.Sprite(new THREE.SpriteMaterial({
     map:_bulletGlowTex, transparent:true, opacity:0.55, depthWrite:false, blending:THREE.AdditiveBlending
   }));
-  bell.scale.set(0.30,0.30,1);
-  bell.position.set(0.22, 0.10, 0.02);
+  bell.scale.set(0.34,0.34,1);
+  bell.position.set(0.26, 0.10, 0.05);
   monkey.add(bell);
 
   g.add(monkey);
 
   g.userData = {
     wheels:[w1,w2,w3,w4],
-    monkey, tongue, earL, earR, bell,
+    monkey, head, tongue, earL, earR, bell,
+    armL, armR,
     t: 0
   };
 
@@ -4664,8 +4760,7 @@ function updateMonkeyCar(e, dt, scroll){
 
   e.obj.position.x = lanesX[3] + wx;
 
-  // ruote + faccia scimmia
-  const ud = e.obj.userData;
+    const ud = e.obj.userData;
   if(ud){
     ud.t += dt;
 
@@ -4673,12 +4768,52 @@ function updateMonkeyCar(e, dt, scroll){
     const spin = carSpeed * 0.55;
     for(const w of ud.wheels) w.rotation.x += spin * dt;
 
-    // linguaccia/orecchie/glow
-    ud.tongue.scale.y = 0.55 + 0.45*Math.sin(ud.t*10.0);
-    const earPull = 0.70 + 0.30*Math.sin(ud.t*7.5);
-    ud.earL.scale.y = earPull;
-    ud.earR.scale.y = 1.0/earPull;
-    ud.bell.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
+    // =========================
+    // 🐵 COSE COMICHE SCIMMIA
+    // =========================
+
+    // "eccitazione" (aumenta quando evade)
+    const evade = (e.evadeT > 0) ? 1.0 : 0.0;
+
+    // bounce cabina/scimmia (mini sobbalzi)
+    const bFast = Math.sin(ud.t * (8.0 + 8.0*evade));
+    const bSlow = Math.sin(ud.t * 3.2);
+    if(ud.monkey){
+      // testa/corpo: vibra e “guida”
+      ud.monkey.position.y = 0.46 + 0.015*bFast + 0.010*bSlow;
+      ud.monkey.rotation.y = 0.10*Math.sin(ud.t*2.6) + 0.22*evade*Math.sin(ud.t*9.0);
+      ud.monkey.rotation.x = -0.06 + 0.05*Math.sin(ud.t*4.0);
+    }
+
+    // linguaccia: esce/entra + vibra
+    if(ud.tongue){
+      ud.tongue.scale.y = 0.65 + 0.55*Math.abs(Math.sin(ud.t*10.5));
+      ud.tongue.scale.x = 0.90 + 0.25*Math.sin(ud.t*13.0);
+      ud.tongue.rotation.z = 0.12*Math.sin(ud.t*12.0) + 0.22*evade*Math.sin(ud.t*18.0);
+    }
+
+    // orecchie: "flap" alternato + tirata quando evade
+    const earBase = 0.75 + 0.25*Math.sin(ud.t*7.8);
+    const earEv   = 0.35 * evade * Math.abs(Math.sin(ud.t*16.0));
+    if(ud.earL){
+      ud.earL.scale.set(1.0, earBase + earEv, 1.0);
+      ud.earL.position.y = 0.02 + 0.02*Math.sin(ud.t*9.0);
+    }
+    if(ud.earR){
+      ud.earR.scale.set(1.0, (1.15 - (earBase-0.75)) + earEv*0.7, 1.0);
+      ud.earR.position.y = 0.02 + 0.02*Math.cos(ud.t*9.0);
+    }
+
+    // campanella glow: lampeggia più forte in evade
+    if(ud.bell && ud.bell.material){
+      const glow = 0.35 + 0.25*Math.abs(Math.sin(ud.t*12.0));
+      const evGlow = 0.25 * evade * (0.5 + 0.5*Math.abs(Math.sin(ud.t*20.0)));
+      ud.bell.material.opacity = Math.min(0.95, glow + evGlow);
+      ud.bell.scale.setScalar(0.30 + 0.06*Math.abs(Math.sin(ud.t*14.0)) + 0.08*evade);
+    }
+
+    // “scossone” macchina durante evade (leggero roll)
+    e.obj.rotation.z = 0.02*Math.sin(ud.t*6.0) + 0.08*evade*Math.sin(ud.t*16.0);
   }
 
   // ✅ quando è molto “avanti” (lontana), la togliamo
