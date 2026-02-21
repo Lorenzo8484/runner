@@ -1550,6 +1550,17 @@ canvas.blurBoost{
   </div>
 </div>
 
+<script>
+(function(){
+  const ok = !!(HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'));
+  if(!ok){
+    const d=document.createElement('div');
+    d.style.cssText="position:fixed;inset:auto 10px 10px 10px;z-index:999999;padding:10px 12px;border-radius:14px;background:rgba(255,60,60,.85);color:#fff;font:12px/1.35 system-ui;white-space:pre-wrap";
+    d.textContent="❌ Il tuo Safari NON supporta importmap.\nSoluzione: usa import diretti da CDN (senza importmap).";
+    document.body.appendChild(d);
+  }
+})();
+</script>
   <script type="module">
     import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
