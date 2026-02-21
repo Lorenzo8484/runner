@@ -1560,7 +1560,38 @@ import { CapsuleGeometry } from 'three/addons/geometries/CapsuleGeometry.js';
        ========================================================= */
     const $ = (id)=>document.getElementById(id);
     function safeOn(el, ev, fn){ if(el) el.addEventListener(ev, fn); }
+   
     // ===============================
+// ✅ ON-SCREEN ERROR OVERLAY (iPhone friendly)
+// ===============================
+(function(){
+  const box = document.createElement('div');
+  box.id = 'errBox';
+  box.style.cssText = `
+    position:fixed; left:10px; right:10px; bottom:10px;
+    z-index:99999; pointer-events:auto;
+    padding:10px 12px; border-radius:14px;
+    background:rgba(0,0,0,.72);
+    color:#fff; font:12px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:none; white-space:pre-wrap; word-break:break-word;
+    border:1px solid rgba(255,255,255,.15);
+  `;
+  document.body.appendChild(box);
+
+  function show(msg){
+    box.style.display = 'block';
+    box.textContent = msg;
+  }
+
+  window.addEventListener('error', (e)=>{
+    show(`❌ JS ERROR:\n${e.message}\n${e.filename || ''}:${e.lineno || ''}:${e.colno || ''}`);
+  });
+
+  window.addEventListener('unhandledrejection', (e)=>{
+    show(`❌ PROMISE REJECTION:\n${(e.reason && (e.reason.stack || e.reason.message)) || e.reason}`);
+  });
+})();
+     // ===============================
 // ✅ UTILITIES MANCANTI (FIX CRASH)
 // ===============================
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
