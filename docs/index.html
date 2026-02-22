@@ -3505,9 +3505,14 @@ actions.jumps = jumpActions;
       foodBoostCharges: 0,
       
       // ===== BULLETS / MONKEY CAR =====
-bullets: 5,              // ✅ per ora fisso 5
-projectiles: [],         // bullet attivi (mesh + vel)
-monkeyCarId: null,       // id (indice) logico: 1 car alla volta
+bullets: 5,                // ✅ per ora fisso 5
+projectiles: [],           // bullet attivi (sprite + vel)
+
+// --- scheduler taxi/monkey: max 3 per singolo FOOD boost ---
+mcActiveId: 0,             // id progressivo “sessione boost”
+mcSpawnedThisBoost: 0,     // quante macchine già uscite (0..3)
+mcNextSpawnAt: 0,          // timer (sec) al prossimo spawn
+mcPending: false,          // se devo spawnare appena possibile
 
       invincibleT:0,
       foodBoostT:0,
@@ -3652,19 +3657,11 @@ if(game._foodPop){
         // ===== bullets UI (visibile durante boost) =====
   updateBulletsUI();
 
-  // ===== monkey car (solo durante FOOD boost) =====
-  if(game.foodBoostT > 0){
-    spawnMonkeyCar();
-  }else{
-    // se finisce boost -> via car + mira
-    despawnMonkeyCar();
-    if(aimState.active || aimState.pending) {
-      aimState.active = false; aimState.pending = false; aimState.pointerId = null;
-      if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-      aimState.holdTimer = null;
-      clearAimOverlay();
-    }
-  }
+  // ===== bullets UI (visibile durante boost) =====
+updateBulletsUI();
+
+// ⚠️ monkey car NON si spawna qui.
+// Lo gestiamo nel loop update() con scheduler (evita spawn continuo).
       pillBoost.style.display='flex';
 
       const both = (game.foodBoostT>0 && game.ringBoostT>0);
@@ -4358,6 +4355,19 @@ hookCamBtn(btnCamFront,'front');
   game.invincibleT = Math.max(game.invincibleT, 10.0);
   bubble.visible = true;
 
+// ===== avvio “sessione” monkey car per questo boost =====
+game.mcActiveId++;
+game.mcSpawnedThisBoost = 0;
+
+// 3 macchine distribuite nel tempo del boost (10s):
+// prima quasi subito, seconda a metà, terza verso fine
+game.mcNextSpawnAt = 0.55;   // tra 0.55s
+game.mcPending = true;
+
+// bullets UI (tu li vuoi 5 fissi per ora)
+game.bullets = 5;
+updateBulletsUI();
+
   // ✅ animazioni + lock
   pulseBoostCount();
   updateFoodBoostButton();     // disabilita i bottoni mentre è attivo
@@ -4472,9 +4482,10 @@ function clearAimOverlay(){
 }
 
 function canUseBulletsNow(){
-  // bullets UI si mostra su boost food o ring, ma la car appare solo su FOOD
-  const anyBoost = (game.foodBoostT > 0 || game.ringBoostT > 0);
-  return (anyBoost && game.started && !game.paused && !game.over && !game.stopped);
+  // UI visibile su ring/food boost, ma sparo SOLO su FOOD boost + taxi vivo
+  const showBoost = (game.foodBoostT > 0 || game.ringBoostT > 0);
+  const canShoot  = (game.foodBoostT > 0) && !!monkeyCarAlive();
+  return (showBoost && canShoot && game.started && !game.paused && !game.over && !game.stopped);
 }
 function monkeyCarAlive(){
   // trova l’entity monkeyCar se esiste
@@ -4803,6 +4814,9 @@ function updateMonkeyCar(e, dt, scroll){
     if(idx>=0) game.entities.splice(idx,1);
     return;
   }
+  // evade countdown
+if(e.evadeT > 0) e.evadeT = Math.max(0, e.evadeT - dt);
+const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
 
   // init comportamento
   if(!e.beh){
@@ -4833,7 +4847,7 @@ function updateMonkeyCar(e, dt, scroll){
 
   // ===== PHASE 1: ARRIVA DA DIETRO E TI SUPERA UN PO'
   if(beh.phase === 'approach'){
-    const v = playerSpeed * 1.55;     // più veloce del player -> ti raggiunge e supera
+    const v = playerSpeed * 1.55 * evadeMul;
     advanceWithForwardSpeed(v);
 
     if(e.z <= Z_AHEAD){
@@ -4851,7 +4865,7 @@ function updateMonkeyCar(e, dt, scroll){
     const v = playerSpeed + err * k;   // v target
 
     // limiti per evitare scatti assurdi
-    const vClamped = clamp(v, playerSpeed * 0.25, playerSpeed * 1.20);
+    const vClamped = clamp(v, playerSpeed * 0.25, playerSpeed * 1.20) * evadeMul;
     advanceWithForwardSpeed(vClamped);
 
     // quando è abbastanza vicino al parallelo, resta un attimo e poi scatta
@@ -4867,7 +4881,7 @@ function updateMonkeyCar(e, dt, scroll){
   else if(beh.phase === 'dash'){
     beh.dashT += dt;
     const mul = 2.8 + beh.dashT * 2.0; // accelera
-    const v = playerSpeed * mul;
+    const v = playerSpeed * mul * evadeMul;
     advanceWithForwardSpeed(v);
 
     if(e.z < -130){
@@ -4893,8 +4907,15 @@ function updateMonkeyCar(e, dt, scroll){
   e.weave = (e.weave ?? rnd(0, Math.PI*2));
   const wSpd = (beh.phase === 'align') ? 4.0 : 2.8;
   e.weave += dt * wSpd;
-  const wx = Math.sin(e.weave) * ((beh.phase === 'align') ? 0.18 : 0.12);
-  e.obj.position.x = lanesX[3] + wx;
+  const baseAmp = (beh.phase === 'align') ? 0.18 : 0.12;
+
+// ✅ dodge extra SOLO durante evade (schivata a scatti)
+const dodge = (e.evadeT > 0)
+  ? (0.28 * Math.sin((tNow * 0.02) + e.weave * 2.0))
+  : 0;
+
+const wx = Math.sin(e.weave) * baseAmp + dodge;
+e.obj.position.x = lanesX[3] + wx;
 
   // anim ruote + scimmia (come prima, ma più “pulita”)
   const ud = e.obj.userData;
@@ -4958,10 +4979,9 @@ function tryEvadeOnShot(carEnt){
 
   // evade “furba”: quasi sempre prova
   if(Math.random() < 0.85){
-    carEnt.evadeT = 1.0;
-    // mini sfx campanella
-    try{ sfx.lane(); }catch{}
-  }
+  carEnt.evadeT = 1.0; // ✅ 1 secondo evade
+  try{ sfx.lane(); }catch{}
+}
 }
 
 function fireBullet(){
@@ -5429,6 +5449,55 @@ if(_nowDanceActive !== _prevDanceActive){
   // scroll
   const scroll = speed*dt;
   game.runDist += scroll;
+  // =========================================================
+// 🚗🐵 SCHEDULER: max 3 taxi per singolo FOOD boost
+// =========================================================
+if(game.foodBoostT > 0){
+  // countdown prossimo spawn
+  if(game.mcSpawnedThisBoost < 3){
+    game.mcNextSpawnAt -= dt;
+    if(game.mcNextSpawnAt <= 0){
+      game.mcPending = true;
+    }
+  }
+
+  // spawn quando “pending” e non c’è già un taxi vivo
+  if(game.mcPending && game.mcSpawnedThisBoost < 3 && !monkeyCarAlive()){
+    spawnMonkeyCar();                  // crea 1 taxi
+    game.mcSpawnedThisBoost++;
+
+    // ripianifica: 3 taxi distribuiti sul restante boost
+    // 10s: spawn ~0.55s, ~3.6s, ~6.6s (variato un po’)
+    const plan = [3.05, 3.00];         // gap tra 1->2 e 2->3
+    const idx = game.mcSpawnedThisBoost - 1; // 1,2,3
+    game.mcNextSpawnAt = (idx <= 1) ? (plan[idx-1] + rnd(-0.35, 0.35)) : 999;
+    game.mcPending = false;
+  }
+}else{
+  // fine food boost -> pulizia
+  if(monkeyCarAlive()) despawnMonkeyCar();
+  game.mcPending = false;
+  game.mcNextSpawnAt = 0;
+  game.mcSpawnedThisBoost = 0;
+
+  // stop aim overlay se era attivo
+  if(aimState.active || aimState.pending) {
+    aimState.active = false; aimState.pending = false; aimState.pointerId = null;
+    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
+    aimState.holdTimer = null;
+    clearAimOverlay();
+  }
+}
+
+// =========================================================
+// 🔫 BULLETS: update proiettili
+// =========================================================
+updateProjectiles(dt, scroll);
+
+// se aim attivo ridisegno anche senza muovere (effetto vivo)
+if(aimState.active){
+  drawAimOverlay(aimState.curX, aimState.curY);
+}
   for(let l=0; l<3; l++) game.lastTurtleZ[l] += scroll;
 
   highwayTex.offset.y -= scroll*0.085;
