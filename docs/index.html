@@ -4777,9 +4777,9 @@ function spawnMonkeyCar(){
 
   const obj = makeMonkeyCar();
 
-  // ✅ nasce DIETRO il player (z positivo = dietro)
-  // mettiamola abbastanza dietro per vederla arrivare
-  const z0 = 28 + rnd(0, 10);
+    // ✅ nasce DIETRO il player MA DAVANTI ALLA CAMERA
+  // (camera BACK sta circa a z ~ 4-8) quindi spawn tra 3.5 e 6.0
+  const z0 = 4.8 + rnd(-0.6, 0.9);
 
   obj.position.set(lanesX[3], 0.02, z0);
   obj.castShadow = true;
@@ -4806,7 +4806,7 @@ function despawnMonkeyCar(){
   }
 }
 
-function updateMonkeyCar(e, dt, scroll){
+function updateMonkeyCar(e, dt, scroll, tNow){
   // se finisce il food boost -> sparisce
   if(game.foodBoostT <= 0 || e.dead){
     scene.remove(e.obj);
@@ -5528,18 +5528,15 @@ for(const mesh of segments){
       
 
 
-      // avanzamento lungo Z
-      e.z += scroll;
-      if (e.obj) e.obj.position.z = e.z;
-      
-      
-      
-            // ===== MONKEY CAR (extra speed + gestures) =====
-      if(e.type === 'monkeyCar'){
-        // extra speed + anim (nota: qui e.z ha già preso lo scroll base)
-        updateMonkeyCar(e, dt, scroll, tNow);
-        continue;
-      }
+      // ===== MONKEY CAR (gestisce da sola lo scroll) =====
+if(e.type === 'monkeyCar'){
+  updateMonkeyCar(e, dt, scroll, tNow);
+  continue;
+}
+
+// avanzamento lungo Z (tutte le altre entity)
+e.z += scroll;
+if (e.obj) e.obj.position.z = e.z;
 
       // TURTLE già colpita → scivolata + spin
       if (e.type === 'turtle' && e.hit) {
