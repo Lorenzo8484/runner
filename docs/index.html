@@ -4363,6 +4363,7 @@ game.mcSpawnedThisBoost = 0;
 // prima quasi subito, seconda a metà, terza verso fine
 game.mcNextSpawnAt = 0.55;   // tra 0.55s
 game.mcPending = true;
+game.mcBoostElapsed = 0; // ✅ tempo passato da inizio boost (per 3 spawn fissi)
 
 // bullets UI (tu li vuoi 5 fissi per ora)
 game.bullets = 5;
@@ -5450,34 +5451,28 @@ if(_nowDanceActive !== _prevDanceActive){
   const scroll = speed*dt;
   game.runDist += scroll;
   // =========================================================
-// 🚗🐵 SCHEDULER: max 3 taxi per singolo FOOD boost
+// 🚗🐵 SCHEDULER: 3 taxi GARANTITE durante i 10s del FOOD boost
+// (0.6s, 3.6s, 6.6s). Se una è ancora viva, la rimpiazziamo.
 // =========================================================
 if(game.foodBoostT > 0){
-  // countdown prossimo spawn
-  if(game.mcSpawnedThisBoost < 3){
-    game.mcNextSpawnAt -= dt;
-    if(game.mcNextSpawnAt <= 0){
-      game.mcPending = true;
-    }
-  }
+  // timer elapsed dall’inizio di QUESTO boost
+  game.mcBoostElapsed = (game.mcBoostElapsed ?? 0) + dt;
 
-  // spawn quando “pending” e non c’è già un taxi vivo
-  if(game.mcPending && game.mcSpawnedThisBoost < 3 && !monkeyCarAlive()){
-    spawnMonkeyCar();                  // crea 1 taxi
+  const spawnTimes = [0.6, 3.6, 6.6];
+
+  // prova a spawnare tutte quelle “dovute” (in caso di lag)
+  while(game.mcSpawnedThisBoost < 3 && game.mcBoostElapsed >= spawnTimes[game.mcSpawnedThisBoost]){
+    // se ce n’è una viva, la togliamo per far arrivare la prossima
+    if(monkeyCarAlive()) despawnMonkeyCar();
+
+    spawnMonkeyCar();
     game.mcSpawnedThisBoost++;
-
-    // ripianifica: 3 taxi distribuiti sul restante boost
-    // 10s: spawn ~0.55s, ~3.6s, ~6.6s (variato un po’)
-    const plan = [3.05, 3.00];         // gap tra 1->2 e 2->3
-    const idx = game.mcSpawnedThisBoost - 1; // 1,2,3
-    game.mcNextSpawnAt = (idx <= 1) ? (plan[idx-1] + rnd(-0.35, 0.35)) : 999;
-    game.mcPending = false;
   }
 }else{
   // fine food boost -> pulizia
   if(monkeyCarAlive()) despawnMonkeyCar();
-  game.mcPending = false;
-  game.mcNextSpawnAt = 0;
+
+  game.mcBoostElapsed = 0;
   game.mcSpawnedThisBoost = 0;
 
   // stop aim overlay se era attivo
@@ -5488,7 +5483,6 @@ if(game.foodBoostT > 0){
     clearAimOverlay();
   }
 }
-
 // =========================================================
 // 🔫 BULLETS: update proiettili
 // =========================================================
