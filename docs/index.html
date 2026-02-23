@@ -4454,22 +4454,28 @@ function monkeyCarAlive(){
   return null;
 }
 
+const _tmpV3 = new THREE.Vector3();
+
 function isTapOnMonkeyCar(clientX, clientY){
   const car = monkeyCarAlive();
   if(!car || !car.obj) return false;
 
-  // posizione 3D "bersaglio" (zona scimmia sul tetto)
-  const tx = car.obj.position.x;
-  const ty = 1.00;      // altezza scimmia circa
-  const tz = car.z;
+  // ✅ usa la POSIZIONE REALE della scimmia (non un ty fisso)
+  const rig = car.obj.userData && car.obj.userData.monkeyRig;
+  if(rig && rig.monkey){
+    rig.monkey.getWorldPosition(_tmpV3);
+  }else{
+    // fallback: centro del taxi un po’ più alto
+    _tmpV3.set(car.obj.position.x, 1.55, car.z);
+  }
 
-  const s = worldToScreen(tx, ty, tz);
+  const s = worldToScreen(_tmpV3.x, _tmpV3.y, _tmpV3.z);
 
   const dx = clientX - s.x;
   const dy = clientY - s.y;
 
-  // hit radius in pixel (tuning)
-  const R = 54;  // 40-70
+  // ✅ raggio più “umano” su mobile
+  const R = 90; // prima 54
   return (dx*dx + dy*dy) <= (R*R);
 }
 
@@ -5387,7 +5393,7 @@ function updateProjectiles(dt, scroll){
       const dz = p.z - car.z;
 
       // hitbox un po’ “generosa”
-      if((dx*dx + dy*dy + dz*dz) < (0.42*0.42)){
+      if((dx*dx + dy*dy + dz*dz) < (0.60*0.60)){
         // HIT
         scene.remove(p.obj);
         game.projectiles.splice(i,1);
