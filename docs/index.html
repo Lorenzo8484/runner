@@ -4696,7 +4696,7 @@ function makeMonkeyCar(){
   // ===== 🐵 SCIMMIA PIÙ VERA (più alta + faccia vera + occhi/bocca) =====
 const monkey = new THREE.Group();
 monkey.position.set(0, 0.86, 0.26);    // più alta e centrata
-monkey.scale.setScalar(2.25);          // ✅ più alta (prima 1.55)
+monkey.scale.setScalar(1.85);          // ✅ più alta (prima 1.55)
 
 // materiali più “pelo / pelle”
 const furMat = new THREE.MeshStandardMaterial({
@@ -4737,13 +4737,13 @@ const spine = new THREE.Group(); monkey.add(spine);
 spine.position.set(0, 0.00, 0.00);
 
 // torso + belly (dà “peso”)
-const torso = mk(new THREE.CapsuleGeometry(0.14, 0.26, 10, 14), furMat);
+const torso = mk(new THREE.CapsuleGeometry(0.105, 0.30, 10, 14), furMat);
 torso.position.set(0, 0.12, -0.04);
 spine.add(torso);
 
-const belly = mk(new THREE.SphereGeometry(0.13, 16, 12), furMat);
-belly.scale.set(1.10, 0.90, 1.05);
-belly.position.set(0, 0.05, 0.02);
+const belly = mk(new THREE.SphereGeometry(0.10, 16, 12), furMat);
+belly.scale.set(0.85, 0.75, 0.85);
+belly.position.set(0, 0.06, 0.02);
 spine.add(belly);
 
 // hips
@@ -4795,24 +4795,39 @@ earL.position.set(-0.19, 0.11, 0.10);
 earR.position.set( 0.19, 0.11, 0.10);
 headPivot.add(earL, earR);
 
-// occhi: sclera + pupilla (così “si vedono”)
 function makeEye(side){
   const eye = new THREE.Group();
 
-  const sclera = mk(new THREE.SphereGeometry(0.030, 14, 12), whiteEye);
-  sclera.scale.set(1.15, 0.95, 1.05);
-  sclera.position.set(0, 0, 0);
+  // sclera più grande + un filo emissive
+  const scleraMat = whiteEye.clone();
+  scleraMat.emissive = new THREE.Color(0x1b1f28);
+  scleraMat.emissiveIntensity = 0.35;
 
-  const pupil = mk(new THREE.SphereGeometry(0.016, 12, 12), darkMat);
-  pupil.position.set(0, 0, 0.020);
+  const sclera = mk(new THREE.SphereGeometry(0.040, 16, 14), scleraMat);
+  sclera.scale.set(1.35, 1.05, 1.10);
 
-  const highlight = mk(new THREE.SphereGeometry(0.006, 10, 10), new THREE.MeshStandardMaterial({
-    color:0xffffff, roughness:0.15, metalness:0.05
+  // pupilla più grande e più avanti
+  const pupil = mk(new THREE.SphereGeometry(0.022, 14, 14), darkMat);
+  pupil.position.set(0, 0, 0.034);
+
+  // outline scuro (bordino) = rende l’occhio leggibile
+  const outline = mk(new THREE.TorusGeometry(0.030, 0.006, 10, 18), darkMat);
+  outline.rotation.x = Math.PI / 2;
+  outline.position.set(0, 0, 0.010);
+
+  // highlight più evidente
+  const highlight = mk(new THREE.SphereGeometry(0.008, 10, 10), new THREE.MeshStandardMaterial({
+    color:0xffffff, roughness:0.10, metalness:0.05,
+    emissive: new THREE.Color(0xffffff),
+    emissiveIntensity: 0.35
   }));
-  highlight.position.set(-0.006, 0.007, 0.028);
+  highlight.position.set(-0.010, 0.010, 0.045);
 
-  eye.add(sclera, pupil, highlight);
-  eye.position.set(0.060*side, 0.085, 0.255);
+  eye.add(sclera, outline, pupil, highlight);
+
+  // ✅ POSIZIONE: più avanti sul muso, così si vedono SEMPRE
+  eye.position.set(0.070*side, 0.085, 0.285);
+
   return { eye, sclera, pupil };
 }
 
@@ -5024,12 +5039,12 @@ const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
   // velocità player (unità/s)
   const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
 
-  // Z RELATIVA AL PLAYER (player è a z=0)
-  // z > 0 = dietro di te (verso camera)
-  // z < 0 = davanti a te (più avanti nella strada)
-  const Z_AHEAD   = -6.0;   // “va un po’ più avanti di te”
-  const Z_PARALLEL=  0.8;   // “arriva parallela con te” (vicina a te ma leggibile)
-  const Z_BEHIND_LIMIT = 40; // sicurezza: se resta troppo dietro la rimuoviamo
+  // 1) mi supera (più avanti = più negativo)
+// 2) torna verso di me (più positivo, verso camera)
+// 3) scappa avanti (molto negativo)
+const Z_OVERTAKE = -10.0;   // ✅ “un po’ avanti di me”
+const Z_NEAR     =  1.4;    // ✅ “arriva verso di me” (vicina al player)
+const Z_BEHIND_LIMIT = 40;
 
   // helper: aggiorna Z con controllo
   // e.z += scroll (mondo) - v*dt (auto che va "in avanti" verso -z)
@@ -5042,31 +5057,32 @@ const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
     const v = playerSpeed * 1.55 * evadeMul;
     advanceWithForwardSpeed(v);
 
-    if(e.z <= Z_AHEAD){
-      beh.phase = 'align';
-      beh.t = 0;
-    }
+    if(e.z <= Z_OVERTAKE){
+  beh.phase = 'align';
+  beh.t = 0;
+}
   }
 
   // ===== PHASE 2: RALLENTA / SI "AGGANCIA" PER DIVENTARE PARALLELA
   else if(beh.phase === 'align'){
     // controller: se è troppo avanti (z molto negativo) => v più bassa del player (ti “aspetta”)
     // se è troppo dietro (z positivo) => v più alta del player (ti raggiunge)
-    const err = (e.z - Z_PARALLEL);    // >0 = dietro, <0 = troppo avanti
-    const k = 2.2;                     // forza di aggancio (più alto = si allinea più in fretta)
-    const v = playerSpeed + err * k;   // v target
+    // ✅ ora “torna verso di me”: target Z_NEAR (positivo)
+const err = (e.z - Z_NEAR);     // >0 = troppo dietro, <0 = troppo avanti
+const k = 1.9;                  // più morbido
+const v = playerSpeed + err * k;
 
-    // limiti per evitare scatti assurdi
-    const vClamped = clamp(v, playerSpeed * 0.25, playerSpeed * 1.20) * evadeMul;
-    advanceWithForwardSpeed(vClamped);
+// limiti: in questa fase NON deve scappare, deve “rientrare”
+const vClamped = clamp(v, playerSpeed * 0.15, playerSpeed * 0.85) * evadeMul;
+advanceWithForwardSpeed(vClamped);
 
-    // quando è abbastanza vicino al parallelo, resta un attimo e poi scatta
-    if(Math.abs(err) < 0.25){
-      if(beh.t > 0.35){                // piccola pausa “parallela”
-        beh.phase = 'dash';
-        beh.dashT = 0;
-      }
-    }
+// quando arriva vicino a me, dopo un attimo scappa
+if(Math.abs(err) < 0.22){
+  if(beh.t > 0.45){
+    beh.phase = 'dash';
+    beh.dashT = 0;
+  }
+}
   }
 
   // ===== PHASE 3: SCATTA VIA DAVANTI E SPARISCE
@@ -5682,16 +5698,12 @@ if(game.foodBoostT > 0){
   // timer elapsed dall’inizio di QUESTO boost
   game.mcBoostElapsed = (game.mcBoostElapsed ?? 0) + dt;
 
-  const spawnTimes = [0.6, 3.6, 6.6];
-
-  // prova a spawnare tutte quelle “dovute” (in caso di lag)
-  while(game.mcSpawnedThisBoost < 3 && game.mcBoostElapsed >= spawnTimes[game.mcSpawnedThisBoost]){
-    // se ce n’è una viva, la togliamo per far arrivare la prossima
-    if(monkeyCarAlive()) despawnMonkeyCar();
-
-    spawnMonkeyCar();
-    game.mcSpawnedThisBoost++;
-  }
+  const spawnTimes = [3.5, 6.2]; // ✅ solo 2 taxi
+while(game.mcSpawnedThisBoost < 2 && game.mcBoostElapsed >= spawnTimes[game.mcSpawnedThisBoost]){
+  if(monkeyCarAlive()) despawnMonkeyCar();
+  spawnMonkeyCar();
+  game.mcSpawnedThisBoost++;
+}
 }else{
   // fine food boost -> pulizia
   if(monkeyCarAlive()) despawnMonkeyCar();
