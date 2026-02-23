@@ -4693,155 +4693,224 @@ function makeMonkeyCar(){
   const w3 = wheel(-xW,  zB);
   const w4 = wheel( xW,  zB);
 
-  // ===== 🐵 SCIMMIA PIÙ REALISTICA (testa+torso+arti+coda) =====
+  // ===== 🐵 SCIMMIA PIÙ VERA (più alta + faccia vera + occhi/bocca) =====
 const monkey = new THREE.Group();
-monkey.position.set(0, 0.78, 0.30);    // sul tetto/near sign
-monkey.scale.setScalar(1.55);          // ✅ meno gigante, più credibile
+monkey.position.set(0, 0.86, 0.26);    // più alta e centrata
+monkey.scale.setScalar(2.25);          // ✅ più alta (prima 1.55)
 
-// materiali “pelo” + “muso”
+// materiali più “pelo / pelle”
 const furMat = new THREE.MeshStandardMaterial({
-  color: 0x6a3f22,
-  roughness: 0.95,
+  color: 0x5a3a22,
+  roughness: 0.98,
   metalness: 0.02
 });
-const faceMat = new THREE.MeshStandardMaterial({
-  color: 0x84502a,
+const faceSkin = new THREE.MeshStandardMaterial({
+  color: 0x8b5a33,
+  roughness: 0.88,
+  metalness: 0.02
+});
+const muzzleSkin = new THREE.MeshStandardMaterial({
+  color: 0xd7b07a,
+  roughness: 0.92,
+  metalness: 0.00
+});
+const darkMat = new THREE.MeshStandardMaterial({
+  color: 0x0b0f14,
+  roughness: 0.40,
+  metalness: 0.10
+});
+const whiteEye = new THREE.MeshStandardMaterial({
+  color: 0xf4f6f8,
+  roughness: 0.75,
+  metalness: 0.02
+});
+const pinkMouth = new THREE.MeshStandardMaterial({
+  color: 0x7a2a22,
   roughness: 0.85,
   metalness: 0.02
 });
-const muzzleMat = new THREE.MeshStandardMaterial({
-  color: 0xd2a06a,
-  roughness: 0.90,
-  metalness: 0.00
-});
-const eyeMat = new THREE.MeshStandardMaterial({
-  color: 0x0a0d12,
-  roughness: 0.30,
-  metalness: 0.10
-});
 
-// helper
 const mk = (geo, mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m; };
 
-// root bones (semplici)
+// root rig
 const spine = new THREE.Group(); monkey.add(spine);
 spine.position.set(0, 0.00, 0.00);
 
-// TORSO
-const torso = mk(new THREE.CapsuleGeometry(0.13, 0.22, 8, 12), furMat);
-torso.position.set(0, 0.10, -0.05);
+// torso + belly (dà “peso”)
+const torso = mk(new THREE.CapsuleGeometry(0.14, 0.26, 10, 14), furMat);
+torso.position.set(0, 0.12, -0.04);
 spine.add(torso);
 
-// PELVIS
-const pelvis = mk(new THREE.SphereGeometry(0.12, 14, 12), furMat);
-pelvis.position.set(0, -0.05, -0.12);
+const belly = mk(new THREE.SphereGeometry(0.13, 16, 12), furMat);
+belly.scale.set(1.10, 0.90, 1.05);
+belly.position.set(0, 0.05, 0.02);
+spine.add(belly);
+
+// hips
+const pelvis = mk(new THREE.SphereGeometry(0.13, 16, 12), furMat);
+pelvis.position.set(0, -0.08, -0.12);
 spine.add(pelvis);
 
-// HEAD group
+// head pivot
 const headPivot = new THREE.Group();
-headPivot.position.set(0, 0.22, 0.02);
+headPivot.position.set(0, 0.26, 0.06);
 spine.add(headPivot);
 
-// HEAD
-const head = mk(new THREE.SphereGeometry(0.14, 18, 14), faceMat);
-head.scale.set(1.0, 0.95, 1.05);
-head.position.set(0, 0.08, 0.10);
+// head (più ovale)
+const head = mk(new THREE.SphereGeometry(0.155, 20, 16), faceSkin);
+head.scale.set(1.05, 0.95, 1.20);
+head.position.set(0, 0.10, 0.10);
 headPivot.add(head);
 
-// MUZZLE
-const muzzle = mk(new THREE.SphereGeometry(0.10, 16, 12), muzzleMat);
-muzzle.scale.set(1.10, 0.80, 1.25);
-muzzle.position.set(0, 0.03, 0.22);
+// brow ridge (sopracciglia/arcata)
+const brow = mk(new THREE.CapsuleGeometry(0.06, 0.18, 6, 12), furMat);
+brow.rotation.z = Math.PI/2;
+brow.position.set(0, 0.14, 0.18);
+headPivot.add(brow);
+
+// muzzle (muso vero)
+const muzzle = mk(new THREE.SphereGeometry(0.115, 18, 14), muzzleSkin);
+muzzle.scale.set(1.25, 0.78, 1.55);
+muzzle.position.set(0, 0.02, 0.26);
 headPivot.add(muzzle);
 
-// EARS
-const earL = mk(new THREE.SphereGeometry(0.06, 14, 10), furMat);
+// nose (narici)
+const nose = mk(new THREE.SphereGeometry(0.030, 14, 12), darkMat);
+nose.scale.set(1.2, 0.7, 1.1);
+nose.position.set(0, 0.02, 0.33);
+headPivot.add(nose);
+
+const nostL = mk(new THREE.SphereGeometry(0.010, 10, 10), darkMat);
+const nostR = nostL.clone();
+nostL.position.set(-0.018, 0.008, 0.34);
+nostR.position.set( 0.018, 0.008, 0.34);
+headPivot.add(nostL, nostR);
+
+// ears
+const earL = mk(new THREE.SphereGeometry(0.065, 14, 10), furMat);
 const earR = earL.clone();
-earL.position.set(-0.17, 0.10, 0.10);
-earR.position.set( 0.17, 0.10, 0.10);
+earL.scale.set(1.0, 1.15, 0.75);
+earR.scale.set(1.0, 1.15, 0.75);
+earL.position.set(-0.19, 0.11, 0.10);
+earR.position.set( 0.19, 0.11, 0.10);
 headPivot.add(earL, earR);
 
-// EYES + eyelids (micro)
-const eyeL = mk(new THREE.SphereGeometry(0.022, 12, 12), eyeMat);
-const eyeR = eyeL.clone();
-eyeL.position.set(-0.05, 0.08, 0.24);
-eyeR.position.set( 0.05, 0.08, 0.24);
-headPivot.add(eyeL, eyeR);
+// occhi: sclera + pupilla (così “si vedono”)
+function makeEye(side){
+  const eye = new THREE.Group();
 
-const lidMat = new THREE.MeshStandardMaterial({ color:0x5a341b, roughness:0.95, metalness:0 });
-const lidL = mk(new THREE.SphereGeometry(0.025, 12, 10), lidMat);
+  const sclera = mk(new THREE.SphereGeometry(0.030, 14, 12), whiteEye);
+  sclera.scale.set(1.15, 0.95, 1.05);
+  sclera.position.set(0, 0, 0);
+
+  const pupil = mk(new THREE.SphereGeometry(0.016, 12, 12), darkMat);
+  pupil.position.set(0, 0, 0.020);
+
+  const highlight = mk(new THREE.SphereGeometry(0.006, 10, 10), new THREE.MeshStandardMaterial({
+    color:0xffffff, roughness:0.15, metalness:0.05
+  }));
+  highlight.position.set(-0.006, 0.007, 0.028);
+
+  eye.add(sclera, pupil, highlight);
+  eye.position.set(0.060*side, 0.085, 0.255);
+  return { eye, sclera, pupil };
+}
+
+const eyeL = makeEye(-1);
+const eyeR = makeEye( 1);
+headPivot.add(eyeL.eye, eyeR.eye);
+
+// eyelids (blink)
+const lidMat = new THREE.MeshStandardMaterial({ color:0x4a2d18, roughness:0.95, metalness:0 });
+const lidL = mk(new THREE.SphereGeometry(0.033, 12, 10), lidMat);
 const lidR = lidL.clone();
-lidL.scale.set(1.10, 0.55, 1.00);
-lidR.scale.set(1.10, 0.55, 1.00);
-lidL.position.copy(eyeL.position); lidL.position.y += 0.010; lidL.position.z -= 0.005;
-lidR.position.copy(eyeR.position); lidR.position.y += 0.010; lidR.position.z -= 0.005;
+lidL.scale.set(1.2, 0.55, 1.0);
+lidR.scale.set(1.2, 0.55, 1.0);
+lidL.position.copy(eyeL.eye.position); lidL.position.y += 0.010; lidL.position.z -= 0.010;
+lidR.position.copy(eyeR.eye.position); lidR.position.y += 0.010; lidR.position.z -= 0.010;
 headPivot.add(lidL, lidR);
 
-// MOUTH (piccola)
-const mouth = mk(new THREE.TorusGeometry(0.05, 0.010, 10, 22, Math.PI), new THREE.MeshStandardMaterial({
-  color:0x2a1208, roughness:0.8, metalness:0.02
-}));
-mouth.rotation.x = Math.PI/2;
-mouth.position.set(0, -0.01, 0.24);
-headPivot.add(mouth);
+// bocca vera (labbro + apertura)
+const mouthPivot = new THREE.Group();
+mouthPivot.position.set(0, -0.03, 0.305);
+headPivot.add(mouthPivot);
 
-// TONGUE (più credibile)
-const tongue = mk(new THREE.CapsuleGeometry(0.018, 0.07, 6, 10), new THREE.MeshStandardMaterial({
-  color:0xff4aa0, roughness:0.90, metalness:0.0
+const lip = mk(new THREE.TorusGeometry(0.060, 0.012, 10, 24, Math.PI), pinkMouth);
+lip.rotation.x = Math.PI/2;
+lip.position.set(0, 0.00, 0.00);
+mouthPivot.add(lip);
+
+const mouthHole = mk(new THREE.SphereGeometry(0.040, 14, 12), darkMat);
+mouthHole.scale.set(1.30, 0.55, 1.20);
+mouthHole.position.set(0, -0.010, -0.008);
+mouthPivot.add(mouthHole);
+
+// lingua
+const tongue = mk(new THREE.CapsuleGeometry(0.020, 0.085, 6, 10), new THREE.MeshStandardMaterial({
+  color:0xff4aa0, roughness:0.92, metalness:0.0
 }));
-tongue.position.set(0, -0.04, 0.255);
+tongue.position.set(0, -0.035, -0.010);
 tongue.rotation.x = -0.55;
-headPivot.add(tongue);
+mouthPivot.add(tongue);
 
-// SHOULDERS pivot
+// spalle
 const sh = new THREE.Group();
-sh.position.set(0, 0.16, 0.02);
+sh.position.set(0, 0.18, 0.05);
 spine.add(sh);
 
-// ARMS (upper+lower)
+// braccia più lunghe (meno pupazzo)
 function makeArm(side){
   const arm = new THREE.Group();
-  arm.position.set(0.14 * side, 0.02, 0.08);
+  arm.position.set(0.17 * side, 0.02, 0.10);
 
-  const upper = mk(new THREE.CapsuleGeometry(0.035, 0.16, 6, 10), furMat);
-  upper.rotation.z = 0.9 * side;
-  upper.position.set(0.02*side, -0.02, 0.00);
-  arm.add(upper);
+  const upperPivot = new THREE.Group();
+  const forePivot  = new THREE.Group();
 
-  const fore = mk(new THREE.CapsuleGeometry(0.030, 0.14, 6, 10), furMat);
+  const upper = mk(new THREE.CapsuleGeometry(0.038, 0.20, 6, 12), furMat);
+  upper.rotation.z = 0.85 * side;
+  upper.position.set(0.03*side, -0.04, 0.00);
+  upperPivot.add(upper);
+
+  const fore = mk(new THREE.CapsuleGeometry(0.032, 0.19, 6, 12), furMat);
   fore.rotation.z = 1.05 * side;
-  fore.position.set(0.08*side, -0.15, 0.02);
-  arm.add(fore);
+  fore.position.set(0.10*side, -0.20, 0.02);
+  forePivot.add(fore);
 
-  const hand = mk(new THREE.SphereGeometry(0.035, 12, 10), faceMat);
-  hand.position.set(0.13*side, -0.23, 0.04);
-  arm.add(hand);
+  const hand = mk(new THREE.SphereGeometry(0.042, 12, 10), faceSkin);
+  hand.position.set(0.18*side, -0.31, 0.05);
+  forePivot.add(hand);
 
-  return { arm, upper, fore, hand };
+  arm.add(upperPivot, forePivot);
+
+  // mettiamo pivot “comodi” per animazione
+  upperPivot.name = 'upper';
+  forePivot.name  = 'fore';
+
+  return { arm, upper: upperPivot, fore: forePivot, hand };
 }
 
 const Larm = makeArm(-1);
 const Rarm = makeArm( 1);
 sh.add(Larm.arm, Rarm.arm);
 
-// LEGS
+// gambe più “vere” e lunghe
 function makeLeg(side){
   const leg = new THREE.Group();
-  leg.position.set(0.08 * side, -0.10, -0.10);
+  leg.position.set(0.09 * side, -0.12, -0.12);
 
-  const thigh = mk(new THREE.CapsuleGeometry(0.040, 0.14, 6, 10), furMat);
-  thigh.rotation.x = 0.25;
-  thigh.position.set(0, -0.02, 0.00);
+  const thigh = mk(new THREE.CapsuleGeometry(0.042, 0.18, 6, 12), furMat);
+  thigh.rotation.x = 0.28;
+  thigh.position.set(0, -0.03, 0.00);
   leg.add(thigh);
 
-  const shin = mk(new THREE.CapsuleGeometry(0.035, 0.12, 6, 10), furMat);
-  shin.rotation.x = 0.35;
-  shin.position.set(0, -0.16, 0.06);
+  const shin = mk(new THREE.CapsuleGeometry(0.038, 0.16, 6, 12), furMat);
+  shin.rotation.x = 0.38;
+  shin.position.set(0, -0.22, 0.08);
   leg.add(shin);
 
-  const foot = mk(new THREE.SphereGeometry(0.040, 12, 10), muzzleMat);
-  foot.scale.set(1.15, 0.65, 1.35);
-  foot.position.set(0, -0.24, 0.12);
+  const foot = mk(new THREE.SphereGeometry(0.050, 12, 10), muzzleSkin);
+  foot.scale.set(1.25, 0.60, 1.35);
+  foot.position.set(0, -0.34, 0.16);
   leg.add(foot);
 
   return { leg, thigh, shin, foot };
@@ -4851,18 +4920,18 @@ const Lleg = makeLeg(-1);
 const Rleg = makeLeg( 1);
 spine.add(Lleg.leg, Rleg.leg);
 
-// TAIL (coda)
+// coda più lunga e “viva”
 const tailPivot = new THREE.Group();
-tailPivot.position.set(0, -0.02, -0.22);
+tailPivot.position.set(0, -0.03, -0.26);
 spine.add(tailPivot);
 
-const tail = mk(new THREE.CylinderGeometry(0.020, 0.030, 0.28, 12), furMat);
+const tail = mk(new THREE.CylinderGeometry(0.020, 0.030, 0.42, 14), furMat);
 tail.rotation.x = 1.35;
-tail.position.set(0, -0.08, -0.10);
+tail.position.set(0, -0.12, -0.15);
 tailPivot.add(tail);
 
-const tailTip = mk(new THREE.SphereGeometry(0.030, 12, 10), faceMat);
-tailTip.position.set(0, -0.21, -0.25);
+const tailTip = mk(new THREE.SphereGeometry(0.035, 12, 10), faceSkin);
+tailTip.position.set(0, -0.33, -0.38);
 tailPivot.add(tailTip);
 
 // taxi bell glow (rimane)
@@ -4873,13 +4942,16 @@ bell.scale.set(0.34,0.34,1);
 bell.position.set(0.30, 0.10, 0.08);
 spine.add(bell);
 
+// aggiungi al taxi
 g.add(monkey);
 
-// salva refs per animazione realistica
+// salva refs per animazioni
 g.userData = g.userData || {};
 g.userData.monkeyRig = {
   monkey, spine, headPivot,
-  tongue, lidL, lidR,
+  mouthPivot, tongue,
+  lidL, lidR,
+  eyeL, eyeR,
   Larm, Rarm, Lleg, Rleg,
   tailPivot, tail, tailTip,
   bell
