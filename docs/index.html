@@ -1682,6 +1682,32 @@ const btnBulletsCount  = $('btnBulletsCount');
 const bulletsCountLbl  = $('bulletsCountLbl');
 const btnBullets       = $('btnBullets');
 const bulletsLbl       = $('bulletsLbl');
+// ✅ SHOOT via pulsante BULLETS (affidabile su iOS)
+safeOn(btnBullets, 'click', (e)=>{
+  e.preventDefault();
+  initAudio();
+
+  const car = monkeyCarAlive();
+  if(!car) return;                 // niente taxi -> niente sparo
+  if(game.bullets <= 0) return;     // finiti
+  if(game.over || game.paused || game.stopped) return;
+  if(game.foodBoostT <= 0) return;  // sparo SOLO in FOOD boost
+
+  fireBullet();
+});
+
+safeOn(btnBulletsCount, 'click', (e)=>{
+  e.preventDefault();
+  initAudio();
+
+  const car = monkeyCarAlive();
+  if(!car) return;
+  if(game.bullets <= 0) return;
+  if(game.over || game.paused || game.stopped) return;
+  if(game.foodBoostT <= 0) return;
+
+  fireBullet();
+});
 
 const boostRow = $('boostRow');
 const btnBoostCount = $('btnBoostCount');
