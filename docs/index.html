@@ -4003,7 +4003,15 @@ sfx.lane();
 
   // 🎮 GIOCO: swipe (gestito in pointerup)
   touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
+  // ✅ TAP IMMEDIATO SULLA SCIMMIA = SPARO (molto più affidabile di pointerup su iOS)
+if(canUseBulletsNow() && game.bullets > 0 && isTapOnMonkeyCar(e.clientX, e.clientY)){
+  touchStart = null;      // evita che venga interpretato come swipe
+  clearAimOverlay();      // pulizia overlay (se presente)
+  fireBullet();           // SPARA subito
+  return;
+}
 });
+
 
     renderer.domElement.addEventListener('pointermove',(e)=>{
       if(!activePointers.has(e.pointerId)) return;
@@ -4070,13 +4078,7 @@ sfx.lane();
   const adx=Math.abs(dx), ady=Math.abs(dy);
   touchStart=null;
   const min=30;
-  // ✅ TAP SULLA SCIMMIA = SPARO (senza aggancio)
-if(adx < 16 && ady < 16){
-  if(canUseBulletsNow() && game.bullets > 0 && isTapOnMonkeyCar(e.clientX, e.clientY)){
-    fireBullet();     // spara
-    return;           // NON fare swipe
-  }
-}
+  
   if(adx<min && ady<min) return;
   if(adx>ady) moveLane(dx>0?1:-1);
   else { if(dy<0) jump(); else slide(); }
