@@ -2842,7 +2842,31 @@ function updateEffects(dt){
     fx.t += dt;
 
     // ===============================
-    // TURTLE EXPLOSION
+    // 🐵 MONKEY JUMP FX (NUOVO)
+    // ===============================
+    if(fx.type === 'monkeyJump'){
+      const t = fx.t;
+      const p = clamp(t / fx.life, 0, 1);
+
+      // parabola salto
+      const y = fx.y0 + Math.sin(p*Math.PI) * 0.85;
+      fx.obj.position.y = y;
+
+      // avanza un po' in avanti
+      fx.obj.position.z = fx.z - p * 2.0;
+
+      // fade out finale
+      if(fx.obj.material) fx.obj.material.opacity = (p > 0.75) ? (1 - (p-0.75)/0.25) : 1.0;
+
+      if(t >= fx.life){
+        scene.remove(fx.obj);
+        game.effects.splice(i,1);
+      }
+      continue;
+    }
+
+    // ===============================
+    // TURTLE EXPLOSION (TUO)
     // ===============================
     if(fx.type === 'turtleExpl'){
       const t = fx.t;
@@ -2854,15 +2878,12 @@ function updateEffects(dt){
       const fS = 2.6 + fP * 2.2;
       fx.flash.scale.set(fS, fS, 1);
 
-      // SHOCKWAVE (anello)
-            // SHOCKWAVE (sprite)
+      // SHOCKWAVE
       const wLife = 0.55;
       const wP = clamp(t / wLife, 0, 1);
 
-      const wS = 0.35 + wP * 4.2;           // cresce molto
+      const wS = 0.35 + wP * 4.2;
       fx.wave.scale.set(wS, wS, 1);
-
-      // fade + leggero “soft pulse”
       fx.wave.material.opacity = (1 - wP) * 0.85;
 
       // PARTICELLE
@@ -2886,24 +2907,21 @@ function updateEffects(dt){
     }
 
     // ===============================
-    // DUST
+    // DUST (TUO)
     // ===============================
     if(fx.type === 'dust'){
       const t = fx.t;
       const life = fx.life;
 
-      // espansione + fade
       const p = clamp(t / life, 0, 1);
       fx.spr.material.opacity = (1 - p) * fx.maxOp;
       const s = fx.s0 + p * fx.sGrow;
       fx.spr.scale.set(s, s, 1);
 
-      // drift leggero
       fx.spr.position.x += fx.vx * dt;
       fx.spr.position.y += fx.vy * dt;
       fx.spr.position.z += fx.vz * dt;
 
-      // “cade” un pelo
       fx.vy -= 1.2 * dt;
 
       if(t > life){
@@ -3518,6 +3536,8 @@ mcPending: false,          // se devo spawnare appena possibile
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
+      // ===== 2X MULTIPLIER =====
+mult2xT: 0,   // secondi rimanenti del 2x
       trioT:0,
 
       entities:[],
@@ -3712,6 +3732,9 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
     function canSpawnTurtle(lane, z){
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
     }
+function pickupMul(){
+  return (game.mult2xT > 0) ? 2 : 1;
+}
 
     function spawnRow(){
       const z0 = -60 - rnd(0,18);
@@ -3979,23 +4002,6 @@ sfx.lane();
         // 🎮 gioco: swipe per lane / jump / slide
         touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
 
-        // 🎯 bullets aim: HOLD (non rompe swipe: parte solo se non ti muovi troppo)
-        const canAim = canUseBulletsNow() && (game.foodBoostT > 0) && (game.bullets > 0) && !!monkeyCarAlive();
-        if(canAim){
-          aimState.pending = true;
-          aimState.active = false;
-          aimState.pointerId = e.pointerId;
-          aimState.startX = e.clientX; aimState.startY = e.clientY;
-          aimState.curX   = e.clientX; aimState.curY   = e.clientY;
-
-          if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-          aimState.holdTimer = setTimeout(()=>{
-            if(aimState.pending && aimState.pointerId === e.pointerId){
-              aimState.pending = false;
-              aimState.active = true;
-              // micro sfx di “aggancio”
-              try{ sfx.magnet(); }catch{}
-            }
           }, 140);
         }
       }
@@ -4008,27 +4014,6 @@ sfx.lane();
       p.y = e.clientY;
 
             if(!isInHomeOrbitMode()){
-        // se stiamo facendo aim (pending o active), gestiamo qui
-        if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
-          aimState.curX = e.clientX;
-          aimState.curY = e.clientY;
-
-          // se stai ancora “pending” e ti muovi tanto -> annulla aim e lascia swipe
-          const dx = e.clientX - aimState.startX;
-          const dy = e.clientY - aimState.startY;
-          if(aimState.pending && (dx*dx + dy*dy) > (22*22)){
-            aimState.pending = false;
-            if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-            aimState.holdTimer = null;
-            clearAimOverlay();
-          }
-
-          // se aim attivo, disegna traiettoria
-          if(aimState.active){
-            drawAimOverlay(aimState.curX, aimState.curY);
-          }
-        }
-        return;
       }
 
       // 🟡 1 dito → rotazione orizzontale del player
@@ -4080,27 +4065,6 @@ sfx.lane();
     return;
   }
 
-  // ===== GAME: prima gestiamo AIM/BULLETS =====
-  if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
-    // stop timer hold
-    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-    aimState.holdTimer = null;
-
-    // se era attivo -> SPARA
-    if(aimState.active){
-      fireBullet();
-    }
-
-    // reset aim sempre
-    aimState.pending = false;
-    aimState.active  = false;
-    aimState.pointerId = null;
-    clearAimOverlay();
-
-    // IMPORTANTISSIMO: cancella swipe start per non fare anche lane/jump/slide
-    touchStart = null;
-    return;
-  }
 
   // ===== swipe normale =====
   if(!touchStart) return;
@@ -4108,6 +4072,13 @@ sfx.lane();
   const adx=Math.abs(dx), ady=Math.abs(dy);
   touchStart=null;
   const min=30;
+  // ✅ TAP SULLA SCIMMIA = SPARO (senza aggancio)
+if(adx < 16 && ady < 16){
+  if(canUseBulletsNow() && game.bullets > 0 && isTapOnMonkeyCar(e.clientX, e.clientY)){
+    fireBullet();     // spara
+    return;           // NON fare swipe
+  }
+}
   if(adx<min && ady<min) return;
   if(adx>ady) moveLane(dx>0?1:-1);
   else { if(dy<0) jump(); else slide(); }
@@ -4119,17 +4090,6 @@ sfx.lane();
 
   activePointers.delete(e.pointerId);
 
-  // ✅ RESET AIM se viene cancellato (fondamentale per evitare freeze)
-  if((aimState.pending || aimState.active) && aimState.pointerId === e.pointerId){
-    if(aimState.holdTimer) clearTimeout(aimState.holdTimer);
-    aimState.holdTimer = null;
-
-    aimState.pending = false;
-    aimState.active  = false;
-    aimState.pointerId = null;
-
-    clearAimOverlay();
-  }
 
   // HOME orbit
   if(isInHomeOrbitMode()){
@@ -4494,6 +4454,25 @@ function monkeyCarAlive(){
     if(e && e.type === 'monkeyCar') return e;
   }
   return null;
+}
+
+function isTapOnMonkeyCar(clientX, clientY){
+  const car = monkeyCarAlive();
+  if(!car || !car.obj) return false;
+
+  // posizione 3D "bersaglio" (zona scimmia sul tetto)
+  const tx = car.obj.position.x;
+  const ty = 1.00;      // altezza scimmia circa
+  const tz = car.z;
+
+  const s = worldToScreen(tx, ty, tz);
+
+  const dx = clientX - s.x;
+  const dy = clientY - s.y;
+
+  // hit radius in pixel (tuning)
+  const R = 54;  // 40-70
+  return (dx*dx + dy*dy) <= (R*R);
 }
 
 function updateBulletsUI(){
@@ -5300,66 +5279,92 @@ function spawnMonkeyExplosion(x, z){
   }
 }
 
-function spawnLootFromMonkey(zBase){
-  // crea lista loot: 50 rings, 2 magnet, 10 food, 2 hearts
-  const loot = [];
-  for(let i=0;i<50;i++) loot.push({t:'ring'});
-  for(let i=0;i<2;i++)  loot.push({t:'magnet'});
-  for(let i=0;i<10;i++) loot.push({t:'food'});
-  for(let i=0;i<2;i++)  loot.push({t:'heart'});
+function make2xRingVisual(){
+  const g = new THREE.Group();
 
-  // shuffle
-  for(let i=loot.length-1;i>0;i--){
-    const j = (Math.random()*(i+1))|0;
-    const tmp = loot[i]; loot[i]=loot[j]; loot[j]=tmp;
-  }
+  // anello verde
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.62, 0.10, 14, 48),
+    new THREE.MeshStandardMaterial({
+      color:0x35ff6a,
+      roughness:0.28,
+      metalness:0.10,
+      emissive:0x0a3d12,
+      emissiveIntensity:0.75
+    })
+  );
+  ring.castShadow = true; ring.receiveShadow = true;
+  g.add(ring);
 
-  // distribuzione su 3 corsie, z “a ventaglio” davanti
-  let z = zBase - 6.0;
-  for(let i=0;i<loot.length;i++){
-    const lane = rndi(0,2);
-    z -= rnd(0.28, 0.55); // mix
-    const zz = z - rnd(0, 10.0); // più sparso
-    const x  = lanesX[lane];
+  // testo "2x" come sprite
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,256,256);
+  ctx.font = '900 120px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = 'rgba(0,0,0,.35)';
+  ctx.lineWidth = 10;
+  ctx.strokeText('2x', 128, 140);
+  ctx.fillText('2x', 128, 140);
 
-    if(loot[i].t === 'ring'){
-      const ring = makeVerticalRing();
-      ring.position.set(x, 0.55, zz);
-      scene.add(ring);
-      game.entities.push({ type:'ring', lane, z:zz, obj:ring, slideStarted:false });
-      continue;
-    }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
 
-    if(loot[i].t === 'magnet'){
-      const spr = makeEmojiSprite(MAGNET);
-      spr.position.set(x, 1.15, zz);
-      spr.scale.set(0.92,0.92,1);
-      scene.add(spr);
-      game.entities.push({ type:'magnet', lane, z:zz, obj:spr });
-      continue;
-    }
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent:true }));
+  spr.scale.set(0.95, 0.95, 1);
+  spr.position.set(0, 0.35, 0);
+  g.add(spr);
 
-    if(loot[i].t === 'heart'){
-      const spr = makeEmojiSprite(HEART);
-      spr.position.set(x, 1.15, zz);
-      spr.scale.set(0.96,0.96,1);
-      scene.add(spr);
-      game.entities.push({ type:'heart', lane, z:zz, obj:spr });
-      continue;
-    }
-
-    if(loot[i].t === 'food'){
-      const emo = FOOD[rndi(0,FOOD.length-1)];
-      const spr = makeEmojiSprite(emo);
-      spr.position.set(x, 1.15, zz);
-      spr.scale.set(0.86,0.86,1);
-      scene.add(spr);
-      game.entities.push({ type:'food', lane, z:zz, obj:spr, emo });
-      continue;
-    }
-  }
+  g.userData._spin = 0;
+  return g;
 }
 
+function spawnMonkeyRewards(zBase){
+  // corsia random 0..2 davanti al player
+  const lane = rndi(0,2);
+
+  // davanti al player (negativo = avanti)
+  const zDrop = zBase - 12.0;
+
+  // 1) MAGNETE
+  {
+    const spr = makeEmojiSprite(MAGNET);
+    spr.position.set(lanesX[lane], 1.15, zDrop);
+    spr.scale.set(0.95,0.95,1);
+    scene.add(spr);
+    game.entities.push({ type:'magnet', lane, z: zDrop, obj:spr });
+  }
+
+  // 2) 2x RING verde
+  {
+    const obj = make2xRingVisual();
+    obj.position.set(lanesX[lane], 0.65, zDrop - 1.1);
+    scene.add(obj);
+    game.entities.push({ type:'x2', lane, z: (zDrop - 1.1), obj });
+  }
+
+  // 3) scimmia che “salta” (solo visual)
+  spawnMonkeyJumpFX(lanesX[lane], zDrop + 1.2);
+}
+
+function spawnMonkeyJumpFX(x, z){
+  const spr = makeEmojiSprite("🐵");
+  spr.position.set(x, 1.0, z);
+  spr.scale.set(1.05,1.05,1);
+  scene.add(spr);
+
+  game.effects.push({
+    type:'monkeyJump',
+    obj: spr,
+    t:0,
+    life: 0.9,
+    x, z,
+    y0: 1.0
+  });
+}
 function updateProjectiles(dt, scroll){
   const car = monkeyCarAlive();
 
@@ -5398,8 +5403,8 @@ function updateProjectiles(dt, scroll){
         const idx = game.entities.indexOf(car);
         if(idx>=0) game.entities.splice(idx,1);
 
-        // DROP loot
-        spawnLootFromMonkey(car.z);
+        // ✅ DROP nuovo (magnete + 2x) + salto scimmia
+spawnMonkeyRewards(car.z);
 
         // sfx
         try{ sfx.boost(); }catch{}
@@ -5614,7 +5619,7 @@ if(_nowDanceActive !== _prevDanceActive){
 }
   if(game.ringBoostT>0) game.ringBoostT = Math.max(0, game.ringBoostT - dt*trafficMul);
   if(game.magnetT>0)    game.magnetT    = Math.max(0, game.magnetT    - dt*trafficMul);
-
+  if(game.mult2xT > 0) game.mult2xT = Math.max(0, game.mult2xT - dt*trafficMul);
   const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
   if(anyBoost && game.invincibleT<0.05){
     game.invincibleT = Math.max(game.invincibleT, Math.max(game.foodBoostT, game.ringBoostT));
@@ -5919,7 +5924,7 @@ if (e.obj) e.obj.position.z = e.z;
         if (e.type === 'ring') {
       if (!collideEntity(e)) continue;
 
-      game.ringCount += 1;
+      game.ringCount += 1 * pickupMul();
       scene.remove(e.obj);
       game.entities.splice(i, 1);
       sfx.ring();
@@ -5963,13 +5968,14 @@ if (e.obj) e.obj.position.z = e.z;
     if (!collideEntity(e)) continue;
 
     if (e.type === 'coin') {
-      game.coins += 1;
-      game.score += 28;
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      sfx.coin();
-      continue;
-    }
+  const m = pickupMul();
+  game.coins += 1 * m;
+  game.score += 28 * m;
+  scene.remove(e.obj);
+  game.entities.splice(i, 1);
+  sfx.coin();
+  continue;
+}
 
     if (e.type === 'food') {
   // ✨ magia: dal pickup alla barra cibo
@@ -5980,7 +5986,7 @@ if (e.obj) e.obj.position.z = e.z;
     { dur: 560, sparks: IS_IOS ? 10 : 14 }
   );
 
-  game.foodCount += 1;
+  game.foodCount += 1 * pickupMul();
   game.foodHistory.push(e.emo);
 
   // flag per pop sulla prima pillola (ultima raccolta)
@@ -6035,6 +6041,14 @@ if (e.obj) e.obj.position.z = e.z;
   continue;
 }
 
+// ===== 2X PICKUP (10s) =====
+if (e.type === 'mult2x') {
+  game.mult2xT = 10.0; // 10 secondi di 2x
+  scene.remove(e.obj);
+  game.entities.splice(i, 1);
+  try{ sfx.boost(); }catch{}
+  continue;
+}
     if (e.type === 'obst') {
       const inv = (game.invincibleT > 0);
       scene.remove(e.obj);
