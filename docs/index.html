@@ -5211,6 +5211,7 @@ function tryEvadeOnShot(carEnt){
 }
 
 function fireBullet(){
+  console.log('FIRE BULLET', { started:game.started, stopped:game.stopped, paused:game.paused, over:game.over, food:game.foodBoostT, bullets:game.bullets, car:!!monkeyCarAlive() });
   const car = monkeyCarAlive();
   if(!car) return;
   if(game.bullets <= 0) return;
