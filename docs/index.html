@@ -5964,14 +5964,6 @@ if (e.obj) e.obj.position.z = e.z;
     }
   }
 
-
-  // ===== bullets projectiles update =====
-  updateProjectiles(dt, scroll);
-
-  // se aim attivo ridisegno anche senza muovere (effetto vivo)
-  if(aimState.active){
-    drawAimOverlay(aimState.curX, aimState.curY);
-  }
   // score + HUD
   game.score += (18 * speedMul) * dt;
 
