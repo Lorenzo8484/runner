@@ -5077,8 +5077,8 @@ const vClamped = clamp(v, playerSpeed * 0.15, playerSpeed * 0.85) * evadeMul;
 advanceWithForwardSpeed(vClamped);
 
 // quando arriva vicino a me, dopo un attimo scappa
-if(Math.abs(err) < 0.15){
-  if(beh.t > 0.45){
+if(Math.abs(err) < 0.22){
+  if(beh.t > 0.20){
     beh.phase = 'dash';
     beh.dashT = 0;
   }
