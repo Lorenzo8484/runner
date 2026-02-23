@@ -5077,7 +5077,7 @@ const vClamped = clamp(v, playerSpeed * 0.15, playerSpeed * 0.85) * evadeMul;
 advanceWithForwardSpeed(vClamped);
 
 // quando arriva vicino a me, dopo un attimo scappa
-if(Math.abs(err) < 0.22){
+if(Math.abs(err) < 0.30){
   if(beh.t > 0.45){
     beh.phase = 'dash';
     beh.dashT = 0;
@@ -5698,7 +5698,7 @@ if(game.foodBoostT > 0){
   // timer elapsed dall’inizio di QUESTO boost
   game.mcBoostElapsed = (game.mcBoostElapsed ?? 0) + dt;
 
-  const spawnTimes = [3.5, 6.2]; // ✅ solo 2 taxi
+  const spawnTimes = [1.5, 6.2]; // ✅ solo 2 taxi
 while(game.mcSpawnedThisBoost < 2 && game.mcBoostElapsed >= spawnTimes[game.mcSpawnedThisBoost]){
   if(monkeyCarAlive()) despawnMonkeyCar();
   spawnMonkeyCar();
