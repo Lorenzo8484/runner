@@ -5115,48 +5115,72 @@ const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
 
     const rig = ud.monkeyRig;
     if(rig){
-      const t = ud.t;
-      const roadBounce = 0.010 * Math.sin(t*18.0) + 0.006 * Math.sin(t*31.0 + 0.8);
-      const breathe = 0.012 * Math.sin(t*2.6);
-      rig.spine.position.y = breathe + roadBounce;
+  const t = ud.t;
 
-      const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.5 : 0.2);
-      const headNo  = (0.06 + 0.10*excite) * Math.sin(t*(4.8 + 7.0*excite));
-      const headYes = (0.03 + 0.05*excite) * Math.sin(t*(3.2 + 4.0*excite) + 0.6);
+  // peso del corpo + vibrazioni strada (più naturali)
+  const road = 0.012*Math.sin(t*17.0) + 0.006*Math.sin(t*29.0 + 0.7);
+  const breathe = 0.018*Math.sin(t*2.2);
+  rig.spine.position.y = breathe + road;
 
-      rig.headPivot.rotation.y = headNo;
-      rig.headPivot.rotation.x = -0.10 + headYes;
+  // eccitazione per fase (più viva quando si affianca)
+  const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.55 : 0.25);
 
-      const blink = (Math.sin(t*1.4) > 0.985) ? 0.75 : 0.0;
-      rig.lidL.scale.y = 0.55 - 0.35*blink;
-      rig.lidR.scale.y = 0.55 - 0.35*blink;
+  // testa: guarda il player (micro) + “no”/“yes”
+  const headNo  = (0.05 + 0.10*excite) * Math.sin(t*(4.2 + 6.8*excite));
+  const headYes = (0.03 + 0.06*excite) * Math.sin(t*(2.6 + 4.4*excite) + 0.6);
+  rig.headPivot.rotation.y = headNo;
+  rig.headPivot.rotation.x = -0.10 + headYes;
 
-      rig.tongue.rotation.x = -0.55 + 0.22*Math.sin(t*(9.5+8*excite));
-      rig.tongue.position.y = -0.04 + 0.010*Math.sin(t*7.0);
+  // occhi: micro sguardo (pupilla avanti/indietro)
+  if(rig.eyeL && rig.eyeL.pupil && rig.eyeR && rig.eyeR.pupil){
+    const lookX = 0.006*Math.sin(t*6.0 + 0.4);
+    const lookY = 0.004*Math.sin(t*5.0 + 1.2);
+    rig.eyeL.pupil.position.x = lookX;
+    rig.eyeR.pupil.position.x = lookX;
+    rig.eyeL.pupil.position.y = lookY;
+    rig.eyeR.pupil.position.y = lookY;
+  }
 
-      const armPump = 0.35*excite*Math.sin(t*(6.8+6.0*excite));
-      rig.Larm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5) + armPump*0.40;
-      rig.Rarm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5 + 1.1) + armPump*0.40;
+  // blink naturale (non “random brutto”)
+  const b = Math.sin(t*1.15);
+  const blink = (b > 0.992) ? 0.85 : 0.0;
+  rig.lidL.scale.y = 0.55 - 0.38*blink;
+  rig.lidR.scale.y = 0.55 - 0.38*blink;
 
-      rig.Larm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 0.2) + armPump*0.35;
-      rig.Rarm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 1.4) + armPump*0.35;
+  // bocca: apre/chiude un po’ + lingua
+  if(rig.mouthPivot){
+    rig.mouthPivot.rotation.x = -0.10 + 0.18*Math.abs(Math.sin(t*(3.8+3.0*excite)));
+  }
+  rig.tongue.rotation.x = -0.55 + 0.26*Math.sin(t*(8.8+7*excite));
+  rig.tongue.position.y = -0.035 + 0.012*Math.sin(t*6.6);
 
-      const leg = 0.08*Math.sin(t*3.0 + 0.5);
-      rig.Lleg.thigh.rotation.x = 0.25 + leg;
-      rig.Rleg.thigh.rotation.x = 0.25 - leg;
+  // braccia: si “aggrappano” (più realistiche)
+  const arm = (0.28 + 0.45*excite) * Math.sin(t*(5.6+5.0*excite));
+  rig.Larm.upper.rotation.x = 0.25 + arm*0.55;
+  rig.Rarm.upper.rotation.x = 0.25 - arm*0.55;
+  rig.Larm.fore.rotation.x  = 0.40 + arm*0.45;
+  rig.Rarm.fore.rotation.x  = 0.40 - arm*0.45;
 
-      rig.tailPivot.rotation.y = 0.35*Math.sin(t*(3.0+2.5*excite));
-      rig.tailPivot.rotation.x = 0.20 + 0.15*Math.sin(t*(2.1+2.0*excite) + 0.4);
+  // gambe: micro movimento
+  const leg = 0.10*Math.sin(t*2.8 + 0.4);
+  rig.Lleg.thigh.rotation.x = 0.22 + leg;
+  rig.Rleg.thigh.rotation.x = 0.22 - leg;
 
-      if(rig.bell && rig.bell.material){
-        const g1 = 0.45 + 0.25*Math.abs(Math.sin(t*8.5));
-        const g2 = 0.20*excite*(0.5+0.5*Math.abs(Math.sin(t*14.0)));
-        rig.bell.material.opacity = Math.min(0.98, g1 + g2);
-        rig.bell.scale.setScalar(0.34 + 0.08*Math.abs(Math.sin(t*10.5)) + 0.10*excite);
-      }
+  // coda: “whip” morbido
+  rig.tailPivot.rotation.y = 0.45*Math.sin(t*(2.6+2.2*excite));
+  rig.tailPivot.rotation.x = 0.22 + 0.18*Math.sin(t*(2.1+1.9*excite) + 0.4);
 
-      e.obj.rotation.z = 0.012*Math.sin(t*5.0) + (beh.phase==='align' ? 0.03*Math.sin(t*12.0) : 0);
-    }
+  // lucina campanello
+  if(rig.bell && rig.bell.material){
+    const g1 = 0.40 + 0.30*Math.abs(Math.sin(t*7.8));
+    const g2 = 0.24*excite*(0.5+0.5*Math.abs(Math.sin(t*13.0)));
+    rig.bell.material.opacity = Math.min(0.98, g1 + g2);
+    rig.bell.scale.setScalar(0.34 + 0.10*Math.abs(Math.sin(t*9.5)) + 0.12*excite);
+  }
+
+  // roll auto leggero (più “peso”)
+  e.obj.rotation.z = 0.018*Math.sin(t*4.6) + (beh.phase==='align' ? 0.035*Math.sin(t*11.0) : 0);
+}
   }
 } // ✅ CHIUDE updateMonkeyCar
 
