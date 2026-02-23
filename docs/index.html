@@ -5405,10 +5405,10 @@ function updateProjectiles(dt, scroll){
     const p = game.projectiles[i];
     p.life -= dt;
 
-    // come le entity: subisce lo scroll + la propria velocità
-    p.z += scroll + (p.vz * dt);
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
+    // ✅ FIX: il proiettile NON deve subire lo scroll del mondo
+p.z += (p.vz * dt);
+p.x += (p.vx * dt);
+p.y += (p.vy * dt);
 
     if(p.obj){
       p.obj.position.set(p.x, p.y, p.z);
@@ -5430,15 +5430,14 @@ if((dx*dx + dy*dy + dz*dz) < (1.05*1.05)){
 
         // kill car
         car.dead = true;
-        spawnMonkeyExplosion(car.obj.position.x, car.z);
-
+        spawnMonkeyExplosion(car.obj.position.x, car.obj.position.z);
+        spawnMonkeyRewards(car.obj.position.z);
         // rimuovi car dall’elenco
         scene.remove(car.obj);
         const idx = game.entities.indexOf(car);
         if(idx>=0) game.entities.splice(idx,1);
 
-        // ✅ DROP nuovo (magnete + 2x) + salto scimmia
-spawnMonkeyRewards(car.z);
+        
 
         // sfx
         try{ sfx.boost(); }catch{}
