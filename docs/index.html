@@ -5020,7 +5020,7 @@ const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
     return;
   }
 
-  // applica posizione
+    // applica posizione
   e.obj.position.z = e.z;
 
   // X: corsia emergenza con micro zigzag (leggero)
@@ -5029,92 +5029,64 @@ const evadeMul = (e.evadeT > 0) ? 1.20 : 1.00; // +20% per 1s
   e.weave += dt * wSpd;
   const baseAmp = (beh.phase === 'align') ? 0.18 : 0.12;
 
-// ✅ dodge extra SOLO durante evade (schivata a scatti)
-const dodge = (e.evadeT > 0)
-  ? (0.28 * Math.sin((tNow * 0.02) + e.weave * 2.0))
-  : 0;
+  const dodge = (e.evadeT > 0)
+    ? (0.28 * Math.sin((tNow * 0.02) + e.weave * 2.0))
+    : 0;
 
-const wx = Math.sin(e.weave) * baseAmp + dodge;
-e.obj.position.x = lanesX[3] + wx;
+  const wx = Math.sin(e.weave) * baseAmp + dodge;
+  e.obj.position.x = lanesX[3] + wx;
 
   // anim ruote + scimmia (più realistica)
-const ud = e.obj.userData;
-if(ud){
-  ud.t = (ud.t ?? 0) + dt;
+  const ud = e.obj.userData;
+  if(ud){
+    ud.t = (ud.t ?? 0) + dt;
 
-  // spin ruote proporzionale alla fase
-  const spin = playerSpeed * (
-    beh.phase === 'approach' ? 1.55 :
-    beh.phase === 'align'    ? 0.95 :
-    2.8
-  ) * 0.55;
+    const rig = ud.monkeyRig;
+    if(rig){
+      const t = ud.t;
+      const roadBounce = 0.010 * Math.sin(t*18.0) + 0.006 * Math.sin(t*31.0 + 0.8);
+      const breathe = 0.012 * Math.sin(t*2.6);
+      rig.spine.position.y = breathe + roadBounce;
 
-  if(ud.wheels){
-    for(const w of ud.wheels) w.rotation.x += spin * dt;
-  }
+      const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.5 : 0.2);
+      const headNo  = (0.06 + 0.10*excite) * Math.sin(t*(4.8 + 7.0*excite));
+      const headYes = (0.03 + 0.05*excite) * Math.sin(t*(3.2 + 4.0*excite) + 0.6);
 
-  // ===== MONKEY RIG =====
-  const rig = ud.monkeyRig;
-  if(rig){
-    const t = ud.t;
+      rig.headPivot.rotation.y = headNo;
+      rig.headPivot.rotation.x = -0.10 + headYes;
 
-    // “sospensioni”: micro-bounce realistico
-    const roadBounce = 0.010 * Math.sin(t*18.0) + 0.006 * Math.sin(t*31.0 + 0.8);
+      const blink = (Math.sin(t*1.4) > 0.985) ? 0.75 : 0.0;
+      rig.lidL.scale.y = 0.55 - 0.35*blink;
+      rig.lidR.scale.y = 0.55 - 0.35*blink;
 
-    // respirazione + postura
-    const breathe = 0.012 * Math.sin(t*2.6);
-    rig.spine.position.y = breathe + roadBounce;
+      rig.tongue.rotation.x = -0.55 + 0.22*Math.sin(t*(9.5+8*excite));
+      rig.tongue.position.y = -0.04 + 0.010*Math.sin(t*7.0);
 
-    // focus: quando è in align ti “guarda” di più, in dash guarda avanti
-    const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.5 : 0.2);
+      const armPump = 0.35*excite*Math.sin(t*(6.8+6.0*excite));
+      rig.Larm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5) + armPump*0.40;
+      rig.Rarm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5 + 1.1) + armPump*0.40;
 
-    // testa: micro shake + “no” + “yes”
-    const headNo  = (0.06 + 0.10*excite) * Math.sin(t*(4.8 + 7.0*excite));
-    const headYes = (0.03 + 0.05*excite) * Math.sin(t*(3.2 + 4.0*excite) + 0.6);
+      rig.Larm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 0.2) + armPump*0.35;
+      rig.Rarm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 1.4) + armPump*0.35;
 
-    rig.headPivot.rotation.y = headNo;
-    rig.headPivot.rotation.x = -0.10 + headYes;
+      const leg = 0.08*Math.sin(t*3.0 + 0.5);
+      rig.Lleg.thigh.rotation.x = 0.25 + leg;
+      rig.Rleg.thigh.rotation.x = 0.25 - leg;
 
-    // blink (palpebre): ogni tanto chiude un filo
-    const blink = (Math.sin(t*1.4) > 0.985) ? 0.75 : 0.0;
-    rig.lidL.scale.y = 0.55 - 0.35*blink;
-    rig.lidR.scale.y = 0.55 - 0.35*blink;
+      rig.tailPivot.rotation.y = 0.35*Math.sin(t*(3.0+2.5*excite));
+      rig.tailPivot.rotation.x = 0.20 + 0.15*Math.sin(t*(2.1+2.0*excite) + 0.4);
 
-    // lingua: vibra con aria
-    rig.tongue.rotation.x = -0.55 + 0.22*Math.sin(t*(9.5+8*excite));
-    rig.tongue.position.y = -0.04 + 0.010*Math.sin(t*7.0);
+      if(rig.bell && rig.bell.material){
+        const g1 = 0.45 + 0.25*Math.abs(Math.sin(t*8.5));
+        const g2 = 0.20*excite*(0.5+0.5*Math.abs(Math.sin(t*14.0)));
+        rig.bell.material.opacity = Math.min(0.98, g1 + g2);
+        rig.bell.scale.setScalar(0.34 + 0.08*Math.abs(Math.sin(t*10.5)) + 0.10*excite);
+      }
 
-    // braccia: “reggono” e assorbono le buche (IK fake)
-    const armPump = 0.35*excite*Math.sin(t*(6.8+6.0*excite));
-    rig.Larm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5) + armPump*0.40;
-    rig.Rarm.upper.rotation.x = 0.25 + 0.15*Math.sin(t*3.5 + 1.1) + armPump*0.40;
-
-    rig.Larm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 0.2) + armPump*0.35;
-    rig.Rarm.fore.rotation.x  = 0.40 + 0.18*Math.sin(t*4.4 + 1.4) + armPump*0.35;
-
-    // gambe: micro movimento (non troppo)
-    const leg = 0.08*Math.sin(t*3.0 + 0.5);
-    rig.Lleg.thigh.rotation.x = 0.25 + leg;
-    rig.Rleg.thigh.rotation.x = 0.25 - leg;
-
-    // coda: ondeggia, più forte in align
-    rig.tailPivot.rotation.y = 0.35*Math.sin(t*(3.0+2.5*excite));
-    rig.tailPivot.rotation.x = 0.20 + 0.15*Math.sin(t*(2.1+2.0*excite) + 0.4);
-
-    // bell glow: pulsa
-    if(rig.bell && rig.bell.material){
-      const g1 = 0.45 + 0.25*Math.abs(Math.sin(t*8.5));
-      const g2 = 0.20*excite*(0.5+0.5*Math.abs(Math.sin(t*14.0)));
-      rig.bell.material.opacity = Math.min(0.98, g1 + g2);
-      rig.bell.scale.setScalar(0.34 + 0.08*Math.abs(Math.sin(t*10.5)) + 0.10*excite);
+      e.obj.rotation.z = 0.012*Math.sin(t*5.0) + (beh.phase==='align' ? 0.03*Math.sin(t*12.0) : 0);
     }
-
-    // roll auto: leggerissimo, più stabile
-    e.obj.rotation.z = 0.012*Math.sin(t*5.0) + (beh.phase==='align' ? 0.03*Math.sin(t*12.0) : 0);
   }
-}
-} 
-}// ✅ chiude: function updateMonkeyCar(...)
+} // ✅ CHIUDE updateMonkeyCar
 
 // ===== BULLET VISUAL =====
 function makeBullet(){
