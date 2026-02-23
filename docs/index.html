@@ -5229,11 +5229,11 @@ function tryEvadeOnShot(carEnt){
   if(!carEnt) return;
   if(carEnt.evadeT > 0.2) return;
 
-  // evade “furba”: quasi sempre prova
-  if(Math.random() < 0.85){
-  carEnt.evadeT = 1.0; // ✅ 1 secondo evade
-  try{ sfx.lane(); }catch{}
-}
+  // ✅ molto meno evasiva (sennò non la prendi mai)
+  if(Math.random() < 0.18){
+    carEnt.evadeT = 0.55; // mezzo secondo
+    try{ sfx.lane(); }catch{}
+  }
 }
 
 function fireBullet(){
@@ -5257,7 +5257,7 @@ function fireBullet(){
   // target = car (leggero offset verso “cabina”)
   const tx = car.obj.position.x;
   const ty = 0.55;
-  const tz = car.z;
+  const tz = car.obj.position.z;   // ✅ Z reale dell’oggetto
 
   const dir = new THREE.Vector3(tx-px, ty-py, tz-pz);
   const len = Math.max(0.001, dir.length());
@@ -5419,10 +5419,11 @@ function updateProjectiles(dt, scroll){
     if(car && car.obj){
       const dx = p.x - car.obj.position.x;
       const dy = p.y - 0.55;
-      const dz = p.z - car.z;
+      const carZ = car.obj.position.z;     // ✅ Z reale dell’oggetto
+const dz = p.z - carZ;
 
-      // hitbox un po’ “generosa”
-      if((dx*dx + dy*dy + dz*dz) < (0.60*0.60)){
+// ✅ hitbox più generosa (così colpisci davvero su mobile)
+if((dx*dx + dy*dy + dz*dz) < (1.05*1.05)){
         // HIT
         scene.remove(p.obj);
         game.projectiles.splice(i,1);
