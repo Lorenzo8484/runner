@@ -3972,40 +3972,38 @@ sfx.lane();
     }
 
     renderer.domElement.addEventListener('pointerdown',(e)=>{
-      initAudio();
-      renderer.domElement.setPointerCapture(e.pointerId);
-      activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  initAudio();
+  renderer.domElement.setPointerCapture(e.pointerId);
+  activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
 
-      if(isInHomeOrbitMode()){
-        // 🟡 HOME: 1 dito = rotazione / 2 dita = pinch+pan
-        if(activePointers.size === 1){
-          homeDrag.active = true;
-          homeDrag.id = e.pointerId;
-          homeDrag.lastX = e.clientX;
-          homeDrag.lastY = e.clientY;
-          homePinch.active = false;
-        }else if(activePointers.size === 2){
-          const vals = [...activePointers.values()];
-          const dx = vals[1].x - vals[0].x;
-          const dy = vals[1].y - vals[0].y;
-          homePinch.active = true;
-          homePinch.startDist = Math.max(1, Math.hypot(dx,dy));
-          homePinch.startRadius = homeOrbit.radius;
-          homePinch.startOffsetX = homeOrbit.targetOffsetX;
-          homePinch.startOffsetY = homeOrbit.targetOffsetY;
-          homePinch.lastMidX = (vals[0].x + vals[1].x)/2;
-          homePinch.lastMidY = (vals[0].y + vals[1].y)/2;
-          homeDrag.active = false;
-          homeDrag.id = null;
-        }
-            }else{
-        // 🎮 gioco: swipe per lane / jump / slide
-        touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
+  if(isInHomeOrbitMode()){
+    // 🟡 HOME: 1 dito = rotazione / 2 dita = pinch+pan
+    if(activePointers.size === 1){
+      homeDrag.active = true;
+      homeDrag.id = e.pointerId;
+      homeDrag.lastX = e.clientX;
+      homeDrag.lastY = e.clientY;
+      homePinch.active = false;
+    }else if(activePointers.size === 2){
+      const vals = [...activePointers.values()];
+      const dx = vals[1].x - vals[0].x;
+      const dy = vals[1].y - vals[0].y;
+      homePinch.active = true;
+      homePinch.startDist = Math.max(1, Math.hypot(dx,dy));
+      homePinch.startRadius = homeOrbit.radius;
+      homePinch.startOffsetX = homeOrbit.targetOffsetX;
+      homePinch.startOffsetY = homeOrbit.targetOffsetY;
+      homePinch.lastMidX = (vals[0].x + vals[1].x)/2;
+      homePinch.lastMidY = (vals[0].y + vals[1].y)/2;
+      homeDrag.active = false;
+      homeDrag.id = null;
+    }
+    return;
+  }
 
-          }, 140);
-        }
-      }
-    });
+  // 🎮 GIOCO: swipe (gestito in pointerup)
+  touchStart = { x:e.clientX, y:e.clientY, t:performance.now() };
+});
 
     renderer.domElement.addEventListener('pointermove',(e)=>{
       if(!activePointers.has(e.pointerId)) return;
