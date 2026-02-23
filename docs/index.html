@@ -5078,7 +5078,7 @@ advanceWithForwardSpeed(vClamped);
 
 // quando arriva vicino a me, dopo un attimo scappa
 if(Math.abs(err) < 0.22){
-  if(beh.t > 0.20){
+  if(beh.t > 0.99){
     beh.phase = 'dash';
     beh.dashT = 0;
   }
