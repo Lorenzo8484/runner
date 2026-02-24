@@ -5355,28 +5355,119 @@ function make2xRingVisual(){
   return g;
 }
 
-// 🐵 Scimmia "guida" (entity vera): salto -> resta -> quando tocchi corre e sparisce
+function makeMonkeyRunner3D(){
+  const g = new THREE.Group();
+
+  const fur = new THREE.MeshStandardMaterial({ color:0x5a3a22, roughness:0.98, metalness:0.02 });
+  const skin= new THREE.MeshStandardMaterial({ color:0x8b5a33, roughness:0.90, metalness:0.02 });
+  const dark= new THREE.MeshStandardMaterial({ color:0x0b0f14, roughness:0.60, metalness:0.10 });
+
+  const mk = (geo, mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m; };
+
+  // corpo
+  const body = mk(new THREE.CapsuleGeometry(0.16, 0.34, 8, 12), fur);
+  body.position.y = 0.55;
+  g.add(body);
+
+  // pancia
+  const belly = mk(new THREE.SphereGeometry(0.13, 14, 12), fur);
+  belly.scale.set(1.05, 0.80, 1.0);
+  belly.position.set(0, 0.52, 0.06);
+  g.add(belly);
+
+  // testa
+  const head = mk(new THREE.SphereGeometry(0.14, 16, 14), skin);
+  head.scale.set(1.05, 0.95, 1.15);
+  head.position.set(0, 0.92, 0.02);
+  g.add(head);
+
+  // muso
+  const muzzle = mk(new THREE.SphereGeometry(0.10, 14, 12), new THREE.MeshStandardMaterial({
+    color:0xd7b07a, roughness:0.92, metalness:0.0
+  }));
+  muzzle.scale.set(1.20, 0.70, 1.35);
+  muzzle.position.set(0, 0.86, 0.13);
+  g.add(muzzle);
+
+  // occhi
+  const eyeW = mk(new THREE.SphereGeometry(0.025, 12, 10), new THREE.MeshStandardMaterial({
+    color:0xf4f6f8, roughness:0.75, metalness:0.02, emissive:0x101318, emissiveIntensity:0.25
+  }));
+  const eyeB = mk(new THREE.SphereGeometry(0.013, 12, 10), dark);
+  const eyeL = new THREE.Group();
+  eyeL.add(eyeW.clone(), eyeB.clone());
+  eyeL.children[1].position.z = 0.02;
+  eyeL.position.set(-0.05, 0.93, 0.12);
+
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.05;
+  g.add(eyeL, eyeR);
+
+  // braccia (pivot per animazione)
+  const armL = new THREE.Group(); armL.name='armL';
+  const armR = new THREE.Group(); armR.name='armR';
+  armL.position.set(-0.17, 0.63, 0.06);
+  armR.position.set( 0.17, 0.63, 0.06);
+
+  const upperArm = mk(new THREE.CapsuleGeometry(0.05, 0.18, 6, 10), fur);
+  upperArm.rotation.z = 0.9;
+  upperArm.position.set(-0.06, -0.10, 0);
+
+  const upperArmR = upperArm.clone();
+  upperArmR.rotation.z = -0.9;
+  upperArmR.position.set(0.06, -0.10, 0);
+
+  armL.add(upperArm);
+  armR.add(upperArmR);
+  g.add(armL, armR);
+
+  // gambe (pivot per animazione)
+  const legL = new THREE.Group(); legL.name='legL';
+  const legR = new THREE.Group(); legR.name='legR';
+  legL.position.set(-0.08, 0.33, -0.02);
+  legR.position.set( 0.08, 0.33, -0.02);
+
+  const thigh = mk(new THREE.CapsuleGeometry(0.055, 0.22, 6, 10), fur);
+  thigh.rotation.x = 0.25;
+  thigh.position.set(0, -0.12, 0);
+
+  const thighR = thigh.clone();
+
+  const foot = mk(new THREE.SphereGeometry(0.06, 12, 10), new THREE.MeshStandardMaterial({
+    color:0xd7b07a, roughness:0.92, metalness:0.0
+  }));
+  foot.scale.set(1.15, 0.65, 1.2);
+  foot.position.set(0, -0.26, 0.08);
+
+  const footR = foot.clone();
+
+  legL.add(thigh, foot);
+  legR.add(thighR, footR);
+  g.add(legL, legR);
+
+  // salva refs per animazione run
+  g.userData.runRig = { armL, armR, legL, legR, head };
+
+  // scala “umana” nella scena
+  g.scale.setScalar(1.25);
+  return g;
+}
+
 function spawnMonkeyGuide(lane, zMonkey){
-  const spr = makeEmojiSprite("🐵");
-  spr.position.set(lanesX[lane], 1.00, zMonkey);
-  spr.scale.set(1.10, 1.10, 1);
-  // evita che sparisca per depth strani
-  if(spr.material){
-    spr.material.depthWrite = false;
-    spr.material.depthTest  = true;
-    spr.material.opacity = 1.0;
-  }
-  scene.add(spr);
+  const obj = makeMonkeyRunner3D();
+  obj.position.set(lanesX[lane], 0.02, zMonkey); // a terra
+
+  scene.add(obj);
 
   game.entities.push({
     type: 'monkeyGuide',
     lane,
     z: zMonkey,
-    obj: spr,
+    obj,
 
     state: 'jump',   // 'jump' -> 'idle' -> 'run'
     t: 0,
-    y0: 1.00,
+    y0: 0.02,
     runT: 0,
     collected: false
   });
@@ -5386,14 +5477,13 @@ function spawnMonkeyRewards(zBase){
   // corsia random 0..2
   const lane = rndi(0,2);
 
-  // ✅ molto più lontano dal player per dare tempo di cambiare corsia
-  // (più negativo = più avanti)
-  const zBaseFar = zBase - 28.0;
+  // ✅ MOLTO più avanti (più negativo = più lontano davanti)
+const zBaseFar = zBase - 70.0;   // prima -28 (poco). Ora MOLTO avanti
 
-  // ✅ ordine: scimmia DAVANTI (più vicina al player), poi magnete, poi 2x ring più avanti
-  const zMonkey = zBaseFar + 4.2;   // prima che tu prenda magnete/anello
-  const zMag    = zBaseFar + 2.2;
-  const zRing2x = zBaseFar + 0.9;
+// scimmia davanti ai drop (la tocchi prima), poi magnete, poi 2x
+const zMonkey = zBaseFar + 7.0;
+const zMag    = zBaseFar + 4.5;
+const zRing2x = zBaseFar + 2.0;
 
   // 1) scimmia che salta e poi sta ferma davanti ai drop
   spawnMonkeyGuide(lane, zMonkey);
@@ -5845,23 +5935,41 @@ if(e.type === 'monkeyGuide' && e.obj){
     e.obj.position.y = e.y0 + Math.sin(e.t*6.0) * 0.03;
   }
   else if(e.state === 'run'){
-    e.runT = (e.runT || 0) + dt;
+  e.runT = (e.runT || 0) + dt;
 
-    // corre in avanti (più negativo = più avanti)
-    const runSpeed = 22.0;
-    e.z -= runSpeed * dt;
-    e.obj.position.z = e.z;
+  // ✅ corre in avanti (molto più veloce e continua finché esce)
+  const runSpeed = 32.0;
+  e.z -= runSpeed * dt;
+  e.obj.position.z = e.z;
 
-    // un filo di “saltello”
-    e.obj.position.y = e.y0 + Math.abs(Math.sin(e.runT*10.0)) * 0.05;
+  // “bounce” di corsa
+  const rig = e.obj.userData?.runRig;
+  const k = 1.0;
+  const a = 0.85; // ampiezza braccia/gambe
+  const ph = e.runT * (10.5 + 2.0*k);
 
-    // sparisce dopo un attimo o se è lontana
-    if(e.runT > 0.75 || e.z < -140){
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      continue;
-    }
+  if(rig){
+    const swingA = Math.sin(ph) * 0.65 * a;
+    const swingB = Math.sin(ph + Math.PI) * 0.65 * a;
+
+    rig.legL.rotation.x =  swingA;
+    rig.legR.rotation.x =  swingB;
+    rig.armL.rotation.x =  swingB * 0.85;
+    rig.armR.rotation.x =  swingA * 0.85;
+
+    rig.head.rotation.x = -0.08 + Math.abs(Math.sin(ph*0.5)) * 0.08;
   }
+
+  // piccolo su/giù del corpo
+  e.obj.position.y = e.y0 + Math.abs(Math.sin(ph)) * 0.05;
+
+  // ✅ sparisce SOLO quando è davvero fuori scena (molto avanti)
+  if(e.z < -220){
+    scene.remove(e.obj);
+    game.entities.splice(i, 1);
+    continue;
+  }
+}
 }
 
       // TURTLE già colpita → scivolata + spin
