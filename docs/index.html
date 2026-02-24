@@ -5355,48 +5355,65 @@ function make2xRingVisual(){
   return g;
 }
 
-function spawnMonkeyRewards(zBase){
-  // corsia random 0..2 davanti al player
-  const lane = rndi(0,2);
-
-  // davanti al player (negativo = avanti)
-  const zDrop = zBase - 12.0;
-
-  // 1) MAGNETE
-  {
-    const spr = makeEmojiSprite(MAGNET);
-    spr.position.set(lanesX[lane], 1.15, zDrop);
-    spr.scale.set(0.95,0.95,1);
-    scene.add(spr);
-    game.entities.push({ type:'magnet', lane, z: zDrop, obj:spr });
-  }
-
-  // 2) 2x RING verde
-  {
-    const obj = make2xRingVisual();
-    obj.position.set(lanesX[lane], 0.65, zDrop - 1.1);
-    scene.add(obj);
-    game.entities.push({ type:'x2', lane, z: (zDrop - 1.1), obj });
-  }
-
-  // 3) scimmia che “salta” (solo visual)
-  spawnMonkeyJumpFX(lanesX[lane], zDrop + 1.2);
-}
-
-function spawnMonkeyJumpFX(x, z){
+// 🐵 Scimmia "guida" (entity vera): salto -> resta -> quando tocchi corre e sparisce
+function spawnMonkeyGuide(lane, zMonkey){
   const spr = makeEmojiSprite("🐵");
-  spr.position.set(x, 1.0, z);
-  spr.scale.set(1.05,1.05,1);
+  spr.position.set(lanesX[lane], 1.00, zMonkey);
+  spr.scale.set(1.10, 1.10, 1);
+  // evita che sparisca per depth strani
+  if(spr.material){
+    spr.material.depthWrite = false;
+    spr.material.depthTest  = true;
+    spr.material.opacity = 1.0;
+  }
   scene.add(spr);
 
-  game.effects.push({
-    type:'monkeyJump',
+  game.entities.push({
+    type: 'monkeyGuide',
+    lane,
+    z: zMonkey,
     obj: spr,
-    t:0,
-    life: 0.9,
-    x, z,
-    y0: 1.0
+
+    state: 'jump',   // 'jump' -> 'idle' -> 'run'
+    t: 0,
+    y0: 1.00,
+    runT: 0,
+    collected: false
   });
+}
+
+function spawnMonkeyRewards(zBase){
+  // corsia random 0..2
+  const lane = rndi(0,2);
+
+  // ✅ molto più lontano dal player per dare tempo di cambiare corsia
+  // (più negativo = più avanti)
+  const zBaseFar = zBase - 28.0;
+
+  // ✅ ordine: scimmia DAVANTI (più vicina al player), poi magnete, poi 2x ring più avanti
+  const zMonkey = zBaseFar + 4.2;   // prima che tu prenda magnete/anello
+  const zMag    = zBaseFar + 2.2;
+  const zRing2x = zBaseFar + 0.9;
+
+  // 1) scimmia che salta e poi sta ferma davanti ai drop
+  spawnMonkeyGuide(lane, zMonkey);
+
+  // 2) MAGNETE (dietro la scimmia, quindi lo prendi dopo)
+  {
+    const spr = makeEmojiSprite(MAGNET);
+    spr.position.set(lanesX[lane], 1.15, zMag);
+    spr.scale.set(0.98,0.98,1);
+    scene.add(spr);
+    game.entities.push({ type:'magnet', lane, z: zMag, obj:spr });
+  }
+
+  // 3) 2x RING verde (dietro magnete, ancora più avanti)
+  {
+    const obj = make2xRingVisual();
+    obj.position.set(lanesX[lane], 0.65, zRing2x);
+    scene.add(obj);
+    game.entities.push({ type:'x2', lane, z: zRing2x, obj });
+  }
 }
 function updateProjectiles(dt, scroll){
   const car = monkeyCarAlive();
@@ -5806,6 +5823,47 @@ if(e.type === 'monkeyCar'){
 e.z += scroll;
 if (e.obj) e.obj.position.z = e.z;
 
+// 🐵 MONKEY GUIDE: salto -> resta -> run via
+if(e.type === 'monkeyGuide' && e.obj){
+  e.t = (e.t || 0) + dt;
+
+  if(e.state === 'jump'){
+    // salto morbido (parabola) e poi resta
+    const p = clamp(e.t / 0.65, 0, 1);
+    const y = e.y0 + Math.sin(p*Math.PI) * 0.85;
+    e.obj.position.y = y;
+
+    // atterra
+    if(p >= 1){
+      e.state = 'idle';
+      e.t = 0;
+      e.obj.position.y = e.y0;
+    }
+  }
+  else if(e.state === 'idle'){
+    // micro bob carino
+    e.obj.position.y = e.y0 + Math.sin(e.t*6.0) * 0.03;
+  }
+  else if(e.state === 'run'){
+    e.runT = (e.runT || 0) + dt;
+
+    // corre in avanti (più negativo = più avanti)
+    const runSpeed = 22.0;
+    e.z -= runSpeed * dt;
+    e.obj.position.z = e.z;
+
+    // un filo di “saltello”
+    e.obj.position.y = e.y0 + Math.abs(Math.sin(e.runT*10.0)) * 0.05;
+
+    // sparisce dopo un attimo o se è lontana
+    if(e.runT > 0.75 || e.z < -140){
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      continue;
+    }
+  }
+}
+
       // TURTLE già colpita → scivolata + spin
       if (e.type === 'turtle' && e.hit) {
         // tempo da quando è stata colpita
@@ -5927,6 +5985,7 @@ if (e.obj) e.obj.position.z = e.z;
       heart:  { x: 0.58, y: 0.98, z: 0.85 },
       magnet: { x: 0.60, y: 1.05, z: 0.90 },
       ring:   { x: 0.42, y: 0.75, z: 0.55 },
+      monkeyGuide: { x: 0.62, y: 1.05, z: 0.85 },
       obst:   { x: 0.46, y: (game.sliding ? 0.58 : 0.82), z: 0.55 }, // era x0.52 z0.70
       turtle: { x: 0.60, y: 0.55, z: 0.75 }                          // era z0.95
     };
@@ -5956,6 +6015,15 @@ if (e.obj) e.obj.position.z = e.z;
 
         if (e.type === 'ring') {
       if (!collideEntity(e)) continue;
+      // 🐵 se tocchi la scimmia: corre in avanti e sparisce
+if(e.type === 'monkeyGuide'){
+  if(e.collected) continue;
+  e.collected = true;
+  e.state = 'run';
+  e.runT = 0;
+  try{ sfx.lane(); }catch{}
+  continue;
+}
 
       game.ringCount += 1 * pickupMul();
       scene.remove(e.obj);
