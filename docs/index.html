@@ -1224,7 +1224,7 @@ canvas.blurBoost{
                   d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5S7.9 19.5 12 19.5s7.5-3.4 7.5-7.5S16.1 4.5 12 4.5zm0 3c2.5 0 4.5 2 4.5 4.5S14.5 16.5 12 16.5 7.5 14.5 7.5 12 9.5 7.5 12 7.5z"/>
             <path fill="rgba(255,255,255,.22)" d="M14.8 7.9c1.2.8 2 2.2 2 3.8 0 .5-.1 1-.2 1.4-.2.8-1.2.9-1.6.2-.2-.4-.3-.9-.3-1.4 0-1.1-.6-2.1-1.4-2.7-.6-.4-.3-1.7.5-1.3z"/>
           </svg>
-          <div class="hudT">Rings</div>
+          <div class="hudT" id="ringsLabel">Rings</div>
         </div>
         <div class="hudV"><span id="rings">0</span></div>
       </div>
@@ -1682,6 +1682,7 @@ function magicFly(fromWorld, toEl, opt = {}){
     const coinsEl = $('coins');
     const bestEl  = $('best'); // hidden
     const ringsEl = $('rings');
+    const ringsLabel = $('ringsLabel');
     const multPill = $('multPill');
     const multTxt  = $('multTxt');
     const multTime = $('multTime');
@@ -3587,9 +3588,9 @@ mcPending: false,          // se devo spawnare appena possibile
       foodBoostT:0,
       ringBoostT:0,
       magnetT:0,
-      // ===== MULTIPLIER (2x / 4x) =====
-multT: 0,          // secondi rimanenti
-multLevel: 1,      // 1 / 2 / 4
+      // ===== MULTIPLIER =====
+multT: 0,        // secondi rimanenti
+multLevel: 0,    // 0 = off, 2 = 2x, 4 = 4x
       trioT:0,
 
       entities:[],
@@ -3785,7 +3786,7 @@ const TURTLE_SMASH_MARGIN = 0.55;   // tolleranza “fisica”
       return Math.abs(z - game.lastTurtleZ[lane]) >= TURTLE_MIN_GAP;
     }
 function pickupMul(){
-  return (game.multT > 0) ? (game.multLevel || 2) : 1;
+  return (game.multT > 0 && game.multLevel > 0) ? game.multLevel : 1;
 }
 
     function spawnRow(){
@@ -5826,10 +5827,7 @@ if(_nowDanceActive !== _prevDanceActive){
   // ===== MULT timer =====
 if(game.multT > 0){
   game.multT = Math.max(0, game.multT - dt*trafficMul);
-  if(game.multT <= 0){
-    game.multT = 0;
-    game.multLevel = 1;
-  }
+  if(game.multT <= 0) game.multLevel = 0;
 }
   const anyBoost = (game.foodBoostT>0 || game.ringBoostT>0);
   if(anyBoost && game.invincibleT<0.05){
@@ -6304,18 +6302,16 @@ if(e.type === 'monkeyGuide'){
   continue;
 }
 
-// ===== MULT PICKUP (10s): 2x -> (se già attivo) 4x =====
-if (e.type === 'mult2x') {
+// ===== MULT PICKUP (10s) =====
+if (e.type === 'x2' || e.type === 'mult2x') {
+  // se non attivo -> 2x
+  if(game.multLevel <= 0) game.multLevel = 2;
+  // se già 2x -> 4x
+  else if(game.multLevel === 2) game.multLevel = 4;
+  // se già 4x -> resta 4x
 
-  if(game.multT > 0){
-    // già attivo: raddoppia (2x -> 4x), cap a 4x
-    game.multLevel = Math.min(4, (game.multLevel || 2) * 2);
-  }else{
-    // non attivo: parte a 2x
-    game.multLevel = 2;
-  }
-
-  game.multT = 10.0; // ✅ ogni raccolta resetta a 10s
+  // ogni pickup resetta a 10s
+  game.multT = 10.0;
 
   scene.remove(e.obj);
   game.entities.splice(i, 1);
@@ -6341,7 +6337,16 @@ if (e.type === 'mult2x') {
   if(scoreEl) scoreEl.textContent = String(Math.floor(game.score));
   if(coinsEl) coinsEl.textContent = String(game.coins);
   if(bestEl)  bestEl.textContent  = String(game.best);
-  if(ringsEl) ringsEl.textContent = String(game.ringCount);
+  // ===== Rings pill: diventa MULT quando attivo =====
+if(ringsEl){
+  if(game.multT > 0 && game.multLevel > 0){
+    if(ringsLabel) ringsLabel.textContent = 'MULT';
+    ringsEl.textContent = `${game.multLevel}x • ${game.multT.toFixed(1)}s`;
+  }else{
+    if(ringsLabel) ringsLabel.textContent = 'Rings';
+    ringsEl.textContent = String(game.ringCount);
+  }
+}
   if(hpTxt)   hpTxt.textContent   = hpString();
   if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
   // ===== HUD MULT =====
