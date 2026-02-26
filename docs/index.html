@@ -1229,27 +1229,7 @@ canvas.blurBoost{
         <div class="hudV"><span id="rings">0</span></div>
       </div>
       
-      <!-- Moltiplicatore (verde) -->
-<div class="hudP pillFx hudHalf" id="multPill" style="display:none;">
-  <div class="hudL">
-    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <linearGradient id="gMult" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-          <stop offset=".45" stop-color="#d6ffe9" stop-opacity=".95"/>
-          <stop offset="1" stop-color="#34c759" stop-opacity=".92"/>
-        </linearGradient>
-      </defs>
-      <path fill="url(#gMult)"
-        d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5S7.9 19.5 12 19.5s7.5-3.4 7.5-7.5S16.1 4.5 12 4.5zm0 3c2.5 0 4.5 2 4.5 4.5S14.5 16.5 12 16.5 7.5 14.5 7.5 12 9.5 7.5 12 7.5z"/>
-    </svg>
-    <div class="hudT">MULT</div>
-  </div>
-  <div class="hudV">
-    <span id="multTxt">2x</span>
-    <span id="multTime">10.0s</span>
-  </div>
-</div>
+      
 
       <!-- Vita (GEMELLA + cuori centrati) -->
 <div class="hudP pillFx hudHalf lifePill">
@@ -1683,9 +1663,6 @@ function magicFly(fromWorld, toEl, opt = {}){
     const bestEl  = $('best'); // hidden
     const ringsEl = $('rings');
     const ringsLabel = $('ringsLabel');
-    const multPill = $('multPill');
-    const multTxt  = $('multTxt');
-    const multTime = $('multTime');
     const hpTxt   = $('hpTxt');
     const magTxt  = $('magTxt');
 
@@ -6349,15 +6326,6 @@ if(ringsEl){
 }
   if(hpTxt)   hpTxt.textContent   = hpString();
   if(magTxt)  magTxt.textContent  = `🧲 ${game.magnetT>0 ? game.magnetT.toFixed(1) : '0'}`;
-  // ===== HUD MULT =====
-if(multPill && multTxt && multTime){
-  const active = (game.multT > 0);
-  multPill.style.display = active ? 'flex' : 'none';
-  if(active){
-    multTxt.textContent  = `${game.multLevel}x`;
-    multTime.textContent = `${game.multT.toFixed(1)}s`;
-  }
-}
   setBoostUI();
 
   if(bubble.visible){
