@@ -5936,148 +5936,114 @@ for(const mesh of segments){
   }
 
         // entities scroll + turtle slide
-    for (let i = game.entities.length - 1; i >= 0; i--) {
-      const e = game.entities[i];
-      
+for (let i = game.entities.length - 1; i >= 0; i--) {
+  const e = game.entities[i];
 
-
-      // ===== MONKEY CAR (gestisce da sola lo scroll) =====
-if(e.type === 'monkeyCar'){
-  updateMonkeyCar(e, dt, scroll, tNow);
-  continue;
-}
-
-// avanzamento lungo Z (tutte le altre entity)
-e.z += scroll;
-if (e.obj) e.obj.position.z = e.z;
-
-// 🐵 MONKEY GUIDE: idle -> run (prima del contatto) -> dash (dopo contatto)
-if(e.type === 'monkeyGuide' && e.obj){
-  e.t = (e.t || 0) + dt;
-
-  // velocità player (unità/s)
-  const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
-
-  // ✅ quando è "vicino" parte prima di essere toccata
-  const PRE_RUN_Z = 6.0; // aumenta se vuoi che parta ancora prima
-  if(e.state === 'idle' && e.z > -PRE_RUN_Z && e.z < PRE_RUN_Z){
-    e.state = 'run';
-    e.runT = 0;
+  // ===== MONKEY CAR (gestisce da sola lo scroll) =====
+  if (e.type === 'monkeyCar') {
+    updateMonkeyCar(e, dt, scroll, tNow);
+    continue;
   }
 
-  // idle: micro bob + posizione a terra
-  if(e.state === 'idle'){
-    e.obj.position.y = e.y0 + Math.sin(e.t*5.2)*0.02;
-  }
+  // avanzamento lungo Z (tutte le altre entity)
+  e.z += scroll;
+  if (e.obj) e.obj.position.z = e.z;
 
-  // run: corre in avanti (scappa un po’ ma resta visibile)
-  if(e.state === 'run'){
-    e.runT = (e.runT || 0) + dt;
+  // 🐵 MONKEY GUIDE: idle -> run (vicino) -> dash (dopo contatto)
+  if (e.type === 'monkeyGuide' && e.obj) {
+    e.t = (e.t || 0) + dt;
 
-    // corre in avanti più del mondo
-    const extra = 9.0; // quanto scappa
-    e.z -= (playerSpeed*0.80 + extra) * dt;
-    e.obj.position.z = e.z;
+    const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
 
-    // anim corsa realistica
-    const rig = e.obj.userData?.runRig;
-    animMonkeyRun(rig, e.runT, 1.0);
-
-    e.obj.position.y = e.y0 + Math.abs(Math.sin(e.runT*10.0))*0.03;
-
-    if(e.z < -220){
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      continue;
+    // quando è "vicino" parte prima di essere toccata
+    const PRE_RUN_Z = 6.0;
+    if (e.state === 'idle' && e.z > -PRE_RUN_Z && e.z < PRE_RUN_Z) {
+      e.state = 'run';
+      e.runT = 0;
     }
-  }
 
-  // dash: quando la tocchi accelera e sparisce
-  if(e.state === 'dash'){
-    e.runT = (e.runT || 0) + dt;
-
-    const extra = 22.0; // molto più veloce
-    e.z -= (playerSpeed*1.15 + extra) * dt;
-    e.obj.position.z = e.z;
-
-    const rig = e.obj.userData?.runRig;
-    animMonkeyRun(rig, e.runT, 1.55);
-
-    e.obj.position.y = e.y0 + Math.abs(Math.sin(e.runT*12.0))*0.05;
-
-    if(e.z < -240){
-      scene.remove(e.obj);
-      game.entities.splice(i, 1);
-      continue;
+    if (e.state === 'idle') {
+      e.obj.position.y = (e.y0 ?? 0.02) + Math.sin(e.t * 5.2) * 0.02;
     }
-  }
-}
-}
-}
 
-      // TURTLE già colpita → scivolata + spin
-      if (e.type === 'turtle' && e.hit) {
-        // tempo da quando è stata colpita
-        e.hitAge = (e.hitAge || 0) + dt;
+    if (e.state === 'run') {
+      e.runT = (e.runT || 0) + dt;
+      const extra = 9.0;
+      e.z -= (playerSpeed * 0.80 + extra) * dt;
+      e.obj.position.z = e.z;
 
-        // cambio colore shell (giallo → rosso)
-        const mats = (e.obj && e.obj.userData && e.obj.userData.mats)
-          ? e.obj.userData.mats
-          : [];
-        if (mats.length) {
-          if (e.hitAge < 0.10) {
-            mats.forEach(m => m.color.setHex(0xffd400)); // lampo giallo
-          } else {
-            mats.forEach(m => m.color.setHex(0xff2d2d)); // rosso finché scivola
-          }
-        }
+      animMonkeyRun(e.obj.userData?.runRig, e.runT, 1.0);
+      e.obj.position.y = (e.y0 ?? 0.02) + Math.abs(Math.sin(e.runT * 10.0)) * 0.03;
 
-        // countdown scivolata + frenata
-        e.slideT = Math.max(0, e.slideT - dt);
-        e.slideV = damp(e.slideV, 0, 6.5, dt);
-
-        // avanzamento extra dovuto alla scivolata
-        const prevZ = e.z;
-        e.z += e.slideV * dt;
-
-        if (e.obj) {
-          e.obj.position.z = e.z;
-          // piccolo spin sull'asse Y
-          e.obj.rotation.y += e.spinV * dt;
-        }
-
-        // polvere solo mentre scivola veloce
-        if (e.slideT > 0 && Math.abs(e.slideV) > 15) {
-          spawnDust(e.obj.position.x, e.z + 0.25);
-        }
-
-        // la shell che scivola rompe pickup/ostacoli
-        const didDestroy = turtleSmashSweep(e, prevZ, e.z);
-        if (didDestroy) e.destroyedAny = true;
-
-        // quando è quasi ferma → sparisce
-        const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
-        if (almostStopped) {
-          if (!e.destroyedAny) {
-            // se non ha colpito niente, almeno un piccolo effetto
-            spawnTurtleExplosion(e.obj.position.x, e.z);
-          }
-          scene.remove(e.obj);
-          game.entities.splice(i, 1);
-          continue; // passa alla prossima entity
-        }
-      }
-
-      // fuori dal mondo davanti alla camera
-      if (e.z > 6) {
+      if (e.z < -220) {
         scene.remove(e.obj);
         game.entities.splice(i, 1);
         continue;
       }
     }
-  
-  
-  
+
+    if (e.state === 'dash') {
+      e.runT = (e.runT || 0) + dt;
+      const extra = 22.0;
+      e.z -= (playerSpeed * 1.15 + extra) * dt;
+      e.obj.position.z = e.z;
+
+      animMonkeyRun(e.obj.userData?.runRig, e.runT, 1.55);
+      e.obj.position.y = (e.y0 ?? 0.02) + Math.abs(Math.sin(e.runT * 12.0)) * 0.05;
+
+      if (e.z < -240) {
+        scene.remove(e.obj);
+        game.entities.splice(i, 1);
+        continue;
+      }
+    }
+  }
+
+  // ===== TURTLE già colpita → scivolata + spin =====
+  if (e.type === 'turtle' && e.hit) {
+    e.hitAge = (e.hitAge || 0) + dt;
+
+    const mats = (e.obj && e.obj.userData && e.obj.userData.mats) ? e.obj.userData.mats : [];
+    if (mats.length) {
+      if (e.hitAge < 0.10) mats.forEach(m => m.color.setHex(0xffd400));
+      else mats.forEach(m => m.color.setHex(0xff2d2d));
+    }
+
+    e.slideT = Math.max(0, e.slideT - dt);
+    e.slideV = damp(e.slideV, 0, 6.5, dt);
+
+    const prevZ = e.z;
+    e.z += e.slideV * dt;
+
+    if (e.obj) {
+      e.obj.position.z = e.z;
+      e.obj.rotation.y += e.spinV * dt;
+    }
+
+    if (e.slideT > 0 && Math.abs(e.slideV) > 15) {
+      spawnDust(e.obj.position.x, e.z + 0.25);
+    }
+
+    const didDestroy = turtleSmashSweep(e, prevZ, e.z);
+    if (didDestroy) e.destroyedAny = true;
+
+    const almostStopped = (Math.abs(e.slideV) < 6.0) || (e.slideT <= 0);
+    if (almostStopped) {
+      if (!e.destroyedAny) spawnTurtleExplosion(e.obj.position.x, e.z);
+      scene.remove(e.obj);
+      game.entities.splice(i, 1);
+      continue;
+    }
+  }
+
+  // fuori dal mondo davanti alla camera
+  if (e.z > 6) {
+    if (e.obj) scene.remove(e.obj);
+    game.entities.splice(i, 1);
+    continue;
+  }
+}
+
     // =========================================================
   // ✅ MAGNETE: attira pickup verso il player
   // =========================================================
