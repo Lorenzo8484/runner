@@ -5566,7 +5566,7 @@ const zRing2x = zBaseFar + 2.0;
     const obj = make2xRingVisual();
     obj.position.set(lanesX[lane], 0.65, zRing2x);
     scene.add(obj);
-    game.entities.push({ type:'x2', lane, z: zRing2x, obj });
+    game.entities.push({ type:'mult2x', lane, z: zRing2x, obj });
   }
 }
 function updateProjectiles(dt, scroll){
@@ -6304,9 +6304,19 @@ if(e.type === 'monkeyGuide'){
   continue;
 }
 
-// ===== 2X PICKUP (10s) =====
+// ===== MULT PICKUP (10s): 2x -> (se già attivo) 4x =====
 if (e.type === 'mult2x') {
-  game.mult2xT = 10.0; // 10 secondi di 2x
+
+  if(game.multT > 0){
+    // già attivo: raddoppia (2x -> 4x), cap a 4x
+    game.multLevel = Math.min(4, (game.multLevel || 2) * 2);
+  }else{
+    // non attivo: parte a 2x
+    game.multLevel = 2;
+  }
+
+  game.multT = 10.0; // ✅ ogni raccolta resetta a 10s
+
   scene.remove(e.obj);
   game.entities.splice(i, 1);
   try{ sfx.boost(); }catch{}
@@ -6321,8 +6331,7 @@ if (e.type === 'mult2x') {
     }
   }
 
-  // score + HUD
-  game.score += (18 * speedMul) * dt;
+  game.score += (18 * speedMul) * dt * pickupMul();
 
   if(game.score > game.best){
     game.best = Math.floor(game.score);
