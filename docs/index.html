@@ -4906,9 +4906,8 @@ function makeArm(side){
   fore.position.set(0.10*side, -0.20, 0.02);
   forePivot.add(fore);
 
-  const hand = mk(new THREE.SphereGeometry(0.042, 12, 10), faceSkin);
-  hand.position.set(0.18*side, -0.31, 0.05);
-  forePivot.add(hand);
+  // hand rimossa: la punta della capsule del fore fa già da mano (evita “4 mani”)
+const hand = null;
 
   arm.add(upperPivot, forePivot);
 
@@ -5002,8 +5001,7 @@ if(Lleg?.shin)  Lleg.shin.name  = 'm_Lleg_shin';
 if(Rleg?.thigh) Rleg.thigh.name = 'm_Rleg_thigh';
 if(Rleg?.shin)  Rleg.shin.name  = 'm_Rleg_shin';
 // ✅ mani + piedi (per animazione corsa più realistica)
-if(Larm?.hand)  Larm.hand.name  = 'm_Lhand';
-if(Rarm?.hand)  Rarm.hand.name  = 'm_Rhand';
+// mani rimosse
 
 if(Lleg?.foot)  Lleg.foot.name  = 'm_Lfoot';
 if(Rleg?.foot)  Rleg.foot.name  = 'm_Rfoot';
@@ -5416,8 +5414,8 @@ function makeMonkeyRunner3D(){
   tailTip: get('m_tailTip'),
   bell: get('m_bell'),
 
-  Larm: { upper: get('m_Larm_upper'), fore: get('m_Larm_fore'), hand: get('m_Lhand') },
-  Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: get('m_Rhand') },
+  Larm: { upper: get('m_Larm_upper'), fore: get('m_Larm_fore'), hand: null },
+Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
 
   Lleg: { thigh: get('m_Lleg_thigh'), shin: get('m_Lleg_shin'), foot: get('m_Lfoot') },
   Rleg: { thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin'), foot: get('m_Rfoot') },
