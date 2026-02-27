@@ -4888,7 +4888,6 @@ const sh = new THREE.Group();
 sh.position.set(0, 0.18, 0.05);
 spine.add(sh);
 
-// braccia più lunghe (meno pupazzo)
 function makeArm(side){
   const arm = new THREE.Group();
   arm.position.set(0.17 * side, 0.02, 0.10);
@@ -4896,31 +4895,40 @@ function makeArm(side){
   const upperPivot = new THREE.Group();
   const forePivot  = new THREE.Group();
 
-  const upper = mk(new THREE.CapsuleGeometry(0.038, 0.20, 6, 12), furMat);
-  upper.rotation.z = 0.85 * side;
-  upper.position.set(0.03*side, -0.04, 0.00);
+  // ✅ braccio = cilindro (niente “punte” da capsule)
+  const upper = mk(new THREE.CylinderGeometry(0.034, 0.040, 0.22, 12), furMat);
+  upper.rotation.z = Math.PI/2;                 // lo mettiamo “orizzontale”
+  upper.position.set(0.02*side, -0.06, 0.00);
   upperPivot.add(upper);
 
-  const fore = mk(new THREE.CapsuleGeometry(0.032, 0.19, 6, 12), furMat);
-  fore.rotation.z = 1.05 * side;
-  fore.position.set(0.10*side, -0.20, 0.02);
+  // giunti (spalla + gomito) piccoli, NON “mani”
+  const shoulder = mk(new THREE.SphereGeometry(0.030, 12, 10), furMat);
+  shoulder.position.set(-0.06*side, -0.02, 0.00);
+  upperPivot.add(shoulder);
+
+  const elbow = mk(new THREE.SphereGeometry(0.028, 12, 10), furMat);
+  elbow.position.set(0.10*side, -0.12, 0.02);
+  upperPivot.add(elbow);
+
+  // ✅ avambraccio = cilindro
+  const fore = mk(new THREE.CylinderGeometry(0.030, 0.034, 0.22, 12), furMat);
+  fore.rotation.z = Math.PI/2;
+  fore.position.set(0.12*side, -0.22, 0.02);
   forePivot.add(fore);
 
-  // hand rimossa: la punta della capsule del fore fa già da mano (evita “4 mani”)
-const hand = null;
+  // ✅ UNA sola mano (sfera unica al polso)
+  const hand = mk(new THREE.SphereGeometry(0.038, 12, 10), faceSkin);
+  hand.position.set(0.24*side, -0.30, 0.05);
+  forePivot.add(hand);
 
   arm.add(upperPivot, forePivot);
 
-  // mettiamo pivot “comodi” per animazione
+  // pivot “comodi” per animazione
   upperPivot.name = 'upper';
   forePivot.name  = 'fore';
 
   return { arm, upper: upperPivot, fore: forePivot, hand };
 }
-
-const Larm = makeArm(-1);
-const Rarm = makeArm( 1);
-sh.add(Larm.arm, Rarm.arm);
 
 // gambe più “vere” e lunghe
 function makeLeg(side){
