@@ -6248,15 +6248,6 @@ if(e.type === 'monkeyGuide'){
 
         if (e.type === 'ring') {
       if (!collideEntity(e)) continue;
-      // 🐵 se tocchi la scimmia: corre in avanti e sparisce
-if(e.type === 'monkeyGuide'){
-  if(e.collected) continue;
-  e.collected = true;
-  e.state = 'run';
-  e.runT = 0;
-  try{ sfx.lane(); }catch{}
-  continue;
-}
 
       game.ringCount += 1 * pickupMul();
       scene.remove(e.obj);
