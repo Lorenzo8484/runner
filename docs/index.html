@@ -5049,7 +5049,27 @@ g.userData.monkeyRig = {
   tailPivot, tail, tailTip,
   bell
 };
+// ✅ FIX: posa base gambe (seduta sul taxi) — elimina “gambe strane”
+(function setTaxiLegRestPose(){
+  const rig = g.userData?.monkeyRig;
+  if(!rig) return;
 
+  // cosce più avanti (seduto)
+  if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x = 0.95;
+  if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x = 0.95;
+
+  // ginocchia piegate
+  if(rig.Lleg?.shin) rig.Lleg.shin.rotation.x = 1.15;
+  if(rig.Rleg?.shin) rig.Rleg.shin.rotation.x = 1.15;
+
+  // piedi più “piatti” sul taxi
+  if(rig.Lleg?.foot) rig.Lleg.foot.rotation.x = -0.35;
+  if(rig.Rleg?.foot) rig.Rleg.foot.rotation.x = -0.35;
+
+  // un filo più indietro (toglie l’effetto “sparato avanti”)
+  if(rig.Lleg?.leg) rig.Lleg.leg.position.z -= 0.06;
+  if(rig.Rleg?.leg) rig.Rleg.leg.position.z -= 0.06;
+})();
   return g;
 }
 
