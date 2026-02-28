@@ -4929,6 +4929,12 @@ function makeArm(side){
 
   return { arm, upper: upperPivot, fore: forePivot, hand };
 }
+// ✅ CREA davvero le braccia (prima mancavano -> crash)
+const Larm = makeArm(-1);
+const Rarm = makeArm( 1);
+
+// attacca le braccia alle spalle
+sh.add(Larm.arm, Rarm.arm);
 
 // gambe più “vere” e lunghe
 function makeLeg(side){
