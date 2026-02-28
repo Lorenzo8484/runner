@@ -4936,42 +4936,47 @@ sh.add(Larm.arm, Rarm.arm);
 
 function makeLeg(side){
   const leg = new THREE.Group();
-  leg.position.set(0.09 * side, -0.10, -0.12);
 
-  // ✅ PIVOT ANCA (thigh pivot)
+  // ✅ gamba più “sotto” il bacino (meno avanti)
+  leg.position.set(0.085 * side, -0.08, -0.06);
+
+  // ✅ piccolo pivot “anca” per tenere le gambe più naturali
+  const hipPivot = new THREE.Group();
+  hipPivot.rotation.z = -0.10 * side;   // porta le gambe un filo “in dentro”
+  hipPivot.rotation.y =  0.02 * side;   // micro twist
+  leg.add(hipPivot);
+
+  // ✅ PIVOT ANCA (thigh)
   const thighPivot = new THREE.Group();
-  thighPivot.position.set(0, 0.00, 0.00);
-  leg.add(thighPivot);
+  hipPivot.add(thighPivot);
 
-  // mesh coscia (attaccata al pivot, con offset)
   const thighMesh = mk(new THREE.CapsuleGeometry(0.042, 0.18, 6, 12), furMat);
-  thighMesh.position.set(0, -0.10, 0.02);
-  thighMesh.rotation.x = 0.08;
+  thighMesh.position.set(0, -0.10, 0.00);     // ✅ z a 0 (prima era avanti)
+  thighMesh.rotation.x = 0.00;
   thighPivot.add(thighMesh);
 
-  // ✅ PIVOT GINOCCHIO (shin pivot) — parte dalla fine coscia
+  // ✅ PIVOT GINOCCHIO
   const shinPivot = new THREE.Group();
-  shinPivot.position.set(0, -0.20, 0.06);
+  shinPivot.position.set(0, -0.20, 0.02);     // ✅ meno avanti
   thighPivot.add(shinPivot);
 
-  // mesh tibia (offset locale)
   const shinMesh = mk(new THREE.CapsuleGeometry(0.038, 0.16, 6, 12), furMat);
-  shinMesh.position.set(0, -0.12, 0.06);
-  shinMesh.rotation.x = 0.10;
+  shinMesh.position.set(0, -0.12, 0.03);
+  shinMesh.rotation.x = 0.00;
   shinPivot.add(shinMesh);
 
-  // ✅ piede (attaccato alla tibia)
+  // ✅ piede meno “sparato” avanti
   const foot = mk(new THREE.SphereGeometry(0.050, 12, 10), muzzleSkin);
   foot.scale.set(1.25, 0.60, 1.35);
-  foot.position.set(0, -0.22, 0.18);
+  foot.position.set(0, -0.21, 0.12);
   shinPivot.add(foot);
 
-  // ✅ IMPORTANTE: i nomi restano uguali ai tuoi (così il clone li ritrova)
+  // ✅ nomi: uguali ai tuoi (IMPORTANTE)
   thighPivot.name = (side < 0) ? 'm_Lleg_thigh' : 'm_Rleg_thigh';
   shinPivot.name  = (side < 0) ? 'm_Lleg_shin'  : 'm_Rleg_shin';
   foot.name       = (side < 0) ? 'm_Lfoot'      : 'm_Rfoot';
 
-  return { leg, thigh: thighPivot, shin: shinPivot, foot };
+  return { leg, hip: hipPivot, thigh: thighPivot, shin: shinPivot, foot };
 }
 
 const Lleg = makeLeg(-1);
@@ -5250,10 +5255,37 @@ if(Math.abs(err) < 0.22){
   rig.Larm.fore.rotation.x  = 0.40 + arm*0.45;
   rig.Rarm.fore.rotation.x  = 0.40 - arm*0.45;
 
-  // gambe: micro movimento
-  const leg = 0.10*Math.sin(t*2.8 + 0.4);
-  rig.Lleg.thigh.rotation.x = 0.22 + leg;
-  rig.Rleg.thigh.rotation.x = 0.22 - leg;
+  // ✅ gambe: coscia + ginocchio + piede (così non restano “strane”)
+const ph = t * 8.8;
+const sA = Math.sin(ph);
+const sB = Math.sin(ph + Math.PI);
+
+const liftL = Math.max(0, sB);
+const liftR = Math.max(0, sA);
+
+if(rig.Lleg?.thigh){
+  rig.Lleg.thigh.rotation.x = 0.28 + sB * 0.26;
+  rig.Lleg.thigh.rotation.z = 0.06;          // ginocchio un filo “in dentro”
+}
+if(rig.Lleg?.shin){
+  rig.Lleg.shin.rotation.x  = 0.55 + liftL * 0.45;
+}
+if(rig.Lleg?.foot){
+  rig.Lleg.foot.rotation.x  = -0.18 + liftL * 0.35;
+  rig.Lleg.foot.position.y  = liftL * 0.03;
+}
+
+if(rig.Rleg?.thigh){
+  rig.Rleg.thigh.rotation.x = 0.28 + sA * 0.26;
+  rig.Rleg.thigh.rotation.z = -0.06;
+}
+if(rig.Rleg?.shin){
+  rig.Rleg.shin.rotation.x  = 0.55 + liftR * 0.45;
+}
+if(rig.Rleg?.foot){
+  rig.Rleg.foot.rotation.x  = -0.18 + liftR * 0.35;
+  rig.Rleg.foot.position.y  = liftR * 0.03;
+}
 
   // coda: “whip” morbido
   rig.tailPivot.rotation.y = 0.45*Math.sin(t*(2.6+2.2*excite));
