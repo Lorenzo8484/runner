@@ -5634,33 +5634,30 @@ const zRing2x = zBaseFar + 2.0;
     game.entities.push({ type:'mult2x', lane, z: zRing2x, obj });
   }
 }
-function updateProjectiles(dt, scroll){
+function updateProjectiles(dt){
   const car = monkeyCarAlive();
 
-  for(let i=game.projectiles.length-1;i>=0;i--){
+  for(let i = game.projectiles.length - 1; i >= 0; i--){
     const p = game.projectiles[i];
     p.life -= dt;
 
-    // ✅ FIX: il proiettile NON deve subire lo scroll del mondo
-p.z += (p.vz * dt);
-p.x += (p.vx * dt);
-p.y += (p.vy * dt);
+    // ✅ il proiettile NON deve subire lo scroll del mondo
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.z += p.vz * dt;
 
     if(p.obj){
-            p.obj.position.set(p.x, p.y, p.z);
+      p.obj.position.set(p.x, p.y, p.z);
 
-      // orienta verso direzione di volo + scia che si “stira”
+      // orienta + anima la scia (safe)
       try{
-        const v = new THREE.Vector3(p.vx, p.vy, p.vz);
-        if(v.lengthSq() > 0.00001){
-          v.normalize();
-          p.obj.lookAt(p.x + v.x, p.y + v.y, p.z + v.z);
-        }
+        const vlen = Math.sqrt(p.vx*p.vx + p.vy*p.vy + p.vz*p.vz) || 1;
+        const vx = p.vx / vlen, vy = p.vy / vlen, vz = p.vz / vlen;
+        p.obj.lookAt(p.x + vx, p.y + vy, p.z + vz);
 
         const trail = p.obj.userData?.trail;
         if(trail && trail.material){
-          const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy + p.vz*p.vz);
-          trail.scale.y = clamp(speed * 0.02, 0.8, 2.6);
+          trail.scale.y = clamp(vlen * 0.02, 0.8, 2.6);
           trail.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(performance.now()*0.02));
         }
 
@@ -5668,50 +5665,38 @@ p.y += (p.vy * dt);
         if(glow && glow.material){
           glow.material.opacity = 0.75 + 0.20*Math.abs(Math.sin(performance.now()*0.02));
         }
+      }catch{}
+    }
 
-        const core = p.obj.userData?.core;
-        if(core && core.material){
-          // leggero “pulse” del core (facoltativo)
-          core.material.opacity = 1.0;
-          core.material.transparent = false;
-        }
-      }catch(e){}
-
-    // collision con car
+    // ===== collision con taxi =====
     if(car && car.obj){
       const dx = p.x - car.obj.position.x;
       const dy = p.y - 0.55;
-      const carZ = car.obj.position.z;     // ✅ Z reale dell’oggetto
-const dz = p.z - carZ;
+      const dz = p.z - car.obj.position.z;
 
-// ✅ hitbox più generosa (così colpisci davvero su mobile)
-if((dx*dx + dy*dy + dz*dz) < (1.05*1.05)){
-        // HIT
-        scene.remove(p.obj);
-        game.projectiles.splice(i,1);
+      // hitbox generosa (mobile)
+      if((dx*dx + dy*dy + dz*dz) < (1.05*1.05)){
+        if(p.obj) scene.remove(p.obj);
+        game.projectiles.splice(i, 1);
 
-        // kill car
         car.dead = true;
         spawnMonkeyExplosion(car.obj.position.x, car.obj.position.z);
         spawnMonkeyRewards(car.obj.position.z);
-        // rimuovi car dall’elenco
+
         scene.remove(car.obj);
         const idx = game.entities.indexOf(car);
-        if(idx>=0) game.entities.splice(idx,1);
+        if(idx >= 0) game.entities.splice(idx, 1);
 
-        
-
-        // sfx
         try{ sfx.boost(); }catch{}
         updateBulletsUI();
         continue;
       }
     }
 
-    // remove se scade o va troppo avanti/indietro
-    if(p.life <= 0 || p.z < -120 || p.z > 10 || p.y < -2 || p.y > 6){
+    // ===== cleanup =====
+    if(p.life <= 0 || p.z < -150 || p.z > 25 || p.y < -3 || p.y > 8){
       if(p.obj) scene.remove(p.obj);
-      game.projectiles.splice(i,1);
+      game.projectiles.splice(i, 1);
       continue;
     }
   }
