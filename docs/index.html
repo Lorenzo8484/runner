@@ -5543,6 +5543,44 @@ Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
   monkey.userData = monkey.userData || {};
   monkey.userData.runRig = rig;
 
+   // ✅ FIX CRITICO: la scimmia runner NON deve ereditare la posa "seduta taxi"
+  (function setRunnerRestPose(r){
+    if(!r) return;
+
+    // reset gambe in posizione "in piedi"
+    if(r.Lleg?.thigh) r.Lleg.thigh.rotation.set(0.10, 0.00,  0.08);
+    if(r.Rleg?.thigh) r.Rleg.thigh.rotation.set(0.10, 0.00, -0.08);
+
+    if(r.Lleg?.shin)  r.Lleg.shin.rotation.set(0.15, 0.00, 0.00);
+    if(r.Rleg?.shin)  r.Rleg.shin.rotation.set(0.15, 0.00, 0.00);
+
+    if(r.Lleg?.foot){
+      r.Lleg.foot.rotation.set(-0.08, 0.00, 0.00);
+      r.Lleg.foot.position.y = 0;
+    }
+    if(r.Rleg?.foot){
+      r.Rleg.foot.rotation.set(-0.08, 0.00, 0.00);
+      r.Rleg.foot.position.y = 0;
+    }
+
+    // salva una base (così l’animazione lavora “sopra” e non contro)
+    r._base = {
+      Lth: r.Lleg?.thigh ? r.Lleg.thigh.rotation.clone() : null,
+      Lsh: r.Lleg?.shin  ? r.Lleg.shin.rotation.clone()  : null,
+      Lft: r.Lleg?.foot  ? r.Lleg.foot.rotation.clone()  : null,
+      Rth: r.Rleg?.thigh ? r.Rleg.thigh.rotation.clone() : null,
+      Rsh: r.Rleg?.shin  ? r.Rleg.shin.rotation.clone()  : null,
+      Rft: r.Rleg?.foot  ? r.Rleg.foot.rotation.clone()  : null
+    };
+  })(rig);
+
+  // ✅ DEBUG (temporaneo): se vedi false qui, il rig NON è collegato e non animerà mai
+  console.log('[monkeyRunnerRig]',
+    !!rig.Lleg?.thigh, !!rig.Lleg?.shin, !!rig.Lleg?.foot,
+    ' | ',
+    !!rig.Rleg?.thigh, !!rig.Rleg?.shin, !!rig.Rleg?.foot
+  );
+
   // scala/posizione a terra (regola se vuoi)
   monkey.scale.setScalar(2.50); // ✅ 2x più grande
   return monkey;
