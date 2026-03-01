@@ -5526,6 +5526,33 @@ Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
   monkey.userData = monkey.userData || {};
   monkey.userData.runRig = rig;
 
+// ✅ DEBUG VISIVO: se questa roba funziona, le gambe diventano colorate
+(function tintLegs(){
+  const tint = (obj, hex)=>{
+    if(!obj) return;
+    obj.traverse?.(o=>{
+      if(o.isMesh && o.material){
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m=>{
+          if(!m) return;
+          m.color?.setHex?.(hex);
+          m.emissive?.setHex?.(hex);
+          m.emissiveIntensity = 0.35;
+        });
+      }
+    });
+  };
+  tint(rig.Lleg?.thigh, 0x00ff66);
+  tint(rig.Lleg?.shin,  0x00ffaa);
+  tint(rig.Lleg?.foot,  0x00ffff);
+
+  tint(rig.Rleg?.thigh, 0xff3355);
+  tint(rig.Rleg?.shin,  0xffaa33);
+  tint(rig.Rleg?.foot,  0xffff33);
+
+  console.log('[monkeyGuide] rig ok?', !!rig.Lleg?.thigh, !!rig.Lleg?.shin, !!rig.Lleg?.foot, '||', !!rig.Rleg?.thigh, !!rig.Rleg?.shin, !!rig.Rleg?.foot);
+})();
+
    // ✅ FIX CRITICO: la scimmia runner NON deve ereditare la posa "seduta taxi"
   (function setRunnerRestPose(r){
     if(!r) return;
@@ -5638,7 +5665,7 @@ function animMonkeyRun(rig, t, intensity=1.0){
     const toeDown  = (0.55 + 0.18*intensity);   // punta giù in spinta
 
     // thigh: più forte avanti, più morbida dietro
-    thigh.rotation.x = thighBase + (ss >= 0 ? ss*thighFwd : -back*thighBck);
+    thigh.rotation.x = thighBase + (ss * 1.8);
 
     // piccolo “apri/chiudi” per togliere l’effetto asse
     thigh.rotation.z = (0.10 * side) + (0.10 * side) * Math.sin(p);
@@ -5646,11 +5673,11 @@ function animMonkeyRun(rig, t, intensity=1.0){
 
     // knee: curva morbida (non lineare) quando è avanti
     const lift = Math.pow(fwd, 1.45);
-    shin.rotation.x = shinBase + lift*kneeBend + back*0.10;
+    shin.rotation.x  = shinBase  + (lift * 2.2);
 
     // foot: sale in swing, punta giù in stance
     foot.position.y = lift * 0.07;
-    foot.rotation.x = footBase + lift*toeUp - back*toeDown;
+    foot.rotation.x  = footBase  + (lift * 1.2) - (back * 1.0);
   }
 
   // sinistra avanti quando destra dietro (offset pi greco)
