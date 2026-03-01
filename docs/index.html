@@ -4936,6 +4936,7 @@ sh.add(Larm.arm, Rarm.arm);
 
 function makeLeg(side){
   const leg = new THREE.Group();
+leg.name = (side < 0) ? 'm_Lleg' : 'm_Rleg'; // ✅ nome per recuperarlo nel clone
 
   // ✅ gamba più “sotto” il bacino (meno avanti)
   leg.position.set(0.085 * side, -0.08, -0.06);
@@ -5519,8 +5520,8 @@ function makeMonkeyRunner3D(){
   Larm: { upper: get('m_Larm_upper'), fore: get('m_Larm_fore'), hand: null },
 Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
 
-  Lleg: { thigh: get('m_Lleg_thigh'), shin: get('m_Lleg_shin'), foot: get('m_Lfoot') },
-  Rleg: { thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin'), foot: get('m_Rfoot') },
+  Lleg: { leg: get('m_Lleg'), thigh: get('m_Lleg_thigh'), shin: get('m_Lleg_shin'), foot: get('m_Lfoot') },
+Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin'), foot: get('m_Rfoot') },
 };
 
   monkey.userData = monkey.userData || {};
@@ -5572,6 +5573,15 @@ Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
       r.Rleg.foot.rotation.set(-0.08, 0.00, 0.00);
       r.Rleg.foot.position.y = 0;
     }
+    // ✅ IMPORTANTISSIMO: annulla lo shift "seduto taxi" (leg.position.z -= 0.06)
+if(r.Lleg?.leg){
+  r.Lleg.leg.position.z = -0.06;  // valore base del makeLeg()
+  r.Lleg.leg.position.y = -0.08;  // valore base del makeLeg()
+}
+if(r.Rleg?.leg){
+  r.Rleg.leg.position.z = -0.06;
+  r.Rleg.leg.position.y = -0.08;
+}
 
     // salva una base (così l’animazione lavora “sopra” e non contro)
     r._base = {
