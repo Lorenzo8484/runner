@@ -4889,9 +4889,14 @@ spine.add(sh);
 function makeArm(side){
   const arm = new THREE.Group();
   arm.position.set(0.17 * side, 0.02, 0.10);
+  // ✅ posa base: braccia giù (non a croce)
+arm.rotation.x = 0.35;        // scende in avanti
+arm.rotation.z = -0.35 * side; // chiude verso il corpo
 
   const upperPivot = new THREE.Group();
   const forePivot  = new THREE.Group();
+  // ✅ gomito: punto da cui parte l’avambraccio
+forePivot.position.set(0.18 * side, -0.14, 0.02);
 
   // ✅ braccio = cilindro (niente “punte” da capsule)
   const upper = mk(new THREE.CylinderGeometry(0.034, 0.040, 0.22, 12), furMat);
@@ -4911,15 +4916,16 @@ function makeArm(side){
   // ✅ avambraccio = cilindro
   const fore = mk(new THREE.CylinderGeometry(0.030, 0.034, 0.22, 12), furMat);
   fore.rotation.z = Math.PI/2;
-  fore.position.set(0.12*side, -0.22, 0.02);
+  fore.position.set(0.10*side, -0.10, 0.00);   // ✅ centrato sul gomito
   forePivot.add(fore);
 
   // ✅ UNA sola mano (sfera unica al polso)
   const hand = mk(new THREE.SphereGeometry(0.038, 12, 10), faceSkin);
-  hand.position.set(0.24*side, -0.30, 0.05);
+  hand.position.set(0.22*side, -0.18, 0.03);   // ✅ mano al polso (non troppo lontana)
   forePivot.add(hand);
 
-  arm.add(upperPivot, forePivot);
+  upperPivot.add(forePivot);   // ✅ avambraccio figlio del braccio
+arm.add(upperPivot);         // ✅ aggiungo solo la spalla al braccio
 
   // pivot “comodi” per animazione
   upperPivot.name = 'upper';
