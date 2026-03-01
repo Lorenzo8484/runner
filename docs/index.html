@@ -5602,40 +5602,67 @@ function animMonkeyRun(rig, t, intensity=1.0){
     rig.Rarm.hand.position.y  = 0.00 + Math.abs(s1)*0.015;
   }
 
-  // ===== gambe: stride + ginocchio + piede che “alza”
-  const legSwing = (1.05 + 0.55*intensity);
-  const thighBase = 0.30;
-  const shinBase  = 0.42;
+    // ===== gambe: corsa più realistica (non “legno”)
+  const legSwing = (1.10 + 0.55*intensity);
 
-  // lift: quando la gamba sta andando avanti, alza il piede
-  const liftA = Math.max(0, s1); // dx
-  const liftB = Math.max(0, s2); // sx
+  // fase passo (dx/sx opposte)
+  const phL = ph + Math.PI;   // sinistra
+  const phR = ph;             // destra
+
+  // helper: 0..1 “quando la gamba va avanti”
+  const fwdL = clamp((Math.sin(phL) + 1) * 0.5, 0, 1);
+  const fwdR = clamp((Math.sin(phR) + 1) * 0.5, 0, 1);
+
+  // helper: “lift” quando in swing (più naturale: curva morbida)
+  const liftL = Math.pow(fwdL, 1.35);
+  const liftR = Math.pow(fwdR, 1.35);
+
+  // valori base (posa corsa)
+  const thighBase = 0.15;    // meno “seduto”
+  const shinBase  = 0.35;
+  const footBase  = -0.10;
+
+  // ampiezze
+  const THIGH_FWD = 1.05 * legSwing;   // avanti
+  const THIGH_BCK = 0.65 * legSwing;   // indietro
+  const KNEE_BEND = 1.05;              // quanto piega in swing
+  const ANKLE_ROLL= 0.55;              // punta su/giù
 
   // SINISTRA
   if(rig.Lleg?.thigh){
-    rig.Lleg.thigh.rotation.x = thighBase + (s2 * 0.95 * legSwing);    // avanti/indietro
+    // avanti/indietro: più avanti che indietro
+    const s = Math.sin(phL);
+    rig.Lleg.thigh.rotation.x = thighBase + (s >= 0 ? s * THIGH_FWD : s * THIGH_BCK);
+
+    // ✅ evita effetto “asse”: un filo di apertura e twist
+    rig.Lleg.thigh.rotation.z = 0.10 + 0.10 * Math.sin(phL);
+    rig.Lleg.thigh.rotation.y = -0.08 * Math.sin(phL);
   }
   if(rig.Lleg?.shin){
-    // ginocchio: piega di più quando il piede si alza
-    rig.Lleg.shin.rotation.x  = shinBase + (liftB * 0.95) + (Math.max(0, -s2) * 0.18);
+    // ginocchio: piega molto quando la gamba è avanti (swing)
+    rig.Lleg.shin.rotation.x = shinBase + liftL * KNEE_BEND + Math.max(0, -Math.sin(phL)) * 0.10;
   }
   if(rig.Lleg?.foot){
-    rig.Lleg.foot.position.y  = 0.00 + (liftB * 0.055); // piede su
-    rig.Lleg.foot.rotation.x  = -0.20 + (liftB * 0.35); // punta su/giù
+    // piede: si alza e “rolla” (toe-up quando swing, toe-down quando spinge)
+    rig.Lleg.foot.position.y = liftL * 0.07;
+    rig.Lleg.foot.rotation.x = footBase + (liftL * 0.35) - (Math.max(0, -Math.sin(phL)) * ANKLE_ROLL);
   }
 
   // DESTRA
   if(rig.Rleg?.thigh){
-    rig.Rleg.thigh.rotation.x = thighBase + (s1 * 0.95 * legSwing);
+    const s = Math.sin(phR);
+    rig.Rleg.thigh.rotation.x = thighBase + (s >= 0 ? s * THIGH_FWD : s * THIGH_BCK);
+
+    rig.Rleg.thigh.rotation.z = -0.10 - 0.10 * Math.sin(phR);
+    rig.Rleg.thigh.rotation.y =  0.08 * Math.sin(phR);
   }
   if(rig.Rleg?.shin){
-    rig.Rleg.shin.rotation.x  = shinBase + (liftA * 0.95) + (Math.max(0, -s1) * 0.18);
+    rig.Rleg.shin.rotation.x = shinBase + liftR * KNEE_BEND + Math.max(0, -Math.sin(phR)) * 0.10;
   }
   if(rig.Rleg?.foot){
-    rig.Rleg.foot.position.y  = 0.00 + (liftA * 0.055);
-    rig.Rleg.foot.rotation.x  = -0.20 + (liftA * 0.35);
+    rig.Rleg.foot.position.y = liftR * 0.07;
+    rig.Rleg.foot.rotation.x = footBase + (liftR * 0.35) - (Math.max(0, -Math.sin(phR)) * ANKLE_ROLL);
   }
-
   // ===== coda: follow naturale
   if(rig.tailPivot){
     rig.tailPivot.rotation.y = 0.45*Math.sin(ph*0.35);
