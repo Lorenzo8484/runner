@@ -5551,128 +5551,133 @@ Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
 
-  // velocità e ampiezze (leggibili su mobile)
-  const spd = 11.5 + 5.0*intensity;
+  intensity = clamp(intensity, 0.6, 1.8);
+
+  // velocità corsa
+  const spd = 9.5 + 4.5*intensity;
   const ph  = t * spd;
 
-  // passo (sin/cos per opposti perfetti)
-  const s1 = Math.sin(ph);
+  // sin/cos base
+  const s  = Math.sin(ph);
   const s2 = Math.sin(ph + Math.PI);
-  const c1 = Math.cos(ph);
-  const c2 = Math.cos(ph + Math.PI);
+  const c  = Math.cos(ph);
 
-  // ===== corpo: avanti + bob + sway (così non “scivola seduto”)
+  // helper fasi: swing quando la gamba va avanti, stance quando spinge dietro
+  const swingL  = Math.max(0,  s2); // sinistra avanti
+  const swingR  = Math.max(0,  s);  // destra avanti
+  const stanceL = Math.max(0, -s2);
+  const stanceR = Math.max(0, -s);
+
+  // curva più “umana”
+  const swL = Math.pow(swingL, 1.45);
+  const swR = Math.pow(swingR, 1.45);
+
+  // =========================
+  // CORPO / PELVI (chiave anti-legno)
+  // =========================
   if(rig.spine){
-    const leanFwd = -0.32 - 0.10*intensity;
-    rig.spine.rotation.x = leanFwd + 0.06*Math.sin(ph*0.5);   // micro elastico
-    rig.spine.rotation.y = 0.10*Math.sin(ph*0.25);            // sway
-    rig.spine.position.y = 0.03 + Math.abs(s1)*0.055;         // bob corsa
+    // leggera inclinazione in avanti + roll del bacino
+    rig.spine.rotation.x = -0.28 - 0.08*intensity + 0.05*Math.sin(ph*0.5);
+    rig.spine.rotation.y =  0.08*Math.sin(ph*0.25);
+    rig.spine.rotation.z =  0.10*Math.sin(ph) * 0.55;            // bacino che “dondola”
+
+    // bob dolce (non su/giù a pezzi)
+    rig.spine.position.y = 0.02 + (Math.abs(Math.sin(ph)) * (0.035 + 0.020*intensity));
   }
 
-  // ===== testa: stabilizza un po’ (meno “pupazzo”)
   if(rig.headPivot){
-    rig.headPivot.rotation.x = -0.10 + 0.08*Math.sin(ph*0.5);
-    rig.headPivot.rotation.y =  0.10*Math.sin(ph*0.25);
+    rig.headPivot.rotation.x = -0.08 + 0.06*Math.sin(ph*0.5);
+    rig.headPivot.rotation.y =  0.08*Math.sin(ph*0.25);
   }
 
-  // ===== braccia: swing ampio + gomito + mano
-  const armSwing = (0.95 + 0.45*intensity); // più ampio
-  const upperBase = 0.55;                   // spalle “alte”
+  // =========================
+  // BRACCIA (ok, ma più morbide)
+  // =========================
+  const armSwing = (0.80 + 0.35*intensity);
+  const upperBase = 0.55;
   const foreBase  = 0.70;
 
   if(rig.Larm?.upper){
-    rig.Larm.upper.rotation.x = upperBase + (s2 * 0.65 * armSwing);
-    rig.Larm.upper.rotation.z = -0.15 + (s2 * 0.12);          // apertura laterale
+    rig.Larm.upper.rotation.x = upperBase + (s2 * 0.55 * armSwing);
+    rig.Larm.upper.rotation.z = -0.12 + (s2 * 0.10);
   }
   if(rig.Larm?.fore){
-    rig.Larm.fore.rotation.x  = foreBase + (Math.max(0, -s2) * 0.95 * armSwing); // piega quando va indietro
-  }
-  if(rig.Larm?.hand){
-    rig.Larm.hand.position.y  = 0.00 + Math.abs(s2)*0.015;
+    rig.Larm.fore.rotation.x  = foreBase + (Math.max(0, -s2) * 0.85 * armSwing);
   }
 
   if(rig.Rarm?.upper){
-    rig.Rarm.upper.rotation.x = upperBase + (s1 * 0.65 * armSwing);
-    rig.Rarm.upper.rotation.z =  0.15 + (s1 * -0.12);
+    rig.Rarm.upper.rotation.x = upperBase + (s * 0.55 * armSwing);
+    rig.Rarm.upper.rotation.z =  0.12 + (s * -0.10);
   }
   if(rig.Rarm?.fore){
-    rig.Rarm.fore.rotation.x  = foreBase + (Math.max(0, -s1) * 0.95 * armSwing);
-  }
-  if(rig.Rarm?.hand){
-    rig.Rarm.hand.position.y  = 0.00 + Math.abs(s1)*0.015;
+    rig.Rarm.fore.rotation.x  = foreBase + (Math.max(0, -s) * 0.85 * armSwing);
   }
 
-    // ===== gambe: corsa più realistica (non “legno”)
-  const legSwing = (1.10 + 0.55*intensity);
+  // =========================
+  // GAMBE (FIX REALE)
+  // =========================
+  const thighBase = 0.10;                 // meno “seduta”
+  const shinBase  = 0.25;
+  const footBase  = -0.08;
 
-  // fase passo (dx/sx opposte)
-  const phL = ph + Math.PI;   // sinistra
-  const phR = ph;             // destra
+  const THIGH_FWD = 0.95 + 0.35*intensity; // avanti
+  const THIGH_BCK = 0.55 + 0.20*intensity; // dietro (più contenuto)
+  const KNEE_SWING= 1.05 + 0.25*intensity; // piega in swing
+  const KNEE_STNC = 0.25;                  // micro piega in stance
+  const TOE_DOWN  = 0.55;                  // spinta
+  const TOE_UP    = 0.35;                  // alza punta
+  const LIFT_Y    = 0.075 + 0.020*intensity;
 
-  // helper: 0..1 “quando la gamba va avanti”
-  const fwdL = clamp((Math.sin(phL) + 1) * 0.5, 0, 1);
-  const fwdR = clamp((Math.sin(phR) + 1) * 0.5, 0, 1);
+  function applyLeg(sideIsLeft){
+    const thigh = sideIsLeft ? rig.Lleg?.thigh : rig.Rleg?.thigh;
+    const shin  = sideIsLeft ? rig.Lleg?.shin  : rig.Rleg?.shin;
+    const foot  = sideIsLeft ? rig.Lleg?.foot  : rig.Rleg?.foot;
 
-  // helper: “lift” quando in swing (più naturale: curva morbida)
-  const liftL = Math.pow(fwdL, 1.35);
-  const liftR = Math.pow(fwdR, 1.35);
+    const sLeg      = sideIsLeft ? s2 : s;         // sin per quella gamba
+    const swing     = sideIsLeft ? swL : swR;      // 0..1
+    const stance    = sideIsLeft ? stanceL : stanceR;
 
-  // valori base (posa corsa)
-  const thighBase = 0.15;    // meno “seduto”
-  const shinBase  = 0.35;
-  const footBase  = -0.10;
+    // avanti/indietro: più naturale (ampiezza diversa)
+    const forward = (sLeg >= 0) ? (sLeg * THIGH_FWD) : (sLeg * THIGH_BCK);
 
-  // ampiezze
-  const THIGH_FWD = 1.05 * legSwing;   // avanti
-  const THIGH_BCK = 0.65 * legSwing;   // indietro
-  const KNEE_BEND = 1.05;              // quanto piega in swing
-  const ANKLE_ROLL= 0.55;              // punta su/giù
+    if(thigh){
+      thigh.rotation.x = thighBase + forward;
 
-  // SINISTRA
-  if(rig.Lleg?.thigh){
-    // avanti/indietro: più avanti che indietro
-    const s = Math.sin(phL);
-    rig.Lleg.thigh.rotation.x = thighBase + (s >= 0 ? s * THIGH_FWD : s * THIGH_BCK);
+      // un filo di “in-out” così non sembra un’asse
+      const zIn = (sideIsLeft ? 1 : -1) * (0.08 + 0.06*Math.sin(ph));
+      thigh.rotation.z = zIn;
+      thigh.rotation.y = (sideIsLeft ? -1 : 1) * (0.06*Math.sin(ph));
+    }
 
-    // ✅ evita effetto “asse”: un filo di apertura e twist
-    rig.Lleg.thigh.rotation.z = 0.10 + 0.10 * Math.sin(phL);
-    rig.Lleg.thigh.rotation.y = -0.08 * Math.sin(phL);
+    if(shin){
+      // ginocchio: molto in swing, poco in stance
+      shin.rotation.x = shinBase + (swing * KNEE_SWING) + (stance * KNEE_STNC);
+    }
+
+    if(foot){
+      // piede: swing = punta su, stance = punta giù
+      const toe = (stance * TOE_DOWN) - (swing * TOE_UP);
+      foot.rotation.x = footBase - toe;
+
+      // solleva solo in swing (zero “saltello legno”)
+      foot.position.y = swing * LIFT_Y;
+    }
   }
-  if(rig.Lleg?.shin){
-    // ginocchio: piega molto quando la gamba è avanti (swing)
-    rig.Lleg.shin.rotation.x = shinBase + liftL * KNEE_BEND + Math.max(0, -Math.sin(phL)) * 0.10;
-  }
-  if(rig.Lleg?.foot){
-    // piede: si alza e “rolla” (toe-up quando swing, toe-down quando spinge)
-    rig.Lleg.foot.position.y = liftL * 0.07;
-    rig.Lleg.foot.rotation.x = footBase + (liftL * 0.35) - (Math.max(0, -Math.sin(phL)) * ANKLE_ROLL);
-  }
 
-  // DESTRA
-  if(rig.Rleg?.thigh){
-    const s = Math.sin(phR);
-    rig.Rleg.thigh.rotation.x = thighBase + (s >= 0 ? s * THIGH_FWD : s * THIGH_BCK);
+  applyLeg(true);   // left
+  applyLeg(false);  // right
 
-    rig.Rleg.thigh.rotation.z = -0.10 - 0.10 * Math.sin(phR);
-    rig.Rleg.thigh.rotation.y =  0.08 * Math.sin(phR);
-  }
-  if(rig.Rleg?.shin){
-    rig.Rleg.shin.rotation.x = shinBase + liftR * KNEE_BEND + Math.max(0, -Math.sin(phR)) * 0.10;
-  }
-  if(rig.Rleg?.foot){
-    rig.Rleg.foot.position.y = liftR * 0.07;
-    rig.Rleg.foot.rotation.x = footBase + (liftR * 0.35) - (Math.max(0, -Math.sin(phR)) * ANKLE_ROLL);
-  }
-  // ===== coda: follow naturale
+  // =========================
+  // CODA + BELL
+  // =========================
   if(rig.tailPivot){
-    rig.tailPivot.rotation.y = 0.45*Math.sin(ph*0.35);
-    rig.tailPivot.rotation.x = 0.25 + 0.22*Math.sin(ph*0.25 + 0.6);
+    rig.tailPivot.rotation.y = 0.40*Math.sin(ph*0.35);
+    rig.tailPivot.rotation.x = 0.22 + 0.18*Math.sin(ph*0.25 + 0.6);
   }
 
-  // ===== bell: glow
   if(rig.bell?.material){
     rig.bell.material.opacity = 0.45 + 0.45*Math.abs(Math.sin(ph*0.6));
-    rig.bell.scale.setScalar(0.34 + 0.12*Math.abs(Math.sin(ph)));
+    rig.bell.scale.setScalar(0.34 + 0.10*Math.abs(Math.sin(ph)));
   }
 }
 
