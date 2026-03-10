@@ -2400,7 +2400,7 @@ safeOn(dynFovToggle,'click', ()=>{
 
     const scene = new THREE.Scene();
     scene.background = makeSkyTexture();
-    scene.fog = IS_IOS ? new THREE.Fog(0xe5f4ff, 42, 180) : new THREE.FogExp2(0xe4f2ff, 0.0085);
+    scene.fog = IS_IOS ? new THREE.Fog(0xe8f5ff, 34, 118) : new THREE.FogExp2(0xe7f4ff, 0.011);
     // ✅ FIX: valori base camera (prima erano in v10, ora li ricaviamo dai profili)
 const baseFov  = cam.front.fov;
 const baseCamZ = cam.front.dist;
@@ -2473,8 +2473,22 @@ const _camEuler = new THREE.Euler(0,0,0,'YXZ');
     contact.position.set(0, 0.02, 0.2);
     scene.add(contact);
 
+    const farFade = new THREE.Mesh(
+      new THREE.PlaneGeometry(34, 28, 1, 1),
+      new THREE.MeshBasicMaterial({
+        color: 0xe8f5ff,
+        transparent: true,
+        opacity: 0.36,
+        depthWrite: false,
+        fog: false
+      })
+    );
+    farFade.rotation.x = -Math.PI/2;
+    farFade.position.set(0, 0.12, -68);
+    scene.add(farFade);
+
     // ===== STRADA =====
-    const segLen = 9.0, segCount = 10;
+    const segLen = 10.0, segCount = 16;
     const laneW = 1.35;
     const mainRoadWidth = laneW * 3;
     const shoulderWidth = 1.40;
@@ -3642,7 +3656,7 @@ actions.jumps = jumpActions;
       ringCount:0,
       foodCount:0,
       foodHistory:[],
-      foodBoostCharges: 0,
+      foodBoostCharges: 5,
       
       // ===== BULLETS / MONKEY CAR =====
 bullets: 5,                // ✅ per ora fisso 5
@@ -4300,8 +4314,9 @@ hookCamBtn(btnCamFront,'front');
       game.score=0; game.coins=0;
       game.ringCount=0;
       game.foodCount=0; game.foodHistory=[];
-      game.foodBoostCharges = 0;
+      game.foodBoostCharges = 5;
       refreshFoodUI();
+      updateFoodBoostButton();
 
       game.invincibleT=0;
       game.foodBoostT=0;
