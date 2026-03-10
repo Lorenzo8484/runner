@@ -1594,21 +1594,23 @@ function pulseHUD(el, cls='hudPulse'){
 // =========================================================
 // ✨ MAGIC FLY (Canvas ultra leggero - NO LAG) ✅ FIX
 // =========================================================
+const magicCanvas = document.getElementById('magicCanvas');
+const magicCtx = magicCanvas ? magicCanvas.getContext('2d') : null;
+let magicDpr = window.devicePixelRatio || 1;
+
+function resizeMagicCanvas(){
+  if(!magicCanvas || !magicCtx) return;
+  magicDpr = window.devicePixelRatio || 1;
+  magicCanvas.width  = Math.floor(window.innerWidth * magicDpr);
+  magicCanvas.height = Math.floor(window.innerHeight * magicDpr);
+  magicCanvas.style.width  = window.innerWidth + 'px';
+  magicCanvas.style.height = window.innerHeight + 'px';
+}
+window.addEventListener('resize', resizeMagicCanvas);
+resizeMagicCanvas();
+
 function magicFly(fromWorld, toEl, opt = {}){
-  if(!toEl) return;
-
-  const canvas = document.getElementById('magicCanvas');
-  if(!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-  if(!ctx) return;
-
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width  = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width  = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  if(!toEl || !magicCanvas || !magicCtx) return;
 
   const start = worldToScreen(fromWorld.x, fromWorld.y, fromWorld.z);
   const r = toEl.getBoundingClientRect();
@@ -1623,27 +1625,27 @@ function magicFly(fromWorld, toEl, opt = {}){
     const x = start.x + (end.x - start.x) * t;
     const y = start.y + (end.y - start.y) * t;
 
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    magicCtx.setTransform(1,0,0,1,0,0);
+    magicCtx.clearRect(0,0,magicCanvas.width,magicCanvas.height);
 
     // pallina
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = 'rgba(120,220,255,0.95)';
-    ctx.beginPath();
-    ctx.arc(x*dpr, y*dpr, 4.2*dpr, 0, Math.PI*2);
-    ctx.fill();
+    magicCtx.globalAlpha = 0.9;
+    magicCtx.fillStyle = 'rgba(120,220,255,0.95)';
+    magicCtx.beginPath();
+    magicCtx.arc(x*magicDpr, y*magicDpr, 4.2*magicDpr, 0, Math.PI*2);
+    magicCtx.fill();
 
     // alone
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = 'rgba(120,220,255,0.25)';
-    ctx.beginPath();
-    ctx.arc(x*dpr, y*dpr, 12*dpr, 0, Math.PI*2);
-    ctx.fill();
+    magicCtx.globalAlpha = 0.35;
+    magicCtx.fillStyle = 'rgba(120,220,255,0.25)';
+    magicCtx.beginPath();
+    magicCtx.arc(x*magicDpr, y*magicDpr, 12*magicDpr, 0, Math.PI*2);
+    magicCtx.fill();
 
     if(t < 1){
       requestAnimationFrame(animate);
     }else{
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      magicCtx.clearRect(0,0,magicCanvas.width,magicCanvas.height);
       pulseHUD(toEl);
     }
   }
@@ -5533,33 +5535,6 @@ Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin')
   monkey.userData = monkey.userData || {};
   monkey.userData.runRig = rig;
 
-// ✅ DEBUG VISIVO: se questa roba funziona, le gambe diventano colorate
-(function tintLegs(){
-  const tint = (obj, hex)=>{
-    if(!obj) return;
-    obj.traverse?.(o=>{
-      if(o.isMesh && o.material){
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach(m=>{
-          if(!m) return;
-          m.color?.setHex?.(hex);
-          m.emissive?.setHex?.(hex);
-          m.emissiveIntensity = 0.35;
-        });
-      }
-    });
-  };
-  tint(rig.Lleg?.thigh, 0x00ff66);
-  tint(rig.Lleg?.shin,  0x00ffaa);
-  tint(rig.Lleg?.foot,  0x00ffff);
-
-  tint(rig.Rleg?.thigh, 0xff3355);
-  tint(rig.Rleg?.shin,  0xffaa33);
-  tint(rig.Rleg?.foot,  0xffff33);
-
-  console.log('[monkeyGuide] rig ok?', !!rig.Lleg?.thigh, !!rig.Lleg?.shin, !!rig.Lleg?.foot, '||', !!rig.Rleg?.thigh, !!rig.Rleg?.shin, !!rig.Rleg?.foot);
-})();
-
    // ✅ FIX CRITICO: la scimmia runner NON deve ereditare la posa "seduta taxi"
   (function setRunnerRestPose(r){
     if(!r) return;
@@ -5599,13 +5574,6 @@ if(r.Rleg?.leg){
       Rft: r.Rleg?.foot  ? r.Rleg.foot.rotation.clone()  : null
     };
   })(rig);
-
-  // ✅ DEBUG (temporaneo): se vedi false qui, il rig NON è collegato e non animerà mai
-  console.log('[monkeyRunnerRig]',
-    !!rig.Lleg?.thigh, !!rig.Lleg?.shin, !!rig.Lleg?.foot,
-    ' | ',
-    !!rig.Rleg?.thigh, !!rig.Rleg?.shin, !!rig.Rleg?.foot
-  );
 
   // scala/posizione a terra (regola se vuoi)
   monkey.scale.setScalar(2.50); // ✅ 2x più grande
@@ -6930,8 +6898,6 @@ shakeY = 0;            // niente su/giù
     // ===== Boot =====
     (async ()=>{
       refreshFoodUI();
-      // 🔥 DEBUG: 5 boost disponibili
-      game.foodBoostCharges = 5;
       updateFoodBoostButton();
       if(hpTxt) hpTxt.textContent = hpString();
       syncCamUI();
