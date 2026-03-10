@@ -4819,10 +4819,46 @@ function makeMonkeyCar(){
   const w3 = wheel(-xW,  zB);
   const w4 = wheel( xW,  zB);
 
-  // ===== 🐵 SCIMMIA PIÙ VERA (più alta + faccia vera + occhi/bocca) =====
+  // dettagli cockpit: rendono subito leggibile la silhouette “monkey driver”
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, 0.46), dark);
+  seat.position.set(0, 0.47, 0.02);
+  seat.castShadow = true; seat.receiveShadow = true;
+  g.add(seat);
+
+  const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.34, 0.10), dark);
+  seatBack.position.set(0, 0.64, -0.16);
+  seatBack.rotation.x = 0.14;
+  seatBack.castShadow = true; seatBack.receiveShadow = true;
+  g.add(seatBack);
+
+  const steerPivot = new THREE.Group();
+  steerPivot.position.set(0, 0.63, 0.36);
+  steerPivot.rotation.x = 0.72;
+  g.add(steerPivot);
+
+  const steeringWheel = new THREE.Mesh(
+    new THREE.TorusGeometry(0.16, 0.018, 10, 24),
+    chrome
+  );
+  steeringWheel.castShadow = true; steeringWheel.receiveShadow = true;
+  steerPivot.add(steeringWheel);
+
+  const steeringHub = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.08, 12), dark);
+  steeringHub.rotation.x = Math.PI/2;
+  steerPivot.add(steeringHub);
+
+  for(let i=0;i<3;i++){
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, 0.12), chrome);
+    spoke.position.z = 0.06;
+    spoke.rotation.y = (Math.PI * 2 * i) / 3;
+    spoke.castShadow = true; spoke.receiveShadow = true;
+    steerPivot.add(spoke);
+  }
+
+  // ===== 🐵 SCIMMIA PIÙ LEGGIBILE (driver silhouette forte) =====
 const monkey = new THREE.Group();
-monkey.position.set(0, 0.86, 0.26);    // più alta e centrata
-monkey.scale.setScalar(1.85);          // ✅ più alta (prima 1.55)
+monkey.position.set(0, 0.90, 0.15);
+monkey.scale.setScalar(1.98);
 
 // materiali più “pelo / pelle”
 const furMat = new THREE.MeshStandardMaterial({
@@ -4863,13 +4899,19 @@ const spine = new THREE.Group(); monkey.add(spine);
 spine.position.set(0, 0.00, 0.00);
 
 // torso + belly (dà “peso”)
-const torso = mk(new THREE.CapsuleGeometry(0.105, 0.30, 10, 14), furMat);
-torso.position.set(0, 0.12, -0.04);
+const torso = mk(new THREE.CapsuleGeometry(0.11, 0.34, 10, 14), furMat);
+torso.position.set(0, 0.12, -0.05);
+torso.scale.set(1.0, 1.08, 0.92);
 spine.add(torso);
 
-const belly = mk(new THREE.SphereGeometry(0.10, 16, 12), furMat);
-belly.scale.set(0.85, 0.75, 0.85);
-belly.position.set(0, 0.06, 0.02);
+const chest = mk(new THREE.SphereGeometry(0.10, 16, 12), furMat);
+chest.scale.set(1.0, 0.82, 0.70);
+chest.position.set(0, 0.18, 0.08);
+spine.add(chest);
+
+const belly = mk(new THREE.SphereGeometry(0.11, 16, 12), furMat);
+belly.scale.set(0.92, 0.78, 0.90);
+belly.position.set(0, 0.05, 0.04);
 spine.add(belly);
 
 // hips
@@ -5001,20 +5043,20 @@ spine.add(sh);
 
 function makeArm(side){
   const arm = new THREE.Group();
-  arm.position.set(0.17 * side, 0.02, 0.10);
-  // ✅ posa base: braccia giù (non a croce)
-arm.rotation.x = 0.35;        // scende in avanti
-arm.rotation.z = -0.35 * side; // chiude verso il corpo
+  arm.position.set(0.18 * side, 0.06, 0.14);
+  // posa base: già vicina a un primate che si appoggia / corre
+arm.rotation.x = 0.68;
+arm.rotation.y = 0.08 * side;
+arm.rotation.z = -0.52 * side;
 
   const upperPivot = new THREE.Group();
   const forePivot  = new THREE.Group();
-  // ✅ gomito: punto da cui parte l’avambraccio
-forePivot.position.set(0.18 * side, -0.14, 0.02);
+  // gomito più basso/allungato = silhouette più da scimmia
+forePivot.position.set(0.21 * side, -0.18, 0.05);
 
-  // ✅ braccio = cilindro (niente “punte” da capsule)
-  const upper = mk(new THREE.CylinderGeometry(0.034, 0.040, 0.22, 12), furMat);
-  upper.rotation.z = Math.PI/2;                 // lo mettiamo “orizzontale”
-  upper.position.set(0.02*side, -0.06, 0.00);
+  const upper = mk(new THREE.CylinderGeometry(0.034, 0.042, 0.26, 12), furMat);
+  upper.rotation.z = Math.PI/2;
+  upper.position.set(0.03*side, -0.09, 0.02);
   upperPivot.add(upper);
 
   // giunti (spalla + gomito) piccoli, NON “mani”
@@ -5022,19 +5064,18 @@ forePivot.position.set(0.18 * side, -0.14, 0.02);
   shoulder.position.set(-0.06*side, -0.02, 0.00);
   upperPivot.add(shoulder);
 
-  const elbow = mk(new THREE.SphereGeometry(0.028, 12, 10), furMat);
-  elbow.position.set(0.10*side, -0.12, 0.02);
+  const elbow = mk(new THREE.SphereGeometry(0.030, 12, 10), furMat);
+  elbow.position.set(0.12*side, -0.15, 0.03);
   upperPivot.add(elbow);
 
-  // ✅ avambraccio = cilindro
-  const fore = mk(new THREE.CylinderGeometry(0.030, 0.034, 0.22, 12), furMat);
+  const fore = mk(new THREE.CylinderGeometry(0.030, 0.036, 0.28, 12), furMat);
   fore.rotation.z = Math.PI/2;
-  fore.position.set(0.10*side, -0.10, 0.00);   // ✅ centrato sul gomito
+  fore.position.set(0.12*side, -0.13, 0.02);
   forePivot.add(fore);
 
-  // ✅ UNA sola mano (sfera unica al polso)
-  const hand = mk(new THREE.SphereGeometry(0.038, 12, 10), faceSkin);
-  hand.position.set(0.22*side, -0.18, 0.03);   // ✅ mano al polso (non troppo lontana)
+  const hand = mk(new THREE.SphereGeometry(0.042, 12, 10), faceSkin);
+  hand.scale.set(1.18, 0.95, 1.05);
+  hand.position.set(0.26*side, -0.22, 0.06);
   forePivot.add(hand);
 
   upperPivot.add(forePivot);   // ✅ avambraccio figlio del braccio
@@ -5055,10 +5096,10 @@ sh.add(Larm.arm, Rarm.arm);
 
 function makeLeg(side){
   const leg = new THREE.Group();
-leg.name = (side < 0) ? 'm_Lleg' : 'm_Rleg'; // ✅ nome per recuperarlo nel clone
+leg.name = (side < 0) ? 'm_Lleg' : 'm_Rleg';
 
-  // ✅ gamba più “sotto” il bacino (meno avanti)
-  leg.position.set(0.085 * side, -0.08, -0.06);
+  // gambe un filo più larghe e arretrate: leggibilità migliore sia da fermo che in corsa
+  leg.position.set(0.10 * side, -0.10, -0.10);
 
   // ✅ piccolo pivot “anca” per tenere le gambe più naturali
   const hipPivot = new THREE.Group();
@@ -5146,8 +5187,10 @@ if(bell)       bell.name       = 'm_bell';
 // braccia
 if(Larm?.upper) Larm.upper.name = 'm_Larm_upper';
 if(Larm?.fore)  Larm.fore.name  = 'm_Larm_fore';
+if(Larm?.hand)  Larm.hand.name  = 'm_Larm_hand';
 if(Rarm?.upper) Rarm.upper.name = 'm_Rarm_upper';
 if(Rarm?.fore)  Rarm.fore.name  = 'm_Rarm_fore';
+if(Rarm?.hand)  Rarm.hand.name  = 'm_Rarm_hand';
 
 // gambe
 if(Lleg?.thigh) Lleg.thigh.name = 'm_Lleg_thigh';
@@ -5167,28 +5210,46 @@ g.userData.monkeyRig = {
   eyeL, eyeR,
   Larm, Rarm, Lleg, Rleg,
   tailPivot, tail, tailTip,
-  bell
+  bell,
+  steerPivot, steeringWheel
 };
 // ✅ FIX: posa base gambe (seduta sul taxi) — elimina “gambe strane”
 (function setTaxiLegRestPose(){
   const rig = g.userData?.monkeyRig;
   if(!rig) return;
 
-  // cosce più avanti (seduto)
-  if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x = 0.95;
-  if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x = 0.95;
+  if(rig.spine){
+    rig.spine.rotation.x = -0.12;
+    rig.spine.rotation.z = 0.03;
+    rig.spine.position.y = 0.02;
+  }
+  if(rig.headPivot){
+    rig.headPivot.rotation.x = -0.08;
+    rig.headPivot.rotation.y = 0.10;
+  }
 
-  // ginocchia piegate
-  if(rig.Lleg?.shin) rig.Lleg.shin.rotation.x = 1.15;
-  if(rig.Rleg?.shin) rig.Rleg.shin.rotation.x = 1.15;
+  // mani già appoggiate vicino al volante
+  if(rig.Larm?.upper) rig.Larm.upper.rotation.set(0.98, 0.12, 0.42);
+  if(rig.Rarm?.upper) rig.Rarm.upper.rotation.set(0.98,-0.12,-0.42);
+  if(rig.Larm?.fore)  rig.Larm.fore.rotation.set(1.10,-0.08, 0.10);
+  if(rig.Rarm?.fore)  rig.Rarm.fore.rotation.set(1.10, 0.08,-0.10);
+  if(rig.Larm?.hand)  rig.Larm.hand.position.set(0.20,-0.17,0.10);
+  if(rig.Rarm?.hand)  rig.Rarm.hand.position.set(-0.20,-0.17,0.10);
 
-  // piedi più “piatti” sul taxi
-  if(rig.Lleg?.foot) rig.Lleg.foot.rotation.x = -0.35;
-  if(rig.Rleg?.foot) rig.Rleg.foot.rotation.x = -0.35;
+  // gambe raccolte dentro il taxi, con piedi puntati sulla pedana
+  if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.set(1.20, 0.10, 0.16);
+  if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.set(1.20,-0.10,-0.16);
+  if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.set(1.38, 0.00, 0.00);
+  if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.set(1.38, 0.00, 0.00);
+  if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.set(-0.72, 0.04, 0.02);
+  if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.set(-0.72,-0.04,-0.02);
+  if(rig.Lleg?.leg)   rig.Lleg.leg.position.set(-0.10,-0.11,-0.18);
+  if(rig.Rleg?.leg)   rig.Rleg.leg.position.set( 0.10,-0.11,-0.18);
 
-  // un filo più indietro (toglie l’effetto “sparato avanti”)
-  if(rig.Lleg?.leg) rig.Lleg.leg.position.z -= 0.06;
-  if(rig.Rleg?.leg) rig.Rleg.leg.position.z -= 0.06;
+  if(rig.tailPivot){
+    rig.tailPivot.rotation.x = 0.95;
+    rig.tailPivot.rotation.y = -0.28;
+  }
 })();
   return g;
 }
@@ -5354,16 +5415,21 @@ if(Math.abs(err) < 0.22){
   // peso del corpo + vibrazioni strada (più naturali)
   const road = 0.012*Math.sin(t*17.0) + 0.006*Math.sin(t*29.0 + 0.7);
   const breathe = 0.018*Math.sin(t*2.2);
-  rig.spine.position.y = breathe + road;
+  rig.spine.position.y = 0.02 + breathe + road;
 
   // eccitazione per fase (più viva quando si affianca)
   const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.55 : 0.25);
+  const steerTurn = Math.sin(t*(3.8 + 3.0*excite));
 
-  // testa: guarda il player (micro) + “no”/“yes”
-  const headNo  = (0.05 + 0.10*excite) * Math.sin(t*(4.2 + 6.8*excite));
-  const headYes = (0.03 + 0.06*excite) * Math.sin(t*(2.6 + 4.4*excite) + 0.6);
-  rig.headPivot.rotation.y = headNo;
-  rig.headPivot.rotation.x = -0.10 + headYes;
+  if(rig.steerPivot){
+    rig.steerPivot.rotation.z = steerTurn * (0.20 + 0.14*excite);
+  }
+
+  // testa: guarda il player + micro sì/no
+  const headNo  = (0.04 + 0.08*excite) * Math.sin(t*(4.2 + 6.8*excite));
+  const headYes = (0.03 + 0.05*excite) * Math.sin(t*(2.6 + 4.4*excite) + 0.6);
+  rig.headPivot.rotation.y = 0.10 + headNo;
+  rig.headPivot.rotation.x = -0.08 + headYes;
 
   // occhi: micro sguardo (pupilla avanti/indietro)
   if(rig.eyeL && rig.eyeL.pupil && rig.eyeR && rig.eyeR.pupil){
@@ -5388,27 +5454,29 @@ if(Math.abs(err) < 0.22){
   rig.tongue.rotation.x = -0.55 + 0.26*Math.sin(t*(8.8+7*excite));
   rig.tongue.position.y = -0.035 + 0.012*Math.sin(t*6.6);
 
-  // braccia: si “aggrappano” (più realistiche)
-  const arm = (0.28 + 0.45*excite) * Math.sin(t*(5.6+5.0*excite));
-  rig.Larm.upper.rotation.x = 0.25 + arm*0.55;
-  rig.Rarm.upper.rotation.x = 0.25 - arm*0.55;
-  rig.Larm.fore.rotation.x  = 0.40 + arm*0.45;
-  rig.Rarm.fore.rotation.x  = 0.40 - arm*0.45;
+  // braccia: mano sul volante + asimmetria viva
+  const arm = (0.18 + 0.26*excite) * Math.sin(t*(5.6+5.0*excite));
+  rig.Larm.upper.rotation.set(0.98 + arm*0.18,  0.14 + steerTurn*0.08,  0.42 + steerTurn*0.10);
+  rig.Rarm.upper.rotation.set(0.98 - arm*0.18, -0.14 + steerTurn*0.08, -0.42 + steerTurn*0.10);
+  rig.Larm.fore.rotation.set(1.10 + arm*0.12, -0.08,  0.10 + steerTurn*0.10);
+  rig.Rarm.fore.rotation.set(1.10 - arm*0.12,  0.08, -0.10 + steerTurn*0.10);
 
-  // ✅ GAMBE TAXI: seduta stabile (NO corsa → niente legno su/giù)
-if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x = 0.95;
-if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x = 0.95;
+  if(rig.Larm?.hand) rig.Larm.hand.position.set(0.20, -0.17 + arm*0.02, 0.10 + steerTurn*0.03);
+  if(rig.Rarm?.hand) rig.Rarm.hand.position.set(-0.20,-0.17 - arm*0.02, 0.10 - steerTurn*0.03);
 
-if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.x  = 1.15;
-if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.x  = 1.15;
+  // gambe raccolte ma con vita, non statue
+if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.set(1.20, 0.10, 0.16);
+if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.set(1.20,-0.10,-0.16);
 
-if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.x  = -0.35;
-if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.x  = -0.35;
+if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.set(1.38,0,0);
+if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.set(1.38,0,0);
 
-// micro vibrazione “strada” (piccolissima, naturale)
+if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.set(-0.72, 0.04, 0.02);
+if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.set(-0.72,-0.04,-0.02);
+
 const seatJit = 0.03 * Math.sin(t*9.0) + 0.015 * Math.sin(t*15.0 + 0.7);
-if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x += seatJit * 0.25;
-if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x += seatJit * 0.25;
+if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x += seatJit * 0.22;
+if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x += seatJit * 0.22;
 
   // coda: “whip” morbido
   rig.tailPivot.rotation.y = 0.45*Math.sin(t*(2.6+2.2*excite));
@@ -5636,8 +5704,8 @@ function makeMonkeyRunner3D(){
   tailTip: get('m_tailTip'),
   bell: get('m_bell'),
 
-  Larm: { upper: get('m_Larm_upper'), fore: get('m_Larm_fore'), hand: null },
-Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: null },
+  Larm: { upper: get('m_Larm_upper'), fore: get('m_Larm_fore'), hand: get('m_Larm_hand') },
+Rarm: { upper: get('m_Rarm_upper'), fore: get('m_Rarm_fore'), hand: get('m_Rarm_hand') },
 
   Lleg: { leg: get('m_Lleg'), thigh: get('m_Lleg_thigh'), shin: get('m_Lleg_shin'), foot: get('m_Lfoot') },
 Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin'), foot: get('m_Rfoot') },
@@ -5651,54 +5719,56 @@ Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin')
     if(!r) return;
 
     if(r.spine){
-      r.spine.rotation.x = -0.44;
-      r.spine.position.y = -0.02;
+      r.spine.rotation.x = -0.64;
+      r.spine.rotation.y = 0.05;
+      r.spine.position.y = -0.03;
     }
     if(r.headPivot){
-      r.headPivot.rotation.x = -0.18;
+      r.headPivot.rotation.x = -0.08;
+      r.headPivot.rotation.y = 0.04;
     }
 
     if(r.Larm?.upper){
-      r.Larm.upper.rotation.set(1.18, 0.08, -0.34);
-      r.Larm.upper.scale.set(1.12, 1.08, 1.12);
+      r.Larm.upper.rotation.set(1.34, 0.14, -0.42);
+      r.Larm.upper.scale.set(1.14, 1.08, 1.14);
     }
     if(r.Rarm?.upper){
-      r.Rarm.upper.rotation.set(1.18, -0.08, 0.34);
-      r.Rarm.upper.scale.set(1.12, 1.08, 1.12);
+      r.Rarm.upper.rotation.set(1.00, -0.12, 0.26);
+      r.Rarm.upper.scale.set(1.10, 1.06, 1.10);
     }
     if(r.Larm?.fore){
-      r.Larm.fore.rotation.set(0.92, -0.04, 0.02);
-      r.Larm.fore.scale.set(1.08, 1.05, 1.08);
+      r.Larm.fore.rotation.set(1.26, -0.08, 0.06);
+      r.Larm.fore.scale.set(1.10, 1.06, 1.10);
     }
     if(r.Rarm?.fore){
-      r.Rarm.fore.rotation.set(0.92, 0.04, -0.02);
-      r.Rarm.fore.scale.set(1.08, 1.05, 1.08);
+      r.Rarm.fore.rotation.set(0.98, 0.06, -0.02);
+      r.Rarm.fore.scale.set(1.06, 1.03, 1.06);
     }
 
-    if(r.Lleg?.thigh) r.Lleg.thigh.rotation.set(0.78, 0.04, 0.10);
-    if(r.Rleg?.thigh) r.Rleg.thigh.rotation.set(0.78,-0.04,-0.10);
+    if(r.Lleg?.thigh) r.Lleg.thigh.rotation.set(0.92, 0.07, 0.16);
+    if(r.Rleg?.thigh) r.Rleg.thigh.rotation.set(0.64,-0.04,-0.08);
 
-    if(r.Lleg?.shin)  r.Lleg.shin.rotation.set(0.92, 0.00, 0.00);
-    if(r.Rleg?.shin)  r.Rleg.shin.rotation.set(0.92, 0.00, 0.00);
+    if(r.Lleg?.shin)  r.Lleg.shin.rotation.set(1.08, 0.00, 0.00);
+    if(r.Rleg?.shin)  r.Rleg.shin.rotation.set(0.84, 0.00, 0.00);
 
     if(r.Lleg?.foot){
-      r.Lleg.foot.rotation.set(-0.55, 0.00, 0.00);
-      r.Lleg.foot.position.y = 0.01;
-      r.Lleg.foot.scale.set(1.08, 1.08, 1.08);
+      r.Lleg.foot.rotation.set(-0.72, 0.02, 0.03);
+      r.Lleg.foot.position.y = 0.00;
+      r.Lleg.foot.scale.set(1.12, 1.10, 1.12);
     }
     if(r.Rleg?.foot){
-      r.Rleg.foot.rotation.set(-0.55, 0.00, 0.00);
-      r.Rleg.foot.position.y = 0.01;
-      r.Rleg.foot.scale.set(1.08, 1.08, 1.08);
+      r.Rleg.foot.rotation.set(-0.50,-0.02,-0.03);
+      r.Rleg.foot.position.y = 0.02;
+      r.Rleg.foot.scale.set(1.08, 1.06, 1.08);
     }
 
     if(r.Lleg?.leg){
-      r.Lleg.leg.position.z = -0.08;
-      r.Lleg.leg.position.y = -0.06;
+      r.Lleg.leg.position.z = -0.12;
+      r.Lleg.leg.position.y = -0.08;
     }
     if(r.Rleg?.leg){
-      r.Rleg.leg.position.z = -0.08;
-      r.Rleg.leg.position.y = -0.06;
+      r.Rleg.leg.position.z = -0.06;
+      r.Rleg.leg.position.y = -0.04;
     }
 
     r._base = {
@@ -5712,47 +5782,55 @@ Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin')
   })(rig);
 
   // scala/posizione a terra (regola se vuoi)
-  monkey.scale.setScalar(2.65);
-  monkey.position.y = -0.05;
+  monkey.scale.setScalar(2.82);
+  monkey.position.y = -0.08;
+  monkey.position.z = 0.02;
   return monkey;
 }
 
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
 
-  const spd = 7.6 + 2.2*intensity;
+  const spd = 8.4 + 2.6*intensity;
   const ph  = t * spd;
+  const stride = 0.55 + 0.16*intensity;
   const leftStep  = Math.sin(ph + Math.PI);
   const rightStep = Math.sin(ph);
-  const bodyLift  = Math.abs(Math.sin(ph));
+  const hop = Math.max(0, Math.sin(ph*2.0));
+  const compress = Math.max(0, -Math.sin(ph*2.0));
 
   if(rig.spine){
-    rig.spine.position.y = -0.02 + bodyLift * (0.040 + 0.018*intensity);
-    rig.spine.rotation.x = -0.52 - 0.04*intensity + Math.cos(ph*2.0) * 0.025;
-    rig.spine.rotation.y = Math.sin(ph) * 0.035;
-    rig.spine.rotation.z = Math.sin(ph*2.0) * 0.018;
+    rig.spine.position.y = -0.03 + hop * (0.055 + 0.020*intensity) - compress * 0.018;
+    rig.spine.rotation.x = -0.66 - 0.05*intensity + Math.cos(ph*2.0) * 0.040;
+    rig.spine.rotation.y = Math.sin(ph) * 0.045;
+    rig.spine.rotation.z = Math.sin(ph*2.0) * 0.030;
   }
 
   if(rig.headPivot){
-    rig.headPivot.rotation.x = -0.24 + Math.sin(ph*2.0) * 0.025;
-    rig.headPivot.rotation.y = Math.sin(ph) * 0.03;
+    rig.headPivot.rotation.x = -0.08 + hop * 0.05 + Math.sin(ph*2.0 + 0.4) * 0.030;
+    rig.headPivot.rotation.y = Math.sin(ph) * 0.055;
+    rig.headPivot.rotation.z = Math.sin(ph + 0.3) * 0.018;
   }
 
-  function driveArm(side, upper, fore, step){
+  function driveArm(side, upper, fore, hand, step){
     if(!upper || !fore) return;
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
-    upper.rotation.x = 1.10 + step * 0.18;
-    upper.rotation.y = (-0.05 * side) + step * 0.06 * side;
-    upper.rotation.z = (-0.26 * side) + Math.cos(ph) * 0.05 * side;
+    upper.rotation.x = 1.10 + step * (0.34 * stride);
+    upper.rotation.y = (-0.08 * side) + step * 0.11 * side;
+    upper.rotation.z = (-0.34 * side) + Math.cos(ph + side*0.35) * 0.08 * side;
 
-    fore.rotation.x = 0.95 + back * 0.62 + forward * 0.10;
-    fore.rotation.y = (-0.03 * side) + step * 0.03 * side;
-    fore.rotation.z = 0.02 * side;
+    fore.rotation.x = 1.00 + back * 0.86 + forward * 0.14;
+    fore.rotation.y = (-0.04 * side) + step * 0.06 * side;
+    fore.rotation.z = 0.03 * side;
+
+    if(hand){
+      hand.scale.set(1.18 + forward*0.08, 0.95 + back*0.04, 1.05);
+    }
   }
 
-  driveArm(-1, rig.Larm?.upper, rig.Larm?.fore, leftStep);
-  driveArm( 1, rig.Rarm?.upper, rig.Rarm?.fore, rightStep);
+  driveArm(-1, rig.Larm?.upper, rig.Larm?.fore, rig.Larm?.hand, leftStep);
+  driveArm( 1, rig.Rarm?.upper, rig.Rarm?.fore, rig.Rarm?.hand, rightStep);
 
   function driveLeg(side, thigh, shin, foot, legRoot, step){
     if(!thigh || !shin || !foot) return;
@@ -5760,29 +5838,30 @@ function animMonkeyRun(rig, t, intensity=1.0){
     const back = Math.max(0, -step);
 
     if(legRoot){
-      legRoot.position.y = -0.06 + forward * 0.010;
-      legRoot.position.z = -0.08 + back * 0.012;
+      legRoot.position.y = -0.07 + forward * 0.020 - compress * 0.008;
+      legRoot.position.z = -0.10 + back * 0.028;
     }
 
-    thigh.rotation.x = 0.78 + step * 0.42;
-    thigh.rotation.y = (-0.03 * side) + step * 0.03 * side;
-    thigh.rotation.z = (0.08 * side) + Math.sin(ph*2.0) * 0.014 * side;
+    thigh.rotation.x = 0.74 + step * (0.62 * stride);
+    thigh.rotation.y = (-0.05 * side) + step * 0.05 * side;
+    thigh.rotation.z = (0.11 * side) + Math.sin(ph*2.0) * 0.025 * side;
 
-    shin.rotation.x = 0.96 + forward * 0.46 + back * 0.08;
-    foot.position.y = 0.01 + forward * 0.030;
-    foot.rotation.x = -0.56 + forward * 0.38 - back * 0.08;
+    shin.rotation.x = 0.92 + forward * 0.62 + back * 0.14;
+    foot.position.y = 0.00 + forward * 0.045;
+    foot.rotation.x = -0.68 + forward * 0.52 - back * 0.10;
+    foot.rotation.z = 0.04 * side;
   }
 
   driveLeg(-1, rig.Lleg?.thigh, rig.Lleg?.shin, rig.Lleg?.foot, rig.Lleg?.leg, leftStep);
   driveLeg( 1, rig.Rleg?.thigh, rig.Rleg?.shin, rig.Rleg?.foot, rig.Rleg?.leg, rightStep);
 
   if(rig.tailPivot){
-    rig.tailPivot.rotation.y = 0.18*Math.sin(ph*0.5);
-    rig.tailPivot.rotation.x = 0.36 + 0.08*Math.sin(ph*0.35 + 0.5);
+    rig.tailPivot.rotation.y = 0.28*Math.sin(ph*0.55);
+    rig.tailPivot.rotation.x = 0.58 + 0.18*Math.sin(ph*0.45 + 0.5) - hop*0.06;
   }
 
   if(rig.mouthPivot){
-    rig.mouthPivot.rotation.x = -0.12 + Math.abs(Math.sin(ph*2.0)) * 0.05;
+    rig.mouthPivot.rotation.x = -0.10 + Math.abs(Math.sin(ph*2.0)) * 0.08;
   }
 }
 
