@@ -4761,583 +4761,255 @@ const _bulletGlowTex = (typeof _explTex !== 'undefined' && _explTex) ? _explTex 
 function makeMonkeyCar(){
   const g = new THREE.Group();
 
-  // ===== materiali più realistici =====
   const paint = new THREE.MeshStandardMaterial({
-    color:0xffc400, roughness:0.28, metalness:0.22,
-    emissive:0x1a1206, emissiveIntensity:0.08
+    color:0xf2c100,
+    roughness:0.24,
+    metalness:0.24,
+    emissive:0x120d03,
+    emissiveIntensity:0.05
   });
-  const dark  = new THREE.MeshStandardMaterial({ color:0x0c1016, roughness:0.62, metalness:0.10 });
-  const chrome= new THREE.MeshStandardMaterial({ color:0xe7eef7, roughness:0.18, metalness:0.92 });
+  const paintDark = new THREE.MeshStandardMaterial({ color:0xd39a00, roughness:0.34, metalness:0.18 });
+  const dark  = new THREE.MeshStandardMaterial({ color:0x11151b, roughness:0.72, metalness:0.08 });
+  const chrome= new THREE.MeshStandardMaterial({ color:0xe6edf5, roughness:0.16, metalness:0.94 });
   const glass = new THREE.MeshStandardMaterial({
-    color:0x081522, roughness:0.10, metalness:0.10,
-    transparent:true, opacity:0.40
+    color:0x0b1622, roughness:0.10, metalness:0.08,
+    transparent:true, opacity:0.42
   });
-  const tire  = new THREE.MeshStandardMaterial({ color:0x070a0e, roughness:0.92, metalness:0.04 });
+  const tire  = new THREE.MeshStandardMaterial({ color:0x090b10, roughness:0.95, metalness:0.03 });
   const lamp  = new THREE.MeshStandardMaterial({
-    color:0xeaf6ff, roughness:0.10, metalness:0.12,
-    emissive:0x8fd2ff, emissiveIntensity:0.40
+    color:0xf5fbff, roughness:0.08, metalness:0.10,
+    emissive:0x93d7ff, emissiveIntensity:0.48
   });
   const redLamp = new THREE.MeshStandardMaterial({
-    color:0xff554a, roughness:0.25, metalness:0.10,
-    emissive:0x5a0a06, emissiveIntensity:0.55
+    color:0xff5a49, roughness:0.18, metalness:0.06,
+    emissive:0x6d1008, emissiveIntensity:0.45
   });
+  const leather = new THREE.MeshStandardMaterial({ color:0x161a21, roughness:0.84, metalness:0.02 });
 
-  // ===== proporzioni taxi (più “auto” e meno cubo) =====
-  const L = 1.85;   // lunghezza
-  const W = 1.05;   // larghezza
-  const H = 0.34;   // altezza base scocca
+  const W = 1.08;
+  const L = 1.94;
 
-  // scocca base (chassis)
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(W, H, L), paint);
-  chassis.position.y = 0.22;
-  chassis.castShadow = true; chassis.receiveShadow = true;
-  g.add(chassis);
+  const add = (geo, mat, x,y,z, rx=0,ry=0,rz=0, s=1)=>{
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x,y,z);
+    m.rotation.set(rx,ry,rz);
+    if(typeof s === 'number') m.scale.setScalar(s); else m.scale.copy(s);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
 
-  // cofano (hood) leggermente inclinato
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.18, 0.62), paint);
-  hood.position.set(0, 0.34, 0.46);
-  hood.rotation.x = -0.08;
-  hood.castShadow = true; hood.receiveShadow = true;
-  g.add(hood);
+  add(new THREE.BoxGeometry(W*0.98, 0.24, L*0.86), paintDark, 0,0.18,0);
+  add(new THREE.BoxGeometry(W, 0.26, L*0.88), paint, 0,0.24,0);
+  add(new THREE.BoxGeometry(W*0.92, 0.14, 0.70), paint, 0,0.39,0.50, -0.10,0,0);
+  add(new THREE.BoxGeometry(W*0.90, 0.15, 0.63), paint, 0,0.38,-0.56, 0.08,0,0);
+  add(new THREE.BoxGeometry(W*0.82, 0.36, 0.98), paint, 0,0.63,-0.02);
+  add(new THREE.BoxGeometry(W*0.78, 0.12, 0.86), paintDark, 0,0.80,-0.02);
 
-  // bagagliaio (trunk)
-  const trunk = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.20, 0.58), paint);
-  trunk.position.set(0, 0.33, -0.55);
-  trunk.rotation.x = 0.06;
-  trunk.castShadow = true; trunk.receiveShadow = true;
-  g.add(trunk);
+  add(new THREE.BoxGeometry(W*0.78, 0.26, 0.06), glass, 0,0.63,0.37,-0.38,0,0);
+  add(new THREE.BoxGeometry(W*0.70, 0.22, 0.06), glass, 0,0.63,-0.39,0.48,0,0);
+  add(new THREE.BoxGeometry(0.05, 0.24, 0.64), glass, -W*0.42,0.61,-0.02);
+  add(new THREE.BoxGeometry(0.05, 0.24, 0.64), glass,  W*0.42,0.61,-0.02);
 
-  // cabina (roof/cabin) più “vera”
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(W*0.92, 0.46, 0.92), paint);
-  cabin.position.set(0, 0.64, -0.05);
-  cabin.castShadow = true; cabin.receiveShadow = true;
-  g.add(cabin);
+  add(new THREE.BoxGeometry(W*0.98, 0.08, 0.09), dark, 0,0.12, 0.96);
+  add(new THREE.BoxGeometry(W*0.98, 0.08, 0.09), dark, 0,0.12,-0.96);
+  add(new THREE.BoxGeometry(0.46, 0.11, 0.04), chrome, 0,0.24,0.96);
+  add(new THREE.BoxGeometry(0.34, 0.09, 0.02), new THREE.MeshStandardMaterial({ color:0xf5f6f7, roughness:0.75, metalness:0.05 }), 0,0.15,0.97);
+  add(new THREE.BoxGeometry(0.14, 0.10, 0.05), lamp, -0.38,0.23,0.96);
+  add(new THREE.BoxGeometry(0.14, 0.10, 0.05), lamp,  0.38,0.23,0.96);
+  add(new THREE.BoxGeometry(0.14, 0.10, 0.05), redLamp, -0.38,0.23,-0.96);
+  add(new THREE.BoxGeometry(0.14, 0.10, 0.05), redLamp,  0.38,0.23,-0.96);
 
-  // tetto nero sottile
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(W*0.94, 0.05, 0.92), dark);
-  roof.position.set(0, 0.89, -0.05);
-  g.add(roof);
+  add(new THREE.BoxGeometry(0.42, 0.10, 0.22), dark, 0,0.90,0.08);
+  add(new THREE.BoxGeometry(0.34, 0.05, 0.15), lamp, 0,0.95,0.08);
+  add(new THREE.BoxGeometry(W*0.98, 0.08, 1.12), dark, 0,0.25,-0.05);
+  add(new THREE.BoxGeometry(0.08, 0.05, 0.08), dark, -W*0.53,0.53,0.27);
+  add(new THREE.BoxGeometry(0.08, 0.05, 0.08), dark,  W*0.53,0.53,0.27);
 
-  // paraurti front/back
-  const bumperF = new THREE.Mesh(new THREE.BoxGeometry(W*0.98, 0.10, 0.10), dark);
-  bumperF.position.set(0, 0.14, 0.93);
-  g.add(bumperF);
-  const bumperB = bumperF.clone();
-  bumperB.position.z = -0.93;
-  g.add(bumperB);
-
-  // griglia + targa
-  const grill = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 0.04), chrome);
-  grill.position.set(0, 0.24, 0.93);
-  g.add(grill);
-
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.10, 0.02), new THREE.MeshStandardMaterial({
-    color:0xf4f6f8, roughness:0.7, metalness:0.05
-  }));
-  plate.position.set(0, 0.16, 0.94);
-  g.add(plate);
-
-  // fari frontali + stop posteriori
-  const headL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), lamp);
-  headL.position.set(-0.40, 0.24, 0.93);
-  const headR = headL.clone(); headR.position.x = 0.40;
-  g.add(headL, headR);
-
-  const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.05), redLamp);
-  tailL.position.set(-0.40, 0.24, -0.93);
-  const tailR = tailL.clone(); tailR.position.x = 0.40;
-  g.add(tailL, tailR);
-
-  // vetri (front + lato)
-  const winF = new THREE.Mesh(new THREE.BoxGeometry(W*0.78, 0.28, 0.06), glass);
-  winF.position.set(0, 0.66, 0.34);
-  winF.rotation.x = -0.05;
-  g.add(winF);
-
-  const winL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.62), glass);
-  winL.position.set(-W*0.46, 0.66, -0.06);
-  const winR = winL.clone(); winR.position.x = W*0.46;
-  g.add(winL, winR);
-
-  // specchietti
-  const mirBase = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.08), dark);
-  const mirL = mirBase.clone(); mirL.position.set(-W*0.56, 0.56, 0.34);
-  const mirR = mirBase.clone(); mirR.position.set( W*0.56, 0.56, 0.34);
-  g.add(mirL, mirR);
-
-  // fascia “taxi” nera + scacchi (semplice ma credibile)
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(W*1.01, 0.10, 1.15), dark);
-  stripe.position.set(0, 0.24, -0.10);
-  stripe.material = stripe.material.clone();
-  stripe.material.roughness = 0.75;
-  g.add(stripe);
-
-  // taxi sign sopra
-  const signBase = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.09, 0.22), dark);
-  signBase.position.set(0, 0.93, 0.10);
-  g.add(signBase);
-
-  const signTop = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.18), lamp);
-  signTop.position.set(0, 0.95, 0.10);
-  g.add(signTop);
-
-  // ruote + passaruota (più realistiche)
-  function wheel(x,z){
-    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.20,0.14,20), tire);
-    w.rotation.z = Math.PI/2;
-    w.position.set(x, 0.16, z);
-    w.castShadow = true; w.receiveShadow = true;
-    g.add(w);
-
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.15,16), chrome);
-    rim.rotation.z = Math.PI/2;
-    rim.position.copy(w.position);
-    g.add(rim);
-
-    return w;
-  }
-
-  const xW = W*0.46;
-  const zF = 0.58;
-  const zB = -0.58;
-
-  const w1 = wheel(-xW,  zF);
-  const w2 = wheel( xW,  zF);
-  const w3 = wheel(-xW,  zB);
-  const w4 = wheel( xW,  zB);
-
-  // dettagli cockpit: rendono subito leggibile la silhouette “monkey driver”
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, 0.46), dark);
-  seat.position.set(0, 0.47, 0.02);
-  seat.castShadow = true; seat.receiveShadow = true;
-  g.add(seat);
-
-  const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.34, 0.10), dark);
-  seatBack.position.set(0, 0.64, -0.16);
-  seatBack.rotation.x = 0.14;
-  seatBack.castShadow = true; seatBack.receiveShadow = true;
-  g.add(seatBack);
+  const seat = add(new THREE.BoxGeometry(0.50, 0.14, 0.44), leather, 0,0.47,-0.02);
+  const seatBack = add(new THREE.BoxGeometry(0.48, 0.28, 0.09), leather, 0,0.61,-0.18,0.14,0,0);
+  add(new THREE.BoxGeometry(0.18, 0.10, 0.24), leather, -0.18,0.47,0.10);
+  add(new THREE.BoxGeometry(0.18, 0.10, 0.24), leather,  0.18,0.47,0.10);
+  add(new THREE.BoxGeometry(0.34, 0.08, 0.16), dark, 0,0.58,0.18);
 
   const steerPivot = new THREE.Group();
-  steerPivot.position.set(0, 0.63, 0.36);
-  steerPivot.rotation.x = 0.72;
+  steerPivot.position.set(0, 0.61, 0.34);
+  steerPivot.rotation.x = 0.78;
   g.add(steerPivot);
-
-  const steeringWheel = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.018, 10, 24),
-    chrome
-  );
+  const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.016, 10, 28), chrome);
   steeringWheel.castShadow = true; steeringWheel.receiveShadow = true;
   steerPivot.add(steeringWheel);
-
-  const steeringHub = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.08, 12), dark);
+  const steeringHub = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.07, 12), dark);
   steeringHub.rotation.x = Math.PI/2;
   steerPivot.add(steeringHub);
-
   for(let i=0;i<3;i++){
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, 0.12), chrome);
-    spoke.position.z = 0.06;
-    spoke.rotation.y = (Math.PI * 2 * i) / 3;
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.022,0.022,0.10), chrome);
+    spoke.position.z = 0.05;
+    spoke.rotation.y = (Math.PI*2*i)/3;
     spoke.castShadow = true; spoke.receiveShadow = true;
     steerPivot.add(spoke);
   }
 
-  // ===== 🐵 SCIMMIA PIÙ LEGGIBILE (driver silhouette forte) =====
-const monkey = new THREE.Group();
-monkey.position.set(0, 0.90, 0.15);
-monkey.scale.setScalar(1.98);
-
-// materiali più “pelo / pelle”
-const furMat = new THREE.MeshStandardMaterial({
-  color: 0x5a3a22,
-  roughness: 0.98,
-  metalness: 0.02
-});
-const faceSkin = new THREE.MeshStandardMaterial({
-  color: 0x8b5a33,
-  roughness: 0.88,
-  metalness: 0.02
-});
-const muzzleSkin = new THREE.MeshStandardMaterial({
-  color: 0xd7b07a,
-  roughness: 0.92,
-  metalness: 0.00
-});
-const darkMat = new THREE.MeshStandardMaterial({
-  color: 0x0b0f14,
-  roughness: 0.40,
-  metalness: 0.10
-});
-const whiteEye = new THREE.MeshStandardMaterial({
-  color: 0xf4f6f8,
-  roughness: 0.75,
-  metalness: 0.02
-});
-const pinkMouth = new THREE.MeshStandardMaterial({
-  color: 0x7a2a22,
-  roughness: 0.85,
-  metalness: 0.02
-});
-
-const mk = (geo, mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m; };
-
-// root rig
-const spine = new THREE.Group(); monkey.add(spine);
-spine.position.set(0, 0.00, 0.00);
-
-// torso + belly (dà “peso”)
-const torso = mk(new THREE.CapsuleGeometry(0.11, 0.34, 10, 14), furMat);
-torso.position.set(0, 0.12, -0.05);
-torso.scale.set(1.0, 1.08, 0.92);
-spine.add(torso);
-
-const chest = mk(new THREE.SphereGeometry(0.10, 16, 12), furMat);
-chest.scale.set(1.0, 0.82, 0.70);
-chest.position.set(0, 0.18, 0.08);
-spine.add(chest);
-
-const belly = mk(new THREE.SphereGeometry(0.11, 16, 12), furMat);
-belly.scale.set(0.92, 0.78, 0.90);
-belly.position.set(0, 0.05, 0.04);
-spine.add(belly);
-
-// hips
-const pelvis = mk(new THREE.SphereGeometry(0.13, 16, 12), furMat);
-pelvis.position.set(0, -0.08, -0.12);
-spine.add(pelvis);
-
-// head pivot
-const headPivot = new THREE.Group();
-headPivot.position.set(0, 0.26, 0.06);
-spine.add(headPivot);
-
-// head (più ovale)
-const head = mk(new THREE.SphereGeometry(0.155, 20, 16), faceSkin);
-head.scale.set(1.05, 0.95, 1.20);
-head.position.set(0, 0.10, 0.10);
-headPivot.add(head);
-
-// brow ridge (sopracciglia/arcata)
-const brow = mk(new THREE.CapsuleGeometry(0.06, 0.18, 6, 12), furMat);
-brow.rotation.z = Math.PI/2;
-brow.position.set(0, 0.14, 0.18);
-headPivot.add(brow);
-
-// muzzle (muso vero)
-const muzzle = mk(new THREE.SphereGeometry(0.115, 18, 14), muzzleSkin);
-muzzle.scale.set(1.25, 0.78, 1.55);
-muzzle.position.set(0, 0.02, 0.26);
-headPivot.add(muzzle);
-
-// nose (narici)
-const nose = mk(new THREE.SphereGeometry(0.030, 14, 12), darkMat);
-nose.scale.set(1.2, 0.7, 1.1);
-nose.position.set(0, 0.02, 0.33);
-headPivot.add(nose);
-
-const nostL = mk(new THREE.SphereGeometry(0.010, 10, 10), darkMat);
-const nostR = nostL.clone();
-nostL.position.set(-0.018, 0.008, 0.34);
-nostR.position.set( 0.018, 0.008, 0.34);
-headPivot.add(nostL, nostR);
-
-// ears
-const earL = mk(new THREE.SphereGeometry(0.065, 14, 10), furMat);
-const earR = earL.clone();
-earL.scale.set(1.0, 1.15, 0.75);
-earR.scale.set(1.0, 1.15, 0.75);
-earL.position.set(-0.19, 0.11, 0.10);
-earR.position.set( 0.19, 0.11, 0.10);
-headPivot.add(earL, earR);
-
-function makeEye(side){
-  const eye = new THREE.Group();
-
-  // sclera più grande + un filo emissive
-  const scleraMat = whiteEye.clone();
-  scleraMat.emissive = new THREE.Color(0x1b1f28);
-  scleraMat.emissiveIntensity = 0.35;
-
-  const sclera = mk(new THREE.SphereGeometry(0.040, 16, 14), scleraMat);
-  sclera.scale.set(1.35, 1.05, 1.10);
-
-  // pupilla più grande e più avanti
-  const pupil = mk(new THREE.SphereGeometry(0.022, 14, 14), darkMat);
-  pupil.position.set(0, 0, 0.034);
-
-  // outline scuro (bordino) = rende l’occhio leggibile
-  const outline = mk(new THREE.TorusGeometry(0.030, 0.006, 10, 18), darkMat);
-  outline.rotation.x = Math.PI / 2;
-  outline.position.set(0, 0, 0.010);
-
-  // highlight più evidente
-  const highlight = mk(new THREE.SphereGeometry(0.008, 10, 10), new THREE.MeshStandardMaterial({
-    color:0xffffff, roughness:0.10, metalness:0.05,
-    emissive: new THREE.Color(0xffffff),
-    emissiveIntensity: 0.35
-  }));
-  highlight.position.set(-0.010, 0.010, 0.045);
-
-  eye.add(sclera, outline, pupil, highlight);
-
-  // ✅ POSIZIONE: più avanti sul muso, così si vedono SEMPRE
-  eye.position.set(0.070*side, 0.085, 0.285);
-
-  return { eye, sclera, pupil };
-}
-
-const eyeL = makeEye(-1);
-const eyeR = makeEye( 1);
-headPivot.add(eyeL.eye, eyeR.eye);
-
-// eyelids (blink)
-const lidMat = new THREE.MeshStandardMaterial({ color:0x4a2d18, roughness:0.95, metalness:0 });
-const lidL = mk(new THREE.SphereGeometry(0.033, 12, 10), lidMat);
-const lidR = lidL.clone();
-lidL.scale.set(1.2, 0.55, 1.0);
-lidR.scale.set(1.2, 0.55, 1.0);
-lidL.position.copy(eyeL.eye.position); lidL.position.y += 0.010; lidL.position.z -= 0.010;
-lidR.position.copy(eyeR.eye.position); lidR.position.y += 0.010; lidR.position.z -= 0.010;
-headPivot.add(lidL, lidR);
-
-// bocca vera (labbro + apertura)
-const mouthPivot = new THREE.Group();
-mouthPivot.position.set(0, -0.03, 0.305);
-headPivot.add(mouthPivot);
-
-const lip = mk(new THREE.TorusGeometry(0.060, 0.012, 10, 24, Math.PI), pinkMouth);
-lip.rotation.x = Math.PI/2;
-lip.position.set(0, 0.00, 0.00);
-mouthPivot.add(lip);
-
-const mouthHole = mk(new THREE.SphereGeometry(0.040, 14, 12), darkMat);
-mouthHole.scale.set(1.30, 0.55, 1.20);
-mouthHole.position.set(0, -0.010, -0.008);
-mouthPivot.add(mouthHole);
-
-// lingua
-const tongue = mk(new THREE.CapsuleGeometry(0.020, 0.085, 6, 10), new THREE.MeshStandardMaterial({
-  color:0xff4aa0, roughness:0.92, metalness:0.0
-}));
-tongue.position.set(0, -0.035, -0.010);
-tongue.rotation.x = -0.55;
-mouthPivot.add(tongue);
-
-// spalle
-const sh = new THREE.Group();
-sh.position.set(0, 0.18, 0.05);
-spine.add(sh);
-
-function makeArm(side){
-  const arm = new THREE.Group();
-  arm.position.set(0.18 * side, 0.06, 0.14);
-  // posa base: già vicina a un primate che si appoggia / corre
-arm.rotation.x = 0.68;
-arm.rotation.y = 0.08 * side;
-arm.rotation.z = -0.52 * side;
-
-  const upperPivot = new THREE.Group();
-  const forePivot  = new THREE.Group();
-  // gomito più basso/allungato = silhouette più da scimmia
-forePivot.position.set(0.21 * side, -0.18, 0.05);
-
-  const upper = mk(new THREE.CylinderGeometry(0.034, 0.042, 0.26, 12), furMat);
-  upper.rotation.z = Math.PI/2;
-  upper.position.set(0.03*side, -0.09, 0.02);
-  upperPivot.add(upper);
-
-  // giunti (spalla + gomito) piccoli, NON “mani”
-  const shoulder = mk(new THREE.SphereGeometry(0.030, 12, 10), furMat);
-  shoulder.position.set(-0.06*side, -0.02, 0.00);
-  upperPivot.add(shoulder);
-
-  const elbow = mk(new THREE.SphereGeometry(0.030, 12, 10), furMat);
-  elbow.position.set(0.12*side, -0.15, 0.03);
-  upperPivot.add(elbow);
-
-  const fore = mk(new THREE.CylinderGeometry(0.030, 0.036, 0.28, 12), furMat);
-  fore.rotation.z = Math.PI/2;
-  fore.position.set(0.12*side, -0.13, 0.02);
-  forePivot.add(fore);
-
-  const hand = mk(new THREE.SphereGeometry(0.042, 12, 10), faceSkin);
-  hand.scale.set(1.18, 0.95, 1.05);
-  hand.position.set(0.26*side, -0.22, 0.06);
-  forePivot.add(hand);
-
-  upperPivot.add(forePivot);   // ✅ avambraccio figlio del braccio
-arm.add(upperPivot);         // ✅ aggiungo solo la spalla al braccio
-
-  // pivot “comodi” per animazione
-  upperPivot.name = 'upper';
-  forePivot.name  = 'fore';
-
-  return { arm, upper: upperPivot, fore: forePivot, hand };
-}
-// ✅ CREA davvero le braccia (prima mancavano -> crash)
-const Larm = makeArm(-1);
-const Rarm = makeArm( 1);
-
-// attacca le braccia alle spalle
-sh.add(Larm.arm, Rarm.arm);
-
-function makeLeg(side){
-  const leg = new THREE.Group();
-leg.name = (side < 0) ? 'm_Lleg' : 'm_Rleg';
-
-  // gambe un filo più larghe e arretrate: leggibilità migliore sia da fermo che in corsa
-  leg.position.set(0.10 * side, -0.10, -0.10);
-
-  // ✅ piccolo pivot “anca” per tenere le gambe più naturali
-  const hipPivot = new THREE.Group();
-  hipPivot.rotation.z = -0.10 * side;   // porta le gambe un filo “in dentro”
-  hipPivot.rotation.y =  0.02 * side;   // micro twist
-  leg.add(hipPivot);
-
-  // ✅ PIVOT ANCA (thigh)
-  const thighPivot = new THREE.Group();
-  hipPivot.add(thighPivot);
-
-  const thighMesh = mk(new THREE.CapsuleGeometry(0.042, 0.18, 6, 12), furMat);
-  thighMesh.position.set(0, -0.10, 0.00);     // ✅ z a 0 (prima era avanti)
-  thighMesh.rotation.x = 0.00;
-  thighPivot.add(thighMesh);
-
-  // ✅ PIVOT GINOCCHIO
-  const shinPivot = new THREE.Group();
-  shinPivot.position.set(0, -0.20, 0.02);     // ✅ meno avanti
-  thighPivot.add(shinPivot);
-
-  const shinMesh = mk(new THREE.CapsuleGeometry(0.038, 0.16, 6, 12), furMat);
-  shinMesh.position.set(0, -0.12, 0.03);
-  shinMesh.rotation.x = 0.00;
-  shinPivot.add(shinMesh);
-
-  // ✅ piede meno “sparato” avanti
-  const foot = mk(new THREE.SphereGeometry(0.050, 12, 10), muzzleSkin);
-  foot.scale.set(1.25, 0.60, 1.35);
-  foot.position.set(0, -0.21, 0.12);
-  shinPivot.add(foot);
-
-  // ✅ nomi: uguali ai tuoi (IMPORTANTE)
-  thighPivot.name = (side < 0) ? 'm_Lleg_thigh' : 'm_Rleg_thigh';
-  shinPivot.name  = (side < 0) ? 'm_Lleg_shin'  : 'm_Rleg_shin';
-  foot.name       = (side < 0) ? 'm_Lfoot'      : 'm_Rfoot';
-
-  return { leg, hip: hipPivot, thigh: thighPivot, shin: shinPivot, foot };
-}
-
-const Lleg = makeLeg(-1);
-const Rleg = makeLeg( 1);
-spine.add(Lleg.leg, Rleg.leg);
-
-// coda più lunga e “viva”
-const tailPivot = new THREE.Group();
-tailPivot.position.set(0, -0.03, -0.26);
-spine.add(tailPivot);
-
-const tail = mk(new THREE.CylinderGeometry(0.020, 0.030, 0.42, 14), furMat);
-tail.rotation.x = 1.35;
-tail.position.set(0, -0.12, -0.15);
-tailPivot.add(tail);
-
-const tailTip = mk(new THREE.SphereGeometry(0.035, 12, 10), faceSkin);
-tailTip.position.set(0, -0.33, -0.38);
-tailPivot.add(tailTip);
-
-// taxi bell glow (rimane)
-const bell = new THREE.Sprite(new THREE.SpriteMaterial({
-  map:_bulletGlowTex, transparent:true, opacity:0.65, depthWrite:false, blending:THREE.AdditiveBlending
-}));
-bell.scale.set(0.34,0.34,1);
-bell.position.set(0.30, 0.10, 0.08);
-spine.add(bell);
-
-// aggiungi al taxi
-g.add(monkey);
-
-// salva refs per animazioni
-g.userData = g.userData || {};
-// ✅ nomi per ritrovare i pezzi dopo clone (IMPORTANTE)
-monkey.name     = 'm_monkey';
-spine.name      = 'm_spine';
-headPivot.name  = 'm_headPivot';
-if(mouthPivot) mouthPivot.name = 'm_mouthPivot';
-if(tongue)     tongue.name     = 'm_tongue';
-if(lidL)       lidL.name       = 'm_lidL';
-if(lidR)       lidR.name       = 'm_lidR';
-if(tailPivot)  tailPivot.name  = 'm_tailPivot';
-if(tail)       tail.name       = 'm_tail';
-if(tailTip)    tailTip.name    = 'm_tailTip';
-if(bell)       bell.name       = 'm_bell';
-
-// braccia
-if(Larm?.upper) Larm.upper.name = 'm_Larm_upper';
-if(Larm?.fore)  Larm.fore.name  = 'm_Larm_fore';
-if(Larm?.hand)  Larm.hand.name  = 'm_Larm_hand';
-if(Rarm?.upper) Rarm.upper.name = 'm_Rarm_upper';
-if(Rarm?.fore)  Rarm.fore.name  = 'm_Rarm_fore';
-if(Rarm?.hand)  Rarm.hand.name  = 'm_Rarm_hand';
-
-// gambe
-if(Lleg?.thigh) Lleg.thigh.name = 'm_Lleg_thigh';
-if(Lleg?.shin)  Lleg.shin.name  = 'm_Lleg_shin';
-if(Rleg?.thigh) Rleg.thigh.name = 'm_Rleg_thigh';
-if(Rleg?.shin)  Rleg.shin.name  = 'm_Rleg_shin';
-// ✅ mani + piedi (per animazione corsa più realistica)
-// mani rimosse
-
-if(Lleg?.foot)  Lleg.foot.name  = 'm_Lfoot';
-if(Rleg?.foot)  Rleg.foot.name  = 'm_Rfoot';
-g.userData = g.userData || {};
-g.userData.monkeyRig = {
-  monkey, spine, headPivot,
-  mouthPivot, tongue,
-  lidL, lidR,
-  eyeL, eyeR,
-  Larm, Rarm, Lleg, Rleg,
-  tailPivot, tail, tailTip,
-  bell,
-  steerPivot, steeringWheel
-};
-// ✅ FIX: posa base gambe (seduta sul taxi) — elimina “gambe strane”
-(function setTaxiLegRestPose(){
-  const rig = g.userData?.monkeyRig;
-  if(!rig) return;
-
-  if(rig.spine){
-    rig.spine.rotation.x = -0.12;
-    rig.spine.rotation.z = 0.03;
-    rig.spine.position.y = 0.02;
+  const wheelMeshes = [];
+  function wheel(x,z, steerFront=false){
+    const grp = new THREE.Group();
+    grp.position.set(x, 0.17, z);
+    g.add(grp);
+    const tireMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.20,0.16,24), tire);
+    tireMesh.rotation.z = Math.PI/2;
+    tireMesh.castShadow = true; tireMesh.receiveShadow = true;
+    grp.add(tireMesh);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.17,18), chrome);
+    rim.rotation.z = Math.PI/2;
+    rim.castShadow = true; rim.receiveShadow = true;
+    grp.add(rim);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.18,10), dark);
+    cap.rotation.z = Math.PI/2;
+    grp.add(cap);
+    wheelMeshes.push({ grp, tire:tireMesh, rim, steerFront });
+    return grp;
   }
-  if(rig.headPivot){
+  const xW = W*0.47;
+  wheel(-xW, 0.61, true);
+  wheel( xW, 0.61, true);
+  wheel(-xW,-0.60, false);
+  wheel( xW,-0.60, false);
+
+  const monkey = new THREE.Group();
+  monkey.position.set(0, 0.88, 0.12);
+  monkey.scale.setScalar(2.05);
+  const furMat = new THREE.MeshStandardMaterial({ color:0x5b3d24, roughness:0.98, metalness:0.01 });
+  const furDark = new THREE.MeshStandardMaterial({ color:0x3d2818, roughness:0.98, metalness:0.01 });
+  const skinMat = new THREE.MeshStandardMaterial({ color:0x8b5d39, roughness:0.90, metalness:0.01 });
+  const muzzleMat = new THREE.MeshStandardMaterial({ color:0xd7af7b, roughness:0.94, metalness:0.0 });
+  const eyeWhite = new THREE.MeshStandardMaterial({ color:0xf7f8fa, roughness:0.70, metalness:0.01 });
+  const eyeDark = new THREE.MeshStandardMaterial({ color:0x0a0d12, roughness:0.28, metalness:0.12 });
+  const mouthMat = new THREE.MeshStandardMaterial({ color:0x6f241c, roughness:0.86, metalness:0.01 });
+  const tongueMat = new THREE.MeshStandardMaterial({ color:0xff5aac, roughness:0.90, metalness:0.0 });
+  const mk = (geo, mat)=>{ const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true; return m; };
+
+  const spine = new THREE.Group(); monkey.add(spine);
+  spine.position.set(0,0,0);
+  const torso = mk(new THREE.CapsuleGeometry(0.115, 0.34, 8, 16), furMat);
+  torso.position.set(0,0.12,-0.04); torso.scale.set(1.0,1.08,0.92); spine.add(torso);
+  const chest = mk(new THREE.SphereGeometry(0.11, 16, 14), furMat); chest.scale.set(1.0,0.78,0.76); chest.position.set(0,0.18,0.07); spine.add(chest);
+  const belly = mk(new THREE.SphereGeometry(0.115, 16, 14), furDark); belly.scale.set(0.90,0.76,0.86); belly.position.set(0,0.04,0.05); spine.add(belly);
+  const pelvis = mk(new THREE.SphereGeometry(0.13, 16, 12), furMat); pelvis.position.set(0,-0.08,-0.12); spine.add(pelvis);
+
+  const headPivot = new THREE.Group(); headPivot.position.set(0,0.27,0.06); spine.add(headPivot);
+  const head = mk(new THREE.SphereGeometry(0.16, 22, 18), skinMat); head.scale.set(1.08,0.96,1.22); head.position.set(0,0.10,0.10); headPivot.add(head);
+  const brow = mk(new THREE.CapsuleGeometry(0.065,0.20,6,14), furDark); brow.rotation.z = Math.PI/2; brow.position.set(0,0.15,0.18); headPivot.add(brow);
+  const muzzle = mk(new THREE.SphereGeometry(0.12, 18, 14), muzzleMat); muzzle.scale.set(1.28,0.80,1.58); muzzle.position.set(0,0.02,0.27); headPivot.add(muzzle);
+  const jaw = mk(new THREE.SphereGeometry(0.08, 14, 12), muzzleMat); jaw.scale.set(1.20,0.55,1.10); jaw.position.set(0,-0.07,0.24); headPivot.add(jaw);
+  const nose = mk(new THREE.SphereGeometry(0.032, 14, 12), eyeDark); nose.scale.set(1.20,0.72,1.05); nose.position.set(0,0.03,0.34); headPivot.add(nose);
+  const nostL = mk(new THREE.SphereGeometry(0.010,10,10), eyeDark); nostL.position.set(-0.018,0.01,0.35); headPivot.add(nostL);
+  const nostR = nostL.clone(); nostR.position.x = 0.018; headPivot.add(nostR);
+  const earL = mk(new THREE.SphereGeometry(0.066, 14, 10), furMat); earL.scale.set(1.0,1.16,0.72); earL.position.set(-0.19,0.12,0.10); headPivot.add(earL);
+  const earR = earL.clone(); earR.position.x = 0.19; headPivot.add(earR);
+
+  function makeEye(side){
+    const eye = new THREE.Group();
+    const sclera = mk(new THREE.SphereGeometry(0.041, 16, 14), eyeWhite);
+    sclera.scale.set(1.36,1.08,1.10);
+    const pupil = mk(new THREE.SphereGeometry(0.022, 14, 14), eyeDark);
+    pupil.position.set(0,0,0.034);
+    const highlight = mk(new THREE.SphereGeometry(0.008, 10, 10), new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.10, metalness:0.05, emissive:0xffffff, emissiveIntensity:0.25 }));
+    highlight.position.set(-0.010,0.010,0.045);
+    eye.add(sclera, pupil, highlight);
+    eye.position.set(0.070*side, 0.085, 0.286);
+    return { eye, sclera, pupil };
+  }
+  const eyeL = makeEye(-1);
+  const eyeR = makeEye(1);
+  headPivot.add(eyeL.eye, eyeR.eye);
+  const lidMat = new THREE.MeshStandardMaterial({ color:0x4a2d18, roughness:0.96, metalness:0.0 });
+  const lidL = mk(new THREE.SphereGeometry(0.033, 12, 10), lidMat); lidL.scale.set(1.18,0.55,1.0); lidL.position.copy(eyeL.eye.position); lidL.position.y += 0.010; lidL.position.z -= 0.010; headPivot.add(lidL);
+  const lidR = lidL.clone(); lidR.position.copy(eyeR.eye.position); headPivot.add(lidR);
+
+  const mouthPivot = new THREE.Group(); mouthPivot.position.set(0,-0.03,0.305); headPivot.add(mouthPivot);
+  const lip = mk(new THREE.TorusGeometry(0.062,0.012,10,24,Math.PI), mouthMat); lip.rotation.x = Math.PI/2; mouthPivot.add(lip);
+  const mouthHole = mk(new THREE.SphereGeometry(0.042,14,12), eyeDark); mouthHole.scale.set(1.34,0.58,1.18); mouthHole.position.set(0,-0.01,-0.008); mouthPivot.add(mouthHole);
+  const tongue = mk(new THREE.CapsuleGeometry(0.021,0.092,6,10), tongueMat); tongue.position.set(0,-0.036,-0.010); tongue.rotation.x = -0.56; mouthPivot.add(tongue);
+
+  const sh = new THREE.Group(); sh.position.set(0,0.18,0.05); spine.add(sh);
+  function makeArm(side){
+    const arm = new THREE.Group();
+    arm.position.set(0.18*side, 0.06, 0.14);
+    arm.rotation.x = 0.66; arm.rotation.y = 0.10*side; arm.rotation.z = -0.50*side;
+    const upper = new THREE.Group();
+    const fore = new THREE.Group();
+    fore.position.set(0.21*side,-0.18,0.05);
+    const upperMesh = mk(new THREE.CylinderGeometry(0.034,0.043,0.27,12), furMat); upperMesh.rotation.z = Math.PI/2; upperMesh.position.set(0.03*side,-0.09,0.02); upper.add(upperMesh);
+    const shoulder = mk(new THREE.SphereGeometry(0.030,12,10), furMat); shoulder.position.set(-0.06*side,-0.02,0.00); upper.add(shoulder);
+    const elbow = mk(new THREE.SphereGeometry(0.030,12,10), furDark); elbow.position.set(0.12*side,-0.15,0.03); upper.add(elbow);
+    const foreMesh = mk(new THREE.CylinderGeometry(0.030,0.036,0.29,12), furMat); foreMesh.rotation.z = Math.PI/2; foreMesh.position.set(0.12*side,-0.13,0.02); fore.add(foreMesh);
+    const hand = mk(new THREE.SphereGeometry(0.043, 12, 10), skinMat); hand.scale.set(1.18,0.95,1.05); hand.position.set(0.26*side,-0.22,0.06); fore.add(hand);
+    upper.add(fore); arm.add(upper);
+    upper.name='upper'; fore.name='fore';
+    return { arm, upper, fore, hand };
+  }
+  const Larm = makeArm(-1); const Rarm = makeArm(1); sh.add(Larm.arm, Rarm.arm);
+
+  function makeLeg(side){
+    const leg = new THREE.Group();
+    leg.name = (side < 0) ? 'm_Lleg' : 'm_Rleg';
+    leg.position.set(0.10*side,-0.10,-0.10);
+    const hip = new THREE.Group(); hip.rotation.z = -0.10*side; hip.rotation.y = 0.02*side; leg.add(hip);
+    const thigh = new THREE.Group(); hip.add(thigh);
+    const thighMesh = mk(new THREE.CapsuleGeometry(0.043,0.18,6,12), furMat); thighMesh.position.set(0,-0.10,0.00); thigh.add(thighMesh);
+    const shin = new THREE.Group(); shin.position.set(0,-0.20,0.02); thigh.add(shin);
+    const shinMesh = mk(new THREE.CapsuleGeometry(0.038,0.16,6,12), furMat); shinMesh.position.set(0,-0.12,0.03); shin.add(shinMesh);
+    const foot = mk(new THREE.SphereGeometry(0.050,12,10), muzzleMat); foot.scale.set(1.25,0.60,1.35); foot.position.set(0,-0.21,0.12); shin.add(foot);
+    thigh.name = (side < 0) ? 'm_Lleg_thigh' : 'm_Rleg_thigh';
+    shin.name  = (side < 0) ? 'm_Lleg_shin'  : 'm_Rleg_shin';
+    foot.name  = (side < 0) ? 'm_Lfoot'      : 'm_Rfoot';
+    return { leg, hip, thigh, shin, foot };
+  }
+  const Lleg = makeLeg(-1); const Rleg = makeLeg(1); spine.add(Lleg.leg, Rleg.leg);
+
+  const tailPivot = new THREE.Group(); tailPivot.position.set(0,-0.03,-0.26); spine.add(tailPivot);
+  const tail = mk(new THREE.CylinderGeometry(0.020,0.030,0.44,14), furDark); tail.rotation.x = 1.36; tail.position.set(0,-0.12,-0.15); tailPivot.add(tail);
+  const tailTip = mk(new THREE.SphereGeometry(0.035, 12, 10), skinMat); tailTip.position.set(0,-0.34,-0.40); tailPivot.add(tailTip);
+
+  const bell = new THREE.Sprite(new THREE.SpriteMaterial({ map:_bulletGlowTex, transparent:true, opacity:0.55, depthWrite:false, blending:THREE.AdditiveBlending }));
+  bell.scale.set(0.32,0.32,1); bell.position.set(0.30,0.10,0.08); spine.add(bell);
+
+  g.add(monkey);
+  monkey.name='m_monkey'; spine.name='m_spine'; headPivot.name='m_headPivot'; mouthPivot.name='m_mouthPivot'; tongue.name='m_tongue'; lidL.name='m_lidL'; lidR.name='m_lidR'; tailPivot.name='m_tailPivot'; tail.name='m_tail'; tailTip.name='m_tailTip'; bell.name='m_bell';
+  Larm.upper.name='m_Larm_upper'; Larm.fore.name='m_Larm_fore'; Larm.hand.name='m_Larm_hand';
+  Rarm.upper.name='m_Rarm_upper'; Rarm.fore.name='m_Rarm_fore'; Rarm.hand.name='m_Rarm_hand';
+
+  g.userData = g.userData || {};
+  g.userData.monkeyRig = { monkey, spine, headPivot, mouthPivot, tongue, lidL, lidR, eyeL, eyeR, Larm, Rarm, Lleg, Rleg, tailPivot, tail, tailTip, bell, steerPivot, steeringWheel, seat, seatBack };
+  g.userData.wheels = wheelMeshes;
+
+  (function setTaxiLegRestPose(){
+    const rig = g.userData?.monkeyRig;
+    if(!rig) return;
+    rig.spine.rotation.x = -0.13;
+    rig.spine.rotation.z = 0.02;
+    rig.spine.position.y = 0.01;
     rig.headPivot.rotation.x = -0.08;
-    rig.headPivot.rotation.y = 0.10;
-  }
+    rig.headPivot.rotation.y = 0.08;
+    rig.Larm.upper.rotation.set(0.96, 0.13, 0.40);
+    rig.Rarm.upper.rotation.set(0.96,-0.13,-0.40);
+    rig.Larm.fore.rotation.set(1.08,-0.10, 0.10);
+    rig.Rarm.fore.rotation.set(1.08, 0.10,-0.10);
+    rig.Larm.hand.position.set(0.20,-0.17,0.10);
+    rig.Rarm.hand.position.set(-0.20,-0.17,0.10);
+    rig.Lleg.thigh.rotation.set(1.22, 0.10, 0.16);
+    rig.Rleg.thigh.rotation.set(1.22,-0.10,-0.16);
+    rig.Lleg.shin.rotation.set(1.40,0,0);
+    rig.Rleg.shin.rotation.set(1.40,0,0);
+    rig.Lleg.foot.rotation.set(-0.74, 0.04, 0.02);
+    rig.Rleg.foot.rotation.set(-0.74,-0.04,-0.02);
+    rig.Lleg.leg.position.set(-0.10,-0.11,-0.18);
+    rig.Rleg.leg.position.set( 0.10,-0.11,-0.18);
+    rig.tailPivot.rotation.x = 0.98;
+    rig.tailPivot.rotation.y = -0.26;
+  })();
 
-  // mani già appoggiate vicino al volante
-  if(rig.Larm?.upper) rig.Larm.upper.rotation.set(0.98, 0.12, 0.42);
-  if(rig.Rarm?.upper) rig.Rarm.upper.rotation.set(0.98,-0.12,-0.42);
-  if(rig.Larm?.fore)  rig.Larm.fore.rotation.set(1.10,-0.08, 0.10);
-  if(rig.Rarm?.fore)  rig.Rarm.fore.rotation.set(1.10, 0.08,-0.10);
-  if(rig.Larm?.hand)  rig.Larm.hand.position.set(0.20,-0.17,0.10);
-  if(rig.Rarm?.hand)  rig.Rarm.hand.position.set(-0.20,-0.17,0.10);
-
-  // gambe raccolte dentro il taxi, con piedi puntati sulla pedana
-  if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.set(1.20, 0.10, 0.16);
-  if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.set(1.20,-0.10,-0.16);
-  if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.set(1.38, 0.00, 0.00);
-  if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.set(1.38, 0.00, 0.00);
-  if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.set(-0.72, 0.04, 0.02);
-  if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.set(-0.72,-0.04,-0.02);
-  if(rig.Lleg?.leg)   rig.Lleg.leg.position.set(-0.10,-0.11,-0.18);
-  if(rig.Rleg?.leg)   rig.Rleg.leg.position.set( 0.10,-0.11,-0.18);
-
-  if(rig.tailPivot){
-    rig.tailPivot.rotation.x = 0.95;
-    rig.tailPivot.rotation.y = -0.28;
-  }
-})();
   return g;
 }
 
@@ -5477,109 +5149,104 @@ if(Math.abs(err) < 0.22){
     // applica posizione
   e.obj.position.z = e.z;
 
-  // X: corsia emergenza con micro zigzag (leggero)
+  // X: corsia emergenza con traiettoria più credibile
   e.weave = (e.weave ?? rnd(0, Math.PI*2));
-  const wSpd = (beh.phase === 'align') ? 4.0 : 2.8;
+  const wSpd = (beh.phase === 'align') ? 3.8 : 2.4;
   e.weave += dt * wSpd;
-  const baseAmp = (beh.phase === 'align') ? 0.18 : 0.12;
-
+  const baseAmp = (beh.phase === 'align') ? 0.14 : 0.09;
   const dodge = (e.evadeT > 0)
-    ? (0.28 * Math.sin((tNow * 0.02) + e.weave * 2.0))
+    ? (0.24 * Math.sin((tNow * 0.018) + e.weave * 1.8))
     : 0;
-
   const wx = Math.sin(e.weave) * baseAmp + dodge;
   e.obj.position.x = lanesX[3] + wx;
 
-  // anim ruote + scimmia (più realistica)
   const ud = e.obj.userData;
   if(ud){
     ud.t = (ud.t ?? 0) + dt;
+    const t = ud.t;
+    const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.62 : 0.34);
+    const road = 0.010*Math.sin(t*15.5) + 0.004*Math.sin(t*27.0 + 0.8);
+    const chassisPitch = -0.010 + 0.012*Math.sin(t*3.4) + (beh.phase==='dash' ? -0.020 : 0);
+    const chassisRoll  = 0.012*Math.sin(t*4.8) + wx*0.06;
+    e.obj.rotation.x = chassisPitch;
+    e.obj.rotation.z = chassisRoll;
+    e.obj.rotation.y = wx * 0.10;
+
+    const wheels = Array.isArray(ud.wheels) ? ud.wheels : [];
+    const wheelSpin = playerSpeed * dt * (0.95 + 0.40*excite) * 2.4;
+    const steerYaw = Math.sin(t*(3.2 + 2.4*excite)) * 0.12 + wx*0.18;
+    for(const w of wheels){
+      if(!w || !w.tire) continue;
+      w.tire.rotation.x -= wheelSpin;
+      if(w.rim) w.rim.rotation.x -= wheelSpin;
+      if(w.steerFront && w.grp) w.grp.rotation.y = steerYaw;
+    }
 
     const rig = ud.monkeyRig;
     if(rig){
-  const t = ud.t;
+      rig.spine.position.y = 0.01 + 0.018*Math.sin(t*2.1) + road;
+      rig.spine.rotation.x = -0.13 + 0.026*Math.sin(t*2.8) + chassisPitch*0.9;
+      rig.spine.rotation.z = 0.02 + chassisRoll*0.8;
+      rig.spine.rotation.y = 0.015*Math.sin(t*1.7);
 
-  // peso del corpo + vibrazioni strada (più naturali)
-  const road = 0.012*Math.sin(t*17.0) + 0.006*Math.sin(t*29.0 + 0.7);
-  const breathe = 0.018*Math.sin(t*2.2);
-  rig.spine.position.y = 0.02 + breathe + road;
+      const steerTurn = Math.sin(t*(3.4 + 3.2*excite));
+      if(rig.steerPivot) rig.steerPivot.rotation.z = steerTurn * (0.22 + 0.14*excite);
 
-  // eccitazione per fase (più viva quando si affianca)
-  const excite = (beh.phase === 'align') ? 1.0 : (beh.phase === 'approach' ? 0.55 : 0.25);
-  const steerTurn = Math.sin(t*(3.8 + 3.0*excite));
+      const laugh = Math.max(0, Math.sin(t*(2.1 + 1.2*excite) - 0.8));
+      const tongueOut = Math.max(0, Math.sin(t*(5.8 + 4.2*excite) - 0.2));
+      if(rig.headPivot){
+        rig.headPivot.rotation.y = 0.08 + 0.10*Math.sin(t*(2.8 + 3.0*excite));
+        rig.headPivot.rotation.x = -0.08 + 0.05*Math.sin(t*(2.0 + 2.6*excite)+0.6) + laugh*0.03;
+        rig.headPivot.rotation.z = 0.012*Math.sin(t*5.2);
+      }
 
-  if(rig.steerPivot){
-    rig.steerPivot.rotation.z = steerTurn * (0.20 + 0.14*excite);
-  }
+      if(rig.eyeL?.pupil && rig.eyeR?.pupil){
+        const lookX = 0.006*Math.sin(t*5.6 + 0.4);
+        const lookY = 0.003*Math.sin(t*4.4 + 1.0);
+        rig.eyeL.pupil.position.x = lookX;
+        rig.eyeR.pupil.position.x = lookX;
+        rig.eyeL.pupil.position.y = lookY;
+        rig.eyeR.pupil.position.y = lookY;
+      }
 
-  // testa: guarda il player + micro sì/no
-  const headNo  = (0.04 + 0.08*excite) * Math.sin(t*(4.2 + 6.8*excite));
-  const headYes = (0.03 + 0.05*excite) * Math.sin(t*(2.6 + 4.4*excite) + 0.6);
-  rig.headPivot.rotation.y = 0.10 + headNo;
-  rig.headPivot.rotation.x = -0.08 + headYes;
+      const blink = (Math.sin(t*1.12) > 0.993) ? 0.86 : 0.0;
+      if(rig.lidL) rig.lidL.scale.y = 0.55 - 0.38*blink;
+      if(rig.lidR) rig.lidR.scale.y = 0.55 - 0.38*blink;
 
-  // occhi: micro sguardo (pupilla avanti/indietro)
-  if(rig.eyeL && rig.eyeL.pupil && rig.eyeR && rig.eyeR.pupil){
-    const lookX = 0.006*Math.sin(t*6.0 + 0.4);
-    const lookY = 0.004*Math.sin(t*5.0 + 1.2);
-    rig.eyeL.pupil.position.x = lookX;
-    rig.eyeR.pupil.position.x = lookX;
-    rig.eyeL.pupil.position.y = lookY;
-    rig.eyeR.pupil.position.y = lookY;
-  }
+      if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.06 + 0.18*laugh + 0.06*Math.sin(t*(6.0+3.0*excite));
+      if(rig.tongue){
+        rig.tongue.rotation.x = -0.52 + 0.20*tongueOut;
+        rig.tongue.position.y = -0.036 + 0.010*tongueOut;
+        rig.tongue.scale.set(1.0, 1.0 + 0.20*tongueOut, 1.0 + 0.08*tongueOut);
+      }
 
-  // blink naturale (non “random brutto”)
-  const b = Math.sin(t*1.15);
-  const blink = (b > 0.992) ? 0.85 : 0.0;
-  rig.lidL.scale.y = 0.55 - 0.38*blink;
-  rig.lidR.scale.y = 0.55 - 0.38*blink;
+      const leftWave = Math.sin(t*(4.8 + 4.0*excite));
+      const rightWave = Math.sin(t*(4.1 + 3.6*excite) + 0.8);
+      if(rig.Larm?.upper) rig.Larm.upper.rotation.set(0.94 + leftWave*0.14,  0.15 + steerTurn*0.10,  0.40 + steerTurn*0.12 + laugh*0.06);
+      if(rig.Rarm?.upper) rig.Rarm.upper.rotation.set(0.94 - rightWave*0.14,-0.15 + steerTurn*0.10, -0.40 + steerTurn*0.12 - laugh*0.06);
+      if(rig.Larm?.fore)  rig.Larm.fore.rotation.set(1.08 + leftWave*0.10, -0.08,  0.10 + steerTurn*0.10);
+      if(rig.Rarm?.fore)  rig.Rarm.fore.rotation.set(1.08 - rightWave*0.10,  0.08, -0.10 + steerTurn*0.10);
+      if(rig.Larm?.hand)  rig.Larm.hand.position.set( 0.20, -0.17 + leftWave*0.015, 0.10 + steerTurn*0.03);
+      if(rig.Rarm?.hand)  rig.Rarm.hand.position.set(-0.20, -0.17 - rightWave*0.015, 0.10 - steerTurn*0.03);
 
-  // bocca: apre/chiude un po’ + lingua
-  if(rig.mouthPivot){
-    rig.mouthPivot.rotation.x = -0.10 + 0.18*Math.abs(Math.sin(t*(3.8+3.0*excite)));
-  }
-  rig.tongue.rotation.x = -0.55 + 0.26*Math.sin(t*(8.8+7*excite));
-  rig.tongue.position.y = -0.035 + 0.012*Math.sin(t*6.6);
+      const seatJit = 0.028*Math.sin(t*8.5) + 0.014*Math.sin(t*14.5 + 0.7);
+      if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.set(1.22 + seatJit*0.18, 0.10, 0.16);
+      if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.set(1.22 + seatJit*0.18,-0.10,-0.16);
+      if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.set(1.40,0,0);
+      if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.set(1.40,0,0);
+      if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.set(-0.74, 0.04, 0.02);
+      if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.set(-0.74,-0.04,-0.02);
 
-  // braccia: mano sul volante + asimmetria viva
-  const arm = (0.18 + 0.26*excite) * Math.sin(t*(5.6+5.0*excite));
-  rig.Larm.upper.rotation.set(0.98 + arm*0.18,  0.14 + steerTurn*0.08,  0.42 + steerTurn*0.10);
-  rig.Rarm.upper.rotation.set(0.98 - arm*0.18, -0.14 + steerTurn*0.08, -0.42 + steerTurn*0.10);
-  rig.Larm.fore.rotation.set(1.10 + arm*0.12, -0.08,  0.10 + steerTurn*0.10);
-  rig.Rarm.fore.rotation.set(1.10 - arm*0.12,  0.08, -0.10 + steerTurn*0.10);
+      if(rig.tailPivot){
+        rig.tailPivot.rotation.y = -0.10 + 0.42*Math.sin(t*(2.4 + 2.0*excite));
+        rig.tailPivot.rotation.x = 0.98 + 0.10*Math.sin(t*(1.8 + 1.6*excite) + 0.4);
+      }
 
-  if(rig.Larm?.hand) rig.Larm.hand.position.set(0.20, -0.17 + arm*0.02, 0.10 + steerTurn*0.03);
-  if(rig.Rarm?.hand) rig.Rarm.hand.position.set(-0.20,-0.17 - arm*0.02, 0.10 - steerTurn*0.03);
-
-  // gambe raccolte ma con vita, non statue
-if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.set(1.20, 0.10, 0.16);
-if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.set(1.20,-0.10,-0.16);
-
-if(rig.Lleg?.shin)  rig.Lleg.shin.rotation.set(1.38,0,0);
-if(rig.Rleg?.shin)  rig.Rleg.shin.rotation.set(1.38,0,0);
-
-if(rig.Lleg?.foot)  rig.Lleg.foot.rotation.set(-0.72, 0.04, 0.02);
-if(rig.Rleg?.foot)  rig.Rleg.foot.rotation.set(-0.72,-0.04,-0.02);
-
-const seatJit = 0.03 * Math.sin(t*9.0) + 0.015 * Math.sin(t*15.0 + 0.7);
-if(rig.Lleg?.thigh) rig.Lleg.thigh.rotation.x += seatJit * 0.22;
-if(rig.Rleg?.thigh) rig.Rleg.thigh.rotation.x += seatJit * 0.22;
-
-  // coda: “whip” morbido
-  rig.tailPivot.rotation.y = 0.45*Math.sin(t*(2.6+2.2*excite));
-  rig.tailPivot.rotation.x = 0.22 + 0.18*Math.sin(t*(2.1+1.9*excite) + 0.4);
-
-  // lucina campanello
-  if(rig.bell && rig.bell.material){
-    const g1 = 0.40 + 0.30*Math.abs(Math.sin(t*7.8));
-    const g2 = 0.24*excite*(0.5+0.5*Math.abs(Math.sin(t*13.0)));
-    rig.bell.material.opacity = Math.min(0.98, g1 + g2);
-    rig.bell.scale.setScalar(0.34 + 0.10*Math.abs(Math.sin(t*9.5)) + 0.12*excite);
-  }
-
-  // roll auto leggero (più “peso”)
-  e.obj.rotation.z = 0.018*Math.sin(t*4.6) + (beh.phase==='align' ? 0.035*Math.sin(t*11.0) : 0);
-}
+      if(rig.bell?.material){
+        rig.bell.material.opacity = Math.min(0.95, 0.34 + 0.20*Math.abs(Math.sin(t*7.6)) + 0.16*excite);
+        rig.bell.scale.setScalar(0.32 + 0.08*Math.abs(Math.sin(t*9.2)) + 0.06*excite);
+      }
+    }
   }
 } // ✅ CHIUDE updateMonkeyCar
 
@@ -5878,44 +5545,48 @@ Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin')
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
 
-  const spd = 8.4 + 2.6*intensity;
+  const spd = 7.6 + 2.0*intensity;
   const ph  = t * spd;
-  const stride = 0.55 + 0.16*intensity;
   const leftStep  = Math.sin(ph + Math.PI);
   const rightStep = Math.sin(ph);
-  const hop = Math.max(0, Math.sin(ph*2.0));
-  const compress = Math.max(0, -Math.sin(ph*2.0));
+  const bounce = Math.max(0, Math.sin(ph*2.0));
+  const squash = Math.max(0, -Math.sin(ph*2.0));
+  const stride = 0.64 + 0.12*intensity;
 
   if(rig.spine){
-    rig.spine.position.y = -0.03 + hop * (0.055 + 0.020*intensity) - compress * 0.018;
-    rig.spine.rotation.x = -0.66 - 0.05*intensity + Math.cos(ph*2.0) * 0.040;
-    rig.spine.rotation.y = Math.sin(ph) * 0.045;
-    rig.spine.rotation.z = Math.sin(ph*2.0) * 0.030;
+    rig.spine.position.y = -0.03 + bounce*(0.050 + 0.016*intensity) - squash*0.014;
+    rig.spine.rotation.x = -0.70 + Math.cos(ph*2.0)*0.030;
+    rig.spine.rotation.y = Math.sin(ph)*0.040;
+    rig.spine.rotation.z = Math.sin(ph*2.0)*0.024;
   }
 
   if(rig.headPivot){
-    rig.headPivot.rotation.x = -0.08 + hop * 0.05 + Math.sin(ph*2.0 + 0.4) * 0.030;
-    rig.headPivot.rotation.y = Math.sin(ph) * 0.055;
-    rig.headPivot.rotation.z = Math.sin(ph + 0.3) * 0.018;
+    rig.headPivot.rotation.x = -0.08 + bounce*0.04 + Math.sin(ph*2.0+0.4)*0.018;
+    rig.headPivot.rotation.y = Math.sin(ph)*0.045;
+    rig.headPivot.rotation.z = Math.sin(ph+0.3)*0.015;
   }
+
+  if(rig.eyeL?.pupil && rig.eyeR?.pupil){
+    const lookX = 0.004*Math.sin(t*4.8);
+    rig.eyeL.pupil.position.x = lookX;
+    rig.eyeR.pupil.position.x = lookX;
+  }
+  const blink = (Math.sin(t*1.02) > 0.995) ? 0.82 : 0.0;
+  if(rig.lidL) rig.lidL.scale.y = 0.55 - 0.35*blink;
+  if(rig.lidR) rig.lidR.scale.y = 0.55 - 0.35*blink;
 
   function driveArm(side, upper, fore, hand, step){
     if(!upper || !fore) return;
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
-    upper.rotation.x = 1.10 + step * (0.34 * stride);
-    upper.rotation.y = (-0.08 * side) + step * 0.11 * side;
-    upper.rotation.z = (-0.34 * side) + Math.cos(ph + side*0.35) * 0.08 * side;
-
-    fore.rotation.x = 1.00 + back * 0.86 + forward * 0.14;
-    fore.rotation.y = (-0.04 * side) + step * 0.06 * side;
-    fore.rotation.z = 0.03 * side;
-
-    if(hand){
-      hand.scale.set(1.18 + forward*0.08, 0.95 + back*0.04, 1.05);
-    }
+    upper.rotation.x = 1.02 + step * (0.26 * stride);
+    upper.rotation.y = (-0.08 * side) + step * 0.09 * side;
+    upper.rotation.z = (-0.30 * side) + Math.cos(ph + side*0.28) * 0.06 * side;
+    fore.rotation.x  = 0.96 + back*0.70 + forward*0.10;
+    fore.rotation.y  = (-0.04 * side) + step * 0.04 * side;
+    fore.rotation.z  = 0.02 * side;
+    if(hand) hand.scale.set(1.18 + forward*0.06, 0.95 + back*0.03, 1.05);
   }
-
   driveArm(-1, rig.Larm?.upper, rig.Larm?.fore, rig.Larm?.hand, leftStep);
   driveArm( 1, rig.Rarm?.upper, rig.Rarm?.fore, rig.Rarm?.hand, rightStep);
 
@@ -5923,33 +5594,28 @@ function animMonkeyRun(rig, t, intensity=1.0){
     if(!thigh || !shin || !foot) return;
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
-
     if(legRoot){
-      legRoot.position.y = -0.07 + forward * 0.020 - compress * 0.008;
-      legRoot.position.z = -0.10 + back * 0.028;
+      legRoot.position.y = -0.07 + forward*0.018 - squash*0.006;
+      legRoot.position.z = -0.10 + back*0.022;
     }
-
-    thigh.rotation.x = 0.74 + step * (0.62 * stride);
-    thigh.rotation.y = (-0.05 * side) + step * 0.05 * side;
-    thigh.rotation.z = (0.11 * side) + Math.sin(ph*2.0) * 0.025 * side;
-
-    shin.rotation.x = 0.92 + forward * 0.62 + back * 0.14;
-    foot.position.y = 0.00 + forward * 0.045;
-    foot.rotation.x = -0.68 + forward * 0.52 - back * 0.10;
-    foot.rotation.z = 0.04 * side;
+    thigh.rotation.x = 0.80 + step * (0.56 * stride);
+    thigh.rotation.y = (-0.05 * side) + step*0.04*side;
+    thigh.rotation.z = (0.10 * side) + Math.sin(ph*2.0)*0.020*side;
+    shin.rotation.x  = 0.95 + forward*0.56 + back*0.10;
+    foot.position.y  = 0.00 + forward*0.036;
+    foot.rotation.x  = -0.70 + forward*0.46 - back*0.08;
+    foot.rotation.z  = 0.04 * side;
   }
-
   driveLeg(-1, rig.Lleg?.thigh, rig.Lleg?.shin, rig.Lleg?.foot, rig.Lleg?.leg, leftStep);
   driveLeg( 1, rig.Rleg?.thigh, rig.Rleg?.shin, rig.Rleg?.foot, rig.Rleg?.leg, rightStep);
 
   if(rig.tailPivot){
-    rig.tailPivot.rotation.y = 0.28*Math.sin(ph*0.55);
-    rig.tailPivot.rotation.x = 0.58 + 0.18*Math.sin(ph*0.45 + 0.5) - hop*0.06;
+    rig.tailPivot.rotation.y = 0.22*Math.sin(ph*0.52);
+    rig.tailPivot.rotation.x = 0.62 + 0.14*Math.sin(ph*0.42 + 0.5) - bounce*0.05;
   }
 
-  if(rig.mouthPivot){
-    rig.mouthPivot.rotation.x = -0.10 + Math.abs(Math.sin(ph*2.0)) * 0.08;
-  }
+  if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.08 + Math.abs(Math.sin(ph*2.0))*0.05;
+  if(rig.tongue) rig.tongue.rotation.x = -0.54 + bounce*0.10;
 }
 
 
