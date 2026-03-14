@@ -4129,7 +4129,7 @@ if (game.lives < game.maxLives) {
       if(!game.started) return;
       if(game.stopped) return;
       if(game.trioT>0) return;
-      game.lane = clamp(game.lane+dir, 0, 3);
+      game.lane = clamp(game.lane+dir, 0, 2);
 tiltTarget = clamp(tiltTarget + dir*0.18, -0.22, 0.22);
 
 // micro kick (usato dalla camera FPS, "inerzia")
