@@ -4826,7 +4826,21 @@ function spawnMonkeyCar(){
   if(game.foodBoostT <= 0) return;
   if(monkeyCarAlive()) return;
 
-  const obj = makeMonkeyCar();
+  let obj;
+  try{
+    obj = makeMonkeyCar();
+  }catch(err){
+    console.error('makeMonkeyCar failed, fallback used', err);
+    obj = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.05, 0.62, 1.85),
+      new THREE.MeshStandardMaterial({ color:0xffc400, roughness:0.38, metalness:0.16 })
+    );
+    body.position.y = 0.32;
+    body.castShadow = true; body.receiveShadow = true;
+    obj.add(body);
+  }
+
   const z0 = 5.2 + rnd(-0.5, 0.8);
   obj.position.set(lanesX[3], 0.02, z0);
   scene.add(obj);
