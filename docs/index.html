@@ -5473,119 +5473,104 @@ Rleg: { leg: get('m_Rleg'), thigh: get('m_Rleg_thigh'), shin: get('m_Rleg_shin')
     if(!r) return;
 
     if(r.spine){
-      r.spine.rotation.x = -0.64;
-      r.spine.rotation.y = 0.05;
-      r.spine.position.y = -0.03;
+      r.spine.rotation.x = -0.72;
+      r.spine.rotation.y = 0.02;
+      r.spine.position.y = -0.01;
     }
     if(r.headPivot){
-      r.headPivot.rotation.x = -0.08;
-      r.headPivot.rotation.y = 0.04;
+      r.headPivot.rotation.x = -0.10;
+      r.headPivot.rotation.y = 0.02;
     }
 
     if(r.Larm?.upper){
-      r.Larm.upper.rotation.set(1.34, 0.14, -0.42);
-      r.Larm.upper.scale.set(1.14, 1.08, 1.14);
+      r.Larm.upper.rotation.set(1.02, 0.10, -0.20);
+      r.Larm.upper.scale.set(1.04, 1.02, 1.04);
     }
     if(r.Rarm?.upper){
-      r.Rarm.upper.rotation.set(1.00, -0.12, 0.26);
-      r.Rarm.upper.scale.set(1.10, 1.06, 1.10);
+      r.Rarm.upper.rotation.set(1.00, -0.10, 0.20);
+      r.Rarm.upper.scale.set(1.04, 1.02, 1.04);
     }
     if(r.Larm?.fore){
-      r.Larm.fore.rotation.set(1.26, -0.08, 0.06);
-      r.Larm.fore.scale.set(1.10, 1.06, 1.10);
+      r.Larm.fore.rotation.set(0.96, -0.04, 0.02);
+      r.Larm.fore.scale.set(1.03, 1.02, 1.03);
     }
     if(r.Rarm?.fore){
-      r.Rarm.fore.rotation.set(0.98, 0.06, -0.02);
-      r.Rarm.fore.scale.set(1.06, 1.03, 1.06);
+      r.Rarm.fore.rotation.set(0.96, 0.04, -0.02);
+      r.Rarm.fore.scale.set(1.03, 1.02, 1.03);
     }
 
-    if(r.Lleg?.thigh) r.Lleg.thigh.rotation.set(0.92, 0.07, 0.16);
-    if(r.Rleg?.thigh) r.Rleg.thigh.rotation.set(0.64,-0.04,-0.08);
+    if(r.Lleg?.thigh) r.Lleg.thigh.rotation.set(0.82, 0.05, 0.10);
+    if(r.Rleg?.thigh) r.Rleg.thigh.rotation.set(0.82,-0.05,-0.10);
 
-    if(r.Lleg?.shin)  r.Lleg.shin.rotation.set(1.08, 0.00, 0.00);
-    if(r.Rleg?.shin)  r.Rleg.shin.rotation.set(0.84, 0.00, 0.00);
+    if(r.Lleg?.shin)  r.Lleg.shin.rotation.set(0.98, 0.00, 0.00);
+    if(r.Rleg?.shin)  r.Rleg.shin.rotation.set(0.98, 0.00, 0.00);
 
     if(r.Lleg?.foot){
-      r.Lleg.foot.rotation.set(-0.72, 0.02, 0.03);
+      r.Lleg.foot.rotation.set(-0.66, 0.02, 0.02);
       r.Lleg.foot.position.y = 0.00;
-      r.Lleg.foot.scale.set(1.12, 1.10, 1.12);
+      r.Lleg.foot.scale.set(1.06, 1.04, 1.06);
     }
     if(r.Rleg?.foot){
-      r.Rleg.foot.rotation.set(-0.50,-0.02,-0.03);
-      r.Rleg.foot.position.y = 0.02;
-      r.Rleg.foot.scale.set(1.08, 1.06, 1.08);
+      r.Rleg.foot.rotation.set(-0.66,-0.02,-0.02);
+      r.Rleg.foot.position.y = 0.00;
+      r.Rleg.foot.scale.set(1.06, 1.04, 1.06);
     }
 
     if(r.Lleg?.leg){
-      r.Lleg.leg.position.z = -0.12;
-      r.Lleg.leg.position.y = -0.08;
+      r.Lleg.leg.position.z = -0.08;
+      r.Lleg.leg.position.y = -0.02;
     }
     if(r.Rleg?.leg){
-      r.Rleg.leg.position.z = -0.06;
-      r.Rleg.leg.position.y = -0.04;
+      r.Rleg.leg.position.z = -0.08;
+      r.Rleg.leg.position.y = -0.02;
     }
-
-    r._base = {
-      Lth: r.Lleg?.thigh ? r.Lleg.thigh.rotation.clone() : null,
-      Lsh: r.Lleg?.shin  ? r.Lleg.shin.rotation.clone()  : null,
-      Lft: r.Lleg?.foot  ? r.Lleg.foot.rotation.clone()  : null,
-      Rth: r.Rleg?.thigh ? r.Rleg.thigh.rotation.clone() : null,
-      Rsh: r.Rleg?.shin  ? r.Rleg.shin.rotation.clone()  : null,
-      Rft: r.Rleg?.foot  ? r.Rleg.foot.rotation.clone()  : null
-    };
   })(rig);
 
-  // scala/posizione a terra (regola se vuoi)
-  monkey.scale.setScalar(2.82);
-  monkey.position.y = -0.08;
-  monkey.position.z = 0.02;
+  monkey.scale.setScalar(2.18);
+  monkey.position.y = 0.26;
+  monkey.position.z = 0.01;
   return monkey;
 }
 
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
 
-  const spd = 7.6 + 2.0*intensity;
+  const spd = 6.8 + 1.6*intensity;
   const ph  = t * spd;
   const leftStep  = Math.sin(ph + Math.PI);
   const rightStep = Math.sin(ph);
   const bounce = Math.max(0, Math.sin(ph*2.0));
-  const squash = Math.max(0, -Math.sin(ph*2.0));
-  const stride = 0.64 + 0.12*intensity;
+  const land = Math.max(0, -Math.sin(ph*2.0));
+  const stride = 0.52 + 0.10*intensity;
 
   if(rig.spine){
-    rig.spine.position.y = -0.03 + bounce*(0.050 + 0.016*intensity) - squash*0.014;
-    rig.spine.rotation.x = -0.70 + Math.cos(ph*2.0)*0.030;
-    rig.spine.rotation.y = Math.sin(ph)*0.040;
-    rig.spine.rotation.z = Math.sin(ph*2.0)*0.024;
+    rig.spine.position.y = -0.01 + bounce*(0.040 + 0.012*intensity) - land*0.010;
+    rig.spine.rotation.x = -0.74 + Math.cos(ph*2.0)*0.022;
+    rig.spine.rotation.y = Math.sin(ph)*0.030;
+    rig.spine.rotation.z = Math.sin(ph*2.0)*0.018;
   }
 
   if(rig.headPivot){
-    rig.headPivot.rotation.x = -0.08 + bounce*0.04 + Math.sin(ph*2.0+0.4)*0.018;
-    rig.headPivot.rotation.y = Math.sin(ph)*0.045;
-    rig.headPivot.rotation.z = Math.sin(ph+0.3)*0.015;
+    rig.headPivot.rotation.x = -0.10 + bounce*0.03 + Math.sin(ph*2.0+0.4)*0.014;
+    rig.headPivot.rotation.y = Math.sin(ph)*0.035;
+    rig.headPivot.rotation.z = Math.sin(ph+0.3)*0.010;
   }
 
-  if(rig.eyeL?.pupil && rig.eyeR?.pupil){
-    const lookX = 0.004*Math.sin(t*4.8);
-    rig.eyeL.pupil.position.x = lookX;
-    rig.eyeR.pupil.position.x = lookX;
-  }
-  const blink = (Math.sin(t*1.02) > 0.995) ? 0.82 : 0.0;
-  if(rig.lidL) rig.lidL.scale.y = 0.55 - 0.35*blink;
-  if(rig.lidR) rig.lidR.scale.y = 0.55 - 0.35*blink;
+  const blink = (Math.sin(t*0.96) > 0.996) ? 0.80 : 0.0;
+  if(rig.lidL) rig.lidL.scale.y = 0.55 - 0.34*blink;
+  if(rig.lidR) rig.lidR.scale.y = 0.55 - 0.34*blink;
 
   function driveArm(side, upper, fore, hand, step){
     if(!upper || !fore) return;
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
-    upper.rotation.x = 1.02 + step * (0.26 * stride);
-    upper.rotation.y = (-0.08 * side) + step * 0.09 * side;
-    upper.rotation.z = (-0.30 * side) + Math.cos(ph + side*0.28) * 0.06 * side;
-    fore.rotation.x  = 0.96 + back*0.70 + forward*0.10;
-    fore.rotation.y  = (-0.04 * side) + step * 0.04 * side;
-    fore.rotation.z  = 0.02 * side;
-    if(hand) hand.scale.set(1.18 + forward*0.06, 0.95 + back*0.03, 1.05);
+    upper.rotation.x = 0.98 + step * (0.22 * stride);
+    upper.rotation.y = (-0.06 * side) + step * 0.06 * side;
+    upper.rotation.z = (-0.20 * side) + Math.cos(ph + side*0.22) * 0.04 * side;
+    fore.rotation.x  = 0.92 + back*0.42 + forward*0.06;
+    fore.rotation.y  = (-0.03 * side) + step * 0.03 * side;
+    fore.rotation.z  = 0.01 * side;
+    if(hand) hand.scale.set(1.12 + forward*0.03, 0.98 + back*0.02, 1.02);
   }
   driveArm(-1, rig.Larm?.upper, rig.Larm?.fore, rig.Larm?.hand, leftStep);
   driveArm( 1, rig.Rarm?.upper, rig.Rarm?.fore, rig.Rarm?.hand, rightStep);
@@ -5595,33 +5580,33 @@ function animMonkeyRun(rig, t, intensity=1.0){
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
     if(legRoot){
-      legRoot.position.y = -0.07 + forward*0.018 - squash*0.006;
-      legRoot.position.z = -0.10 + back*0.022;
+      legRoot.position.y = -0.02 + forward*0.012 - land*0.004;
+      legRoot.position.z = -0.08 + back*0.018;
     }
-    thigh.rotation.x = 0.80 + step * (0.56 * stride);
-    thigh.rotation.y = (-0.05 * side) + step*0.04*side;
-    thigh.rotation.z = (0.10 * side) + Math.sin(ph*2.0)*0.020*side;
-    shin.rotation.x  = 0.95 + forward*0.56 + back*0.10;
-    foot.position.y  = 0.00 + forward*0.036;
-    foot.rotation.x  = -0.70 + forward*0.46 - back*0.08;
-    foot.rotation.z  = 0.04 * side;
+    thigh.rotation.x = 0.82 + step * (0.44 * stride);
+    thigh.rotation.y = (-0.04 * side) + step*0.03*side;
+    thigh.rotation.z = (0.08 * side) + Math.sin(ph*2.0)*0.014*side;
+    shin.rotation.x  = 0.98 + forward*0.42 + back*0.08;
+    foot.position.y  = forward*0.028;
+    foot.rotation.x  = -0.66 + forward*0.34 - back*0.06;
+    foot.rotation.z  = 0.03 * side;
   }
   driveLeg(-1, rig.Lleg?.thigh, rig.Lleg?.shin, rig.Lleg?.foot, rig.Lleg?.leg, leftStep);
   driveLeg( 1, rig.Rleg?.thigh, rig.Rleg?.shin, rig.Rleg?.foot, rig.Rleg?.leg, rightStep);
 
   if(rig.tailPivot){
-    rig.tailPivot.rotation.y = 0.22*Math.sin(ph*0.52);
-    rig.tailPivot.rotation.x = 0.62 + 0.14*Math.sin(ph*0.42 + 0.5) - bounce*0.05;
+    rig.tailPivot.rotation.y = 0.16*Math.sin(ph*0.48);
+    rig.tailPivot.rotation.x = 0.70 + 0.10*Math.sin(ph*0.38 + 0.5) - bounce*0.04;
   }
 
-  if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.08 + Math.abs(Math.sin(ph*2.0))*0.05;
-  if(rig.tongue) rig.tongue.rotation.x = -0.54 + bounce*0.10;
+  if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.08 + Math.abs(Math.sin(ph*2.0))*0.03;
+  if(rig.tongue) rig.tongue.rotation.x = -0.54 + bounce*0.06;
 }
 
 
 function spawnMonkeyGuide(lane, zMonkey){
   const obj = makeMonkeyRunner3D();
-  obj.position.set(lanesX[lane], 0.02, zMonkey); // a terra
+  obj.position.set(lanesX[lane], 0.16, zMonkey);
 
   scene.add(obj);
 
@@ -5633,7 +5618,7 @@ function spawnMonkeyGuide(lane, zMonkey){
 
     state: 'idle',
     t: 0,
-    y0: 0.02,
+    y0: 0.16,
     runT: 0,
     collected: false
   });
