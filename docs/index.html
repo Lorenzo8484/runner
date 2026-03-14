@@ -4822,6 +4822,100 @@ function makeMonkeyRunner3D(){
   return makePrimateRig({ seated:false });
 }
 
+function spawnMonkeyCar(){
+  if(game.foodBoostT <= 0) return;
+  if(monkeyCarAlive()) return;
+
+  const obj = makeMonkeyCar();
+  const z0 = 5.2 + rnd(-0.5, 0.8);
+  obj.position.set(lanesX[3], 0.02, z0);
+  scene.add(obj);
+
+  game.entities.push({
+    type:'monkeyCar',
+    lane:3,
+    z:z0,
+    obj,
+    dead:false,
+    t:0,
+    weave:rnd(0, Math.PI*2)
+  });
+}
+
+function despawnMonkeyCar(){
+  for(let i=game.entities.length-1;i>=0;i--){
+    const e = game.entities[i];
+    if(e.type === 'monkeyCar'){
+      scene.remove(e.obj);
+      game.entities.splice(i,1);
+    }
+  }
+}
+
+function updateMonkeyCar(e, dt, scroll, tNow){
+  try{
+    if(game.foodBoostT <= 0 || e.dead || !e.obj){
+      scene.remove(e.obj);
+      const idx = game.entities.indexOf(e);
+      if(idx>=0) game.entities.splice(idx,1);
+      return;
+    }
+
+    e.t = (e.t || 0) + dt;
+    e.weave = (e.weave || 0) + dt * 2.4;
+
+    const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
+    const forwardSpeed = playerSpeed * 1.30;
+    e.z += scroll - forwardSpeed * dt;
+
+    e.obj.position.z = e.z;
+    e.obj.position.x = lanesX[3] + Math.sin(e.weave) * 0.10;
+    e.obj.rotation.z = Math.sin(e.t * 4.0) * 0.012;
+
+    const rig = e.obj.userData?.monkeyRig;
+    if(rig){
+      const excite = 0.35 + 0.25*Math.abs(Math.sin(e.t*1.6));
+      rig.spine.position.y = 0.02 + Math.sin(e.t*9.0)*0.006;
+      rig.spine.rotation.x = -0.08 + Math.sin(e.t*3.2)*0.015;
+      rig.spine.rotation.z = Math.sin(e.t*6.0)*0.010;
+      if(rig.steerPivot) rig.steerPivot.rotation.z = Math.sin(e.t*3.4) * (0.12 + excite*0.04);
+      if(rig.headPivot){
+        rig.headPivot.rotation.y = 0.06 + Math.sin(e.t*2.4)*0.05;
+        rig.headPivot.rotation.x = -0.05 + Math.sin(e.t*2.0 + 0.6)*0.025;
+      }
+      if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.05 + Math.abs(Math.sin(e.t*3.2))*0.04;
+      if(rig.tongue) rig.tongue.rotation.x = -0.46 + Math.sin(e.t*5.2)*0.08;
+      if(rig.lidL && rig.lidR){
+        const blink = (Math.sin(e.t*1.1) > 0.995) ? 0.75 : 0.0;
+        rig.lidL.scale.y = 0.52 - 0.30*blink;
+        rig.lidR.scale.y = 0.52 - 0.30*blink;
+      }
+      if(rig.Larm?.upper) rig.Larm.upper.rotation.set(1.18, 0.10, 0.22 + Math.sin(e.t*3.4)*0.04);
+      if(rig.Rarm?.upper) rig.Rarm.upper.rotation.set(1.18,-0.10,-0.22 + Math.sin(e.t*3.4)*0.04);
+      if(rig.Larm?.fore) rig.Larm.fore.rotation.set(-0.56, 0, 0);
+      if(rig.Rarm?.fore) rig.Rarm.fore.rotation.set(-0.56, 0, 0);
+      if(rig.tailPivot){
+        rig.tailPivot.rotation.x = 0.84 + Math.sin(e.t*1.6)*0.06;
+        rig.tailPivot.rotation.y = -0.20 + Math.sin(e.t*1.4)*0.10;
+      }
+      if(rig.bell && rig.bell.material){
+        rig.bell.material.opacity = 0.42 + Math.abs(Math.sin(e.t*7.0))*0.20;
+      }
+    }
+
+    if(e.z < -140 || e.z > 40){
+      scene.remove(e.obj);
+      const idx = game.entities.indexOf(e);
+      if(idx>=0) game.entities.splice(idx,1);
+    }
+  }catch(err){
+    console.error('updateMonkeyCar failed', err);
+    try{ scene.remove(e.obj); }catch{}
+    const idx = game.entities.indexOf(e);
+    if(idx>=0) game.entities.splice(idx,1);
+  }
+}
+
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
   const spd = 6.6 + 1.4*intensity;
@@ -5255,7 +5349,7 @@ if(game.multT > 0){
   }
 
   // smooth lane follow
-  const laneTargetX = lanesX[ clamp(game.lane, 0, 3) ];
+  const laneTargetX = lanesX[ clamp(game.lane, 0, 2) ];
   runnerX = damp(runnerX, laneTargetX, 14, dt);
   runnerPivot.position.x = runnerX;
   runnerPivot.position.y = (-game.y);
