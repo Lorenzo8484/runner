@@ -4163,11 +4163,14 @@ sfx.lane();
     }
 
     window.addEventListener('keydown', (e)=>{
-      const k=e.key.toLowerCase();
-      if(k==='arrowleft') moveLane(-1);
-      if(k==='arrowright') moveLane(1);
-      if(k==='arrowup' || k===' ') jump();
-      if(k==='arrowdown') slide();
+      const k = e.key.toLowerCase();
+      if(['arrowleft','arrowright','arrowup','arrowdown',' ','a','d','w','s','p'].includes(k)){
+        e.preventDefault();
+      }
+      if(k==='arrowleft' || k==='a') moveLane(-1);
+      if(k==='arrowright' || k==='d') moveLane(1);
+      if(k==='arrowup' || k==='w' || k===' ') jump();
+      if(k==='arrowdown' || k==='s') slide();
       if(k==='p') togglePause();
     });
 
