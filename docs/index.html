@@ -5446,7 +5446,9 @@ function makeMonkeyRunner3D(){
   const tongueMat = new THREE.MeshStandardMaterial({ color:0xff63ad, roughness:0.92, metalness:0.0 });
   const mk = (geo, mat)=>{ const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true; return m; };
 
+  // root visivo alzato rispetto all'entity root, così la scimmia resta ben sopra il terreno
   const hips = new THREE.Group();
+  hips.position.set(0, 0.16, 0);
   monkey.add(hips);
 
   const spine = new THREE.Group();
@@ -5587,29 +5589,30 @@ function makeMonkeyRunner3D(){
 
   monkey.userData.runRig = { monkey, hips, spine, headPivot, mouthPivot, tongue, lidL, lidR, eyeL, eyeR, Larm, Rarm, Lleg, Rleg, tailPivot };
 
-  // natural base pose
-  spine.rotation.x = -0.52;
-  headPivot.rotation.x = -0.10;
-  Larm.upper.rotation.set(0.58, 0.10, -0.14);
-  Rarm.upper.rotation.set(0.58,-0.10, 0.14);
-  Larm.fore.rotation.set(0.46, -0.04, 0.01);
-  Rarm.fore.rotation.set(0.46,  0.04,-0.01);
-  Lleg.thigh.rotation.set(0.42, 0.03, 0.05);
-  Rleg.thigh.rotation.set(0.42,-0.03,-0.05);
-  Lleg.shin.rotation.set(0.72,0,0);
-  Rleg.shin.rotation.set(0.72,0,0);
-  Lleg.foot.rotation.set(-0.22, 0.02, 0.02);
-  Rleg.foot.rotation.set(-0.22,-0.02,-0.02);
+  // natural base pose più leggibile e un po' più "vera"
+  spine.rotation.x = -0.42;
+  headPivot.rotation.x = -0.04;
+  Larm.upper.rotation.set(0.42, 0.08, -0.12);
+  Rarm.upper.rotation.set(0.42,-0.08, 0.12);
+  Larm.fore.rotation.set(0.34, -0.03, 0.01);
+  Rarm.fore.rotation.set(0.34,  0.03,-0.01);
+  Lleg.thigh.rotation.set(0.28, 0.02, 0.04);
+  Rleg.thigh.rotation.set(0.28,-0.02,-0.04);
+  Lleg.shin.rotation.set(0.58,0,0);
+  Rleg.shin.rotation.set(0.58,0,0);
+  Lleg.foot.rotation.set(-0.14, 0.02, 0.02);
+  Rleg.foot.rotation.set(-0.14,-0.02,-0.02);
 
-  monkey.scale.setScalar(1.32);
-  monkey.position.set(0, -0.02, 0.00);
+  monkey.scale.setScalar(1.48);
+  monkey.position.set(0, 0.00, 0.00);
+  monkey.userData.groundY = 0.18;
   return monkey;
 }
 
 function animMonkeyRun(rig, t, intensity=1.0){
   if(!rig) return;
 
-  const spd = 7.2 + 1.4*intensity;
+  const spd = 5.9 + 1.1*intensity;
   const ph  = t * spd;
   const leftStep  = Math.sin(ph + Math.PI);
   const rightStep = Math.sin(ph);
@@ -5617,15 +5620,15 @@ function animMonkeyRun(rig, t, intensity=1.0){
   const settle = Math.max(0, -Math.sin(ph*2.0));
 
   if(rig.spine){
-    rig.spine.position.y = bounce*(0.030 + 0.008*intensity) - settle*0.008;
-    rig.spine.rotation.x = -0.52 + Math.cos(ph*2.0)*0.032;
-    rig.spine.rotation.y = Math.sin(ph)*0.028;
-    rig.spine.rotation.z = Math.sin(ph*2.0)*0.018;
+    rig.spine.position.y = bounce*(0.022 + 0.006*intensity) - settle*0.005;
+    rig.spine.rotation.x = -0.42 + Math.cos(ph*2.0)*0.024;
+    rig.spine.rotation.y = Math.sin(ph)*0.020;
+    rig.spine.rotation.z = Math.sin(ph*2.0)*0.012;
   }
   if(rig.headPivot){
-    rig.headPivot.rotation.x = -0.12 + bounce*0.02 + Math.sin(ph*2.0+0.4)*0.012;
-    rig.headPivot.rotation.y = Math.sin(ph)*0.028;
-    rig.headPivot.rotation.z = Math.sin(ph+0.3)*0.008;
+    rig.headPivot.rotation.x = -0.05 + bounce*0.014 + Math.sin(ph*2.0+0.4)*0.009;
+    rig.headPivot.rotation.y = Math.sin(ph)*0.022;
+    rig.headPivot.rotation.z = Math.sin(ph+0.3)*0.006;
   }
 
   const blink = (Math.sin(t*0.92) > 0.996) ? 0.80 : 0.0;
@@ -5636,13 +5639,13 @@ function animMonkeyRun(rig, t, intensity=1.0){
     if(!upper || !fore) return;
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
-    upper.rotation.x = 0.58 + step*0.62;
-    upper.rotation.y = (-0.08*side) + step*0.08*side;
-    upper.rotation.z = (-0.14*side) + Math.cos(ph + side*0.2)*0.05*side;
-    fore.rotation.x = 0.46 + back*0.46 + forward*0.10;
-    fore.rotation.y = (-0.04*side) + step*0.03*side;
+    upper.rotation.x = 0.42 + step*0.46;
+    upper.rotation.y = (-0.06*side) + step*0.06*side;
+    upper.rotation.z = (-0.12*side) + Math.cos(ph + side*0.2)*0.035*side;
+    fore.rotation.x = 0.34 + back*0.28 + forward*0.08;
+    fore.rotation.y = (-0.03*side) + step*0.02*side;
     fore.rotation.z = 0;
-    if(hand) hand.scale.set(1.08 + forward*0.03, 0.98, 1.0);
+    if(hand) hand.scale.set(1.05 + forward*0.02, 0.98, 1.0);
   }
   driveArm(-1, rig.Larm?.upper, rig.Larm?.fore, rig.Larm?.hand, leftStep);
   driveArm( 1, rig.Rarm?.upper, rig.Rarm?.fore, rig.Rarm?.hand, rightStep);
@@ -5652,33 +5655,34 @@ function animMonkeyRun(rig, t, intensity=1.0){
     const forward = Math.max(0, step);
     const back = Math.max(0, -step);
     if(legRoot){
-      legRoot.position.y = forward*0.010 - settle*0.004;
-      legRoot.position.z = back*0.014;
+      legRoot.position.y = forward*0.007 - settle*0.003;
+      legRoot.position.z = back*0.010;
     }
-    thigh.rotation.x = 0.42 + step*0.64;
-    thigh.rotation.y = (-0.03*side) + step*0.03*side;
-    thigh.rotation.z = (0.05*side) + Math.sin(ph*2.0)*0.014*side;
-    shin.rotation.x = 0.72 + forward*0.62 + back*0.05;
-    foot.position.y = forward*0.018;
-    foot.rotation.x = -0.22 + forward*0.34 - back*0.05;
+    thigh.rotation.x = 0.28 + step*0.46;
+    thigh.rotation.y = (-0.02*side) + step*0.02*side;
+    thigh.rotation.z = (0.04*side) + Math.sin(ph*2.0)*0.010*side;
+    shin.rotation.x = 0.58 + forward*0.46 + back*0.04;
+    foot.position.y = forward*0.012;
+    foot.rotation.x = -0.14 + forward*0.22 - back*0.04;
     foot.rotation.z = 0.02*side;
   }
   driveLeg(-1, rig.Lleg?.thigh, rig.Lleg?.shin, rig.Lleg?.foot, rig.Lleg?.leg, leftStep);
   driveLeg( 1, rig.Rleg?.thigh, rig.Rleg?.shin, rig.Rleg?.foot, rig.Rleg?.leg, rightStep);
 
   if(rig.tailPivot){
-    rig.tailPivot.rotation.y = 0.12*Math.sin(ph*0.42);
-    rig.tailPivot.rotation.x = 1.18 + 0.08*Math.sin(ph*0.34 + 0.5) - bounce*0.03;
+    rig.tailPivot.rotation.y = 0.10*Math.sin(ph*0.42);
+    rig.tailPivot.rotation.x = 1.12 + 0.05*Math.sin(ph*0.34 + 0.5) - bounce*0.02;
   }
 
-  if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.04 + Math.abs(Math.sin(ph*2.0))*0.02;
-  if(rig.tongue) rig.tongue.rotation.x = -0.60 + bounce*0.04;
+  if(rig.mouthPivot) rig.mouthPivot.rotation.x = -0.02 + Math.abs(Math.sin(ph*2.0))*0.015;
+  if(rig.tongue) rig.tongue.rotation.x = -0.56 + bounce*0.03;
 }
 
 
 function spawnMonkeyGuide(lane, zMonkey){
   const obj = makeMonkeyRunner3D();
-  obj.position.set(lanesX[lane], 0.02, zMonkey);
+  const yBase = obj.userData?.groundY ?? 0.18;
+  obj.position.set(lanesX[lane], yBase, zMonkey);
 
   scene.add(obj);
 
@@ -5690,7 +5694,7 @@ function spawnMonkeyGuide(lane, zMonkey){
 
     state: 'idle',
     t: 0,
-    y0: 0.02,
+    y0: yBase,
     runT: 0,
     collected: false
   });
@@ -6158,27 +6162,28 @@ for (let i = game.entities.length - 1; i >= 0; i--) {
     e.t = (e.t || 0) + dt;
 
     const playerSpeed = Math.max(0.001, scroll / Math.max(0.001, dt));
+    const yBase = e.y0 ?? 0.18;
 
-    // quando è "vicino" parte prima di essere toccata
-    const PRE_RUN_Z = 6.0;
+    // quando è vicina parte prima di essere toccata
+    const PRE_RUN_Z = 8.0;
     if (e.state === 'idle' && e.z > -PRE_RUN_Z && e.z < PRE_RUN_Z) {
       e.state = 'run';
       e.runT = 0;
     }
 
     if (e.state === 'idle') {
-      e.obj.position.y = (e.y0 ?? 0.02) + Math.sin(e.t * 3.6) * 0.015;
-      animMonkeyRun(e.obj.userData?.runRig, e.t * 0.35, 0.25);
+      e.obj.position.y = yBase + Math.sin(e.t * 2.8) * 0.010;
+      animMonkeyRun(e.obj.userData?.runRig, e.t * 0.28, 0.18);
     }
 
     if (e.state === 'run') {
       e.runT = (e.runT || 0) + dt;
-      const extra = 9.0;
-      e.z -= (playerSpeed * 0.80 + extra) * dt;
+      const extra = 11.0;
+      e.z -= (playerSpeed * 0.86 + extra) * dt;
       e.obj.position.z = e.z;
 
-      animMonkeyRun(e.obj.userData?.runRig, e.runT, 1.05);
-      e.obj.position.y = (e.y0 ?? 0.02) + Math.abs(Math.sin(e.runT * 7.2)) * 0.012;
+      animMonkeyRun(e.obj.userData?.runRig, e.runT, 0.95);
+      e.obj.position.y = yBase + Math.abs(Math.sin(e.runT * 5.9)) * 0.010;
 
       if (e.z < -220) {
         scene.remove(e.obj);
@@ -6189,12 +6194,12 @@ for (let i = game.entities.length - 1; i >= 0; i--) {
 
     if (e.state === 'dash') {
       e.runT = (e.runT || 0) + dt;
-      const extra = 22.0;
-      e.z -= (playerSpeed * 1.15 + extra) * dt;
+      const extra = 25.0;
+      e.z -= (playerSpeed * 1.20 + extra) * dt;
       e.obj.position.z = e.z;
 
-      animMonkeyRun(e.obj.userData?.runRig, e.runT, 1.35);
-      e.obj.position.y = (e.y0 ?? 0.02) + Math.abs(Math.sin(e.runT * 8.2)) * 0.016;
+      animMonkeyRun(e.obj.userData?.runRig, e.runT, 1.18);
+      e.obj.position.y = yBase + Math.abs(Math.sin(e.runT * 6.8)) * 0.012;
 
       if (e.z < -240) {
         scene.remove(e.obj);
