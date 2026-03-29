@@ -3127,6 +3127,50 @@ function updateEffects(dt){
     }
 
     // ===============================
+    // MONKEY CAR BOOM
+    // ===============================
+    if(fx.type === 'monkeyBoom'){
+      const t = fx.t;
+      const flashP = clamp(t / 0.20, 0, 1);
+      fx.flash.material.opacity = (1 - flashP) * 1.0;
+      const flashS = 3.4 + flashP * 3.6;
+      fx.flash.scale.set(flashS, flashS, 1);
+
+      const fireP = clamp(t / 0.42, 0, 1);
+      fx.fireball.material.opacity = (1 - fireP) * 0.95;
+      const fireS = 2.2 + fireP * 2.8;
+      fx.fireball.scale.set(fireS, fireS, 1);
+      fx.fireball.position.y = 0.88 + fireP * 0.25;
+
+      const smokeP = clamp(t / 0.95, 0, 1);
+      fx.smoke.material.opacity = (1 - smokeP) * 0.55;
+      const smokeS = 1.6 + smokeP * 3.6;
+      fx.smoke.scale.set(smokeS, smokeS, 1);
+      fx.smoke.position.y = 0.80 + smokeP * 0.65;
+
+      const waveP = clamp(t / 0.55, 0, 1);
+      const waveS = 0.45 + waveP * 5.2;
+      fx.wave.scale.set(waveS, waveS, 1);
+      fx.wave.material.opacity = (1 - waveP) * 0.95;
+
+      for(const c of fx.chunks){
+        c.vy -= 8.2 * dt;
+        c.mesh.position.x += c.vx * dt;
+        c.mesh.position.y += c.vy * dt;
+        c.mesh.position.z += c.vz * dt;
+        c.mesh.rotation.x += c.rx * dt;
+        c.mesh.rotation.y += c.ry * dt;
+        c.mesh.rotation.z += c.rz * dt;
+      }
+
+      if(t > 1.15){
+        scene.remove(fx.g);
+        game.effects.splice(i,1);
+      }
+      continue;
+    }
+
+    // ===============================
     // DUST (TUO)
     // ===============================
     if(fx.type === 'dust'){
@@ -5250,49 +5294,107 @@ if(Math.abs(err) < 0.22){
   }
 } // ✅ CHIUDE updateMonkeyCar
 
-// ===== BULLET VISUAL =====
+// ===== ROCKET VISUAL =====
 function makeBullet(){
   const g = new THREE.Group();
 
-  // nucleo
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 16, 12),
-    new THREE.MeshBasicMaterial({ color: 0xeaffff })
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.028, 0.036, 0.34, 14),
+    new THREE.MeshStandardMaterial({
+      color:0xe8edf4,
+      roughness:0.36,
+      metalness:0.35,
+      emissive:0x101820,
+      emissiveIntensity:0.08
+    })
   );
-  core.renderOrder = 999;
-  g.add(core);
+  body.rotation.x = Math.PI / 2;
+  body.castShadow = true;
+  body.receiveShadow = true;
+  g.add(body);
 
-  // glow (sprite)
+  const nose = new THREE.Mesh(
+    new THREE.ConeGeometry(0.036, 0.10, 14),
+    new THREE.MeshStandardMaterial({ color:0xff4a32, roughness:0.40, metalness:0.12 })
+  );
+  nose.rotation.x = Math.PI / 2;
+  nose.position.z = 0.22;
+  nose.castShadow = true;
+  g.add(nose);
+
+  const finMat = new THREE.MeshStandardMaterial({ color:0xff8a4d, roughness:0.52, metalness:0.08 });
+  for(let i=0;i<4;i++){
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.10, 0.06), finMat);
+    fin.position.z = -0.12;
+    fin.rotation.z = (Math.PI * 0.5 * i);
+    fin.castShadow = true;
+    g.add(fin);
+  }
+
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({
     map:_bulletGlowTex,
     transparent:true,
-    opacity:0.85,
+    opacity:0.95,
     depthWrite:false,
     depthTest:false,
     blending:THREE.AdditiveBlending
   }));
-  glow.scale.set(0.30, 0.30, 1);
+  glow.scale.set(0.34, 0.34, 1);
+  glow.position.z = -0.17;
   glow.renderOrder = 999;
   g.add(glow);
 
-  // scia (cilindro che si allunga dietro)
+  const rc = document.createElement('canvas');
+  rc.width = 128; rc.height = 128;
+  const rg = rc.getContext('2d');
+  rg.clearRect(0,0,128,128);
+  rg.font = '900 72px system-ui';
+  rg.textAlign = 'center';
+  rg.textBaseline = 'middle';
+  rg.fillText('🚀', 64, 68);
+  const rocketEmoji = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:new THREE.CanvasTexture(rc),
+    transparent:true,
+    depthWrite:false,
+    depthTest:false
+  }));
+  rocketEmoji.scale.set(0.22, 0.22, 1);
+  rocketEmoji.position.set(0, 0.10, 0.02);
+  rocketEmoji.renderOrder = 1000;
+  g.add(rocketEmoji);
+
+  const flame = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_bulletGlowTex,
+    transparent:true,
+    opacity:0.90,
+    depthWrite:false,
+    depthTest:false,
+    blending:THREE.AdditiveBlending,
+    color:0xffb35c
+  }));
+  flame.scale.set(0.24, 0.42, 1);
+  flame.position.z = -0.24;
+  flame.renderOrder = 999;
+  g.add(flame);
+
   const trail = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.015, 0.03, 0.40, 10, 1, true),
+    new THREE.CylinderGeometry(0.020, 0.055, 0.58, 10, 1, true),
     new THREE.MeshBasicMaterial({
       color: 0x9fe9ff,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.42,
       depthWrite: false,
       blending: THREE.AdditiveBlending
     })
   );
   trail.rotation.x = Math.PI / 2;
-  trail.position.z = -0.20;
+  trail.position.z = -0.34;
   trail.renderOrder = 998;
   g.add(trail);
 
-  g.userData.core = core;
+  g.userData.body = body;
   g.userData.glow = glow;
+  g.userData.flame = flame;
   g.userData.trail = trail;
 
   return g;
@@ -5361,32 +5463,105 @@ function fireBullet(){
 }
 
 function spawnMonkeyExplosion(x, z){
-  // riuso un FX già tuo (flash+shock) se vuoi: qui facciamo un burst “più grosso”
-  try{ spawnTurtleExplosion(x, z); }catch{}
+  const g = new THREE.Group();
+  g.position.set(x, 0.02, z);
 
-  // extra sparkles (2 sprite)
-  for(let i=0;i<2;i++){
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({
-      map:_bulletGlowTex, transparent:true, opacity:0.75, depthWrite:false, blending:THREE.AdditiveBlending
-    }));
-    s.position.set(x + rnd(-0.25,0.25), 0.65 + rnd(0,0.25), z + rnd(-0.15,0.15));
-    const ss = 1.4 + i*0.8;
-    s.scale.set(ss, ss, 1);
-    s.renderOrder = 999;
-    scene.add(s);
-    game.effects.push({
-      type:'dust',
-      spr:s,
-      t:0,
-      life: 0.30 + i*0.10,
-      s0: ss,
-      sGrow: 2.2,
-      maxOp: 0.70,
-      vx: rnd(-0.2,0.2),
-      vy: rnd(0.9,1.4),
-      vz: rnd(-0.2,0.2)
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_explTex,
+    transparent:true,
+    opacity:1.0,
+    depthWrite:false,
+    depthTest:false,
+    blending:THREE.AdditiveBlending,
+    color:0xfff1c9
+  }));
+  flash.scale.set(3.4, 3.4, 1);
+  flash.position.y = 0.95;
+  flash.renderOrder = 999;
+  g.add(flash);
+
+  const fireball = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_explTex,
+    transparent:true,
+    opacity:0.95,
+    depthWrite:false,
+    depthTest:false,
+    blending:THREE.AdditiveBlending,
+    color:0xff7a36
+  }));
+  fireball.scale.set(2.2, 2.2, 1);
+  fireball.position.y = 0.88;
+  fireball.renderOrder = 999;
+  g.add(fireball);
+
+  const smoke = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:_dustTex,
+    transparent:true,
+    opacity:0.55,
+    depthWrite:false,
+    depthTest:false,
+    color:0x2f2f33
+  }));
+  smoke.scale.set(1.6, 1.6, 1);
+  smoke.position.y = 0.80;
+  smoke.renderOrder = 998;
+  g.add(smoke);
+
+  const wave = new THREE.Mesh(
+    new THREE.PlaneGeometry(1,1),
+    new THREE.MeshBasicMaterial({
+      map:_shockTex,
+      transparent:true,
+      opacity:0.95,
+      depthWrite:false,
+      depthTest:false,
+      blending:THREE.AdditiveBlending,
+      side:THREE.DoubleSide,
+      color:0xffb35c
+    })
+  );
+  wave.rotation.x = -Math.PI/2;
+  wave.position.y = 0.04;
+  wave.scale.set(0.45, 0.45, 1);
+  wave.renderOrder = 998;
+  g.add(wave);
+
+  const chunks = [];
+  const chunkMats = [0xf4c542, 0xd08c24, 0x222831, 0xff6a3d];
+  const chunkCount = IS_IOS ? 12 : 20;
+  for(let i=0;i<chunkCount;i++){
+    const geo = new THREE.BoxGeometry(rnd(0.06,0.18), rnd(0.04,0.12), rnd(0.06,0.18));
+    const mat = new THREE.MeshStandardMaterial({ color:chunkMats[i % chunkMats.length], roughness:0.62, metalness:0.12, emissive:0x170802, emissiveIntensity:0.10 });
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    m.position.set(rnd(-0.18,0.18), rnd(0.30,0.95), rnd(-0.16,0.16));
+    m.rotation.set(rnd(0,Math.PI), rnd(0,Math.PI), rnd(0,Math.PI));
+    g.add(m);
+    chunks.push({
+      mesh:m,
+      vx:rnd(-3.6,3.6),
+      vy:rnd(2.8,6.0),
+      vz:rnd(-3.2,2.0),
+      rx:rnd(-6,6),
+      ry:rnd(-6,6),
+      rz:rnd(-6,6)
     });
   }
+
+  scene.add(g);
+  game.effects.push({
+    type:'monkeyBoom',
+    g,
+    t:0,
+    flash,
+    fireball,
+    smoke,
+    wave,
+    chunks
+  });
+
+  try{ sfx.hit(); }catch{}
 }
 
 function make2xRingVisual(){
@@ -5753,15 +5928,22 @@ function updateProjectiles(dt){
         const vx = p.vx / vlen, vy = p.vy / vlen, vz = p.vz / vlen;
         p.obj.lookAt(p.x + vx, p.y + vy, p.z + vz);
 
+        const pulse = Math.abs(Math.sin(performance.now()*0.02));
         const trail = p.obj.userData?.trail;
         if(trail && trail.material){
-          trail.scale.y = clamp(vlen * 0.02, 0.8, 2.6);
-          trail.material.opacity = 0.35 + 0.25*Math.abs(Math.sin(performance.now()*0.02));
+          trail.scale.y = clamp(vlen * 0.018, 1.0, 3.2);
+          trail.material.opacity = 0.28 + 0.18*pulse;
         }
 
         const glow = p.obj.userData?.glow;
         if(glow && glow.material){
-          glow.material.opacity = 0.75 + 0.20*Math.abs(Math.sin(performance.now()*0.02));
+          glow.material.opacity = 0.82 + 0.14*pulse;
+        }
+
+        const flame = p.obj.userData?.flame;
+        if(flame && flame.material){
+          flame.material.opacity = 0.75 + 0.20*pulse;
+          flame.scale.set(0.24 + 0.02*pulse, 0.34 + 0.18*pulse, 1);
         }
       }catch{}
     }
