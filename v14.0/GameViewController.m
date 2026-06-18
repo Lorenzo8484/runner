@@ -5,7 +5,7 @@
 #import "ParticleSystem.h"
 
 // Version string for verification
-static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.1";
+static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.2";
 
 // ─── Game Constants ──────────────────────────
 #define LANE_W 2.5f
@@ -52,29 +52,61 @@ static SCNMaterial *pbr(NSString *s){
 
 // ═══════════════════════════════════════════════
 // MARK: - Glass Pill (EXACT match of .pillFx from original CSS)
+// Uses UIVisualEffectView for real backdrop-filter blur + gradient overlay
 // ═══════════════════════════════════════════════
 static UIView *glassPill(CGRect frame){
-    UIView *ev=[[UIView alloc]initWithFrame:frame];
-    ev.layer.cornerRadius=frame.size.height/2;ev.layer.masksToBounds=YES;
-    // Gradient: linear-gradient(180deg, rgba(60,90,140,.28), rgba(12,16,26,.64))
-    CAGradientLayer *grad=[CAGradientLayer layer];grad.frame=ev.bounds;
-    grad.colors=@[(id)[UIColor colorWithRed:0.235 green:0.353 blue:0.549 alpha:0.28].CGColor,
-                   (id)[UIColor colorWithRed:0.047 green:0.063 blue:0.102 alpha:0.64].CGColor];
-    grad.cornerRadius=frame.size.height/2;[ev.layer insertSublayer:grad atIndex:0];
-    // Border: 1px solid rgba(170,210,255,.22)
-    ev.layer.borderWidth=0.5;ev.layer.borderColor=[UIColor colorWithRed:0.667 green:0.824 blue:1.0 alpha:0.22].CGColor;
-    return ev;
+    UIView *container = [[UIView alloc] initWithFrame:frame];
+    container.backgroundColor = [UIColor clearColor];
+    container.layer.shadowColor = [UIColor blackColor].CGColor;
+    container.layer.shadowOffset = CGSizeMake(0, 7);
+    container.layer.shadowRadius = 22;
+    container.layer.shadowOpacity = 0.50;
+    // ring shadow
+    container.layer.shadowPath = nil;
+    container.layer.masksToBounds = NO;
+
+    // ── UIVisualEffectView for backdrop-filter: blur(6px) saturate(1.2) ──
+    UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+    UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blur];
+    blurView.frame = CGRectMake(0, 0, frame.size.width, frame.size.height);
+    blurView.layer.cornerRadius = frame.size.height / 2;
+    blurView.layer.masksToBounds = YES;
+
+    // ── Overlay gradient: linear-gradient(180deg, rgba(60,90,140,.28), rgba(12,16,26,.64)) ──
+    UIView *overlay = [[UIView alloc] initWithFrame:blurView.bounds];
+    CAGradientLayer *grad = [CAGradientLayer layer];
+    grad.frame = overlay.bounds;
+    grad.colors = @[
+        (id)[UIColor colorWithRed:0.235 green:0.353 blue:0.549 alpha:0.28].CGColor,
+        (id)[UIColor colorWithRed:0.047 green:0.063 blue:0.102 alpha:0.64].CGColor
+    ];
+    grad.cornerRadius = frame.size.height / 2;
+    [overlay.layer addSublayer:grad];
+    [blurView.contentView addSubview:overlay];
+
+    // ── Inner border: 1px solid rgba(170,210,255,.22) ──
+    blurView.contentView.layer.borderWidth = 0.5;
+    blurView.contentView.layer.borderColor = [UIColor colorWithRed:0.667 green:0.824 blue:1.0 alpha:0.22].CGColor;
+    blurView.contentView.layer.cornerRadius = frame.size.height / 2;
+
+    // ── ::before top highlight ──
+    CAGradientLayer *before = [CAGradientLayer layer];
+    before.frame = blurView.bounds;
+    before.colors = @[
+        (id)[UIColor colorWithWhite:1 alpha:0.11].CGColor,
+        (id)[UIColor colorWithWhite:1 alpha:0].CGColor
+    ];
+    before.locations = @[@0, @0.55];
+    before.cornerRadius = frame.size.height / 2;
+    before.opacity = 0.70;
+    [blurView.contentView.layer addSublayer:before];
+
+    [container addSubview:blurView];
+    return container;
 }
 
 static UIView *glassPillShadow(CGRect frame){
-    UIView *ev=glassPill(frame);
-    ev.layer.shadowColor=[UIColor blackColor].CGColor;ev.layer.shadowOffset=CGSizeMake(0,7);ev.layer.shadowRadius=22;ev.layer.shadowOpacity=0.50;
-    ev.layer.masksToBounds=NO;
-    // Inner highlight (::before)
-    UIView *inner=[[UIView alloc]initWithFrame:CGRectMake(0,0,frame.size.width,frame.size.height/2)];
-    inner.backgroundColor=[UIColor colorWithWhite:1 alpha:0.07];inner.layer.cornerRadius=frame.size.height/2;
-    inner.userInteractionEnabled=NO;[ev addSubview:inner];
-    return ev;
+    return glassPill(frame); // Shadow already included in glassPill
 }
 
 // ═══════════════════════════════════════════════
@@ -273,12 +305,10 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 }
 
 // ═══════════════════════════════════════════════
-// MARK: - HUD Pill Builder
+// MARK: - HUD Pill Builder (simplified — glassPill handles visuals)
 // ═══════════════════════════════════════════════
 -(UIView*)hudPillFull:(CGRect)frame icon:(NSString*)icon label:(NSString*)label valRef:(UILabel**)valRef{
-    UIView*p=glassPill(frame);p.layer.shadowColor=[UIColor blackColor].CGColor;p.layer.shadowOffset=CGSizeMake(0,7);p.layer.shadowRadius=22;p.layer.shadowOpacity=0.5;p.layer.masksToBounds=NO;
-    UIView*inner=[[UIView alloc]initWithFrame:CGRectMake(0,0,frame.size.width,frame.size.height/2)];
-    inner.backgroundColor=[UIColor colorWithWhite:1 alpha:0.07];inner.layer.cornerRadius=frame.size.height/2;inner.userInteractionEnabled=NO;[p addSubview:inner];
+    UIView*p=glassPill(frame);
     CGFloat pady=4*hs(),padx=6*hs();
     UILabel*il=nil;
     if(icon.length){
@@ -298,36 +328,26 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 }
 
 -(UIView*)hudPillLife:(CGRect)frame{
-    UIView*p=glassPill(frame);p.layer.shadowColor=[UIColor blackColor].CGColor;p.layer.shadowOffset=CGSizeMake(0,7);p.layer.shadowRadius=22;p.layer.shadowOpacity=0.5;p.layer.masksToBounds=NO;
+    UIView*p=glassPill(frame);
     UILabel*hl=[[UILabel alloc]initWithFrame:CGRectMake(4,4,frame.size.width-8,frame.size.height-8)];
     hl.text=@"❤️❤️❤️";hl.textAlignment=NSTextAlignmentCenter;hl.font=[UIFont systemFontOfSize:8*hs()];hl.textColor=[UIColor whiteColor];hl.adjustsFontSizeToFitWidth=YES;
     _lifeVal=hl;[p addSubview:hl];
     return p;
 }
 
-// ═══════════════════════════════════════════════
-// MARK: - Bar Pill
-// ═══════════════════════════════════════════════
 -(UIView*)hudBarPill:(CGRect)frame icon:(NSString*)icon label:(NSString*)label valRef:(UILabel**)valRef fillRef:(UIView**)fillRef{
-    UIView*p=glassPill(frame);p.layer.shadowColor=[UIColor blackColor].CGColor;p.layer.shadowOffset=CGSizeMake(0,7);p.layer.shadowRadius=22;p.layer.shadowOpacity=0.5;p.layer.masksToBounds=NO;
-    UIView*inner=[[UIView alloc]initWithFrame:CGRectMake(0,0,frame.size.width,frame.size.height/2)];
-    inner.backgroundColor=[UIColor colorWithWhite:1 alpha:0.07];inner.layer.cornerRadius=frame.size.height/2;inner.userInteractionEnabled=NO;[p addSubview:inner];
+    UIView*p=glassPill(frame);
     CGFloat pady=4*hs(),padx=6*hs();
-    // Icon
     UILabel*il=[[UILabel alloc]initWithFrame:CGRectMake(padx,pady,11*hs(),11*hs())];
     il.text=icon;il.font=[UIFont systemFontOfSize:11*hs()];il.textAlignment=NSTextAlignmentCenter;[p addSubview:il];
-    // Label
     CGFloat lx=padx+11*hs()+5*hs();
     UILabel*ll=[self hudTitleLabel:CGRectMake(lx,pady,40,frame.size.height-2*pady) text:label];[p addSubview:ll];
-    // Bar background
     CGFloat bw=60*hs()*hw(),bx=lx+40+5*hs();
     UIView*barBg=[[UIView alloc]initWithFrame:CGRectMake(bx,pady+frame.size.height/2-1.5*hs(),bw,3*hs())];
     barBg.backgroundColor=[UIColor colorWithWhite:1 alpha:0.12];barBg.layer.cornerRadius=1.5*hs();[p addSubview:barBg];
-    // Bar fill
     UIView*fill=[[UIView alloc]initWithFrame:CGRectMake(0,0,0,3*hs())];
     fill.backgroundColor=[UIColor colorWithRed:0.78 green:0.85 blue:1 alpha:0.88];fill.layer.cornerRadius=1.5*hs();[barBg addSubview:fill];
     if(fillRef)*fillRef=fill;
-    // Value
     UILabel*vl=[self hudValueLabel:CGRectMake(frame.size.width-padx-38,pady,38,frame.size.height-2*pady)];[p addSubview:vl];
     if(valRef)*valRef=vl;
     return p;
@@ -337,7 +357,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // MARK: - Lifecycle
 // ═══════════════════════════════════════════════
 -(void)viewDidLoad{[super viewDidLoad];
-    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.1 — Fixed camera+textures+ground");
+    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.2 — Glass morphism + layout fix");
     _audio=[AudioEngine shared];
 
     // Settings defaults (match original)
@@ -728,15 +748,22 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
 // ═══════════════════════════════════════════════
 // MARK: - Right Stack (Bullets, Boost, AVVIA, DANCE)
+// Anchored to bottom — EXACT match of .rightStack CSS
 // ═══════════════════════════════════════════════
 -(void)setupRightStack{
     CGFloat sw=self.view.bounds.size.width,sh=self.view.bounds.size.height;
-    CGFloat rx=sw-6*ms()-70*ms()*0.75;
-    CGFloat bw=70*ms()*0.75,bh=20*ms()*1.5;
-    CGFloat gapY=5*ms();
+    CGFloat rx=sw - 6*ms() - 70*ms()*0.75;          // right: 6px * menuScale
+    CGFloat bw=70*ms()*0.75, bh=20*ms()*1.5;        // bigBtn dimensions
+    CGFloat gapY=5*ms();                              // gap between items
 
-    CGFloat by=sh-(8*ms()+22*ms())-2*(bh+gapY);
-    _rightStack=[[UIView alloc]initWithFrame:CGRectMake(rx,by,bw,sh-by)];_rightStack.backgroundColor=[UIColor clearColor];
+    // Total height with all 4 items (Bullets + Boost + AVVIA + DANCE)
+    CGFloat totalH = 4*bh + 3*gapY;
+    // Bottom anchor: 8px*menuScale + 22px*menuScale from safe area bottom
+    CGFloat bottomOff = 8*ms() + 22*ms();
+    CGFloat by = sh - bottomOff - totalH;
+
+    _rightStack=[[UIView alloc]initWithFrame:CGRectMake(rx, by, bw, totalH)];
+    _rightStack.backgroundColor=[UIColor clearColor];
     [self.view addSubview:_rightStack];
 
     CGFloat sy=0;
@@ -744,47 +771,47 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     // Bullets Row (hidden)
     _bulletsRow=[[UIView alloc]initWithFrame:CGRectMake(0,sy,bw,bh)];_bulletsRow.hidden=YES;[_rightStack addSubview:_bulletsRow];
     CGFloat mw=28*ms();
-    UIView*bcp=glassPillShadow(CGRectMake(0,0,mw,bh));
+    UIView*bcp=glassPill(CGRectMake(0,0,mw,bh));
     _bulletsCountBtn=[UIButton buttonWithType:UIButtonTypeSystem];_bulletsCountBtn.frame=CGRectMake(0,0,mw,bh);
-    _bulletsCountLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,mw,bh)];_bulletsCountLbl.text=@"5";_bulletsCountLbl.textAlignment=NSTextAlignmentCenter;_bulletsCountLbl.font=[UIFont systemFontOfSize:7*ms()*1.1 weight:UIFontWeightBlack];_bulletsCountLbl.textColor=[UIColor whiteColor];
+    _bulletsCountLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,mw,bh)];_bulletsCountLbl.text=@"5";_bulletsCountLbl.textAlignment=NSTextAlignmentCenter;_bulletsCountLbl.font=[UIFont systemFontOfSize:7*ms()*1.1 weight:UIFontWeightBlack];_bulletsCountLbl.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
     [_bulletsCountBtn addSubview:_bulletsCountLbl];[bcp addSubview:_bulletsCountBtn];[_bulletsRow addSubview:bcp];
     [_bulletsCountBtn addTarget:self action:@selector(fireBullet) forControlEvents:UIControlEventTouchUpInside];
 
-    UIView*bbp=glassPillShadow(CGRectMake(mw+gapY,0,bw-mw-gapY,bh));
+    UIView*bbp=glassPill(CGRectMake(mw+gapY,0,bw-mw-gapY,bh));
     _bulletsBtn=[UIButton buttonWithType:UIButtonTypeSystem];_bulletsBtn.frame=CGRectMake(0,0,bw-mw-gapY,bh);
-    _bulletsLabel=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw-mw-gapY,bh)];_bulletsLabel.text=@"BULLETS";_bulletsLabel.textAlignment=NSTextAlignmentCenter;_bulletsLabel.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_bulletsLabel.textColor=[UIColor whiteColor];
+    _bulletsLabel=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw-mw-gapY,bh)];_bulletsLabel.text=@"BULLETS";_bulletsLabel.textAlignment=NSTextAlignmentCenter;_bulletsLabel.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_bulletsLabel.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
     [_bulletsBtn addSubview:_bulletsLabel];[bbp addSubview:_bulletsBtn];[_bulletsRow addSubview:bbp];
     [_bulletsBtn addTarget:self action:@selector(fireBullet) forControlEvents:UIControlEventTouchUpInside];
     sy+=bh+gapY;
 
     // Boost Row (hidden)
     _boostRow=[[UIView alloc]initWithFrame:CGRectMake(0,sy,bw,bh)];_boostRow.hidden=YES;[_rightStack addSubview:_boostRow];
-    UIView*bcp2=glassPillShadow(CGRectMake(0,0,mw,bh));
+    UIView*bcp2=glassPill(CGRectMake(0,0,mw,bh));
     _boostCountBtn=[UIButton buttonWithType:UIButtonTypeSystem];_boostCountBtn.frame=CGRectMake(0,0,mw,bh);
-    _boostCountLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,mw,bh)];_boostCountLbl.text=@"0";_boostCountLbl.textAlignment=NSTextAlignmentCenter;_boostCountLbl.font=[UIFont systemFontOfSize:7*ms()*1.1 weight:UIFontWeightBlack];_boostCountLbl.textColor=[UIColor whiteColor];
+    _boostCountLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,mw,bh)];_boostCountLbl.text=@"0";_boostCountLbl.textAlignment=NSTextAlignmentCenter;_boostCountLbl.font=[UIFont systemFontOfSize:7*ms()*1.1 weight:UIFontWeightBlack];_boostCountLbl.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
     [_boostCountBtn addSubview:_boostCountLbl];[bcp2 addSubview:_boostCountBtn];[_boostRow addSubview:bcp2];
     [_boostCountBtn addTarget:self action:@selector(useFoodBoost) forControlEvents:UIControlEventTouchUpInside];
 
-    UIView*fbp=glassPillShadow(CGRectMake(mw+gapY,0,bw-mw-gapY,bh));
+    UIView*fbp=glassPill(CGRectMake(mw+gapY,0,bw-mw-gapY,bh));
     _foodBoostBtn=[UIButton buttonWithType:UIButtonTypeSystem];_foodBoostBtn.frame=CGRectMake(0,0,bw-mw-gapY,bh);
-    _foodBoostLabel=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw-mw-gapY,bh)];_foodBoostLabel.text=@"BOOST";_foodBoostLabel.textAlignment=NSTextAlignmentCenter;_foodBoostLabel.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_foodBoostLabel.textColor=[UIColor whiteColor];
+    _foodBoostLabel=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw-mw-gapY,bh)];_foodBoostLabel.text=@"BOOST";_foodBoostLabel.textAlignment=NSTextAlignmentCenter;_foodBoostLabel.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_foodBoostLabel.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
     [_foodBoostBtn addSubview:_foodBoostLabel];[fbp addSubview:_foodBoostBtn];[_boostRow addSubview:fbp];
     [_foodBoostBtn addTarget:self action:@selector(useFoodBoost) forControlEvents:UIControlEventTouchUpInside];
     sy+=bh+gapY;
 
-    // AVVIA/RESTART/STOP (big button)
-    _mainBtn=[UIButton buttonWithType:UIButtonTypeSystem];_mainBtn.frame=CGRectMake(0,sy,bw,bh);
-    UIView*mbp=glassPillShadow(CGRectMake(0,0,bw,bh));
-    _mainLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw,bh)];_mainLbl.text=@"AVVIA";_mainLbl.textAlignment=NSTextAlignmentCenter;_mainLbl.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_mainLbl.textColor=[UIColor whiteColor];_mainLbl.text=@"AVVIA";
-    [mbp addSubview:_mainLbl];_mainBtn.frame=CGRectMake(0,0,bw,bh);[_mainBtn addTarget:self action:@selector(mainAction) forControlEvents:UIControlEventTouchUpInside];
+    // AVVIA/RESTART/STOP (big button — always visible)
+    UIView*mbp=glassPill(CGRectMake(0,sy,bw,bh));
+    _mainLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw,bh)];_mainLbl.text=@"AVVIA";_mainLbl.textAlignment=NSTextAlignmentCenter;_mainLbl.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_mainLbl.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
+    [mbp addSubview:_mainLbl];
+    _mainBtn=[UIButton buttonWithType:UIButtonTypeSystem];_mainBtn.frame=CGRectMake(0,0,bw,bh);[_mainBtn addTarget:self action:@selector(mainAction) forControlEvents:UIControlEventTouchUpInside];
     [mbp addSubview:_mainBtn];[_rightStack addSubview:mbp];
     sy+=bh+gapY;
 
-    // DANCE
-    _danceBtn=[UIButton buttonWithType:UIButtonTypeSystem];_danceBtn.frame=CGRectMake(0,sy,bw,bh);
-    UIView*dbp=glassPillShadow(CGRectMake(0,0,bw,bh));
-    _danceLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw,bh)];_danceLbl.text=@"DANCE";_danceLbl.textAlignment=NSTextAlignmentCenter;_danceLbl.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_danceLbl.textColor=[UIColor whiteColor];
-    [dbp addSubview:_danceLbl];[_danceBtn addTarget:self action:@selector(useDance) forControlEvents:UIControlEventTouchUpInside];
+    // DANCE (always visible)
+    UIView*dbp=glassPill(CGRectMake(0,sy,bw,bh));
+    _danceLbl=[[UILabel alloc]initWithFrame:CGRectMake(0,0,bw,bh)];_danceLbl.text=@"DANCE";_danceLbl.textAlignment=NSTextAlignmentCenter;_danceLbl.font=[UIFont systemFontOfSize:7*ms()*1.125 weight:UIFontWeightBlack];_danceLbl.textColor=[UIColor colorWithRed:0.92 green:0.95 blue:1 alpha:1];
+    [dbp addSubview:_danceLbl];
+    _danceBtn=[UIButton buttonWithType:UIButtonTypeSystem];_danceBtn.frame=CGRectMake(0,0,bw,bh);[_danceBtn addTarget:self action:@selector(useDance) forControlEvents:UIControlEventTouchUpInside];
     [dbp addSubview:_danceBtn];[_rightStack addSubview:dbp];
 }
 
