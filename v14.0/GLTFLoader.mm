@@ -124,16 +124,29 @@
             // ── Material ──
             SCNMaterial *mat = [SCNMaterial material];
             mat.lightingModelName = SCNLightingModelPhysicallyBased;
-            mat.diffuse.contents = [UIColor colorWithRed:0.85 green:0.65 blue:0.45 alpha:1.0];
-            mat.roughness.contents = @0.6;
-            mat.metalness.contents = @0.0;
             
+            // Default: extract from GLTF PBR material
             if (prim->material) {
                 cgltf_material *cmat = prim->material;
                 float *bc = cmat->pbr_metallic_roughness.base_color_factor;
                 mat.diffuse.contents = [UIColor colorWithRed:bc[0] green:bc[1] blue:bc[2] alpha:bc[3]];
                 mat.roughness.contents = @(cmat->pbr_metallic_roughness.roughness_factor);
                 mat.metalness.contents = @(cmat->pbr_metallic_roughness.metallic_factor);
+                
+                // Load base color texture if present
+                cgltf_texture *tex = cmat->pbr_metallic_roughness.base_color_texture.texture;
+                if (tex && tex->image && tex->image->buffer_view) {
+                    cgltf_buffer_view *bv = tex->image->buffer_view;
+                    const uint8_t *imgData = ((const uint8_t*)bv->buffer->data) + bv->offset;
+                    NSData *nsData = [NSData dataWithBytes:imgData length:bv->size];
+                    UIImage *img = [UIImage imageWithData:nsData];
+                    if (img) mat.diffuse.contents = img;
+                }
+            } else {
+                // No GLTF material — use a neutral color with tint
+                mat.diffuse.contents = [UIColor colorWithRed:0.6 green:0.55 blue:0.5 alpha:1.0];
+                mat.roughness.contents = @0.7;
+                mat.metalness.contents = @0.0;
             }
             
             // ── Create geometry ──

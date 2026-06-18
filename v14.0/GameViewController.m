@@ -5,7 +5,7 @@
 #import "ParticleSystem.h"
 
 // Version string for verification
-static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.0";
+static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.1";
 
 // ─── Game Constants ──────────────────────────
 #define LANE_W 2.5f
@@ -337,7 +337,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // MARK: - Lifecycle
 // ═══════════════════════════════════════════════
 -(void)viewDidLoad{[super viewDidLoad];
-    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.0 — FULL NATIVE MATCH");
+    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.1 — Fixed camera+textures+ground");
     _audio=[AudioEngine shared];
 
     // Settings defaults (match original)
@@ -403,9 +403,12 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     _sv.preferredFramesPerSecond=60;
     _sv.antialiasingMode=SCNAntialiasingModeMultisampling4X;
     [self.view addSubview:_sv];
-
-    SCNFloor *fl=[SCNFloor floor];fl.reflectivity=0;fl.materials=@[pbr(@"ground")];
-    SCNNode *fn=[SCNNode nodeWithGeometry:fl];fn.position=SCNVector3Make(0,-0.05,-80);
+    // Ground — use large plane for proper PBR UVs
+    SCNPlane *gp = [SCNPlane planeWithWidth:300 height:300];
+    gp.materials = @[pbr(@"ground")];
+    SCNNode *fn = [SCNNode nodeWithGeometry:gp];
+    fn.eulerAngles = SCNVector3Make(-M_PI_2, 0, 0);
+    fn.position = SCNVector3Make(0, -0.2, -80);
     [_sc.rootNode addChildNode:fn];
 }
 
@@ -1139,18 +1142,14 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 -(void)mainAction{
     [_audio playJump];
 
-    // Home screen: start intro camera
-    if(!_stopped==NO&&!_over&&_homeCam.active&&!_homeCam.intro){
-        _homeCam.intro=YES;_homeCam.t=0;
-        [self applyViewMode:ViewModeBack];
+    // Home screen or stopped: start game directly (skip drone intro)
+    if(_homeCam.active || _stopped){
+        [self startGame];
         return;
     }
 
     // Game over: restart
     if(_over){[self restartGame];return;}
-
-    // Stopped: start game
-    if(_stopped){[self startGame];return;}
 
     // Playing: toggle stop
     _stopped=!_stopped;
