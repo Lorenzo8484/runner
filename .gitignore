@@ -1,0 +1,8 @@
+# IPA binaries (too large for git)
+*.ipa
+
+# Build artifacts
+/tmp/
+
+# macOS
+.DS_Store
