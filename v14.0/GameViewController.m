@@ -5,14 +5,20 @@
 #import "ParticleSystem.h"
 
 // Version string for verification
-static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.5";
+#define STR(x) #x
+#define XSTR(x) STR(x)
+static const char __attribute__((used)) _game_version[] = "JungleRunner_" XSTR(VERSION_STR);
 
-// ─── Game Constants ──────────────────────────
-#define LANE_W 2.5f
-#define LX(l) ((l)*LANE_W)
-#define RW (LANE_W*3.6f)
-#define TL 8.0f
-#define NT 30
+// ─── Game Constants (MATCHING ORIGINAL) ──────────
+#define LANE_W   1.35f
+#define ROAD_W   (LANE_W * 3 + 1.40f)  // totalRoadWidth = 5.45
+#define L_EDGE   (-ROAD_W / 2.0f)      // leftEdge = -2.725
+#define LX(l)    (L_EDGE + LANE_W * ((l) + 0.5f))
+#define SEG_LEN  11.0f
+#define SEG_N    22
+#define NT       SEG_N
+#define RW       ROAD_W
+#define TL       SEG_LEN
 #define SHADOW_SZ 2048
 #define MAX_LIVES 5
 
@@ -44,10 +50,13 @@ static SCNMaterial *pbr(NSString *s){
     m.normal.contents=[UIImage imageWithContentsOfFile:[bu pathForResource:[b stringByAppendingString:@"/normal.jpg"] ofType:nil]];
     NSString *ao=[bu pathForResource:[b stringByAppendingString:@"/ao.jpg"] ofType:nil];
     if(ao)m.ambientOcclusion.contents=[UIImage imageWithContentsOfFile:ao];
+    NSString *metal=[bu pathForResource:[b stringByAppendingString:@"/metal.jpg"] ofType:nil];
+    if(metal)m.metalness.contents=[UIImage imageWithContentsOfFile:metal]; else m.metalness.contents=@0.0;
     m.diffuse.wrapS=SCNWrapModeRepeat;m.diffuse.wrapT=SCNWrapModeRepeat;
     m.roughness.wrapS=SCNWrapModeRepeat;m.roughness.wrapT=SCNWrapModeRepeat;
     m.normal.wrapS=SCNWrapModeRepeat;m.normal.wrapT=SCNWrapModeRepeat;
-    m.metalness.contents=@0.0;return m;
+    if(metal){m.metalness.wrapS=SCNWrapModeRepeat;m.metalness.wrapT=SCNWrapModeRepeat;}
+    return m;
 }
 
 // ═══════════════════════════════════════════════
@@ -124,7 +133,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 @implementation GameViewController {
     // SceneKit
     SCNView *_sv; SCNScene *_sc;
-    SCNNode *_camNode, *_playerNode, *_modelNode, *_roadContainer;
+    SCNNode *_camNode, *_playerNode, *_modelNode, *_roadContainer, *_lookTarget;
     SCNNode *_sunNode, *_ambientNode;
 
     // Player
@@ -134,6 +143,8 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
     // State
     GameState _state; ViewMode _viewMode;
+    float _camX, _camY, _camZ, _lookY, _lookZ;  // camera damping
+    float _camYtarget, _camZtarget;             // camera target positions
     int _score, _lives, _coins, _rings; float _speed, _dist;
     float _invTimer, _boostTimer; BOOL _hasBoost, _hasMagnet; int _bullets; float _speedBoost;
     float _foodBoostT, _magnetT; int _foodCount, _foodBoostCharges;
@@ -390,7 +401,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 }
 
 -(void)initState{
-    _lane=0;_targetX=0;_jumping=NO;_jumpVel=0;_playerY=1;_sliding=NO;_slideTimer=0;
+    _lane=1;_targetX=LX(1);_jumping=NO;_jumpVel=0;_playerY=1;_sliding=NO;_slideTimer=0;  // start center lane
     _score=0;_lives=3;_coins=0;_rings=0;_speed=10;_dist=0;
     _invTimer=0;_boostTimer=0;_hasBoost=NO;_hasMagnet=NO;_bullets=5;_speedBoost=0;
     _foodBoostT=0;_magnetT=0;_foodCount=0;_foodBoostCharges=5;
@@ -405,7 +416,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
     _nextTreeZ=-15;_nextRockZ=-18;_nextCoinZ=-4;_nextTurtleZ=-35;_nextRingZ=-8;_nextHeartZ=-50;
     _carActive=NO;_hitCount=0;
-    _treeNames=@[@"tree_default",@"tree_detailed",@"tree_oak",@"tree_fat",@"tree_cone",@"tree_tall",@"tree_small",@"tree_thin",@"tree_simple",@"tree_blocks",@"tree_pineDefaultA",@"tree_pineDefaultB",@"tree_pineTallA",@"tree_pineTallC",@"tree_pineRoundA",@"tree_pineRoundC",@"tree_pineSmallA",@"tree_pineSmallC",@"tree_palmDetailedShort",@"tree_palmDetailedTall"];
+    _treeNames=@[@"tree_small_02",@"searsia_lucida",@"tree_default",@"tree_detailed",@"tree_oak",@"tree_fat",@"tree_cone",@"tree_tall",@"tree_small",@"tree_thin",@"tree_simple",@"tree_blocks",@"tree_pineDefaultA",@"tree_pineDefaultB",@"tree_pineTallA",@"tree_pineTallC",@"tree_pineRoundA",@"tree_pineRoundC",@"tree_pineSmallA",@"tree_pineSmallC",@"tree_palmDetailedShort",@"tree_palmDetailedTall"];
     _rockNames=@[@"cliff_rock",@"cliff_large_rock",@"cliff_half_rock",@"cliff_corner_rock",@"cliff_block_rock"];
 }
 
@@ -414,44 +425,34 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // ═══════════════════════════════════════════════
 -(void)setupScene{
     _sc=[SCNScene scene];
-    _sc.background.contents = [UIColor colorWithRed:1 green:0 blue:0 alpha:1]; // DEBUG RED
-    _sc.fogColor=[UIColor colorWithRed:0.6 green:0.7 blue:0.8 alpha:1];
-    _sc.fogStartDistance=50;_sc.fogEndDistance=200;
+    // HDRI Sky — grasslands_sunset from Poly Haven
+    NSString *hdriPath=[[NSBundle mainBundle] pathForResource:@"Assets/hdri/grasslands_sunset_2k" ofType:@"exr"];
+    if(hdriPath){
+        UIImage *hdri=[UIImage imageWithContentsOfFile:hdriPath];
+        _sc.lightingEnvironment.contents=hdri;
+        _sc.lightingEnvironment.intensity=0.8;
+        _sc.background.contents=hdri;  // sky visible
+    } else {
+        _sc.background.contents=[UIColor colorWithRed:0.92 green:0.96 blue:1 alpha:1]; // #eaf6ff fog color
+    }
+    _sc.fogColor=[UIColor colorWithRed:0.92 green:0.96 blue:1 alpha:1];  // 0xeaf6ff from JS
+    _sc.fogStartDistance=44;_sc.fogEndDistance=150;  // exact match JS
 
     _sv=[[SCNView alloc]initWithFrame:self.view.bounds];
     _sv.scene=_sc;_sv.delegate=self;
     _sv.preferredFramesPerSecond=60;
     _sv.antialiasingMode=SCNAntialiasingModeMultisampling4X;
     [self.view addSubview:_sv];
-    // Ground — use large plane for proper PBR UVs
-    SCNPlane *gp = [SCNPlane planeWithWidth:300 height:300];
-    gp.materials = @[pbr(@"ground")];
-    SCNNode *fn = [SCNNode nodeWithGeometry:gp];
-    fn.eulerAngles = SCNVector3Make(-M_PI_2, 0, 0);
-    fn.position = SCNVector3Make(0, -0.2, -80);
+    // Ground — sunny_rose_garden from Poly Haven
+    SCNPlane *gp = [SCNPlane planeWithWidth:44 height:SEG_LEN*SEG_N];
+    SCNMaterial *sideMat=[SCNMaterial material];sideMat.lightingModelName=SCNLightingModelPhysicallyBased;
+    sideMat.diffuse.contents=[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Assets/ground/diff" ofType:@"jpg"]];
+    sideMat.roughness.contents=@0.9;sideMat.metalness.contents=@0.0;
+    gp.materials=@[sideMat];
+    SCNNode *fn=[SCNNode nodeWithGeometry:gp];
+    fn.eulerAngles=SCNVector3Make(-M_PI_2,0,0);
+    fn.position=SCNVector3Make(0,-0.2,0);
     [_sc.rootNode addChildNode:fn];
-
-    // ── DEBUG: Red sphere at player position ──
-    SCNSphere *ds = [SCNSphere sphereWithRadius:0.8];
-    SCNMaterial *dm = [SCNMaterial material];
-    dm.diffuse.contents = [UIColor redColor];
-    dm.emission.contents = [UIColor redColor];
-    ds.materials = @[dm];
-    SCNNode *dn = [SCNNode nodeWithGeometry:ds];
-    dn.position = SCNVector3Make(0, 1.5, -2);
-    [_sc.rootNode addChildNode:dn];
-    LOG(@"🔴 DEBUG sphere at (0,1.5,-2) — if you see red, scene renders");
-
-    // ── DEBUG: Green sphere at center ──
-    SCNSphere *gs = [SCNSphere sphereWithRadius:0.5];
-    SCNMaterial *gm = [SCNMaterial material];
-    gm.diffuse.contents = [UIColor greenColor];
-    gm.emission.contents = [UIColor greenColor];
-    gs.materials = @[gm];
-    SCNNode *gn = [SCNNode nodeWithGeometry:gs];
-    gn.position = SCNVector3Make(0, 1.0, 0);
-    [_sc.rootNode addChildNode:gn];
-    LOG(@"🟢 DEBUG sphere at (0,1,0) — if you see green, scene renders");
 }
 
 // ═══════════════════════════════════════════════
@@ -483,13 +484,18 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // ═══════════════════════════════════════════════
 -(void)setupCamera{
     SCNCamera *c=[SCNCamera camera];
-    c.zNear=0.2;c.zFar=300;c.fieldOfView=65;
-    c.wantsHDR=YES;c.wantsExposureAdaptation=YES;c.exposureOffset=0.3;
-    c.bloomIntensity=0.4;c.bloomThreshold=0.85;c.bloomBlurRadius=10;
+    c.zNear=0.1;c.zFar=320;c.fieldOfView=60;  // baseFov=60 from original
+    c.wantsHDR=YES;c.wantsExposureAdaptation=NO;c.exposureOffset=0;
+    c.bloomIntensity=0.5;c.bloomThreshold=0.85;c.bloomBlurRadius=10;
     _camNode=[SCNNode node];_camNode.camera=c;
-    _camNode.position=SCNVector3Make(0,5.5,7);
-    _camNode.eulerAngles=SCNVector3Make(-0.5,0,0);
+    // BACK default: camX=0, camY=4.6, camZ=5.0 (exact match JS Factory)
+    _camNode.position=SCNVector3Make(0,4.6,5.0);
     [_sc.rootNode addChildNode:_camNode];
+    // Camera lookAt target — stored as node for damping
+    _lookTarget=[SCNNode node];_lookTarget.position=SCNVector3Make(0,1.0,-6.5);
+    [_sc.rootNode addChildNode:_lookTarget];
+    SCNLookAtConstraint *lc=[SCNLookAtConstraint lookAtConstraintWithTarget:_lookTarget];
+    lc.gimbalLockEnabled=YES;_camNode.constraints=@[lc];
 }
 
 // ═══════════════════════════════════════════════
@@ -765,11 +771,22 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
 -(void)applyViewMode:(ViewMode)mode{
     _viewMode=mode;[self updateCamThumb];
+    CGFloat cz=5.0, cy=4.6, fy=0.416, fz=-6.5;  // factory defaults from original JS
     switch(mode){
-        case ViewModeBack:_camNode.position=SCNVector3Make(0,5.5,7);_camNode.eulerAngles=SCNVector3Make(-0.5,0,0);break;
-        case ViewModeFPS:_camNode.position=SCNVector3Make(0,1.8,-0.5);_camNode.eulerAngles=SCNVector3Make(0,0,0);break;
-        case ViewModeFront:_camNode.position=SCNVector3Make(0,3.5,-5);_camNode.eulerAngles=SCNVector3Make(-0.3,M_PI,0);break;
+        case ViewModeBack:
+            _camYtarget=cy; _camZtarget=cz; _lookY=fy; _lookZ=fz;
+            _camNode.position=SCNVector3Make(_camX,cy,cz);
+            break;
+        case ViewModeFPS:
+            _camYtarget=1.58; _camZtarget=-0.95; _lookY=1.58; _lookZ=-10;
+            _camNode.position=SCNVector3Make(_camX,1.58,-0.95);
+            break;
+        case ViewModeFront:
+            _camYtarget=cy; _camZtarget=cz; _lookY=0.375; _lookZ=0.10;
+            _camNode.position=SCNVector3Make(_camX,cy,-cz);
+            break;
     }
+    _camY=_camYtarget; _camZ=_camZtarget;  // snap immediately
 }
 
 // ═══════════════════════════════════════════════
@@ -1196,8 +1213,8 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     UITapGestureRecognizer*t=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tap)];[_sv addGestureRecognizer:t];
 }
 -(void)swipe:(UISwipeGestureRecognizer*)s{if(_state!=GameStatePlaying)return;
-    if(s.direction==UISwipeGestureRecognizerDirectionLeft&&_lane>-1){_lane--;_targetX=LX(_lane);}
-    if(s.direction==UISwipeGestureRecognizerDirectionRight&&_lane<1){_lane++;_targetX=LX(_lane);}
+    if(s.direction==UISwipeGestureRecognizerDirectionLeft&&_lane>0){_lane--;_targetX=LX(_lane);}
+    if(s.direction==UISwipeGestureRecognizerDirectionRight&&_lane<2){_lane++;_targetX=LX(_lane);}
     if(s.direction==UISwipeGestureRecognizerDirectionUp&&!_jumping&&!_sliding){_jumping=YES;_jumpVel=7.5;[self anim:@"jump"];[_audio playJump];}
     if(s.direction==UISwipeGestureRecognizerDirectionDown&&!_jumping&&!_sliding){_sliding=YES;_slideTimer=0.7;_modelNode.scale=SCNVector3Make(1,0.4,1);_playerY=0.5;[self anim:@"slide"];[_audio playSlide];}
 }
@@ -1277,7 +1294,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     // Return to home
     _homeCam.active=YES;_homeCam.intro=NO;_homeCam.t=0;
     _homeOrbitAngle=M_PI;_homeOrbitRadius=2.6;_homeOrbitHeight=1.9;
-    _lane=0;_targetX=0;
+    _lane=1;_targetX=LX(1);
     _playerNode.position=SCNVector3Make(0,1,0);
     _jumping=NO;_jumpVel=0;_playerY=1;_sliding=NO;_slideTimer=0;
 
@@ -1365,15 +1382,26 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
     float effectiveDt=dt*(1+(_speedBoost>0?0.5:0));
 
-    // Speed + Score
+    // Speed + Score — baseSpeed 12.9 from original (no ramp)
     _dist+=_speed*effectiveDt;_score=(int)_dist;
-    _speed=10+_dist/100;if(_speed>40)_speed=40;
+    _speed=12.9;  // exact match JS baseSpeed
 
-    // ── Player (cubic easing lane change + dust trail) ──
+    // ── Player (cubic easing lane change) ──
     float cx=_playerNode.position.x;float dx=_targetX-cx;
     float et=MIN(1,10*effectiveDt);
-    cx+=dx*powf(et,3); // Cubic ease out
-    _playerNode.position=SCNVector3Make(cx,_playerY,0);
+    cx+=dx*powf(et,3); _playerNode.position=SCNVector3Make(cx,_playerY,0);
+
+    // ── Camera damping (exact JS: camX = damp(camX, playerX*0.55, 5, dt)) ──
+    float lambdaX=5, lambdaY=8;
+    _camX+=(cx*0.55f - _camX)*(1-expf(-lambdaX*dt));
+    _camY+=(_camYtarget - _camY)*(1-expf(-lambdaY*dt));
+    _camZ+=(_camZtarget - _camZ)*(1-expf(-lambdaY*dt));
+    // Apply position
+    if(_viewMode==ViewModeBack) _camNode.position=SCNVector3Make(_camX,_camY,_camZ);
+    else if(_viewMode==ViewModeFront) _camNode.position=SCNVector3Make(_camX,_camY,-_camZ);
+    else _camNode.position=SCNVector3Make(cx,_camY,_camZ);  // FPS follows player
+    // LookAt — just update target, constraint handles the rest
+    _lookTarget.position=SCNVector3Make(_camX*0.35f, _lookY, _lookZ);
 
     // Dynamic dust trail
     if(!_dustTrail){_dustTrail=[SCNNode node];_dustPS=[ParticleSystem dustTrail];[_dustTrail addParticleSystem:_dustPS];_dustTrail.position=SCNVector3Make(0,0.05,0.5);[_playerNode addChildNode:_dustTrail];}
