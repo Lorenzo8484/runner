@@ -5,7 +5,7 @@
 #import "ParticleSystem.h"
 
 // Version string for verification
-static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.3";
+static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.5";
 
 // ─── Game Constants ──────────────────────────
 #define LANE_W 2.5f
@@ -357,7 +357,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // MARK: - Lifecycle
 // ═══════════════════════════════════════════════
 -(void)viewDidLoad{[super viewDidLoad];
-    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.2 — Glass morphism + layout fix");
+    _lbuf=[NSMutableString string];LOG(@"🏁 Jungle Runner v14.4 — DEBUG spheres RED+GREEN");
     _audio=[AudioEngine shared];
 
     // Settings defaults (match original)
@@ -430,6 +430,28 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     fn.eulerAngles = SCNVector3Make(-M_PI_2, 0, 0);
     fn.position = SCNVector3Make(0, -0.2, -80);
     [_sc.rootNode addChildNode:fn];
+
+    // ── DEBUG: Red sphere at player position ──
+    SCNSphere *ds = [SCNSphere sphereWithRadius:0.8];
+    SCNMaterial *dm = [SCNMaterial material];
+    dm.diffuse.contents = [UIColor redColor];
+    dm.emission.contents = [UIColor redColor];
+    ds.materials = @[dm];
+    SCNNode *dn = [SCNNode nodeWithGeometry:ds];
+    dn.position = SCNVector3Make(0, 1.5, -2);
+    [_sc.rootNode addChildNode:dn];
+    LOG(@"🔴 DEBUG sphere at (0,1.5,-2) — if you see red, scene renders");
+
+    // ── DEBUG: Green sphere at center ──
+    SCNSphere *gs = [SCNSphere sphereWithRadius:0.5];
+    SCNMaterial *gm = [SCNMaterial material];
+    gm.diffuse.contents = [UIColor greenColor];
+    gm.emission.contents = [UIColor greenColor];
+    gs.materials = @[gm];
+    SCNNode *gn = [SCNNode nodeWithGeometry:gs];
+    gn.position = SCNVector3Make(0, 1.0, 0);
+    [_sc.rootNode addChildNode:gn];
+    LOG(@"🟢 DEBUG sphere at (0,1,0) — if you see green, scene renders");
 }
 
 // ═══════════════════════════════════════════════
@@ -636,12 +658,16 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     // Change boost label font
     for(UILabel*l in _boostPill.subviews){if([l isKindOfClass:[UILabel class]]&&l.text.length>0&&![l.text hasPrefix:@"⚡"]){_boostName=l;}}
 
-    // Debug button (below Magnete, matching original position)
+    // Debug button (RED background — always visible, outside hudWrap so tappable)
+    CGFloat dbgY = y + 6*ph() + 30;
     _debugBtn=[UIButton buttonWithType:UIButtonTypeSystem];
-    _debugBtn.frame=CGRectMake(0,poff+6*hs(),ph()*hs(),ph()*hs());
-    [_debugBtn setTitle:@"🐛" forState:UIControlStateNormal];_debugBtn.titleLabel.font=[UIFont systemFontOfSize:10*ms()];
+    _debugBtn.frame=CGRectMake(x, dbgY, 50, 28);
+    _debugBtn.backgroundColor=[UIColor colorWithRed:1 green:0.2 blue:0.2 alpha:0.8];
+    _debugBtn.layer.cornerRadius=14;[_debugBtn setTitle:@"🐛DBG" forState:UIControlStateNormal];
+    [_debugBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    _debugBtn.titleLabel.font=[UIFont systemFontOfSize:10 weight:UIFontWeightBlack];
     [_debugBtn addTarget:self action:@selector(toggleDebug) forControlEvents:UIControlEventTouchUpInside];
-    _debugBtn.userInteractionEnabled=YES;[_hudWrap addSubview:_debugBtn];
+    _debugBtn.userInteractionEnabled=YES;[self.view addSubview:_debugBtn];
 
     // Best score (hidden, like original)
     _bestLbl=[[UILabel alloc]initWithFrame:CGRectZero];_bestLbl.hidden=YES;[self.view addSubview:_bestLbl];
@@ -1090,23 +1116,56 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // MARK: - Debug Panel
 // ═══════════════════════════════════════════════
 -(void)setupDebugPanel{
-    _debugPanel=glassPillShadow(CGRectMake(10,60,MIN(320,self.view.bounds.size.width-20),160));
-    _debugPanel.hidden=YES;[self.view addSubview:_debugPanel];
+    CGFloat pw = MIN(340, self.view.bounds.size.width - 20);
+    _debugPanel = glassPill(CGRectMake(10, 50, pw, 210));
+    _debugPanel.hidden = YES;
+    _debugPanel.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.85];
+    [self.view addSubview:_debugPanel];
 
-    _dbgFps=[self debugRow:CGRectMake(8,8,_debugPanel.frame.size.width-16,18) label:@"fps:"];
-    _dbgCam=[self debugRow:CGRectMake(8,26,_debugPanel.frame.size.width-16,18) label:@"camera:"];
-    _dbgState=[self debugRow:CGRectMake(8,44,_debugPanel.frame.size.width-16,18) label:@"state:"];
-    _dbgEnt=[self debugRow:CGRectMake(8,62,_debugPanel.frame.size.width-16,18) label:@"entities:"];
-    _dbgLane=[self debugRow:CGRectMake(8,80,_debugPanel.frame.size.width-16,18) label:@"lane:"];
-    _dbgBoosts=[self debugRow:CGRectMake(8,98,_debugPanel.frame.size.width-16,18) label:@"boosts:"];
+    _dbgFps   = [self debugRow:CGRectMake(8,4,pw-16,18)  label:@"fps: --"];
+    _dbgCam   = [self debugRow:CGRectMake(8,22,pw-16,18) label:@"cam: --"];
+    _dbgState = [self debugRow:CGRectMake(8,40,pw-16,18) label:@"state: --"];
+    _dbgEnt   = [self debugRow:CGRectMake(8,58,pw-16,18) label:@"entities: --"];
+    _dbgLane  = [self debugRow:CGRectMake(8,76,pw-16,18) label:@"lane: --"];
+    _dbgBoosts= [self debugRow:CGRectMake(8,94,pw-16,18) label:@"boosts: --"];
+    // Extra
+    UILabel *r1 = [self debugRow:CGRectMake(8,112,pw-16,18) label:@"scene: loaded"];
+    UILabel *r2 = [self debugRow:CGRectMake(8,130,pw-16,18) label:@"models: 14 anims"];
+    UILabel *r3 = [self debugRow:CGRectMake(8,148,pw-16,18) label:@"renderer: active"];
+    UILabel *r4 = [self debugRow:CGRectMake(8,166,pw-16,18) label:@"SPHERE: RED+GRN visible?"];
+    UILabel *r5 = [self debugRow:CGRectMake(8,184,pw-16,18) label:@"BG: RED (#ff0000)"];
+    r1.tag = 901; r2.tag = 902; r3.tag = 903; r4.tag = 904; r5.tag = 905;
 }
 
 -(UILabel*)debugRow:(CGRect)frame label:(NSString*)l{
-    UILabel*ll=[[UILabel alloc]initWithFrame:frame];ll.text=l;ll.textColor=[UIColor colorWithRed:0.85 green:0.9 blue:1 alpha:0.85];ll.font=[UIFont systemFontOfSize:11];[_debugPanel addSubview:ll];
+    UILabel*ll=[[UILabel alloc]initWithFrame:frame];ll.text=l;ll.textColor=[UIColor colorWithRed:0.85 green:0.9 blue:1 alpha:0.95];ll.font=[UIFont systemFontOfSize:11 weight:UIFontWeightMedium];[_debugPanel addSubview:ll];
     return ll;
 }
 
 -(void)toggleDebug{_debugPanel.hidden=!_debugPanel.hidden;}
+
+// Called every frame from renderer — always update debug labels
+-(void)updateDebugPanel:(NSTimeInterval)t{
+    static int fc=0; static NSTimeInterval lf=0;
+    fc++;
+    if(t-lf>=0.5){
+        int fps = (int)(fc/(t-lf));
+        _dbgFps.text = [NSString stringWithFormat:@"fps: %d", fps];
+        fc=0; lf=t;
+    }
+    if(_debugPanel.hidden) return;
+    _dbgCam.text    = [NSString stringWithFormat:@"cam: %s pos(%.1f %.1f %.1f)", 
+        _viewMode==ViewModeBack?"BACK":_viewMode==ViewModeFPS?"FPS":"FRONT",
+        _camNode.position.x, _camNode.position.y, _camNode.position.z];
+    _dbgState.text  = [NSString stringWithFormat:@"state: %s stopped:%d over:%d home:%d",
+        _state==GameStateHome?"HOME":_state==GameStatePlaying?"PLAY":"GAMEOVER",
+        _stopped, _over, _homeCam.active];
+    _dbgEnt.text    = [NSString stringWithFormat:@"entities: t%lu r%lu c%lu tu%lu ri%lu h%lu",
+        (unsigned long)_trees.count, (unsigned long)_rocks.count, (unsigned long)_coinObjs.count,
+        (unsigned long)_turtles.count, (unsigned long)_ringObjs.count, (unsigned long)_heartObjs.count];
+    _dbgLane.text   = [NSString stringWithFormat:@"lane: %d x=%.1f tgt=%.1f", _lane, _playerNode.position.x, _targetX];
+    _dbgBoosts.text = [NSString stringWithFormat:@"boosts: food=%.1f mag=%.1f inv=%.1f", _foodBoostT, _magnetT, _invTimer];
+}
 
 // ═══════════════════════════════════════════════
 // MARK: - Home Camera
@@ -1118,23 +1177,6 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 
 -(void)updateHomeCam:(float)dt{
     if(!_homeCam.active)return;
-
-    if(_homeCam.intro){
-        // Drone camera transition
-        _homeCam.t+=dt*0.8;
-        float t=_homeCam.t;
-        // Ease out cubic: 1-(1-t)³
-        float e=1-powf(1-MIN(1,t),3);
-        _camNode.position=SCNVector3Make(
-            sinf(_homeOrbitAngle)*_homeOrbitRadius*(1-e),
-            _homeOrbitHeight+(5.5-_homeOrbitHeight)*(e),
-            7*(e)+_homeOrbitRadius*(1-e)*(-cosf(_homeOrbitAngle))
-        );
-        if(t>=1){_homeCam.intro=NO;_homeCam.active=NO;}
-        return;
-    }
-
-    // Orbiting camera
     _homeOrbitAngle+=0.15*dt;
     _camNode.position=SCNVector3Make(
         sinf(_homeOrbitAngle)*_homeOrbitRadius,
@@ -1142,8 +1184,6 @@ static inline CGFloat gap(void){return 6*hs();} // gap
         -cosf(_homeOrbitAngle)*_homeOrbitRadius+2
     );
     _camNode.eulerAngles=SCNVector3Make(-0.35,0,0);
-
-    // Keep player in idle
     if(![_currentAnim hasPrefix:@"idle"])[self anim:@"idle"];
     _modelNode.position=SCNVector3Make(0,sin(_homeCam.t*2)*0.04,0);
 }
@@ -1532,19 +1572,6 @@ static inline CGFloat gap(void){return 6*hs();} // gap
     _stopped=YES;[self anim:@"die"];[_audio playDeath];
     [self updateMainButton];
     SCNParticleSystem*dp=[ParticleSystem impactDirt];dp.birthRate=80;SCNNode*dn=[SCNNode node];[dn addParticleSystem:dp];dn.position=SCNVector3Make(0,0.8,0);[_playerNode addChildNode:dn];
-}
-
-// ═══════════════════════════════════════════════
-// MARK: - Debug Panel Update
-// ═══════════════════════════════════════════════
--(void)updateDebugPanel:(NSTimeInterval)t{
-    if(_debugPanel.hidden)return;
-    static int fc=0;static NSTimeInterval lf=0;fc++;if(t-lf>=0.5){_dbgFps.text=[NSString stringWithFormat:@"fps: %d",(int)(fc/(t-lf))];fc=0;lf=t;}
-    _dbgCam.text=[NSString stringWithFormat:@"camera: %s",_viewMode==ViewModeBack?"BACK":_viewMode==ViewModeFPS?"FPS":"FRONT"];
-    _dbgState.text=[NSString stringWithFormat:@"state: %s",_over?"GameOver":_stopped?"Stopped":"Playing"];
-    _dbgEnt.text=[NSString stringWithFormat:@"entities: %d",(int)(_trees.count+_rocks.count+_coinObjs.count+_turtles.count)];
-    _dbgLane.text=[NSString stringWithFormat:@"lane: %d",_lane];
-    _dbgBoosts.text=[NSString stringWithFormat:@"boosts: food=%.1f mag=%.1f",_foodBoostT,_magnetT];
 }
 
 // ═══════════════════════════════════════════════
