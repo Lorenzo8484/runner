@@ -5,7 +5,7 @@
 #import "ParticleSystem.h"
 
 // Version string for verification
-static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.2";
+static const char __attribute__((used)) _game_version[] = "JungleRunner_v14.3";
 
 // ─── Game Constants ──────────────────────────
 #define LANE_W 2.5f
@@ -414,7 +414,7 @@ static inline CGFloat gap(void){return 6*hs();} // gap
 // ═══════════════════════════════════════════════
 -(void)setupScene{
     _sc=[SCNScene scene];
-    _sc.background.contents=[self generateSky];
+    _sc.background.contents = [UIColor colorWithRed:1 green:0 blue:0 alpha:1]; // DEBUG RED
     _sc.fogColor=[UIColor colorWithRed:0.6 green:0.7 blue:0.8 alpha:1];
     _sc.fogStartDistance=50;_sc.fogEndDistance=200;
 
